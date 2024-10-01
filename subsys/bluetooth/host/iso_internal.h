@@ -12,8 +12,8 @@
 #include <zephyr/bluetooth/iso.h>
 
 struct iso_data {
-	/** BT_BUF_ISO_IN */
-	uint8_t  type;
+	/* Extend the bt_buf user data */
+	struct bt_buf_data buf_data;
 
 	/* Index into the bt_conn storage array */
 	uint8_t  index;
@@ -117,7 +117,7 @@ struct net_buf *bt_iso_create_pdu_timeout_debug(struct net_buf_pool *pool,
 
 #define bt_iso_create_pdu(_pool, _reserve) \
 	bt_iso_create_pdu_timeout_debug(_pool, _reserve, K_FOREVER, \
-					__func__, __line__)
+					__func__, __LINE__)
 #else
 struct net_buf *bt_iso_create_pdu_timeout(struct net_buf_pool *pool,
 					  size_t reserve, k_timeout_t timeout);
@@ -158,3 +158,11 @@ void bt_iso_chan_set_state(struct bt_iso_chan *chan, enum bt_iso_state state);
 
 /* Process incoming data for a connection */
 void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags);
+
+/* Whether the HCI ISO data packet contains a timestamp or not.
+ * Per spec, the TS flag can only be set for the first fragment.
+ */
+enum bt_iso_timestamp {
+	BT_ISO_TS_ABSENT = 0,
+	BT_ISO_TS_PRESENT,
+};

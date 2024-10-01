@@ -37,6 +37,7 @@
 #include "keys.h"
 #include "conn_internal.h"
 #include "l2cap_internal.h"
+#include "classic/l2cap_br_interface.h"
 #include "smp.h"
 
 #define LOG_LEVEL CONFIG_BT_SMP_LOG_LEVEL
@@ -57,7 +58,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define ID_DIST 0
 #endif
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 #define LINK_DIST BT_SMP_DIST_LINK_KEY
 #else
 #define LINK_DIST 0
@@ -81,7 +82,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define BT_SMP_AUTH_BONDING_FLAGS 0
 #endif /* CONFIG_BT_BONDABLE */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 
 #define BT_SMP_AUTH_MASK_SC	0x2f
 #if defined(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)
@@ -100,7 +101,7 @@ LOG_MODULE_REGISTER(bt_smp);
 #define BT_SMP_AUTH_DEFAULT (BT_SMP_AUTH_BONDING_FLAGS | BT_SMP_AUTH_SC)
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 enum pairing_method {
 	JUST_WORKS,		/* JustWorks pairing */
@@ -247,7 +248,7 @@ static const uint8_t gen_method_sc[5 /* remote */][5 /* local */] = {
 };
 #endif /* !CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 /* SMP over BR/EDR channel specific context */
 struct bt_smp_br {
 	/* Commands that remote is allowed to send */
@@ -276,7 +277,7 @@ struct bt_smp_br {
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static struct bt_smp bt_smp_pool[CONFIG_BT_MAX_CONN];
 static bool bondable = IS_ENABLED(CONFIG_BT_BONDABLE);
@@ -287,7 +288,7 @@ static const uint8_t *sc_public_key;
 static K_SEM_DEFINE(sc_local_pkey_ready, 0, 1);
 
 /* Pointer to internal data is used to mark that callbacks of given SMP channel are not initialized.
- * Value of NULL represents no authenticaiton capabilities and cannot be used for that purpose.
+ * Value of NULL represents no authentication capabilities and cannot be used for that purpose.
  */
 #define BT_SMP_AUTH_CB_UNINITIALIZED	((atomic_ptr_val_t)bt_smp_pool)
 
@@ -474,6 +475,34 @@ static enum bt_security_err security_err_get(uint8_t smp_err)
 	}
 }
 
+#if defined(CONFIG_BT_SECURITY_ERR_TO_STR)
+const char *bt_security_err_to_str(enum bt_security_err err)
+{
+	#define SEC_ERR(err) [err] = #err
+
+	const char * const mapping_table[] = {
+		SEC_ERR(BT_SECURITY_ERR_SUCCESS),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_FAIL),
+		SEC_ERR(BT_SECURITY_ERR_PIN_OR_KEY_MISSING),
+		SEC_ERR(BT_SECURITY_ERR_OOB_NOT_AVAILABLE),
+		SEC_ERR(BT_SECURITY_ERR_AUTH_REQUIREMENT),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_SUPPORTED),
+		SEC_ERR(BT_SECURITY_ERR_PAIR_NOT_ALLOWED),
+		SEC_ERR(BT_SECURITY_ERR_INVALID_PARAM),
+		SEC_ERR(BT_SECURITY_ERR_KEY_REJECTED),
+		SEC_ERR(BT_SECURITY_ERR_UNSPECIFIED),
+	};
+
+	if (err < ARRAY_SIZE(mapping_table) && mapping_table[err]) {
+		return mapping_table[err];
+	} else {
+		return "(unknown)";
+	}
+
+	#undef SEC_ERR
+}
+#endif /* CONFIG_BT_SECURITY_ERR_TO_STR */
+
 static uint8_t smp_err_get(enum bt_security_err auth_err)
 {
 	switch (auth_err) {
@@ -498,6 +527,40 @@ static uint8_t smp_err_get(enum bt_security_err auth_err)
 		return 0;
 	}
 }
+
+#if defined(CONFIG_BT_SMP_ERR_TO_STR)
+const char *bt_smp_err_to_str(uint8_t smp_err)
+{
+	#define SMP_ERR(err) [err] = #err
+
+	const char * const mapping_table[] = {
+		SMP_ERR(BT_SMP_ERR_SUCCESS),
+		SMP_ERR(BT_SMP_ERR_PASSKEY_ENTRY_FAILED),
+		SMP_ERR(BT_SMP_ERR_OOB_NOT_AVAIL),
+		SMP_ERR(BT_SMP_ERR_AUTH_REQUIREMENTS),
+		SMP_ERR(BT_SMP_ERR_CONFIRM_FAILED),
+		SMP_ERR(BT_SMP_ERR_PAIRING_NOTSUPP),
+		SMP_ERR(BT_SMP_ERR_ENC_KEY_SIZE),
+		SMP_ERR(BT_SMP_ERR_CMD_NOTSUPP),
+		SMP_ERR(BT_SMP_ERR_UNSPECIFIED),
+		SMP_ERR(BT_SMP_ERR_REPEATED_ATTEMPTS),
+		SMP_ERR(BT_SMP_ERR_INVALID_PARAMS),
+		SMP_ERR(BT_SMP_ERR_DHKEY_CHECK_FAILED),
+		SMP_ERR(BT_SMP_ERR_NUMERIC_COMP_FAILED),
+		SMP_ERR(BT_SMP_ERR_BREDR_PAIRING_IN_PROGRESS),
+		SMP_ERR(BT_SMP_ERR_CROSS_TRANSP_NOT_ALLOWED),
+		SMP_ERR(BT_SMP_ERR_KEY_REJECTED),
+	};
+
+	if (smp_err < ARRAY_SIZE(mapping_table) && mapping_table[smp_err]) {
+		return mapping_table[smp_err];
+	} else {
+		return "(unknown)";
+	}
+
+	#undef SMP_ERR
+}
+#endif /* CONFIG_BT_SMP_ERR_TO_STR */
 
 static struct net_buf *smp_create_pdu(struct bt_smp *smp, uint8_t op, size_t len)
 {
@@ -592,6 +655,7 @@ static bool update_keys_check(struct bt_smp *smp, struct bt_keys *keys)
 	return true;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool update_debug_keys_check(struct bt_smp *smp)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -611,12 +675,13 @@ static bool update_debug_keys_check(struct bt_smp *smp)
 
 	return false;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \
 	!defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* For TX callbacks */
 static void smp_pairing_complete(struct bt_smp *smp, uint8_t status);
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status);
 #endif
 
@@ -641,7 +706,7 @@ static void smp_check_complete(struct bt_conn *conn, uint8_t dist_complete)
 		return;
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		struct bt_smp_br *smp;
 
@@ -678,7 +743,7 @@ static void smp_sign_info_sent(struct bt_conn *conn, void *user_data, int err)
 }
 #endif /* CONFIG_BT_SIGNING */
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static void sc_derive_link_key(struct bt_smp *smp)
 {
 	/* constants as specified in Core Spec Vol.3 Part H 2.4.2.4 */
@@ -815,7 +880,7 @@ static void smp_br_timeout(struct k_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 			bt_conn_tx_cb_t cb)
 {
-	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL);
+	int err = bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb, NULL);
 
 	if (err) {
 		if (err == -ENOBUFS) {
@@ -864,7 +929,7 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 
 static void smp_br_init(struct bt_smp_br *smp)
 {
-	/* Initialize SMP context exluding L2CAP channel context and anything
+	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp_br, chan));
@@ -1397,7 +1462,8 @@ static int smp_br_error(struct bt_smp_br *smp, uint8_t reason)
 	 * SMP timer is not restarted for PairingFailed so don't use
 	 * smp_br_send
 	 */
-	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_br_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf,
+				NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 
@@ -1590,7 +1656,7 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 
 	return 0;
 }
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static void smp_reset(struct bt_smp *smp)
 {
@@ -1659,7 +1725,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 	}
 
 	if (!status) {
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 		/*
 		 * Don't derive if Debug Keys are used.
 		 * TODO should we allow this if BR/EDR is already connected?
@@ -1669,7 +1735,7 @@ static void smp_pairing_complete(struct bt_smp *smp, uint8_t status)
 		     IS_ENABLED(CONFIG_BT_STORE_DEBUG_KEYS))) {
 			sc_derive_link_key(smp);
 		}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 		bool bond_flag = atomic_test_bit(smp->flags, SMP_FLAG_BOND);
 		struct bt_conn_auth_info_cb *listener, *next;
 
@@ -1748,7 +1814,9 @@ static void smp_timeout(struct k_work *work)
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	int err = bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
+	__ASSERT_NO_MSG(user_data == NULL);
+
+	int err = bt_l2cap_send_pdu(&smp->chan, buf, cb, NULL);
 
 	if (err) {
 		if (err == -ENOBUFS) {
@@ -1803,7 +1871,7 @@ static int smp_error(struct bt_smp *smp, uint8_t reason)
 	rsp->reason = reason;
 
 	/* SMP timer is not restarted for PairingFailed so don't use smp_send */
-	if (bt_l2cap_send(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf)) {
+	if (bt_l2cap_send_pdu(&smp->chan, buf, NULL, NULL)) {
 		net_buf_unref(buf);
 	}
 
@@ -1829,15 +1897,6 @@ static uint8_t smp_send_pairing_random(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void xor_128(const uint8_t p[16], const uint8_t q[16], uint8_t r[16])
-{
-	size_t len = 16;
-
-	while (len--) {
-		*r++ = *p++ ^ *q++;
-	}
-}
-
 static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 		  const uint8_t preq[7], const uint8_t pres[7],
 		  const bt_addr_le_t *ia, const bt_addr_le_t *ra,
@@ -1864,7 +1923,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 	/* c1 = e(k, e(k, r XOR p1) XOR p2) */
 
 	/* Using enc_data as temporary output buffer */
-	xor_128(r, p1, enc_data);
+	mem_xor_128(enc_data, r, p1);
 
 	err = bt_encrypt_le(k, enc_data, enc_data);
 	if (err) {
@@ -1878,7 +1937,7 @@ static int smp_c1(const uint8_t k[16], const uint8_t r[16],
 
 	LOG_DBG("p2 %s", bt_hex(p2, 16));
 
-	xor_128(enc_data, p2, enc_data);
+	mem_xor_128(enc_data, p2, enc_data);
 
 	return bt_encrypt_le(k, enc_data, enc_data);
 }
@@ -2555,7 +2614,7 @@ static uint8_t smp_central_ident(struct bt_smp *smp, struct net_buf *buf)
 
 static int smp_init(struct bt_smp *smp)
 {
-	/* Initialize SMP context exluding L2CAP channel context and anything
+	/* Initialize SMP context excluding L2CAP channel context and anything
 	 * else declared after.
 	 */
 	(void)memset(smp, 0, offsetof(struct bt_smp, chan));
@@ -2831,7 +2890,7 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
-	err = bt_l2cap_send(conn, BT_L2CAP_CID_SMP, req_buf);
+	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
 		return err;
@@ -3118,7 +3177,6 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
-	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 	struct bt_smp_pairing *rsp = (void *)buf->data;
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
 	uint8_t err;
@@ -3173,7 +3231,17 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return err;
 	}
 
-	if (!atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
+	/* the OR operation evaluated by "if" statement below seems redundant
+	 * when CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY is enabled, because in
+	 * that case the SMP_FLAG_SC will always be set to false. But it's
+	 * needed in order to inform the compiler that the inside of the "if"
+	 * is the return point for CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 * builds. This avoids compiler warnings regarding the code after the
+	 * "if" statement, that would happen for builds with
+	 * CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY enabled
+	 */
+	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY) ||
+	    !atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 #if defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 		return BT_SMP_ERR_AUTH_REQUIREMENTS;
 #else
@@ -3187,6 +3255,8 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 		return legacy_pairing_rsp(smp);
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 	}
+
+	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
@@ -3542,6 +3612,7 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 	return 0;
 }
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static bool le_sc_oob_data_req_check(struct bt_smp *smp)
 {
 	struct bt_smp_pairing *req = (struct bt_smp_pairing *)&smp->preq[1];
@@ -3586,6 +3657,7 @@ static void le_sc_oob_config_set(struct bt_smp *smp,
 
 	info->lesc.oob_config = oob_config;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 {
@@ -4085,6 +4157,7 @@ static uint8_t smp_security_request(struct bt_smp *smp, struct net_buf *buf)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
+#ifndef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
 static uint8_t generate_dhkey(struct bt_smp *smp)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY)) {
@@ -4126,6 +4199,7 @@ static uint8_t display_passkey(struct bt_smp *smp)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static uint8_t smp_public_key_periph(struct bt_smp *smp)
@@ -4184,6 +4258,12 @@ static uint8_t smp_public_key_periph(struct bt_smp *smp)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
+#ifdef CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY
+static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
+{
+	return BT_SMP_ERR_AUTH_REQUIREMENTS;
+}
+#else
 static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 {
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
@@ -4296,6 +4376,7 @@ static uint8_t smp_public_key(struct bt_smp *smp, struct net_buf *buf)
 
 	return 0;
 }
+#endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
 static uint8_t smp_dhkey_check(struct bt_smp *smp, struct net_buf *buf)
 {
@@ -5191,7 +5272,7 @@ static int smp_g2_test(void)
 	return 0;
 }
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 static int smp_h6_test(void)
 {
 	uint8_t w[16] = { 0x9b, 0x7d, 0x39, 0x0a, 0xa6, 0x10, 0x10, 0x34,
@@ -5236,7 +5317,7 @@ static int smp_h7_test(void)
 
 	return 0;
 }
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 static int smp_h8_test(void)
 {
@@ -5303,7 +5384,7 @@ static int smp_self_test(void)
 		return err;
 	}
 
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 	err = smp_h6_test();
 	if (err) {
 		LOG_ERR("SMP h6 self test failed");
@@ -5315,7 +5396,7 @@ static int smp_self_test(void)
 		LOG_ERR("SMP h7 self test failed");
 		return err;
 	}
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 	err = smp_h8_test();
 	if (err) {
 		LOG_ERR("SMP h8 self test failed");
@@ -5955,10 +6036,10 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 }
 
 BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept, NULL);
-#if defined(CONFIG_BT_BREDR)
+#if defined(CONFIG_BT_CLASSIC)
 BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
 			bt_smp_br_accept, NULL);
-#endif /* CONFIG_BT_BREDR */
+#endif /* CONFIG_BT_CLASSIC */
 
 int bt_smp_init(void)
 {

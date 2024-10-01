@@ -13,6 +13,7 @@
  * exceptions
  */
 
+#include <zephyr/debug/symtab.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/kernel.h>
@@ -33,7 +34,7 @@ void z_arm64_safe_exception_stack_init(void)
 	char *safe_exc_sp;
 
 	cpu_id = arch_curr_cpu()->id;
-	safe_exc_sp = Z_KERNEL_STACK_BUFFER(z_arm64_safe_exception_stacks[cpu_id]) +
+	safe_exc_sp = K_KERNEL_STACK_BUFFER(z_arm64_safe_exception_stacks[cpu_id]) +
 		      CONFIG_ARM64_SAFE_EXCEPTION_STACK_SIZE;
 	arch_curr_cpu()->arch.safe_exception_stack = (uint64_t)safe_exc_sp;
 	write_sp_el0((uint64_t)safe_exc_sp);
@@ -180,7 +181,7 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 	LOG_ERR("  ISS: 0x%llx", GET_ESR_ISS(esr));
 }
 
-static void esf_dump(const z_arch_esf_t *esf)
+static void esf_dump(const struct arch_esf *esf)
 {
 	LOG_ERR("x0:  0x%016llx  x1:  0x%016llx", esf->x0, esf->x1);
 	LOG_ERR("x2:  0x%016llx  x3:  0x%016llx", esf->x2, esf->x3);
@@ -194,8 +195,8 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("x18: 0x%016llx  lr:  0x%016llx", esf->x18, esf->lr);
 }
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
-static void esf_unwind(const z_arch_esf_t *esf)
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+static void esf_unwind(const struct arch_esf *esf)
 {
 	/*
 	 * For GCC:
@@ -222,10 +223,18 @@ static void esf_unwind(const z_arch_esf_t *esf)
 	uint64_t lr;
 
 	LOG_ERR("");
-	while (fp != NULL) {
+	for (int i = 0; (fp != NULL) && (i < CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES); i++) {
 		lr = fp[1];
+#ifdef CONFIG_SYMTAB
+		uint32_t offset = 0;
+		const char *name = symtab_find_symbol_name(lr, &offset);
+
+		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx [%s+0x%x]",
+			 count++, (uint64_t) fp, lr, name, offset);
+#else
 		LOG_ERR("backtrace %2d: fp: 0x%016llx lr: 0x%016llx",
 			 count++, (uint64_t) fp, lr);
+#endif
 		fp = (uint64_t *) fp[0];
 	}
 	LOG_ERR("");
@@ -235,7 +244,7 @@ static void esf_unwind(const z_arch_esf_t *esf)
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
-static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint64_t far)
+static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, uint64_t far)
 {
 	uint64_t sp, sp_limit, guard_start;
 	/* 0x25 means data abort from current EL */
@@ -250,7 +259,7 @@ static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint
 			 * so flush the fpu context to its owner, and then set no fpu trap to avoid
 			 * a new nested exception triggered by FPU accessing (var_args).
 			 */
-			z_arm64_flush_local_fpu();
+			arch_flush_local_fpu();
 			write_cpacr_el1(read_cpacr_el1() | CPACR_EL1_FPEN_NOTRAP);
 #endif
 			arch_curr_cpu()->arch.corrupted_sp = 0UL;
@@ -275,7 +284,7 @@ static bool z_arm64_stack_corruption_check(z_arch_esf_t *esf, uint64_t esr, uint
 }
 #endif
 
-static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
+static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
 	if (!esf)
@@ -297,7 +306,7 @@ static bool is_recoverable(z_arch_esf_t *esf, uint64_t esr, uint64_t far,
 	return false;
 }
 
-void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
+void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 {
 	uint64_t esr = 0;
 	uint64_t elr = 0;
@@ -313,11 +322,13 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 			far = read_far_el1();
 			elr = read_elr_el1();
 			break;
+#if !defined(CONFIG_ARMV8_R)
 		case MODE_EL3:
 			esr = read_esr_el3();
 			far = read_far_el3();
 			elr = read_elr_el3();
 			break;
+#endif /* CONFIG_ARMV8_R */
 		}
 
 #ifdef CONFIG_ARM64_STACK_PROTECTION
@@ -352,9 +363,9 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
 		esf_dump(esf);
 	}
 
-#ifdef CONFIG_ARM64_ENABLE_FRAME_POINTER
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
 	esf_unwind(esf);
-#endif /* CONFIG_ARM64_ENABLE_FRAME_POINTER */
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
 	z_fatal_error(reason, esf);
@@ -368,7 +379,7 @@ void z_arm64_fatal_error(unsigned int reason, z_arch_esf_t *esf)
  *
  * @param esf exception frame
  */
-void z_arm64_do_kernel_oops(z_arch_esf_t *esf)
+void z_arm64_do_kernel_oops(struct arch_esf *esf)
 {
 	/* x8 holds the exception reason */
 	unsigned int reason = esf->x8;

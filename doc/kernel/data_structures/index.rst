@@ -34,3 +34,5 @@ needed will be provided by the user.
   spsc_pbuf.rst
   rbtree.rst
   ring_buffers.rst
+  mpsc_lockfree.rst
+  spsc_lockfree.rst

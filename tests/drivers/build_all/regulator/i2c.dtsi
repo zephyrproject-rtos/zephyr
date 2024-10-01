@@ -75,3 +75,25 @@ axp192@4 {
 		LDO3 {};
 	};
 };
+
+max20335@5 {
+	compatible = "maxim,max20335";
+	reg = <0x5>;
+
+	regulators {
+		compatible = "maxim,max20335-regulator";
+
+		BUCK1 {};
+		BUCK2 {};
+		LDO1 {};
+		LDO2 {};
+		LDO3 {};
+	};
+};
+
+cp9314@6 {
+	compatible = "cirrus,cp9314";
+	reg = <0x6>;
+
+	cirrus,initial-switched-capacitor-mode = "2:1";
+};

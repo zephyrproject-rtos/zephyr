@@ -2,6 +2,11 @@
 
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
+
+zephyr_library_sources_ifdef(CONFIG_ETH_DRIVER_RAW_MODE
+  eth_raw.c
+  )
 
 zephyr_library_sources_ifdef(CONFIG_ETH_GECKO
 	eth_gecko.c
@@ -23,7 +28,6 @@ zephyr_library_sources_ifdef(CONFIG_ETH_ENC424J600	eth_enc424j600.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ESP32		eth_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_DSA_KSZ8XXX		dsa_ksz8xxx.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_LITEETH		eth_liteeth.c)
-zephyr_library_sources_ifdef(CONFIG_ETH_MCUX		eth_mcux.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_SMSC911X	eth_smsc911x.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STELLARIS	eth_stellaris.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL	eth_stm32_hal.c)
@@ -34,6 +38,8 @@ zephyr_library_sources_ifdef(CONFIG_SLIP_TAP		eth_slip_tap.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_SMSC91X		eth_smsc91x.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_IVSHMEM 	eth_ivshmem.c eth_ivshmem_queue.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111	eth_adin2111.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_LAN865X	        eth_lan865x.c oa_tc6.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_XMC4XXX     eth_xmc4xxx.c)
 
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
@@ -42,14 +48,22 @@ if(CONFIG_ETH_NXP_S32_NETC)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_ETH_NXP_S32_GMAC	eth_nxp_s32_gmac.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_NUMAKER		eth_numaker.c)
 
 if(CONFIG_ETH_NATIVE_POSIX)
-  set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
-  set_source_files_properties(${native_posix_source_files}
-    PROPERTIES COMPILE_DEFINITIONS
-    "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
-  )
-  zephyr_library_sources(${native_posix_source_files})
+  if (CONFIG_NATIVE_APPLICATION)
+    set(native_posix_source_files eth_native_posix.c eth_native_posix_adapt.c)
+    set_source_files_properties(${native_posix_source_files}
+      PROPERTIES COMPILE_DEFINITIONS
+      "NO_POSIX_CHEATS;_BSD_SOURCE;_DEFAULT_SOURCE"
+    )
+    zephyr_library_sources(${native_posix_source_files})
+  else()
+    zephyr_library_sources(eth_native_posix.c)
+    target_sources(native_simulator INTERFACE eth_native_posix_adapt.c)
+  endif()
 endif()
 
 add_subdirectory(phy)
+add_subdirectory(eth_nxp_enet_qos)
+add_subdirectory(nxp_enet)

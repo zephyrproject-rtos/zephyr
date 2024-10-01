@@ -97,9 +97,9 @@ function(toolchain_ld_link_elf)
     ${LINKERFLAGPREFIX}--entry=__start
     ${LINKERFLAGPREFIX}--Map=${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
     ${LINKERFLAGPREFIX}--whole-archive
-    ${ZEPHYR_LIBS_PROPERTY}
+    ${WHOLE_ARCHIVE_LIBS}
     ${LINKERFLAGPREFIX}--no-whole-archive
-    kernel
+    ${NO_WHOLE_ARCHIVE_LIBS}
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
     ${LIB_INCLUDE_DIR}
     -L${PROJECT_BINARY_DIR}

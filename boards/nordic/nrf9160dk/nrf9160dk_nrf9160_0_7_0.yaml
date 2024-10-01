@@ -1,0 +1,22 @@
+identifier: nrf9160dk@0.7.0/nrf9160
+name: nRF9160-DK-NRF9160 (rev. 0.7.0)
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 88
+flash: 1024
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+vendor: nordic

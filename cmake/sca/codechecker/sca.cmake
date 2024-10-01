@@ -2,8 +2,8 @@
 #
 # Copyright (c) 2023, Basalte bv
 
-find_program(CODECHECKER_EXE CodeChecker REQUIRED)
-message(STATUS "Found CodeChecker: ${CODECHECKER_EXE}")
+find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
+message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
 # CodeChecker uses the compile_commands.json as input
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -26,6 +26,7 @@ add_custom_target(codechecker ALL
     --name zephyr # Set a default metadata name
     ${CODECHECKER_ANALYZE_OPTS}
     ${CMAKE_BINARY_DIR}/compile_commands.json
+    || ${CMAKE_COMMAND} -E true # allow to continue processing results
   DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json ${output_dir}/codechecker.ready
   BYPRODUCTS ${output_dir}/codechecker.plist
   VERBATIM
@@ -38,6 +39,14 @@ add_custom_command(
   TARGET codechecker POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E rm ${output_dir}/codechecker.ready
 )
+
+# If 'codechecker parse' returns an exit status of '2', it means more than 0
+# issues were detected. Suppress the exit status by default, but permit opting
+# in to the failure.
+if(NOT CODECHECKER_PARSE_EXIT_STATUS)
+  set(CODECHECKER_PARSE_OPTS ${CODECHECKER_PARSE_OPTS} || ${CMAKE_COMMAND} -E true)
+endif()
+
 
 if(CODECHECKER_EXPORT)
   string(REPLACE "," ";" export_list ${CODECHECKER_EXPORT})
@@ -52,7 +61,6 @@ if(CODECHECKER_EXPORT)
         --export ${export_item}
         --output ${output_dir}/codechecker.${export_item}
         ${CODECHECKER_PARSE_OPTS}
-        || ${CMAKE_COMMAND} -E true # parse has exit code 2 if a report is emitted by an analyzer
       BYPRODUCTS ${output_dir}/codechecker.${export_item}
       VERBATIM
       USES_TERMINAL
@@ -66,7 +74,6 @@ else()
     COMMAND ${CODECHECKER_EXE} parse
       ${output_dir}/codechecker.plist
       ${CODECHECKER_PARSE_OPTS}
-      || ${CMAKE_COMMAND} -E true # parse has exit code 2 if a report is emitted by an analyzer
     VERBATIM
     USES_TERMINAL
     COMMAND_EXPAND_LISTS

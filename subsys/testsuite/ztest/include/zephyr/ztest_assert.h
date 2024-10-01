@@ -283,6 +283,13 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 #define zassert_ok(cond, ...) zassert(!(cond), #cond " is non-zero", ##__VA_ARGS__)
 
 /**
+ * @brief Assert that @a cond is not 0 (failure)
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the assertion fails
+ */
+#define zassert_not_ok(cond, ...) zassert(!!(cond), #cond " is zero", ##__VA_ARGS__)
+
+/**
  * @brief Assert that @a ptr is NULL
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the assertion fails
@@ -383,6 +390,16 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	zassert(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
 
 /**
+ * @brief Assert that 2 strings have the same contents
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zassert_str_equal(s1, s2, ...)                                                     \
+	zassert(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -424,6 +441,16 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  * @param ... Optional message and variables to print if the assumption fails
  */
 #define zassume_ok(cond, ...) zassume(!(cond), #cond " is non-zero", ##__VA_ARGS__)
+
+/**
+ * @brief Assume that @a cond is not 0 (failure)
+ *
+ * If the assumption fails, the test will be marked as "skipped".
+ *
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the assumption fails
+ */
+#define zassume_not_ok(cond, ...) zassume(!!(cond), #cond " is zero", ##__VA_ARGS__)
 
 /**
  * @brief Assume that @a ptr is NULL
@@ -541,6 +568,16 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 	zassume(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
 
 /**
+ * @brief Assumes that 2 strings have the same contents
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zassume_str_equal(s1, s2, ...)                                                     \
+	zassume(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -579,6 +616,15 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 #define zexpect_ok(cond, ...) zexpect(!(cond), #cond " is non-zero", ##__VA_ARGS__)
 
 /**
+ * @brief Expect that @a cond is not 0 (failure), otherwise mark test as failed but continue its
+ * execution.
+ *
+ * @param cond Condition to check
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_not_ok(cond, ...) zexpect(!!(cond), #cond " is zero", ##__VA_ARGS__)
+
+/**
  * @brief Expect that @a ptr is NULL, otherwise mark test as failed but continue its execution.
  *
  * @param ptr Pointer to compare
@@ -596,7 +642,6 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
 
 /**
  * @brief Expect that @a a equals @a b, otherwise mark test as failed but continue its execution.
- * expectation fails, the test will be marked as "skipped".
  *
  * @param a Value to compare
  * @param b Value to compare
@@ -665,6 +710,17 @@ static inline bool z_zexpect(bool cond, const char *default_msg, const char *fil
  */
 #define zexpect_mem_equal(buf, exp, size, ...)                                                     \
 	zexpect(memcmp(buf, exp, size) == 0, #buf " not equal to " #exp, ##__VA_ARGS__)
+
+/**
+ * @brief Expect that 2 strings have the same contents, otherwise mark test as failed but
+ * continue its execution.
+ *
+ * @param s1 The first string
+ * @param s2 The second string
+ * @param ... Optional message and variables to print if the expectation fails
+ */
+#define zexpect_str_equal(s1, s2, ...)                                                     \
+	zexpect(strcmp(s1, s2) == 0, #s1 " not equal to " #s2, ##__VA_ARGS__)
 
 /**
  * @}

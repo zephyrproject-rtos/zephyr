@@ -15,6 +15,8 @@
 /**
  * @brief I2C EEPROM Target Driver API
  * @defgroup i2c_eeprom_target_api I2C EEPROM Target Driver API
+ * @since 1.13
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -46,10 +48,10 @@ int eeprom_target_read(const struct device *dev, uint8_t *eeprom_data,
 		      unsigned int offset);
 
 /**
- * @brief Change the address of eeprom taget at runtime
+ * @brief Change the address of eeprom target at runtime
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @param addr New address to assign to the eeprom target devide
+ * @param addr New address to assign to the eeprom target device
  *
  * @retval 0 Is successful
  * @retval -EINVAL If parameters are invalid

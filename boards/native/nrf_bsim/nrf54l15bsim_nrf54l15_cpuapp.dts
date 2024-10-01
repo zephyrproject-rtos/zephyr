@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/nordic/nrf54l15_cpuapp.dtsi>
+
+/ {
+	model = "Nordic NRF54L15 BSIM NRF54L15 Application";
+	compatible = "bsim,nrf54l15-bsim-nrf54l15-cpuapp", "bsim,nrf54";
+
+	chosen {
+		zephyr,entropy = &rng;
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+	};
+
+	/delete-node/ cpus;
+	/delete-node/ clocks;
+	/delete-node/ sw-pwm;
+
+	soc {
+		/delete-node/ memory@20000000;
+		/delete-node/ memory@2002f000;
+		peripheral@50000000 {
+			/delete-node/ spi@4a000;
+			/delete-node/ uart@4a000;
+			/delete-node/ vpr@4c000;
+			/delete-node/ mailbox@0;
+			/delete-node/ interrupt-controller@f0000000;
+			/delete-node/ gpio@50400;
+			/delete-node/ i2c@c6000;
+			/delete-node/ spi@c6000;
+			/delete-node/ uart@c6000;
+			/delete-node/ i2c@c7000;
+			/delete-node/ spi@c7000;
+			/delete-node/ uart@c7000;
+			/delete-node/ i2c@c8000;
+			/delete-node/ spi@c8000;
+			/delete-node/ uart@c8000;
+			/delete-node/ pwm@d2000;
+			/delete-node/ pwm@d3000;
+			/delete-node/ pwm@d4000;
+			/delete-node/ adc@d5000;
+			/delete-node/ nfct@d6000;
+			/delete-node/ gpio@d8200;
+			/delete-node/ gpiote@da000;
+			/delete-node/ i2s@dd000;
+			/delete-node/ qdec@e0000;
+			/delete-node/ qdec@e1000;
+			/delete-node/ i2c@104000;
+			/delete-node/ spi@104000;
+			/delete-node/ uart@104000;
+			/delete-node/ watchdog@108000;
+			/delete-node/ watchdog@109000;
+			/delete-node/ gpio@10a000;
+			/delete-node/ gpiote@10c000;
+		};
+		/delete-node/ spu@50003000;
+		/delete-node/ gpiote@5000d000;
+		/delete-node/ crypto@50844000;
+	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "zephyr,native-posix-rng";
+	};
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&cpuapp_rram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(500)>;
+		};
+	};
+};
+
+&temp {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+	/* This feature is not yet supported by the RADIO model */
+	/delete-property/ dfe-supported;
+};
+
+&clock {
+	status = "okay";
+};

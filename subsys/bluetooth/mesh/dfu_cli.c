@@ -6,11 +6,11 @@
 
 #include <string.h>
 #include <zephyr/bluetooth/mesh.h>
+#include <zephyr/bluetooth/crypto.h>
 #include <zephyr/settings/settings.h>
 #include "access.h"
 #include "dfu.h"
 #include "blob.h"
-#include <zephyr/random/random.h>
 #include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
@@ -305,6 +305,24 @@ static void tx_end(int err, void *cb_data)
 	blob_cli_broadcast_tx_complete(&cli->blob);
 }
 
+static int tx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+	      struct net_buf_simple *buf, const struct bt_mesh_send_cb *cb,
+	      struct bt_mesh_dfu_cli *cli)
+{
+	int err;
+
+	err = bt_mesh_model_send(mod, ctx, buf, cb, cli);
+	if (err) {
+		LOG_ERR("Send err: %d", err);
+		if (cb) {
+			cb->end(err, cli);
+		}
+		return err;
+	}
+
+	return 0;
+}
+
 static int info_get(struct bt_mesh_dfu_cli *cli, struct bt_mesh_msg_ctx *ctx,
 		    uint8_t idx, uint8_t max_count,
 		    const struct bt_mesh_send_cb *cb)
@@ -314,7 +332,7 @@ static int info_get(struct bt_mesh_dfu_cli *cli, struct bt_mesh_msg_ctx *ctx,
 	net_buf_simple_add_u8(&buf, idx);
 	net_buf_simple_add_u8(&buf, max_count);
 
-	return bt_mesh_model_send(cli->mod, ctx, &buf, cb, cli);
+	return tx(cli->mod, ctx, &buf, cb, cli);
 }
 
 static void send_info_get(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -352,7 +370,7 @@ static void send_update_start(struct bt_mesh_blob_cli *b, uint16_t dst)
 	net_buf_simple_add_mem(&buf, cli->xfer.slot->metadata,
 			       cli->xfer.slot->metadata_len);
 
-	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
+	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_get(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -363,7 +381,7 @@ static void send_update_get(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_GET, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_GET);
 
-	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
+	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_cancel(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -374,7 +392,7 @@ static void send_update_cancel(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_CANCEL, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_CANCEL);
 
-	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
+	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 static void send_update_apply(struct bt_mesh_blob_cli *b, uint16_t dst)
@@ -385,7 +403,7 @@ static void send_update_apply(struct bt_mesh_blob_cli *b, uint16_t dst)
 	BT_MESH_MODEL_BUF_DEFINE(buf, BT_MESH_DFU_OP_UPDATE_APPLY, 0);
 	bt_mesh_model_msg_init(&buf, BT_MESH_DFU_OP_UPDATE_APPLY);
 
-	bt_mesh_model_send(cli->mod, &ctx, &buf, &send_cb, cli);
+	(void)tx(cli->mod, &ctx, &buf, &send_cb, cli);
 }
 
 /*******************************************************************************
@@ -681,10 +699,10 @@ static void cancelled(struct bt_mesh_blob_cli *b)
  * Message handlers
  ******************************************************************************/
 
-static int handle_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = mod->user_data;
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	enum bt_mesh_dfu_status status;
 	enum bt_mesh_dfu_phase phase;
 	struct bt_mesh_dfu_target *target;
@@ -807,10 +825,10 @@ static int handle_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	return 0;
 }
 
-static int handle_info_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_info_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = mod->user_data;
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	struct bt_mesh_dfu_target *target;
 	enum bt_mesh_dfu_iter it = BT_MESH_DFU_ITER_CONTINUE;
 	uint8_t img_cnt, idx;
@@ -906,10 +924,10 @@ static int handle_info_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	return 0;
 }
 
-static int handle_metadata_status(struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
+static int handle_metadata_status(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 				  struct net_buf_simple *buf)
 {
-	struct bt_mesh_dfu_cli *cli = mod->user_data;
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 	struct bt_mesh_dfu_metadata_status *rsp = cli->req.params;
 	uint8_t hdr, idx;
 
@@ -943,11 +961,11 @@ const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int dfu_cli_init(struct bt_mesh_model *mod)
+static int dfu_cli_init(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_cli *cli = mod->user_data;
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 
-	if (mod->elem_idx != 0) {
+	if (mod->rt->elem_idx != 0) {
 		LOG_ERR("DFU update client must be instantiated on first elem");
 		return -EINVAL;
 	}
@@ -963,9 +981,9 @@ static int dfu_cli_init(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static void dfu_cli_reset(struct bt_mesh_model *mod)
+static void dfu_cli_reset(const struct bt_mesh_model *mod)
 {
-	struct bt_mesh_dfu_cli *cli = mod->user_data;
+	struct bt_mesh_dfu_cli *cli = mod->rt->user_data;
 
 	cli->req.type = REQ_NONE;
 	cli->req.addr = BT_MESH_ADDR_UNASSIGNED;
@@ -999,7 +1017,11 @@ int bt_mesh_dfu_cli_send(struct bt_mesh_dfu_cli *cli,
 	cli->xfer.blob.size = xfer->slot->size;
 
 	if (xfer->blob_id == 0) {
-		sys_rand_get(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+		int err = bt_rand(&cli->xfer.blob.id, sizeof(cli->xfer.blob.id));
+
+		if (err) {
+			return err;
+		}
 	} else {
 		cli->xfer.blob.id = xfer->blob_id;
 	}

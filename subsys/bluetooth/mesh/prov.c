@@ -153,15 +153,10 @@ static uint32_t get_auth_number(bt_mesh_output_action_t output,
 
 	bt_rand(&num, sizeof(num));
 
-	if (output == BT_MESH_BLINK ||
-	    output == BT_MESH_BEEP ||
-	    output == BT_MESH_VIBRATE ||
-	    input == BT_MESH_PUSH ||
-	    input == BT_MESH_TWIST) {
-		/* According to the Bluetooth Mesh Profile
-		 * Specification Section 5.4.2.4, blink, beep
-		 * vibrate, push and twist should be a random integer
-		 * between 0 and 10^size, *exclusive*:
+	if (output == BT_MESH_BLINK || output == BT_MESH_BEEP || output == BT_MESH_VIBRATE ||
+	    input == BT_MESH_PUSH || input == BT_MESH_TWIST) {
+		/* According to MshPRTv1.1: 5.4.2.4, blink, beep vibrate, push and twist should be
+		 * a random integer between 0 and 10^size, *exclusive*:
 		 */
 		num = (num % (divider[size - 1] - 1)) + 1;
 	} else {

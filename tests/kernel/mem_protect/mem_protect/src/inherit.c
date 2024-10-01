@@ -5,7 +5,7 @@
  */
 
 #include "mem_protect.h"
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
 
 /* function prototypes */
@@ -132,7 +132,7 @@ static inline struct k_heap *z_vrfy_ret_resource_pool_ptr(void)
 {
 	return z_impl_ret_resource_pool_ptr();
 }
-#include <syscalls/ret_resource_pool_ptr_mrsh.c>
+#include <zephyr/syscalls/ret_resource_pool_ptr_mrsh.c>
 struct k_heap *child_heap_mem_ptr;
 struct k_heap *parent_heap_mem_ptr;
 

@@ -52,7 +52,7 @@ board:
 Programming
 ***********
 
-Set ``-DSHIELD=frdm_stbc_agm01`` when you invoke ``west build``. For example:
+Set ``--shield frdm_stbc_agm01`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/fxas21002

@@ -132,8 +132,8 @@ static struct lwm2m_engine_obj_inst *lpwan_create(uint16_t obj_inst_id)
 				   j, NETWORK_ADDRESS_MAX, false);
 	INIT_OBJ_RES_MULTI_OPTDATA(UCIFI_LPWAN_SECONDARY_ADDRESS_RID, res[index], i,
 				   res_inst[index], j, SECONDARY_NETWORK_ADDRESS_MAX, false);
-	INIT_OBJ_RES_DATA(UCIFI_LPWAN_MAC_ADDRESS_RID, res[index], i, res_inst[index], j,
-			  mac[index], MAC_ADDRESS_SIZE);
+	INIT_OBJ_RES_DATA_LEN(UCIFI_LPWAN_MAC_ADDRESS_RID, res[index], i, res_inst[index], j,
+			  mac[index], MAC_ADDRESS_SIZE, 0);
 	INIT_OBJ_RES_MULTI_OPTDATA(UCIFI_LPWAN_PEER_ADDRESS_RID, res[index], i, res_inst[index], j,
 				   PEER_ADDRESS_MAX, false);
 	INIT_OBJ_RES_MULTI_OPTDATA(UCIFI_LPWAN_MULTICAST_GRP_ADDRESS_RID, res[index], i,
@@ -178,4 +178,4 @@ static int ucifi_lpwan_init(void)
 	return 0;
 }
 
-SYS_INIT(ucifi_lpwan_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ucifi_lpwan_init);

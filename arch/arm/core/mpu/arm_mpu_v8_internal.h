@@ -31,7 +31,7 @@ struct dynamic_region_info {
  */
 static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 #if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M55)
+	defined(CONFIG_CPU_CORTEX_M55) || defined(CONFIG_CPU_CORTEX_M85)
 static inline void mpu_set_mair0(uint32_t mair0)
 {
 	MPU->MAIR0 = mair0;
@@ -408,7 +408,7 @@ static inline int is_user_accessible_region(uint32_t rnr, int write)
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	int32_t rnr;
 	int rc = -EPERM;
@@ -455,7 +455,7 @@ static inline int mpu_buffer_validate(void *addr, size_t size, int write)
  * in case the fast address range check fails.
  *
  */
-static inline int mpu_buffer_validate(void *addr, size_t size, int write)
+static inline int mpu_buffer_validate(const void *addr, size_t size, int write)
 {
 	uint32_t _addr = (uint32_t)addr;
 	uint32_t _size = (uint32_t)size;
@@ -720,12 +720,7 @@ static int mpu_mark_areas_for_dynamic_regions(
  */
 static inline uint8_t get_num_regions(void)
 {
-#if defined(NUM_MPU_REGIONS)
-	/* Retrieve the number of regions from DTS configuration. */
-	return NUM_MPU_REGIONS;
-#else
 	return mpu_get_num_regions();
-#endif /* NUM_MPU_REGIONS */
 }
 
 /* This internal function programs the dynamic MPU regions.

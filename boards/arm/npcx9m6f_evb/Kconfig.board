@@ -1,6 +1,0 @@
-# Copyright (c) 2021 Nuvoton Technology Corporation.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NPCX9M6F_EVB
-	bool "Nuvoton NPCX9M6F EVB Development board"
-	depends on SOC_NPCX9M6F

@@ -18,6 +18,9 @@ description: |
                      &p3_2_scb2_uart_rts &p3_3_scb2_uart_cts>;
         pinctrl-names = "default";
 
+        /* HW Flow control must be enabled for HCI H4 */
+        hw-flow-control;
+
         bt-hci {
           status = "okay";
           compatible = "infineon,cyw43xxx-bt-hci";
@@ -66,10 +69,10 @@ properties:
     type: int
     description: |
       HCI UART boudrate for feature operation. If not defined
-      bus/current-speed wil be used as default.
+      bus/current-speed will be used as default.
 
   fw-download-speed:
     type: int
     description: |
-      HCI UART boudrate for FW dowload operation. If not defined
-      bus/current-speed wil be used as default.
+      HCI UART boudrate for FW download operation. If not defined
+      bus/current-speed will be used as default.

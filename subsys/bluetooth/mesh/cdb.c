@@ -94,6 +94,7 @@ struct bt_mesh_cdb bt_mesh_cdb = {
 	},
 	.app_keys = {
 		[0 ... (CONFIG_BT_MESH_CDB_APP_KEY_COUNT - 1)] = {
+			.app_idx = BT_MESH_KEY_UNUSED,
 			.net_idx = BT_MESH_KEY_UNUSED,
 		}
 	},
@@ -1024,26 +1025,32 @@ int bt_mesh_cdb_node_key_export(const struct bt_mesh_cdb_node *node, uint8_t out
 	return bt_mesh_key_export(out, &node->dev_key);
 }
 
-struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx,
-						      uint16_t app_idx)
+struct bt_mesh_cdb_app_key *bt_mesh_cdb_app_key_alloc(uint16_t net_idx, uint16_t app_idx)
 {
 	struct bt_mesh_cdb_app_key *key;
+	struct bt_mesh_cdb_app_key *vacant_key = NULL;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.app_keys); ++i) {
 		key = &bt_mesh_cdb.app_keys[i];
 
-		if (key->net_idx != BT_MESH_KEY_UNUSED) {
+		if (key->app_idx == app_idx) {
+			return NULL;
+		}
+
+		if (key->net_idx != BT_MESH_KEY_UNUSED || vacant_key) {
 			continue;
 		}
 
-		key->net_idx = net_idx;
-		key->app_idx = app_idx;
-
-		return key;
+		vacant_key = key;
 	}
 
-	return NULL;
+	if (vacant_key) {
+		vacant_key->net_idx = net_idx;
+		vacant_key->app_idx = app_idx;
+	}
+
+	return vacant_key;
 }
 
 void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store)
@@ -1055,6 +1062,7 @@ void bt_mesh_cdb_app_key_del(struct bt_mesh_cdb_app_key *key, bool store)
 	}
 
 	key->net_idx = BT_MESH_KEY_UNUSED;
+	key->app_idx = BT_MESH_KEY_UNUSED;
 	bt_mesh_key_destroy(&key->keys[0].app_key);
 	bt_mesh_key_destroy(&key->keys[1].app_key);
 	memset(key->keys, 0, sizeof(key->keys));

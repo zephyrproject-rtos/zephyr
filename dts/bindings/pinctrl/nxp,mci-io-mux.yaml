@@ -1,0 +1,69 @@
+# Copyright 2022, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MCI IO MUX pin control node. This node defines pin configurations in pin
+  groups, and has the 'pinctrl' node identifier in the SOC's devicetree. Each
+  group within the pin configuration defines a peripheral's pin configuration.
+  Each numbered subgroup represents pins with shared configuration for that
+  peripheral. The 'pinmux' property of each group selects the pins to be
+  configured with these properties. For example, here is a configuration
+  for FLEXCOMM0 pins:
+
+  pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+    group0 {
+      pinmux = <IO_MUX_FC0_USART_DATA_IO2>,
+              <IO_MUX_FC0_USART_DATA_IO3>;
+      slew-rate = "normal";
+    };
+  };
+
+  If only the required properties are supplied, the pin will be configured
+  as normal drive strength and no pull. This corresponds to the following
+  pin settings:
+  PAD_PU_PD_ENx = (0x0 << pin_index)
+  SR_CONFIGx = (0x2 << pin_index)
+
+  Note
+
+  Note the inherited pinctrl properties defined below have the following effects:
+  bias-pull-up: PAD_PU_PD_ENx= (0x1 << pin_index)
+  bias-pull-down: PAD_PU_PD_ENx= (0x10 << pin_index)
+
+compatible: "nxp,mci-io-mux"
+
+include:
+  - name: base.yaml
+
+child-binding:
+  description: MCI IO MUX pin controller pin group
+  child-binding:
+    description: |
+      MCI IO MUX pin controller pin configuration node
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selection for this group. See the SOC level pinctrl header
+          file in NXP's HAL for a defined list of these options.
+      slew-rate:
+        required: true
+        type: string
+        enum:
+          - "slow"
+          - "normal"
+          - "fast"
+          - "ultra"
+        description: |
+          Pin output slew rate. Sets the GPIOxx_SR field in the SR_CONFIGx
+          register.
+          0 - slow slew rate
+          1 - normal slew rate
+          2 - fast slew rate
+          3 - fastest slew rate (ultra)

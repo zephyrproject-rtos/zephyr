@@ -2067,7 +2067,7 @@ release:
 * :github:`10345` - The OpenAMP remote build is for wrong board
 * :github:`10344` - SPI Chip Select usage is not unambiguous
 * :github:`10329` - SystemView overflow event
-* :github:`10320` - arm: mpu: mpu_config and and mpu_regions to be declared/defined as const
+* :github:`10320` - arm: mpu: mpu_config and mpu_regions to be declared/defined as const
 * :github:`10318` - It is not documented what YAML bindings do
 * :github:`10316` - net: sockets: Close doesn't unblock recv
 * :github:`10313` - net: sockets: Packets are leaked on TCP abort connection

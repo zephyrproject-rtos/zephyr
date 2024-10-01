@@ -22,6 +22,11 @@ endif()
 #  RUNNER_LINK_LIBRARIES:
 #      Extra libraries to link with the runner
 #      For ex. set_property(TARGET native_simulator APPEND PROPERTY RUNNER_LINK_LIBRARIES "mylib.a")
+#  LOCALIZE_EXTRA_OPTIONS:
+#      Extra options to be passed to objcopy when localizing each Zephyr MCU image symbols
+#      This can be used to hide symbols a library may have set as visible outside of
+#      itself once the MCU image has been assembled.
+#      For ex. set_property(TARGET native_simulator APPEND PROPERTY LOCALIZE_EXTRA_OPTIONS "--localize-symbol=spinel*")
 #  Note: target_link_libraries() cannot be used on this library at this point.
 #        target_link_libraries() updates INTERFACE_LINK_LIBRARIES but wrapping it with extra
 #        information. This means we cannot directly pass it to the native_simulator runner build.
@@ -30,6 +35,7 @@ endif()
 #        We use target_link_options() instead
 add_library(native_simulator INTERFACE)
 set_property(TARGET native_simulator PROPERTY RUNNER_LINK_LIBRARIES "")
+set_property(TARGET native_simulator PROPERTY LOCALIZE_EXTRA_OPTIONS "")
 
 set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator CACHE PATH "Path to the native simulator")
 
@@ -93,14 +99,20 @@ elseif (CONFIG_NATIVE_LIBRARY)
     get_filename_component(COMPILER_OWN_INCLUDE_PATH "${_OUTPUT}" DIRECTORY)
 
     # Do not use the C library from this compiler/host,
-    # but still use the basic compiler headers
-    # -fno-builtin to avoid the compiler using builtin replacements for std library functions
+    # but still use the basic compiler headers,
+    # remove all operating system specific predefined macros,
+    # no_builtin to avoid the compiler using builtin replacements for std library functions
     zephyr_compile_options(
       -nostdinc
       -isystem ${COMPILER_OWN_INCLUDE_PATH}
+      "SHELL:-include ${ZEPHYR_BASE}/arch/posix/include/undef_system_defines.h"
       $<TARGET_PROPERTY:compiler,freestanding>
-      -fno-builtin
+      $<TARGET_PROPERTY:compiler,no_builtin>
     )
+  endif()
+
+  if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
+    target_compile_options(native_simulator INTERFACE $<TARGET_PROPERTY:compiler,warnings_as_errors>)
   endif()
 endif()
 
@@ -126,8 +138,6 @@ if (CONFIG_GPROF)
 
   target_link_options(native_simulator INTERFACE "-pg")
 endif()
-
-zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
 if (CONFIG_NATIVE_APPLICATION)
   zephyr_ld_options(
@@ -163,10 +173,12 @@ endif()
 
 if(CONFIG_ASAN_RECOVER)
   zephyr_compile_options(-fsanitize-recover=all)
+  target_compile_options(native_simulator INTERFACE "-fsanitize-recover=all")
 endif()
 
 if(CONFIG_ARCH_POSIX_LIBFUZZER)
   list(APPEND LLVM_SANITIZERS "fuzzer")
+  target_compile_options(native_simulator INTERFACE "-DNSI_NO_MAIN=1")
   if(NOT CONFIG_64BIT)
     # On i386, libfuzzer seems to dynamically relocate the binary, so
     # we need to emit PIC code.  This limitation is undocumented and
@@ -179,17 +191,12 @@ list(JOIN LLVM_SANITIZERS "," LLVM_SANITIZERS_ARG)
 if(NOT ${LLVM_SANITIZERS_ARG} STREQUAL "")
   set(LLVM_SANITIZERS_ARG "-fsanitize=${LLVM_SANITIZERS_ARG}")
   zephyr_compile_options("${LLVM_SANITIZERS_ARG}")
-  zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
+  if (CONFIG_NATIVE_APPLICATION)
+    zephyr_link_libraries("${LLVM_SANITIZERS_ARG}")
+  endif()
 
   target_link_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
   target_compile_options(native_simulator INTERFACE ${LLVM_SANITIZERS_ARG})
 endif()
-
-# Override the C standard used for compilation to C 2011
-# This is due to some tests using _Static_assert which is a 2011 feature, but
-# otherwise relying on compilers supporting it also when set to C99.
-# This was in general ok, but with some host compilers and C library versions
-# it led to problems. So we override it to 2011 for native_posix.
-set_property(GLOBAL PROPERTY CSTD c11)
 
 add_subdirectory(core)

@@ -1,0 +1,30 @@
+# ST Microelectronics STM32L0 MCU series
+
+# Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32L0X
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select HAS_STM32CUBE
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_PM
+
+config SOC_STM32L051XX
+	select CPU_HAS_ARM_MPU
+
+config SOC_STM32L053XX
+	select CPU_HAS_ARM_MPU
+
+config SOC_STM32L071XX
+	select CPU_HAS_ARM_MPU
+
+config SOC_STM32L072XX
+	select CPU_HAS_ARM_MPU
+
+config SOC_STM32L073XX
+	select CPU_HAS_ARM_MPU
+
+config SOC_STM32L081XX
+	select CPU_HAS_ARM_MPU

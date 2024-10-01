@@ -1,0 +1,30 @@
+sample:
+  name: IPC Service example integration (icmsg multi endpoint backend)
+common:
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "IPC-service HOST \\[INST 0 - ENDP A\\] demo started"
+      - "IPC-service HOST \\[INST 0 - ENDP B\\] demo started"
+      - "IPC-service HOST \\[INST 1\\] demo started"
+      - "IPC-service HOST \\[INST 0 - ENDP A\\] demo ended\\."
+      - "IPC-service HOST \\[INST 0 - ENDP B\\] demo ended\\."
+      - "IPC-service HOST \\[INST 1\\] demo ended\\."
+tests:
+  sample.ipc.multi_endpoint:
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+  sample.ipc.multi_endpoint.icbmsg:
+    platform_allow: nrf5340dk/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+    tags: ipc
+    sysbuild: true
+    extra_args:
+      DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay
+      remote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay

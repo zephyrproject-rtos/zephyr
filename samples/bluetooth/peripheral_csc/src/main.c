@@ -304,18 +304,18 @@ static uint16_t lcet; /* Last Crank Event Time */
 static void csc_simulation(void)
 {
 	static uint8_t i;
-	uint32_t rand = sys_rand32_get();
+	uint8_t rnd = sys_rand8_get();
 	bool nfy_crank = false, nfy_wheel = false;
 
 	/* Measurements don't have to be updated every second */
 	if (!(i % 2)) {
-		lwet += 1050 + rand % 50;
+		lwet += 1050 + rnd % 50;
 		c_wheel_revs += 2U;
 		nfy_wheel = true;
 	}
 
 	if (!(i % 3)) {
-		lcet += 1000 + rand % 50;
+		lcet += 1000 + rnd % 50;
 		ccr += 1U;
 		nfy_crank = true;
 	}
@@ -368,13 +368,17 @@ static const struct bt_data ad[] = {
 		      BT_UUID_16_ENCODE(BT_UUID_BAS_VAL))
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static void bt_ready(void)
 {
 	int err;
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

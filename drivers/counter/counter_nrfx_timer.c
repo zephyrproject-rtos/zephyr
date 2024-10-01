@@ -15,8 +15,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_timer
 
-#define TIMER_CLOCK(timer_instance) NRF_TIMER_BASE_FREQUENCY_GET(timer_instance)
-
 #define CC_TO_ID(cc_num) (cc_num - 2)
 
 #define ID_TO_CC(idx) (nrf_timer_cc_channel_t)(idx + 2)
@@ -27,6 +25,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define COUNTER_OVERFLOW_SHORT NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK
 #define COUNTER_READ_CC NRF_TIMER_CC_CHANNEL1
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#define MAYBE_CONST_CONFIG
+#else
+#define MAYBE_CONST_CONFIG const
+#endif
 
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
@@ -253,6 +257,7 @@ static int set_top_value(const struct device *dev,
 
 	nrf_timer_int_disable(timer, COUNTER_TOP_INT_MASK);
 	nrf_timer_cc_set(timer, TOP_CH, cfg->ticks);
+	nrf_timer_event_clear(timer, COUNTER_TOP_EVT);
 	nrf_timer_shorts_enable(timer, COUNTER_OVERFLOW_SHORT);
 
 	data->top_cb = cfg->callback;
@@ -282,7 +287,16 @@ static uint32_t get_pending_int(const struct device *dev)
 static int init_timer(const struct device *dev,
 		      const struct counter_timer_config *config)
 {
-	const struct counter_nrfx_config *nrfx_config = dev->config;
+	MAYBE_CONST_CONFIG struct counter_nrfx_config *nrfx_config =
+			(MAYBE_CONST_CONFIG struct counter_nrfx_config *)dev->config;
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	/* For simulated devices we need to convert the hardcoded DT address from the real
+	 * peripheral into the correct one for simulation
+	 */
+	nrfx_config->timer = nhw_convert_periph_base_addr(nrfx_config->timer);
+#endif
+
 	NRF_TIMER_Type *reg = nrfx_config->timer;
 
 	nrf_timer_bit_width_set(reg, config->bit_width);
@@ -363,8 +377,10 @@ static void alarm_irq_handle(const struct device *dev, uint32_t id)
 	}
 }
 
-static void irq_handler(const struct device *dev)
+static void irq_handler(const void *arg)
 {
+	const struct device *dev = arg;
+
 	top_irq_handle(dev);
 
 	for (uint32_t i = 0; i < counter_get_num_of_channels(dev); i++) {
@@ -401,6 +417,14 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			    irq_handler, DEVICE_DT_INST_GET(idx), 0))		\
 	)
 
+#if !defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+#define CHECK_MAX_FREQ(idx)									\
+		BUILD_ASSERT(DT_INST_PROP(idx, max_frequency) ==				\
+			NRF_TIMER_BASE_FREQUENCY_GET((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)))
+#else
+#define CHECK_MAX_FREQ(idx)
+#endif
+
 #define COUNTER_NRFX_TIMER_DEVICE(idx)								\
 	BUILD_ASSERT(DT_INST_PROP(idx, prescaler) <=						\
 			TIMER_PRESCALER_PRESCALER_Msk,						\
@@ -427,10 +451,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static struct counter_nrfx_ch_data							\
 		counter##idx##_ch_data[CC_TO_ID(DT_INST_PROP(idx, cc_num))];			\
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL);			\
-	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {			\
+	static MAYBE_CONST_CONFIG struct counter_nrfx_config nrfx_counter_##idx##_config = {	\
 		.info = {									\
 			.max_top_value = (uint32_t)BIT64_MASK(DT_INST_PROP(idx, max_bit_width)),\
-			.freq = TIMER_CLOCK((NRF_TIMER_Type *)DT_INST_REG_ADDR(idx)) /		\
+			.freq = DT_INST_PROP(idx, max_frequency) /				\
 				BIT(DT_INST_PROP(idx, prescaler)),				\
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,					\
 			.channels = CC_TO_ID(DT_INST_PROP(idx, cc_num)),			\
@@ -439,6 +463,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = (NRF_TIMER_Type *)DT_INST_REG_ADDR(idx),				\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)				\
 	};											\
+	CHECK_MAX_FREQ(idx);									\
 	DEVICE_DT_INST_DEFINE(idx,								\
 			    counter_##idx##_init,						\
 			    NULL,								\

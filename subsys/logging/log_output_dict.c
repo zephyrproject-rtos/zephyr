@@ -45,18 +45,18 @@ void log_dict_output_msg_process(const struct log_output *output,
 				0U;
 
 	buffer_write(output->func, (uint8_t *)&output_hdr, sizeof(output_hdr),
-		     (void *)output);
+		     (void *)output->control_block->ctx);
 
 	size_t len;
 	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len > 0U) {
-		buffer_write(output->func, data, len, (void *)output);
+		buffer_write(output->func, data, len, (void *)output->control_block->ctx);
 	}
 
 	data = log_msg_get_data(msg, &len);
 	if (len > 0U) {
-		buffer_write(output->func, data, len, (void *)output);
+		buffer_write(output->func, data, len, (void *)output->control_block->ctx);
 	}
 
 	log_output_flush(output);
@@ -70,5 +70,5 @@ void log_dict_output_dropped_process(const struct log_output *output, uint32_t c
 	msg.num_dropped_messages = MIN(cnt, 9999);
 
 	buffer_write(output->func, (uint8_t *)&msg, sizeof(msg),
-		     (void *)output);
+		     (void *)output->control_block->ctx);
 }

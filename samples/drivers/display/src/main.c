@@ -140,21 +140,34 @@ static void fill_buffer_bgr565(enum corner corner, uint8_t grey, uint8_t *buf,
 	}
 }
 
-static void fill_buffer_mono(enum corner corner, uint8_t grey, uint8_t *buf,
-			     size_t buf_size)
+static void fill_buffer_mono(enum corner corner, uint8_t grey,
+			     uint8_t black, uint8_t white,
+			     uint8_t *buf, size_t buf_size)
 {
 	uint16_t color;
 
 	switch (corner) {
 	case BOTTOM_LEFT:
-		color = (grey & 0x01u) ? 0xFFu : 0x00u;
+		color = (grey & 0x01u) ? white : black;
 		break;
 	default:
-		color = 0;
+		color = black;
 		break;
 	}
 
 	memset(buf, color, buf_size);
+}
+
+static inline void fill_buffer_mono01(enum corner corner, uint8_t grey,
+				      uint8_t *buf, size_t buf_size)
+{
+	fill_buffer_mono(corner, grey, 0x00u, 0xFFu, buf, buf_size);
+}
+
+static inline void fill_buffer_mono10(enum corner corner, uint8_t grey,
+				      uint8_t *buf, size_t buf_size)
+{
+	fill_buffer_mono(corner, grey, 0xFFu, 0x00u, buf, buf_size);
 }
 
 int main(void)
@@ -166,6 +179,7 @@ int main(void)
 	size_t h_step;
 	size_t scale;
 	size_t grey_count;
+	uint8_t bg_color;
 	uint8_t *buf;
 	int32_t grey_scale_sleep;
 	const struct device *display_dev;
@@ -196,8 +210,17 @@ int main(void)
 		rect_h = 1;
 	}
 
-	h_step = rect_h;
-	scale = (capabilities.x_resolution / 8) / rect_h;
+	if ((capabilities.x_resolution < 3 * rect_w) ||
+	    (capabilities.y_resolution < 3 * rect_h) ||
+	    (capabilities.x_resolution < 8 * rect_h)) {
+		rect_w = capabilities.x_resolution * 40 / 100;
+		rect_h = capabilities.y_resolution * 40 / 100;
+		h_step = capabilities.y_resolution * 20 / 100;
+		scale = 1;
+	} else {
+		h_step = rect_h;
+		scale = (capabilities.x_resolution / 8) / rect_h;
+	}
 
 	rect_w *= scale;
 	rect_h *= scale;
@@ -216,25 +239,36 @@ int main(void)
 
 	switch (capabilities.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
+		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_argb8888;
 		buf_size *= 4;
 		break;
 	case PIXEL_FORMAT_RGB_888:
+		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb888;
 		buf_size *= 3;
 		break;
 	case PIXEL_FORMAT_RGB_565:
+		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb565;
 		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_BGR_565:
+		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_bgr565;
 		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_MONO01:
+		bg_color = 0xFFu;
+		fill_buffer_fnc = fill_buffer_mono01;
+		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
+			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
+		break;
 	case PIXEL_FORMAT_MONO10:
-		fill_buffer_fnc = fill_buffer_mono;
-		buf_size /= 8;
+		bg_color = 0x00u;
+		fill_buffer_fnc = fill_buffer_mono10;
+		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
+			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
@@ -256,7 +290,7 @@ int main(void)
 #endif
 	}
 
-	(void)memset(buf, 0xFFu, buf_size);
+	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
 	buf_desc.pitch = capabilities.x_resolution;
@@ -264,6 +298,14 @@ int main(void)
 	buf_desc.height = h_step;
 
 	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
+		/*
+		 * Tweaking the height value not to draw outside of the display.
+		 * It is required when using a monochrome display whose vertical
+		 * resolution can not be divided by 8.
+		 */
+		if ((capabilities.y_resolution - idx) < h_step) {
+			buf_desc.height = (capabilities.y_resolution - idx);
+		}
 		display_write(display_dev, 0, idx, &buf_desc, buf);
 	}
 

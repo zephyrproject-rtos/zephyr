@@ -20,6 +20,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_time.h>
 #include <zephyr/net/ieee802154.h>
+#include <zephyr/net/ieee802154_ie.h>
 #include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
@@ -28,6 +29,8 @@ extern "C" {
 
 /**
  * @defgroup ieee802154_driver IEEE 802.15.4 Drivers
+ * @since 1.0
+ * @version 0.8.0
  * @ingroup ieee802154
  *
  * @brief IEEE 802.15.4 driver API
@@ -230,8 +233,8 @@ enum ieee802154_phy_channel_page {
  * ieee802154_phy_supported_channels.
  */
 struct ieee802154_phy_channel_range {
-	uint16_t from_channel;
-	uint16_t to_channel;
+	uint16_t from_channel; /**< From channel range */
+	uint16_t to_channel;   /**< To channel range */
 };
 
 /**
@@ -482,7 +485,30 @@ enum ieee802154_hw_caps {
 	/** TX at specified time supported */
 	IEEE802154_HW_TXTIME = BIT(8),
 
-	/** TX directly from sleep supported */
+	/** TX directly from sleep supported
+	 *
+	 *  @note This HW capability does not conform to the requirements
+	 *  specified in #61227 as it closely couples the driver to OpenThread's
+	 *  capability and device model which is different from Zephyr's:
+	 *   - "Sleeping" is a well defined term in Zephyr related to internal
+	 *     power and thread management and different from "RX off" as
+	 *     defined in OT.
+	 *   - Currently all OT-capable drivers have the "sleep to TX"
+	 *     capability anyway plus we expect future drivers to implement it
+	 *     ootb as well, so no information is actually conveyed by this
+	 *     capability.
+	 *   - The `start()`/`stop()` API of a net device controls the
+	 *     interface's operational state. Drivers MUST respond with
+	 *     -ENETDOWN when calling `tx()` while their operational state is
+	 *     "DOWN", only devices in the "UP" state MAY transmit packets (RFC
+	 *     2863).
+	 *   - A migration path has been defined in #63670 for actual removal of
+	 *     this capability in favor of a standard compliant
+	 *     `configure(rx_on/rx_off)` call, see there for details.
+	 *
+	 * @deprecated Drivers and L2 SHALL not introduce additional references
+	 * to this capability and remove existing ones as outlined in #63670.
+	 */
 	IEEE802154_HW_SLEEP_TO_TX = BIT(9),
 
 	/** Timed RX window scheduling supported */
@@ -491,24 +517,27 @@ enum ieee802154_hw_caps {
 	/** TX security supported (key management, encryption and authentication) */
 	IEEE802154_HW_TX_SEC = BIT(11),
 
+	/** RxOnWhenIdle handling supported */
+	IEEE802154_RX_ON_WHEN_IDLE = BIT(12),
+
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
 	 */
 };
 
 /** @brief Number of bits used by ieee802154_hw_caps type. */
-#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (12)
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (13)
 
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
 
 /** Filter type, see @ref ieee802154_radio_api::filter */
 enum ieee802154_filter_type {
-	IEEE802154_FILTER_TYPE_IEEE_ADDR,
-	IEEE802154_FILTER_TYPE_SHORT_ADDR,
-	IEEE802154_FILTER_TYPE_PAN_ID,
-	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
-	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
+	IEEE802154_FILTER_TYPE_IEEE_ADDR,      /**< Address type filter */
+	IEEE802154_FILTER_TYPE_SHORT_ADDR,     /**< Short address type filter */
+	IEEE802154_FILTER_TYPE_PAN_ID,         /**< PAN id type filter */
+	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,  /**< Source address type filter */
+	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR, /**< Source short address type filter */
 };
 
 /** Driver events, see @ref IEEE802154_CONFIG_EVENT_HANDLER */
@@ -524,7 +553,7 @@ enum ieee802154_event {
 	 * synchronously switched of due to a call to `stop()` or an RX slot
 	 * being configured.
 	 */
-	IEEE802154_EVENT_SLEEP,
+	IEEE802154_EVENT_RX_OFF,
 };
 
 /** RX failed event reasons, see @ref IEEE802154_EVENT_RX_FAILED */
@@ -565,11 +594,16 @@ struct ieee802154_filter {
  * IEEE802154_CONFIG_MAC_KEYS.
  */
 struct ieee802154_key {
+	/** Key material */
 	uint8_t *key_value;
+	/** Initial value of frame counter associated with the key, see section 9.4.3 */
 	uint32_t key_frame_counter;
+	/** Indicates if per-key frame counter should be used, see section 9.4.3 */
 	bool frame_counter_per_key;
+	/** Key Identifier Mode, see section 9.4.2.3, Table 9-7 */
 	uint8_t key_id_mode;
-	uint8_t key_index;
+	/** Key Identifier, see section 9.4.4 */
+	uint8_t *key_id;
 };
 
 /** IEEE 802.15.4 Transmission mode. */
@@ -598,6 +632,9 @@ enum ieee802154_tx_mode {
 	 * Transmit packet in the future, perform CCA before transmission.
 	 *
 	 * @note requires IEEE802154_HW_TXTIME capability.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_TX_MODE_TXTIME_CCA,
 
@@ -675,7 +712,8 @@ enum ieee802154_config_type {
 	 * larger than the current frame counter associated with the same key,
 	 * see sections 8.2.2, 9.2.4 g/h) and 9.4.3.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_MAC_KEYS,
 
@@ -691,7 +729,8 @@ enum ieee802154_config_type {
 	 * Drivers SHALL return -EINVAL in case the configured frame counter
 	 * does not conform to this requirement.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 */
 	IEEE802154_CONFIG_FRAME_COUNTER,
 
@@ -699,7 +738,8 @@ enum ieee802154_config_type {
 	 * Sets the current MAC frame counter value if the provided value is greater than
 	 * the current one.
 	 *
-	 * @note Available in any interface operational state.
+	 * @note Requires @ref IEEE802154_HW_TX_SEC capability and is available
+	 * in any interface operational state.
 	 *
 	 * @warning This configuration option does not conform to the
 	 * requirements specified in #61227 as it is redundant with @ref
@@ -753,78 +793,308 @@ enum ieee802154_config_type {
 	 *
 	 * @note requires @ref IEEE802154_HW_RXTIME capability and is available
 	 * in any interface operational state.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_RX_SLOT,
 
 	/**
-	 * Configure CSL receiver (Endpoint) period.
+	 * Enables or disables a device as a CSL receiver and configures its CSL
+	 * period.
 	 *
-	 * @details In order to configure a CSL receiver the upper layer should combine several
-	 * configuration options in the following way:
-	 * 1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once to inform the driver of the
-	 *    short and extended addresses of the peer to which it should inject CSL IEs.
-	 * 2. Use @ref IEEE802154_CONFIG_CSL_RX_TIME periodically, before each use of
-	 *    @ref IEEE802154_CONFIG_CSL_PERIOD setting parameters of the nearest CSL RX window,
-	 *    and before each use of IEEE_CONFIG_RX_SLOT setting parameters of the following (not
-	 *    the nearest one) CSL RX window, to allow the driver to calculate the proper
-	 *    CSL phase to the nearest CSL window to inject in the CSL IEs for both transmitted
-	 *    data and ACK frames.
-	 * 3. Use @ref IEEE802154_CONFIG_CSL_PERIOD on each value change to update the current
-	 *    CSL period value which will be injected in the CSL IEs together with the CSL phase
-	 *    based on @ref IEEE802154_CONFIG_CSL_RX_TIME.
-	 * 4. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule the immediate receive
-	 *    window early enough before the expected window start time, taking into account
-	 *    possible clock drifts and scheduling uncertainties.
+	 * @details Configures the CSL period in units of 10 symbol periods.
+	 * Values greater than zero enable CSL if the driver supports it and the
+	 * device starts to operate as a CSL receiver. Setting this to zero
+	 * disables CSL on the device. If the driver does not support CSL, the
+	 * configuration call SHALL return -ENOTSUP.
 	 *
-	 * This diagram shows the usage of the four options over time:
+	 * See section 7.4.2.3 and section 8.4.3.6, table 8-104, macCslPeriod.
 	 *
-	 *         Start CSL                                  Schedule CSL window
+	 * @note Confusingly the standard calls the CSL receiver "CSL
+	 * coordinator" (i.e. "coordinating the CSL protocol timing", see
+	 * section 6.12.2.2), although, typically, a CSL coordinator is NOT also
+	 * an IEEE 802.15.4 FFD coordinator or PAN coordintor but a simple RFD
+	 * end device (compare the device roles outlined in sections 5.1, 5.3,
+	 * 5.5 and 6.1). To avoid confusion we therefore prefer calling CSL
+	 * coordinators (typically an RFD end device) "CSL receivers" and CSL
+	 * peer devices (typically FFD coordinators or PAN coordinators) "CSL
+	 * transmitters". Also note that at this time, we do NOT support
+	 * unsynchronized transmission with CSL wake up frames as specified in
+	 * section 6.12.2.4.4.
 	 *
-	 *     ENH_ACK_HEADER_IE                        CSL_RX_TIME (following window)
-	 *          |                                        |
-	 *          | CSL_RX_TIME (nearest window)           | RX_SLOT (nearest window)
-	 *          |    |                                   |   |
-	 *          |    | CSL_PERIOD                        |   |
-	 *          |    |    |                              |   |
-	 *          v    v    v                              v   v
-	 *     ----------------------------------------------------------[ CSL window ]-----+
-	 *                                             ^                                    |
-	 *                                             |                                    |
-	 *                                             +--------------------- loop ---------+
+	 * To offload CSL receiver timing to the driver the upper layer SHALL
+	 * combine several configuration options in the following way:
+	 *
+	 * 1. Use @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE once with an
+	 *    appropriate pre-filled CSL IE and the CSL phase set to an
+	 *    arbitrary value or left uninitialized. The CSL phase SHALL be
+	 *    injected on-the-fly by the driver at runtime as outlined in 2.
+	 *    below. Adding a short and extended address will inform the driver
+	 *    of the specific CSL receiver to which it SHALL inject CSL IEs. If
+	 *    no addresses are given then the CSL IE will be injected into all
+	 *    enhanced ACK frames as soon as CSL is enabled.  This configuration
+	 *    SHALL be done before enabling CSL by setting a CSL period greater
+	 *    than zero.
+	 *
+	 * 2. Configure @ref IEEE802154_CONFIG_EXPECTED_RX_TIME immediately
+	 *    followed by @ref IEEE802154_CONFIG_CSL_PERIOD. To prevent race
+	 *    conditions, the upper layer SHALL ensure that the receiver is not
+	 *    enabled during or between the two calls (e.g. by a previously
+	 *    configured RX slot) nor SHALL a frame be transmitted concurrently.
+	 *
+	 *    The expected RX time SHALL point to the end of SFD of an ideally
+	 *    timed RX frame in an arbitrary past or future CSL channel sample,
+	 *    i.e.  whose "end of SFD" arrives exactly at the locally predicted
+	 *    time inside the CSL channel sample.
+	 *
+	 *    The driver SHALL derive CSL anchor points and the CSL phase from
+	 *    the given expected RX time as follows:
+	 *
+	 *        cslAnchorPointNs = last expected RX time
+	 *                           + PHY-specific PHR duration in ns
+	 *
+	 *        startOfMhrNs = start of MHR of the frame containing the
+	 *                       CSL IE relative to the local network clock
+	 *
+	 *        cslPhase = (startOfMhrNs - cslAnchorPointNs)
+	 *                   / (10 * PHY specific symbol period in ns)
+	 *                   % cslPeriod
+	 *
+	 *    The driver SHALL set the CSL phase in the IE configured in 1.  and
+	 *    inject that IE on-the-fly into outgoing enhanced ACK frames if the
+	 *    destination address conforms to the IE's address filter.
+	 *
+	 * 3. Use @ref IEEE802154_CONFIG_RX_SLOT periodically to schedule
+	 *    each CSL channel sample early enough before its start time. The
+	 *    size of the CSL channel sample SHALL take relative clock drift and
+	 *    scheduling uncertainties with respect to CSL transmitters into
+	 *    account as specified by the standard such that at least the full
+	 *    SHR of a legitimate RX frame is guaranteed to land inside the
+	 *    channel sample.
+	 *
+	 *    To this avail, the last configured expected RX time plus an
+	 *    integer number of CSL periods SHALL point to a fixed offset of the
+	 *    RX slot (not necessarily its center):
+	 *
+	 *        expectedRxTimeNs_N = last expected RX time
+	 *            + N * (cslPeriod * 10 * PHY-specific symbol period in ns)
+	 *
+	 *        expectedRxTimeNs_N - rxSlot_N.start == const for all N
+	 *
+	 *    While the configured CSL period is greater than zero, drivers
+	 *    SHOULD validate the offset of the expected RX time inside each RX
+	 *    slot accordingly. If the driver finds that the offset varies from
+	 *    slot to slot, drivers SHOULD log the difference but SHALL
+	 *    nevertheless accept and schedule the RX slot with a zero success
+	 *    value to work around minor implementation or rounding errors in
+	 *    upper layers.
+	 *
+	 * Configure and start a CSL receiver:
+	 *
+	 *     ENH_ACK_HEADER_IE
+	 *        |
+	 *        | EXPECTED_RX_TIME (end of SFD of a perfectly timed RX frame
+	 *        |    |              in any past or future channel sample)
+	 *        |    |
+	 *        |    | CSL_PERIOD (>0)            RX_SLOT
+	 *        |    |    |                          |
+	 *        v    v    v                          v
+	 *     -----------------------------------------------[-CSL channel sample ]----+
+	 *                                         ^                                    |
+	 *                                         |                                    |
+	 *                                         +--------------------- loop ---------+
+	 *
+	 * Disable CSL on the receiver:
+	 *
+	 *     CSL_PERIOD (=0)
+	 *        |
+	 *        v
+	 *     ---------------------
+	 *
+	 * Update the CSL period to a new value:
+	 *
+	 *     EXPECTED_RX_TIME (based on updated period)
+	 *        |
+	 *        |  CSL_PERIOD (>0, updated)       RX_SLOT
+	 *        |     |                              |
+	 *        v     v                              v
+	 *     -----------------------------------------------[-CSL channel sample ]----+
+	 *                                         ^                                    |
+	 *                                         |                                    |
+	 *                                         +--------------------- loop ---------+
 	 *
 	 * @note Available in any interface operational state.
 	 *
-	 * @warning This configuration option does not conform to the
-	 * requirements specified in #61227 as it is incompatible with standard
-	 * primitives and may therefore be deprecated in the future.
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
 	IEEE802154_CONFIG_CSL_PERIOD,
 
 	/**
-	 * @brief Configure the next CSL receive window (i.e. "channel sample")
-	 * center, in units of nanoseconds relative to the network subsystem's
-	 * local clock.
+	 * Configure a timepoint at which an RX frame is expected to arrive.
+	 *
+	 * @details Configure the nanosecond resolution timepoint relative to
+	 * the network subsystem's local clock at which an RX frame's end of SFD
+	 * (i.e. equivalently its end of SHR, start of PHR, or in the case of
+	 * PHYs with RDEV or ERDEV capability the RMARKER) is expected to arrive
+	 * at the local antenna assuming perfectly synchronized local and remote
+	 * network clocks and zero distance between antennas.
+	 *
+	 * This parameter MAY be used to offload parts of timing sensitive TDMA
+	 * (e.g.  TSCH, beacon-enabled PAN including DSME), low-energy (e.g.
+	 * CSL, RIT) or ranging (TDoA) protocols to the driver. In these
+	 * protocols, medium access is tightly controlled such that the expected
+	 * arrival time of a frame can be predicted within a well-defined time
+	 * window. This feature will typically be combined with @ref
+	 * IEEE802154_CONFIG_RX_SLOT although this is not a hard requirement.
+	 *
+	 * The "expected RX time" MAY be interpreted slightly differently
+	 * depending on the protocol context:
+	 * - CSL phase (i.e. time to the next expected CSL transmission) or anchor
+	 *   time (i.e. any arbitrary timepoint with "zero CSL phase") SHALL be
+	 *   derived by adding the PHY header duration to the expected RX time
+	 *   to calculate the "start of MHR" ("first symbol of MAC", see section
+	 *   6.12.2.1) required by the CSL protocol, compare @ref
+	 *   IEEE802154_CONFIG_CSL_PERIOD.
+	 * - In TSCH the expected RX time MAY be set to macTsRxOffset +
+	 *   macTsRxWait / 2. Then the time correction SHALL be calculated as
+	 *   the expected RX time minus actual arrival timestamp, see section
+	 *   6.5.4.3.
+	 * - In ranging applications, time difference of arrival (TDOA) MAY be
+	 *   calculated inside the driver comparing actual RMARKER timestamps
+	 *   against the assumed synchronized time at which the ranging frame
+	 *   was sent, see IEEE 802.15.4z.
+	 *
+	 * In case of periodic protocols (e.g. CSL channel samples, periodic
+	 * beacons of a single PAN, periodic ranging "blinks"), a single
+	 * timestamp at any time in the past or in the future may be given from
+	 * which other expected timestamps can be derived by adding or
+	 * subtracting multiples of the RX period. See e.g. the CSL
+	 * documentation in this API.
+	 *
+	 * Additionally this parameter MAY be used by drivers to discipline
+	 * their local representation of a distributed network clock by deriving
+	 * synchronization instants related to a remote representation of the
+	 * same clock (as in PTP).
 	 *
 	 * @note Available in any interface operational state.
 	 *
-	 * @warning This configuration option does not conform to the
-	 * requirements specified in #61227 as it is incompatible with standard
-	 * primitives and may therefore be deprecated in the future.
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
 	 */
-	IEEE802154_CONFIG_CSL_RX_TIME,
+	IEEE802154_CONFIG_EXPECTED_RX_TIME,
 
 	/**
-	 * Indicates whether to inject IE into ENH ACK Frame for specific address
-	 * or not. Disabling the ENH ACK with no address provided (NULL pointer)
-	 * should disable it for all enabled addresses.
+	 * Adds a header information element (IE) to be injected into enhanced
+	 * ACK frames generated by the driver if the given destination address
+	 * filter matches.
 	 *
-	 * @note Available in any interface operational state.
+	 * @details Drivers implementing the @ref IEEE802154_HW_RX_TX_ACK
+	 * capability generate ACK frames autonomously. Setting this
+	 * configuration will ask the driver to inject the given preconfigured
+	 * header IE when generating enhanced ACK frames where appropriate by
+	 * the standard. IEs for all other frame types SHALL be provided by L2.
 	 *
-	 * @warning This configuration option does not conform to the
-	 * requirements specified in #61227 as it is incompatible with standard
-	 * primitives and may therefore be modified in the future.
+	 * The driver shall return -ENOTSUP in the following cases:
+	 * - It does not support the @ref IEEE802154_HW_RX_TX_ACK,
+	 * - It does not support header IE injection,
+	 * - It cannot inject the runtime fields on-the-fly required for the
+	 *   given IE element ID (see list below).
+	 *
+	 * Enhanced ACK header IEs (element IDs in parentheses) that either
+	 * need to be rejected or explicitly supported and parsed by the driver
+	 * because they require on-the-fly timing information injection are:
+	 * - CSL IE (0x1a)
+	 * - Rendezvous Time IE (0x1d)
+	 * - Time Correction IE (0x1e)
+	 *
+	 * Drivers accepting this configuration option SHALL check the list of
+	 * configured IEs for each outgoing enhanced ACK frame, select the ones
+	 * appropriate for the received frame based on their element ID, inject
+	 * any required runtime information on-the-fly and include the selected
+	 * IEs into the enhanced ACK frame's MAC header.
+	 *
+	 * Drivers supporting enhanced ACK header IE injection SHALL
+	 * autonomously inject header termination IEs as required by the
+	 * standard.
+	 *
+	 * A destination short address and extended address MAY be given by L2
+	 * to filter the devices to which the given IE is included. Setting the
+	 * short address to the broadcast address and the extended address to
+	 * NULL will inject the given IE into all ACK frames unless a more
+	 * specific filter is also present for any given destination device
+	 * (fallback configuration). L2 SHALL take care to either set both
+	 * address fields to valid device addresses or none.
+	 *
+	 * This configuration type may be called several times with distinct
+	 * element IDs and/or addresses. The driver SHALL either store all
+	 * configured IE/address combinations or return -ENOMEM if no
+	 * additional configuration can be stored.
+	 *
+	 * Configuring a header IE with a previously configured element ID and
+	 * address filter SHALL override the previous configuration. This
+	 * implies that repetition of the same header IE/address combination is
+	 * NOT supported.
+	 *
+	 * Configuring an existing element ID/address filter combination with
+	 * the header IE's length field set to zero SHALL remove that
+	 * configuration. SHALL remove the fallback configuration if no address
+	 * is given.
+	 *
+	 * Configuring a header IE for an address filter with the header IE
+	 * pointer set to NULL SHALL remove all header IE's for that address
+	 * filter. SHALL remove ALL header IE configuration (including but not
+	 * limited to fallbacks) if no address is given.
+	 *
+	 * If any of the deleted configurations didn't previously exist, then
+	 * the call SHALL be ignored. Whenever the length field is set to zero,
+	 * the content fields MUST NOT be accessed by the driver.
+	 *
+	 * L2 SHALL minimize the space required to keep IE configuration inside
+	 * the driver by consolidating address filters and by removing
+	 * configuration that is no longer required.
+	 *
+	 * @note requires @ref IEEE802154_HW_RX_TX_ACK capability and is
+	 * available in any interface operational state. Currently we only
+	 * support header IEs but that may change in the future.
+	 *
+	 * @note Required for Thread 1.2 Coordinated Sampled Listening feature
+	 * (see Thread specification 1.2.0, ch. 3.2.6.3).
+	 *
+	 * @note Required for Thread 1.2 Link Metrics feature (see Thread
+	 * specification 1.2.0, ch. 4.11.3.3).
 	 */
 	IEEE802154_CONFIG_ENH_ACK_HEADER_IE,
+
+	/**
+	 * Enable/disable RxOnWhenIdle MAC PIB attribute (Table 8-94).
+	 *
+	 * Since there is no clear guidance in IEEE 802.15.4 specification about the definition of
+	 * an "idle period", this implementation expects that drivers use the RxOnWhenIdle attribute
+	 * to determine next radio state (false --> off, true --> receive) in the following
+	 * scenarios:
+	 * - Finalization of a regular frame reception task, provided that:
+	 *   - The frame is received without errors and passes the filtering and it's not an
+	 *     spurious ACK.
+	 *   - ACK is not requested or transmission of ACK is not possible due to internal
+	 *     conditions.
+	 * - Finalization of a frame transmission or transmission of an ACK frame, when ACK is not
+	 *     requested in the transmitted frame.
+	 * - Finalization of the reception operation of a requested ACK due to:
+	 *   - ACK timeout expiration.
+	 *   - Reception of an invalid ACK or not an ACK frame.
+	 *   - Reception of the proper ACK, unless the transmitted frame was a Data Request Command
+	 *     and the frame pending bit on the received ACK is set to true. In this case the radio
+	 *     platform implementation SHOULD keep the receiver on until a determined timeout which
+	 *     triggers an idle period start.
+	 * - Finalization of a stand alone CCA task.
+	 * - Finalization of a CCA operation with busy result during CSMA/CA procedure.
+	 * - Finalization of an Energy Detection task.
+	 * - Finalization of a scheduled radio reception window
+	 *     (see @ref IEEE802154_CONFIG_RX_SLOT).
+	 */
+	IEEE802154_CONFIG_RX_ON_WHEN_IDLE,
 
 	/** Number of types defined in ieee802154_config_type. */
 	IEEE802154_CONFIG_COMMON_COUNT,
@@ -855,15 +1125,15 @@ struct ieee802154_config {
 	union {
 		/** see @ref IEEE802154_CONFIG_AUTO_ACK_FPB */
 		struct {
-			bool enabled;
-			enum ieee802154_fpb_mode mode;
+			bool enabled;                  /**< Is auto ACK FPB enabled */
+			enum ieee802154_fpb_mode mode; /**< Auto ACK FPB mode */
 		} auto_ack_fpb;
 
 		/** see @ref IEEE802154_CONFIG_ACK_FPB */
 		struct {
-			uint8_t *addr; /* in little endian for both, short and extended address */
-			bool extended;
-			bool enabled;
+			uint8_t *addr; /**< little endian for both short and extended address */
+			bool extended; /**< Is extended address */
+			bool enabled;  /**< Is enabled */
 		} ack_fpb;
 
 		/** see @ref IEEE802154_CONFIG_PAN_COORDINATOR */
@@ -871,6 +1141,9 @@ struct ieee802154_config {
 
 		/** see @ref IEEE802154_CONFIG_PROMISCUOUS */
 		bool promiscuous;
+
+		/** see @ref IEEE802154_CONFIG_RX_ON_WHEN_IDLE */
+		bool rx_on_when_idle;
 
 		/** see @ref IEEE802154_CONFIG_EVENT_HANDLER */
 		ieee802154_event_cb_t event_handler;
@@ -921,58 +1194,67 @@ struct ieee802154_config {
 			 */
 			net_time_t duration;
 
+			/**
+			 * Used channel
+			 */
 			uint8_t channel;
 		} rx_slot;
 
 		/**
 		 * see @ref IEEE802154_CONFIG_CSL_PERIOD
 		 *
-		 * The CSL period in units of 10 symbol periods,
-		 * see section 7.4.2.3.
-		 *
 		 * in CPU byte order
 		 */
 		uint32_t csl_period;
 
 		/**
-		 * see @ref IEEE802154_CONFIG_CSL_RX_TIME
-		 *
-		 * Nanosecond resolution timestamp relative to the network
-		 * subsystem's local clock defining the center of the CSL RX window
-		 * at which the receiver is expected to be fully started up
-		 * (i.e. not including any startup times).
+		 * see @ref IEEE802154_CONFIG_EXPECTED_RX_TIME
 		 */
-		net_time_t csl_rx_time;
+		net_time_t expected_rx_time;
 
 		/** see @ref IEEE802154_CONFIG_ENH_ACK_HEADER_IE */
 		struct {
 			/**
-			 * Header IEs to be added to the Enh-Ack frame.
+			 * Pointer to the header IE, see section 7.4.2.1,
+			 * figure 7-21
 			 *
-			 * in little endian
+			 * Certain header IEs may be incomplete if they require
+			 * timing information to be injected at runtime
+			 * on-the-fly, see the list in @ref
+			 * IEEE802154_CONFIG_ENH_ACK_HEADER_IE.
 			 */
-			const uint8_t *data;
+			struct ieee802154_header_ie *header_ie;
 
-			/** length of the header IEs */
-			uint16_t data_len;
+			/**
+			 * Filters the devices that will receive this IE by
+			 * extended address. MAY be set to NULL to configure a
+			 * fallback for all devices (implies that short_addr
+			 * MUST also be set to @ref
+			 * IEEE802154_BROADCAST_ADDRESS).
+			 *
+			 * in big endian
+			 */
+			const uint8_t *ext_addr;
 
 			/**
 			 * Filters the devices that will receive this IE by
 			 * short address. MAY be set to @ref
-			 * IEEE802154_BROADCAST_ADDRESS to disable the filter.
+			 * IEEE802154_BROADCAST_ADDRESS to configure a fallback
+			 * for all devices (implies that ext_addr MUST also set
+			 * to NULL in this case).
 			 *
 			 * in CPU byte order
 			 */
 			uint16_t short_addr;
 
 			/**
-			 * Filters the devices that will receive this IE by
-			 * extended address. MAY be set to NULL to disable the
-			 * filter.
-			 *
-			 * in big endian
+			 * Flag for purging enh ACK header IEs.
+			 * When flag is set to true, driver should remove all existing
+			 * header IEs, and all other entries in config should be ignored.
+			 * This means that purging current header IEs and
+			 * configuring a new one in the same call is not allowed.
 			 */
-			const uint8_t *ext_addr;
+			bool purge_ie;
 		} ack_ie;
 	};
 };
@@ -1383,7 +1665,7 @@ struct ieee802154_radio_api {
 	 * with the frame data to be transmitted
 	 *
 	 * @retval 0 The frame was successfully sent or scheduled. If the driver
-	 * supports ACK offloading and the frame requested acknowlegment (AR bit
+	 * supports ACK offloading and the frame requested acknowledgment (AR bit
 	 * set), this means that the packet was successfully acknowledged by its
 	 * peer.
 	 * @retval -EINVAL Invalid packet (e.g. an expected IE is missing or the
@@ -1391,7 +1673,7 @@ struct ieee802154_radio_api {
 	 * @retval -EBUSY The frame could not be sent because the medium was
 	 * busy (CSMA/CA or CCA offloading feature only).
 	 * @retval -ENOMSG The frame was not confirmed by an ACK packet (TX ACK
-	 * offloading feature only).
+	 * offloading feature only) or the received ACK packet was invalid.
 	 * @retval -ENOBUFS The frame could not be scheduled due to missing
 	 * internal resources (timed TX offloading feature only).
 	 * @retval -ENETDOWN The interface is not "UP".

@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(16)>;
+};
+
+&clk_inro {
+	clock-frequency = <DT_FREQ_K(80)>;
+};
+
+/delete-node/ &clk_iso;
+
+/* MAX32672 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(16)>;
+		};
+
+		sram2: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(64)>;
+		};
+
+		sram3: memory@20018000 {
+			compatible = "mmio-sram";
+			reg = <0x20018000 DT_SIZE_K(64)>;
+		};
+
+		sram4: memory@20028000 {
+			compatible = "mmio-sram";
+			reg = <0x20028000 DT_SIZE_K(4)>;
+		};
+
+		sram5: memory@20029000 {
+			compatible = "mmio-sram";
+			reg = <0x20029000 DT_SIZE_K(4)>;
+		};
+
+		sram6: memory@2002a000 {
+			compatible = "mmio-sram";
+			reg = <0x2002a000 DT_SIZE_K(16)>;
+		};
+
+		sram7: memory@2002e000 {
+			compatible = "mmio-sram";
+			reg = <0x2002e000 DT_SIZE_K(16)>;
+		};
+
+		flc1: flash_controller@40029400 {
+			compatible = "adi,max32-flash-controller";
+			reg = <0x40029400 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash1: flash@10080000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10080000 DT_SIZE_K(512)>;
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
+		};
+
+		uart3: serial@40145000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40145000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <88 0>;
+			status = "disabled";
+		};
+	};
+};

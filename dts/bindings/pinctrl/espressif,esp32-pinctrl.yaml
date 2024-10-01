@@ -65,7 +65,7 @@ description: |
     target SoC in the following URL
 
 
-    https://github.com/zephyrproject-rtos/hal_espressif/tree/zephyr/include/dt-bindings/pinctrl
+    https://github.com/zephyrproject-rtos/zephyr/tree/main/include/zephyr/dt-bindings/pinctrl
 
 
     The ESP-WROVER-KIT board is based on the ESP32 SoC, in that case, we search

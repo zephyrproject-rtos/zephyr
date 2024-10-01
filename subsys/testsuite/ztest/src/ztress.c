@@ -18,20 +18,20 @@ static bool cpu_sys_clock_ok;
 
 /* Timer used for adjusting contexts backoff time to get optimal CPU load. */
 static void ctrl_timeout(struct k_timer *timer);
-K_TIMER_DEFINE(ctrl_timer, ctrl_timeout, NULL);
+static K_TIMER_DEFINE(ctrl_timer, ctrl_timeout, NULL);
 
 /* Timer used for reporting test progress. */
 static void progress_timeout(struct k_timer *timer);
-K_TIMER_DEFINE(progress_timer, progress_timeout, NULL);
+static K_TIMER_DEFINE(progress_timer, progress_timeout, NULL);
 
 /* Timer used for higher priority context. */
 static void ztress_timeout(struct k_timer *timer);
-K_TIMER_DEFINE(ztress_timer, ztress_timeout, NULL);
+static K_TIMER_DEFINE(ztress_timer, ztress_timeout, NULL);
 
 /* Timer handling test timeout which ends test prematurely. */
 static k_timeout_t timeout;
 static void test_timeout(struct k_timer *timer);
-K_TIMER_DEFINE(test_timer, test_timeout, NULL);
+static K_TIMER_DEFINE(test_timer, test_timeout, NULL);
 
 static atomic_t active_cnt;
 static struct k_thread threads[CONFIG_ZTRESS_MAX_THREADS];
@@ -216,7 +216,7 @@ static k_timeout_t randomize_t(k_timeout_t t)
 static void microdelay(void)
 {
 	static volatile int microdelay_cnt;
-	uint32_t repeat = sys_rand32_get() & 0xff;
+	uint8_t repeat = sys_rand8_get();
 
 	for (int i = 0; i < repeat; i++) {
 		microdelay_cnt++;

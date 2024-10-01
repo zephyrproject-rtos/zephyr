@@ -1,0 +1,15 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_FVP_AEMV8A
+	bool
+	select SOC_FAMILY_ARM64
+
+config SOC_FVP_BASE_REVC_2XAEMV8A
+	bool
+
+config SOC
+	default "fvp_base_revc_2xaemv8a" if SOC_FVP_BASE_REVC_2XAEMV8A
+
+config SOC_SERIES
+	default "fvp_aemv8a" if SOC_SERIES_FVP_AEMV8A

@@ -24,15 +24,45 @@ extern "C" {
 
 /**
  * This resource should be added before all other resources that should be
- * included in the responses of the .well-known/core resource.
+ * included in the responses of the .well-known/core resource if is to be used with
+ * coap_well_known_core_get.
  */
 #define COAP_WELL_KNOWN_CORE_PATH \
 	((const char * const[]) { ".well-known", "core", NULL })
 
+/**
+ * @brief Build a CoAP response for a .well-known/core CoAP request.
+ *
+ * @param resource Array of known resources, terminated with an empty resource
+ * @param request A pointer to the .well-known/core CoAP request
+ * @param response A pointer to a CoAP response, will be initialized
+ * @param data A data pointer to be used to build the CoAP response
+ * @param data_len The maximum length of the data buffer
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
 int coap_well_known_core_get(struct coap_resource *resource,
-			     struct coap_packet *request,
+			     const struct coap_packet *request,
 			     struct coap_packet *response,
-			     uint8_t *data, uint16_t len);
+			     uint8_t *data, uint16_t data_len);
+
+/**
+ * @brief Build a CoAP response for a .well-known/core CoAP request.
+ *
+ * @param resources Array of known resources
+ * @param resources_len Number of resources in the array
+ * @param request A pointer to the .well-known/core CoAP request
+ * @param response A pointer to a CoAP response, will be initialized
+ * @param data A data pointer to be used to build the CoAP response
+ * @param data_len The maximum length of the data buffer
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_well_known_core_get_len(struct coap_resource *resources,
+				 size_t resources_len,
+				 const struct coap_packet *request,
+				 struct coap_packet *response,
+				 uint8_t *data, uint16_t data_len);
 
 /**
  * In case you want to add attributes to the resources included in the
@@ -40,7 +70,9 @@ int coap_well_known_core_get(struct coap_resource *resource,
  * to a valid coap_core_metadata structure.
  */
 struct coap_core_metadata {
+	/** List of attributes to add */
 	const char * const *attributes;
+	/** User specific data */
 	void *user_data;
 };
 

@@ -45,7 +45,6 @@
 /* Devicetree global defines */
 #define LOCK_TIMEOUT		DT_PROP(MMCM, litex_lock_timeout)
 #define DRDY_TIMEOUT		DT_PROP(MMCM, litex_drdy_timeout)
-#define SYS_CLOCK_FREQUENCY	DT_PROP(MMCM, litex_sys_clock_frequency)
 #define DIVCLK_DIVIDE_MIN	DT_PROP(MMCM, litex_divclk_divide_min)
 #define DIVCLK_DIVIDE_MAX	DT_PROP(MMCM, litex_divclk_divide_max)
 #define CLKFBOUT_MULT_MIN	DT_PROP(MMCM, litex_clkfbout_mult_min)
@@ -243,7 +242,6 @@ struct litex_clk_device {
 	struct litex_clk_range clkfbout;	/* clkfbout_mult_frange */
 	struct litex_clk_range vco;		/* vco_freq_range */
 	uint8_t *update_clkout;			/* which clkout needs update */
-	uint32_t sys_clk_freq;			/* input frequency */
 	uint32_t vco_margin;
 	uint32_t nclkout;
 };

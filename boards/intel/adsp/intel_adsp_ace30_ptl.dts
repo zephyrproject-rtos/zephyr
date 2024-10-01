@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <intel/intel_adsp_ace30_ptl.dtsi>
+
+/ {
+	model = "intel_adsp_ace30_ptl";
+	compatible = "intel";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &mem_window3;
+	};
+};

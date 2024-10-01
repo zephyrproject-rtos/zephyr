@@ -1,0 +1,5 @@
+series:
+- name: starfive_jh71xx
+  socs:
+  - name: jh7100
+  - name: jh7110

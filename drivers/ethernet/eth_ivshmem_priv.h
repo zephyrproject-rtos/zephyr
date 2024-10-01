@@ -40,8 +40,8 @@ struct eth_ivshmem_queue {
 };
 
 int eth_ivshmem_queue_init(
-		struct eth_ivshmem_queue *q, uintptr_t shmem,
-		size_t shmem_section_size, bool tx_buffer_first);
+		struct eth_ivshmem_queue *q, uintptr_t tx_shmem,
+		uintptr_t rx_shmem, size_t shmem_section_size);
 void eth_ivshmem_queue_reset(struct eth_ivshmem_queue *q);
 int eth_ivshmem_queue_tx_get_buff(struct eth_ivshmem_queue *q, void **data, size_t len);
 int eth_ivshmem_queue_tx_commit_buff(struct eth_ivshmem_queue *q);

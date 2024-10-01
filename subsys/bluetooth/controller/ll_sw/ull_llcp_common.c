@@ -54,7 +54,7 @@
 
 /* LLCP Local Procedure FSM states */
 enum {
-	LP_COMMON_STATE_IDLE,
+	LP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	LP_COMMON_STATE_WAIT_TX,
 	LP_COMMON_STATE_WAIT_TX_ACK,
 	LP_COMMON_STATE_WAIT_RX,
@@ -84,7 +84,7 @@ enum {
 
 /* LLCP Remote Procedure Common FSM states */
 enum {
-	RP_COMMON_STATE_IDLE,
+	RP_COMMON_STATE_IDLE = LLCP_STATE_IDLE,
 	RP_COMMON_STATE_WAIT_RX,
 	RP_COMMON_STATE_POSTPONE_TERMINATE,
 	RP_COMMON_STATE_WAIT_TX,
@@ -417,7 +417,7 @@ static void lp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx)
 	}
 
 	if (!piggy_back) {
-		/* Enqueue notification towards LL, unless we re-use RX node,
+		/* Enqueue notification towards LL, unless we reuse RX node,
 		 * in which case it is handled on the ull_cp_rx return path
 		 */
 		ll_rx_put_sched(ntf->hdr.link, ntf);
@@ -646,7 +646,7 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO || CONFIG_BT_CTLR_PERIPHERAL_ISO */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PROC_DATA_LENGTH_UPDATE:
-		if (!ull_cp_remote_dle_pending(conn)) {
+		if (feature_dle(conn) && !ull_cp_remote_dle_pending(conn)) {
 			if (llcp_lr_ispaused(conn) || !llcp_tx_alloc_peek(conn, ctx)) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
@@ -662,6 +662,10 @@ static void lp_comm_send_req(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t
 			/* REQ was received from peer and RSP not yet sent
 			 * lets piggy-back on RSP instead af sending REQ
 			 * thus we can complete local req
+			 *
+			 * OR
+			 *
+			 * Data Length Update procedure no longer supported
 			 */
 			llcp_lr_complete(conn);
 			ctx->state = LP_COMMON_STATE_IDLE;
@@ -917,11 +921,6 @@ void llcp_lp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 }
 
-void llcp_lp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = LP_COMMON_STATE_IDLE;
-}
-
 void llcp_lp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)
 {
 	lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, param);
@@ -1135,6 +1134,7 @@ static void rp_comm_ntf(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t gene
 
 	/* Allocate ntf node */
 	ntf = ctx->node_ref.rx;
+	ctx->node_ref.rx = NULL;
 	LL_ASSERT(ntf);
 
 	/* This should be an 'old' RX node, so put/sched when done */
@@ -1415,11 +1415,6 @@ void llcp_rp_comm_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_
 void llcp_rp_comm_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
 {
 	rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_ACK, tx->pdu);
-}
-
-void llcp_rp_comm_init_proc(struct proc_ctx *ctx)
-{
-	ctx->state = RP_COMMON_STATE_IDLE;
 }
 
 void llcp_rp_comm_run(struct ll_conn *conn, struct proc_ctx *ctx, void *param)

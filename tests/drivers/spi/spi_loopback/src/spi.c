@@ -55,9 +55,10 @@ static struct spi_dt_spec spi_slow = SPI_DT_SPEC_GET(SPI_SLOW_DEV, SPI_OP(FRAME_
 
 /* to run this test, connect MOSI pin to the MISO of the SPI */
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define BUF_SIZE 18
 #define BUF2_SIZE 36
+#define BUF3_SIZE 8192
 
 #if CONFIG_NOCACHE_MEMORY
 #define __NOCACHE	__attribute__((__section__(".nocache")))
@@ -73,6 +74,9 @@ static __aligned(32) char buffer_rx[BUF_SIZE] __used __NOCACHE;
 static const char tx2_data[BUF2_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
 static __aligned(32) char buffer2_tx[BUF2_SIZE] __used __NOCACHE;
 static __aligned(32) char buffer2_rx[BUF2_SIZE] __used __NOCACHE;
+static const char large_tx_data[BUF3_SIZE] = "Thequickbrownfoxjumpsoverthelazydog\0";
+static __aligned(32) char large_buffer_tx[BUF3_SIZE] __used __NOCACHE;
+static __aligned(32) char large_buffer_rx[BUF3_SIZE] __used __NOCACHE;
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -517,6 +521,48 @@ static int spi_rx_bigger_than_tx(struct spi_dt_spec *spec)
 	return 0;
 }
 
+/* test transferring different buffers on the same dma channels */
+static int spi_complete_large_transfers(struct spi_dt_spec *spec)
+{
+	struct spi_buf tx_bufs;
+	const struct spi_buf_set tx = {
+		.buffers = &tx_bufs,
+		.count = 1
+	};
+
+	tx_bufs.buf = large_buffer_tx;
+	tx_bufs.len = BUF3_SIZE;
+
+
+	struct spi_buf rx_bufs;
+	const struct spi_buf_set rx = {
+		.buffers = &rx_bufs,
+		.count = 1
+	};
+
+	rx_bufs.buf = large_buffer_rx;
+	rx_bufs.len = BUF3_SIZE;
+
+	int ret;
+
+	LOG_INF("Start complete large transfers");
+
+	ret = spi_transceive_dt(spec, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
+		zassert_false(1, "Large Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
 #if (CONFIG_SPI_ASYNC)
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
@@ -527,16 +573,22 @@ static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
 
-static void spi_async_call_cb(struct k_poll_event *evt,
-			      struct k_sem *caller_sem,
-			      void *unused)
+static void spi_async_call_cb(void *p1,
+			      void *p2,
+			      void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct k_poll_event *evt = p1;
+	struct k_sem *caller_sem = p2;
 	int ret;
 
 	LOG_DBG("Polling...");
 
 	while (1) {
-		ret = k_poll(evt, 1, K_MSEC(200));
+		ret = k_poll(evt, 1, K_MSEC(2000));
 		zassert_false(ret, "one or more events are not ready");
 
 		result = evt->signal->result;
@@ -555,11 +607,27 @@ static int spi_async_call(struct spi_dt_spec *spec)
 			.buf = buffer_tx,
 			.len = BUF_SIZE,
 		},
+		{
+			.buf = buffer2_tx,
+			.len = BUF2_SIZE,
+		},
+		{
+			.buf = large_buffer_tx,
+			.len = BUF3_SIZE,
+		},
 	};
 	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
+		},
+		{
+			.buf = buffer2_rx,
+			.len = BUF2_SIZE,
+		},
+		{
+			.buf = large_buffer_rx,
+			.len = BUF3_SIZE,
 		},
 	};
 	const struct spi_buf_set tx = {
@@ -573,6 +641,9 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	int ret;
 
 	LOG_INF("Start async call");
+	memset(buffer_rx, 0, sizeof(buffer_rx));
+	memset(buffer2_rx, 0, sizeof(buffer2_rx));
+	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
 
 	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -591,6 +662,29 @@ static int spi_async_call(struct spi_dt_spec *spec)
 	if (result) {
 		LOG_ERR("Call code %d", ret);
 		zassert_false(result, "SPI transceive failed");
+		return -1;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s", buffer_print_tx);
+		LOG_ERR("                           vs: %s", buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s", buffer_print_tx2);
+		LOG_ERR("                             vs: %s", buffer_print_rx2);
+		zassert_false(1, "Buffer 2 contents are different");
+		return -1;
+	}
+
+	if (memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE)) {
+		zassert_false(1, "Buffer 3 contents are different");
 		return -1;
 	}
 
@@ -636,7 +730,7 @@ ZTEST(spi_loopback, test_spi_loopback)
 #if (CONFIG_SPI_ASYNC)
 	async_thread_id = k_thread_create(&async_thread,
 					  spi_async_stack, STACK_SIZE,
-					  (k_thread_entry_t)spi_async_call_cb,
+					  spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
@@ -650,7 +744,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
 	    spi_rx_every_4(&spi_slow) ||
-	    spi_rx_bigger_than_tx(&spi_slow)
+	    spi_rx_bigger_than_tx(&spi_slow) ||
+	    spi_complete_large_transfers(&spi_slow)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_slow)
 #endif
@@ -668,7 +763,8 @@ ZTEST(spi_loopback, test_spi_loopback)
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
 	    spi_rx_every_4(&spi_fast) ||
-	    spi_rx_bigger_than_tx(&spi_fast)
+	    spi_rx_bigger_than_tx(&spi_fast) ||
+	    spi_complete_large_transfers(&spi_fast)
 #if (CONFIG_SPI_ASYNC)
 	    || spi_async_call(&spi_fast)
 #endif
@@ -695,6 +791,8 @@ static void *spi_loopback_setup(void)
 	memcpy(buffer_tx, tx_data, sizeof(tx_data));
 	memset(buffer2_tx, 0, sizeof(buffer2_tx));
 	memcpy(buffer2_tx, tx2_data, sizeof(tx2_data));
+	memset(large_buffer_tx, 0, sizeof(large_buffer_tx));
+	memcpy(large_buffer_tx, large_tx_data, sizeof(large_tx_data));
 	return NULL;
 }
 

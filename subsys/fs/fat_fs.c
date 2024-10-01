@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,10 @@
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/__assert.h>
 #include <ff.h>
+#include <diskio.h>
+#include <zfs_diskio.h> /* Zephyr specific FatFS API */
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(fs, CONFIG_FS_LOG_LEVEL);
 
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
@@ -58,6 +63,23 @@ static int translate_error(int error)
 	case FR_DISK_ERR:
 	case FR_INT_ERR:
 	case FR_NOT_READY:
+		return -EIO;
+	}
+
+	return -EIO;
+}
+
+static int translate_disk_error(int error)
+{
+	switch (error) {
+	case RES_OK:
+		return 0;
+	case RES_WRPRT:
+		return -EPERM;
+	case RES_PARERR:
+		return -EINVAL;
+	case RES_NOTRDY:
+	case RES_ERROR:
 		return -EIO;
 	}
 
@@ -463,13 +485,26 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 static int fatfs_unmount(struct fs_mount_t *mountp)
 {
 	FRESULT res;
+	DRESULT disk_res;
+	uint8_t param = DISK_IOCTL_POWER_OFF;
 
 	res = f_mount(NULL, translate_path(mountp->mnt_point), 0);
+	if (res != FR_OK) {
+		LOG_ERR("Unmount failed (%d)", res);
+		return translate_error(res);
+	}
 
-	return translate_error(res);
+	/* Make direct disk IOCTL call to deinit disk */
+	disk_res = disk_ioctl(((FATFS *)mountp->fs_data)->pdrv, CTRL_POWER, &param);
+	if (disk_res != RES_OK) {
+		LOG_ERR("Could not power off disk (%d)", disk_res);
+		return translate_disk_error(disk_res);
+	}
+
+	return 0;
 }
 
-#if defined(CONFIG_FILE_SYSTEM_MKFS)
+#if defined(CONFIG_FILE_SYSTEM_MKFS) && defined(CONFIG_FS_FATFS_MKFS)
 
 static MKFS_PARM def_cfg = {
 	.fmt = FM_ANY | FM_SFD,	/* Any suitable FAT */
@@ -494,7 +529,7 @@ static int fatfs_mkfs(uintptr_t dev_id, void *cfg, int flags)
 	return translate_error(res);
 }
 
-#endif /* CONFIG_FILE_SYSTEM_MKFS */
+#endif /* CONFIG_FILE_SYSTEM_MKFS && FS_FATFS_MKFS */
 
 /* File system interface */
 static const struct fs_file_system_t fatfs_fs = {
@@ -516,7 +551,7 @@ static const struct fs_file_system_t fatfs_fs = {
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
-#if defined(CONFIG_FILE_SYSTEM_MKFS)
+#if defined(CONFIG_FILE_SYSTEM_MKFS) && defined(CONFIG_FS_FATFS_MKFS)
 	.mkfs = fatfs_mkfs,
 #endif
 };
@@ -527,4 +562,4 @@ static int fatfs_init(void)
 	return fs_register(FS_FATFS, &fatfs_fs);
 }
 
-SYS_INIT(fatfs_init, POST_KERNEL, 99);
+SYS_INIT(fatfs_init, POST_KERNEL, CONFIG_FILE_SYSTEM_INIT_PRIORITY);

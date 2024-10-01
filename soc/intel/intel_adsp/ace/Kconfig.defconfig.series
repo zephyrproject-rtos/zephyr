@@ -1,0 +1,89 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_INTEL_ADSP_ACE
+
+config SMP
+	default y
+
+config POWER_DOMAIN
+	default y
+
+# MTL leaves the upper mapping in the same spot as cAVS, but moves the
+# lower one inexplicably.
+config XTENSA_UNCACHED_REGION
+	default 2
+
+# Parameters for gen_isr_tables.py:
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 4
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 29
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 9
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config XTENSA_TIMER
+	default n
+
+config XTENSA_TIMER_ID
+	default 0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 393216000 if XTENSA_TIMER
+	default 38400000 if INTEL_ADSP_TIMER
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 12000
+
+config XTENSA_CCOUNT_HZ
+	default 393216000
+
+config INTEL_ADSP_TIMER
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+if LOG
+
+config LOG_BACKEND_ADSP
+	default y
+
+endif # LOG
+
+config XTENSA_MORE_SPIN_RELAX_NOPS
+	default y if SMP && MP_MAX_NUM_CPUS > 1
+
+if XTENSA_MORE_SPIN_RELAX_NOPS
+
+config XTENSA_NUM_SPIN_RELAX_NOPS
+	default 32 if MP_MAX_NUM_CPUS = 1
+	default 64 if MP_MAX_NUM_CPUS = 2
+	default 96 if MP_MAX_NUM_CPUS = 3
+	default 128 if MP_MAX_NUM_CPUS = 4
+	default 160 if MP_MAX_NUM_CPUS = 5
+
+endif # XTENSA_MORE_SPIN_RELAX_NOPS
+
+if KERNEL_VM_SUPPORT
+
+config KERNEL_VM_SIZE
+	default 0xfe0000
+
+endif
+
+rsource "Kconfig.defconfig.ace*"
+
+endif # SOC_SERIES_INTEL_ADSP_ACE

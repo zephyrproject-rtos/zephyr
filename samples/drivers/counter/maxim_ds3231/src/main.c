@@ -105,7 +105,7 @@ static void min_alarm_handler(const struct device *dev,
 	(void)counter_get_value(dev, &time);
 
 	uint32_t uptime = k_uptime_get_32();
-	uint8_t us = uptime % 1000U;
+	uint16_t ms = uptime % 1000U;
 
 	uptime /= 1000U;
 	uint8_t se = uptime % 60U;
@@ -143,7 +143,7 @@ static void min_alarm_handler(const struct device *dev,
 	printk("%s: adj %d.%09lu, uptime %u:%02u:%02u.%03u, clk err %d ppm\n",
 	       format_time(time, -1),
 	       (uint32_t)(ts->tv_sec - time), ts->tv_nsec,
-	       hr, mn, se, us, err_ppm);
+	       hr, mn, se, ms, err_ppm);
 }
 
 struct maxim_ds3231_alarm sec_alarm;

@@ -174,8 +174,7 @@ int mqtt_client_websocket_disconnect(struct mqtt_client *client)
 
 	ret = websocket_disconnect(client->transport.websocket.sock);
 	if (ret < 0) {
-		NET_ERR("Websocket disconnect failed (%d)", ret);
-		return ret;
+		NET_DBG("Websocket disconnect failed (%d)", ret);
 	}
 
 	if (client->transport.type == MQTT_TRANSPORT_NON_SECURE_WEBSOCKET) {

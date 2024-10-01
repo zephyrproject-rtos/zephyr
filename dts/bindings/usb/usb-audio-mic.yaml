@@ -23,13 +23,19 @@ properties:
     type: string
     description: |
       Type of endpoint synchronization for IN devices.
-      Default value is Sychronous.
+      Default value is Synchronous.
       Adaptive is not supported.
     enum:
       - "No Synchronization"
       - "Asynchronous"
       - "Adaptive"
       - "Synchronous"
+  sample-rate-hz:
+    type: int
+    default: 48000
+  polling-interval:
+    type: int
+    default: 1
   # channel configuration options
   channel-l:
     type: boolean

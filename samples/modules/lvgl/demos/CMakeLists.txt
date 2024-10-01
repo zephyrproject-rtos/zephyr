@@ -81,3 +81,10 @@ target_sources_ifdef(CONFIG_LV_USE_DEMO_BENCHMARK app PRIVATE
 target_sources_ifdef(CONFIG_LV_USE_DEMO_STRESS app PRIVATE
     ${LVGL_DIR}/demos/stress/lv_demo_stress.c
 )
+
+target_sources_ifdef(CONFIG_LV_USE_DEMO_WIDGETS app PRIVATE
+    ${LVGL_DIR}/demos/widgets/assets/img_clothes.c
+    ${LVGL_DIR}/demos/widgets/assets/img_demo_widgets_avatar.c
+    ${LVGL_DIR}/demos/widgets/assets/img_lvgl_logo.c
+    ${LVGL_DIR}/demos/widgets/lv_demo_widgets.c
+)

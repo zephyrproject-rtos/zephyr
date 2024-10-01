@@ -117,4 +117,13 @@ struct gcov_info {
 
 };
 
+/*
+ * These functions are in the header for easy access for external interface
+ * reporting since they aren't useful without the structs in this header.
+ */
+struct gcov_info *gcov_get_list_head(void);
+size_t gcov_populate_buffer(uint8_t *buffer, struct gcov_info *info);
+size_t gcov_calculate_buff_size(struct gcov_info *info);
+void gcov_reset_all_counts(void);
+
 #endif /* _COVERAGE_H_ */

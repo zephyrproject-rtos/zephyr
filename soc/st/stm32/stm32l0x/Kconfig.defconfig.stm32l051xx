@@ -1,0 +1,11 @@
+# ST Microelectronics STM32L051XX MCU
+
+# Copyright (c) 2021 Nomono AS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32L051XX
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_STM32L051XX

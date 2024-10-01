@@ -166,7 +166,13 @@ class Node:
         return prop
 
     def _del(self) -> None:
-        # Removes the node from the tree
+        # Removes the node from the tree. When called on the root node,
+        # this method will leave it empty but still part of the tree.
+
+        if self.parent is None:
+            self.nodes.clear()
+            self.props.clear()
+            return
         self.parent.nodes.pop(self.name)  # type: ignore
 
     def __str__(self):
@@ -2029,7 +2035,7 @@ def to_nums(data: bytes, length: int = 4, signed: bool = False) -> List[int]:
 
     if len(data) % length:
         _err(f"{data!r} is {len(data)} bytes long, "
-             f"expected a length that's a a multiple of {length}")
+             f"expected a length that's a multiple of {length}")
 
     return [int.from_bytes(data[i:i + length], "big", signed=signed)
             for i in range(0, len(data), length)]

@@ -15,7 +15,6 @@ if I2C
 
 config I2C_SHELL
 	bool "I2C Shell"
-	default y
 	depends on SHELL
 	help
 	  Enable I2C Shell.
@@ -55,14 +54,47 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config HAS_I2C_RTIO
+	bool
+	help
+	  This option must be selected by I2C controller drivers that optionally implement the RTIO
+	  interface.
+
 config I2C_RTIO
 	bool "I2C RTIO API"
+	depends on HAS_I2C_RTIO
+	select RTIO
 	help
 	  API and implementations of I2C for RTIO
+
+if I2C_RTIO
+config I2C_RTIO_SQ_SIZE
+	int "Submission queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+config I2C_RTIO_CQ_SIZE
+	int "Completion queue size for blocking calls"
+	default 4
+	help
+	  Blocking i2c calls when I2C_RTIO is enabled are copied into a per driver
+	  submission queue. The queue depth determines the number of possible i2c_msg
+	  structs that may be in the array given to i2c_transfer. A sensible default
+	  is going to be 4 given the device address, register address, and a value
+	  to be read or written.
+
+endif # I2C_RTIO
+
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
 source "drivers/i2c/Kconfig.b91"
+source "drivers/i2c/Kconfig.bcm_iproc"
 source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.dw"
 source "drivers/i2c/Kconfig.esp32"
@@ -94,6 +126,10 @@ source "drivers/i2c/Kconfig.xilinx_axi"
 source "drivers/i2c/Kconfig.mchp_mss"
 source "drivers/i2c/Kconfig.sedi"
 source "drivers/i2c/Kconfig.ambiq"
+source "drivers/i2c/Kconfig.numaker"
+source "drivers/i2c/Kconfig.mcux"
+source "drivers/i2c/Kconfig.ene"
+source "drivers/i2c/Kconfig.max32"
 
 config I2C_INIT_PRIORITY
 	int "Init priority"
@@ -136,19 +172,12 @@ config I2C_MCUX
 	help
 	  Enable the mcux I2C driver.
 
-config I2C_MCUX_FLEXCOMM
-	bool "MCUX FLEXCOMM I2C driver"
-	default y
-	depends on DT_HAS_NXP_LPC_I2C_ENABLED
-	select PINCTRL
-	help
-	  Enable the mcux flexcomm i2c driver.
-
 config I2C_MCUX_LPI2C
 	bool "MCUX LPI2C driver"
 	default y
 	depends on DT_HAS_NXP_IMX_LPI2C_ENABLED
 	depends on CLOCK_CONTROL
+	select HAS_I2C_RTIO
 	select PINCTRL
 	help
 	  Enable the mcux LPI2C driver.
@@ -195,5 +224,12 @@ config I2C_RV32M1_LPI2C
 	select PINCTRL
 	help
 	  Enable the RV32M1 LPI2C driver.
+
+config GPIO_I2C_SWITCH
+	bool "GPIO controlled I2C bus switch"
+	default y
+	depends on DT_HAS_GPIO_I2C_SWITCH_ENABLED
+	help
+	  Enable GPIO controlled I2C bus switch driver.
 
 endif # I2C

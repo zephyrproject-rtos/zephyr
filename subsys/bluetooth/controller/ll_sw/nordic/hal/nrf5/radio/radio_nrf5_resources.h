@@ -15,11 +15,12 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define NRF_RADIO_TXRX_END_EVENT EVENTS_END
+#define NRF_RADIO_TRX_END_EVENT EVENTS_END
+
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
-#define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_END_DISABLE_Msk
+#define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
 
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
@@ -39,11 +40,12 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define NRF_RADIO_TXRX_END_EVENT EVENTS_END
+#define NRF_RADIO_TRX_END_EVENT EVENTS_END
+
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
-#define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_END_DISABLE_Msk
+#define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
 
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 2
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE2
@@ -55,11 +57,12 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define NRF_RADIO_TXRX_END_EVENT EVENTS_END
+#define NRF_RADIO_TRX_END_EVENT EVENTS_END
+
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
-#define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_END_DISABLE_Msk
+#define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
 
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 #define HAL_EVENT_TIMER_SAMPLE_TASK NRF_TIMER_TASK_CAPTURE3
@@ -81,7 +84,7 @@
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 /* Allocate 2 adjacent channels for PHYEND delay compensation. Use the same channels as for
  * PHY CODED S2. The CTEINLINE may not be enabled for PHY CODED so PHYEND event is generated
- * at the same instant as END event. Hence the channels are uesed interchangeably.
+ * at the same instant as END event. Hence the channels are used interchangeably.
  * That saves from use of another timer.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP_PHYEND_DELAY_COMPENSATION_BASE 2
@@ -95,7 +98,7 @@
  * including CTE EVENTS_PHYEND event is generated at very end of a PDU. In case there is no CTE in
  * a PDU the EVENTS_PHYEND event is generated in the same instant as EVENTS_END event.
  */
-#define NRF_RADIO_TXRX_END_EVENT EVENTS_PHYEND
+#define NRF_RADIO_TRX_END_EVENT EVENTS_PHYEND
 
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_PHYEND to EVENTS_DISABLE.
  * This is a mask for SOC that has Direction Finding Extension in a Radio peripheral.
@@ -103,9 +106,9 @@
  * In case there is a CTE in a PDU then EVENTS_PHYEND event is generated after the CTE.
  * If there is no CTE, it is generated in the same instant as EVENTS_END.
  */
-#define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk
 
-/* Delay of EVENTS_PHYEND event on receive PDU without CTE inclded when CTEINLINE is enabled */
+/* Delay of EVENTS_PHYEND event on receive PDU without CTE included when CTEINLINE is enabled */
 #define RADIO_EVENTS_PHYEND_DELAY_US 16
 
 /* Delay of CCM TASKS_CRYPT start in number of bits for Radio Bit counter */
@@ -116,11 +119,12 @@
  * or reception of a PDU on air. In case of regular PDU it is generated when last bit of CRC is
  * received or transmitted.
  */
-#define NRF_RADIO_TXRX_END_EVENT EVENTS_END
+#define NRF_RADIO_TRX_END_EVENT EVENTS_END
+
 /* Wrapper for RADIO_SHORTS mask connecting EVENTS_END to EVENTS_DISABLE.
  * This is a default shortcut used to automatically disable Radio after end of PDU.
  */
-#define NRF_RADIO_SHORTS_PDU_END_DISABLE RADIO_SHORTS_END_DISABLE_Msk
+#define NRF_RADIO_SHORTS_TRX_END_DISABLE_Msk HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk
 #endif /* !CONFIG_BT_CTLR_DF */
 
 #define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3

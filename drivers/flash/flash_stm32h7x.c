@@ -14,8 +14,13 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <stm32h7rsxx_ll_bus.h>
+#include <stm32h7rsxx_ll_utils.h>
+#else
 #include <stm32h7xx_ll_bus.h>
 #include <stm32h7xx_ll_utils.h>
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 #include "flash_stm32.h"
 #include "stm32_hsem.h"
@@ -117,13 +122,40 @@ static int flash_stm32_check_status(const struct device *dev)
 	 * ECC errors. Corrected data is returned for single ECC
 	 * errors, so in this case we just log a warning.
 	 */
-	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
-				      & ~FLASH_FLAG_SNECCERR_BANK1);
 #ifdef DUAL_BANK
 	uint32_t const error_bank2 = (FLASH_FLAG_ALL_ERRORS_BANK2
 				      & ~FLASH_FLAG_SNECCERR_BANK2);
 #endif
 	uint32_t sr;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	uint32_t const error_bank = (FLASH_FLAG_ECC_ERRORS
+				      & ~FLASH_FLAG_SNECCERR
+				      & ~FLASH_FLAG_DBECCERR);
+
+
+	/* Read the Interrupt status flags. */
+	sr = regs->ISR;
+	if (sr & (FLASH_FLAG_SNECCERR)) {
+		uint32_t word = regs->ECCSFADDR & FLASH_ECCSFADDR_SEC_FADD;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+
+	if (sr & (FLASH_FLAG_DBECCERR)) {
+		uint32_t word = regs->ECCDFADDR & FLASH_ECCDFADDR_DED_FADD;
+
+		LOG_WRN("Bank%d ECC error at 0x%08x", 1,
+			word * 4 * FLASH_NB_32BITWORD_IN_FLASHWORD);
+	}
+
+	/* Clear the ECC flags (including FA) */
+	regs->ICR = FLASH_FLAG_ECC_ERRORS;
+	if (sr & error_bank) {
+#else
+	uint32_t const error_bank1 = (FLASH_FLAG_ALL_ERRORS_BANK1
+				      & ~FLASH_FLAG_SNECCERR_BANK1);
 
 	/* Read the status flags. */
 	sr = regs->SR1;
@@ -135,7 +167,9 @@ static int flash_stm32_check_status(const struct device *dev)
 	}
 	/* Clear the flags (including FA1R) */
 	regs->CCR1 = FLASH_FLAG_ALL_BANK1;
+
 	if (sr & error_bank1) {
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		LOG_ERR("Status Bank%d: 0x%08x", 1, sr);
 		return -EIO;
 	}
@@ -307,7 +341,7 @@ static int write_ndwords(const struct device *dev,
 			 uint8_t n)
 {
 	volatile uint64_t *flash = (uint64_t *)(offset
-						+ CONFIG_FLASH_BASE_ADDRESS);
+						+ FLASH_STM32_BASE_ADDRESS);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -451,7 +485,7 @@ static void flash_stm32h7_flush_caches(const struct device *dev,
 		return; /* Cache not enabled */
 	}
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS
 						  + offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
@@ -574,7 +608,7 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset,
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 
-	memcpy(data, (uint8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
+	memcpy(data, (uint8_t *) FLASH_STM32_BASE_ADDRESS + offset, len);
 
 	__set_FAULTMASK(0);
 	SCB->CCR &= ~SCB_CCR_BFHFNMIGN_Msk;

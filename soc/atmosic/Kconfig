@@ -1,0 +1,9 @@
+# Copyright (c) 2021-2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ATM
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_ATM

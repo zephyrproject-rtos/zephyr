@@ -109,7 +109,7 @@ static inline void trigger_irq(int irq)
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #define VECTOR_MASK 0xFF
 #else
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 #define LOAPIC_ICR_IPI_TEST  0x00004000U
 #endif
 
@@ -166,6 +166,13 @@ static inline void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
+#if defined(CONFIG_NUCLEI_ECLIC) || defined(CONFIG_NRFX_CLIC)
+void riscv_clic_irq_set_pending(uint32_t irq);
+static inline void trigger_irq(int irq)
+{
+	riscv_clic_irq_set_pending(irq);
+}
+#else
 static inline void trigger_irq(int irq)
 {
 	uint32_t mip;
@@ -174,7 +181,7 @@ static inline void trigger_irq(int irq)
 			  : "=r" (mip)
 			  : "r" (1 << irq));
 }
-
+#endif
 #elif defined(CONFIG_XTENSA)
 static inline void trigger_irq(int irq)
 {

@@ -44,19 +44,6 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
 
 #endif /* CONFIG_NEWLIB_LIBC */
 
-/* Handle deprecated malloc arena size configuration values */
-#ifdef CONFIG_COMMON_LIBC_MALLOC
-# if defined(CONFIG_MINIMAL_LIBC) && (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE != -2)
-#  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
-#  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
-#  warning Using deprecated setting CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE
-# elif defined(CONFIG_PICOLIBC) && (CONFIG_PICOLIBC_HEAP_SIZE != -2)
-#  undef CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
-#  define CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE CONFIG_PICOLIBC_HEAP_SIZE
-#  warning Using deprecated setting CONFIG_PICOLIBC_HEAP_SIZE
-# endif
-#endif
-
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_COMMON_LIBC_MALLOC
 
@@ -74,7 +61,7 @@ __syscall size_t zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
  *  - If we have an MPU that requires power of two alignment, the heap bounds
  *    must be specified in Kconfig via CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE.
  *  - Otherwise, the heap arena on most arches starts at a suitably
- *    aligned base addreess after the `_end` linker symbol, through to the end
+ *    aligned base address after the `_end` linker symbol, through to the end
  *    of system RAM.
  */
 #if (!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) || \
@@ -109,7 +96,7 @@ extern struct k_mem_partition z_libc_partition;
 #endif
 #endif /* CONFIG_USERSPACE */
 
-#include <syscalls/libc-hooks.h>
+#include <zephyr/syscalls/libc-hooks.h>
 
 /* C library memory partitions */
 #define Z_LIBC_DATA K_APP_DMEM(z_libc_partition)

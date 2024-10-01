@@ -12,7 +12,7 @@ operation of the stacks and how they were implemented.
 
    overview.rst
    net-stack-architecture.rst
-   networking-api-usage.rst
+   net_config_guide.rst
    networking_with_host.rst
    network_monitoring.rst
    api/index.rst

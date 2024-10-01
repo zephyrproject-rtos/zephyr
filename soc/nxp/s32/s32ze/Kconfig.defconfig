@@ -1,0 +1,32 @@
+# NXP S32ZE MCUs series
+
+# Copyright 2022,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_S32ZE
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 991
+
+config FPU
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 2000000
+
+config MAIN_STACK_SIZE
+	default 1024
+
+if ETH_DRIVER && NET_L2_ETHERNET
+
+# NETC drops TCP/UDP packets with invalid checksum
+config NET_TCP_CHECKSUM
+	default n
+
+config NET_UDP_CHECKSUM
+	default n
+
+endif # ETH_DRIVER && NET_L2_ETHERNET
+
+endif # SOC_SERIES_S32ZE

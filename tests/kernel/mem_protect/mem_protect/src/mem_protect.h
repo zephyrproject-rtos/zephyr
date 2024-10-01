@@ -67,6 +67,8 @@ static inline void set_fault_valid(bool valid)
 #else
 #define MEM_REGION_ALLOC (4)
 #endif
+#elif defined(CONFIG_XTENSA)
+#define MEM_REGION_ALLOC (4096)
 #else
 #error "Test suite not compatible for the given architecture"
 #endif
@@ -91,6 +93,6 @@ static inline void set_fault_valid(bool valid)
 
 __syscall struct k_heap *ret_resource_pool_ptr(void);
 
-#include <syscalls/mem_protect.h>
+#include <zephyr/syscalls/mem_protect.h>
 
 #endif /* _TEST_SYSCALLS_H_ */

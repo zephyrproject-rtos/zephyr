@@ -34,12 +34,12 @@ Build net-mgmt socket sample application like this:
    :goals: build
    :compact:
 
-Example building for the native_posix board:
+Example building for the native_sim board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/net_mgmt
    :host-os: unix
-   :board: native_posix
+   :board: native_sim
    :conf: prj.conf
    :goals: run
    :compact:

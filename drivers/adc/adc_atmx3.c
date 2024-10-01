@@ -521,7 +521,8 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 
 		result = c1_nominal * (sample_x2_signed * sample_scaling);
 	}
-	LOG_INF("raw: %x, samplie_x2: %u, result: %f V", raw_fifo.value, sample_x2_signed, result);
+	LOG_INF("raw: %x, samplie_x2: %u, result: %f V", raw_fifo.value, sample_x2_signed,
+		(double)result);
 
 	return (uint16_t)(result * 1000.0f);
 }

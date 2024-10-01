@@ -1,0 +1,18 @@
+# Copyright (c) 2024
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nucleo_h533re
+name: ST Nucleo H533RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 272
+flash: 512
+supported:
+  - gpio
+  - watchdog
+  - pwm
+  - rtc
+  - adc
+vendor: st

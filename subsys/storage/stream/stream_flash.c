@@ -76,9 +76,18 @@ static int settings_direct_loader(const char *key, size_t len,
 
 int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 {
+#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
 	int rc;
 	struct flash_pages_info page;
+#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
+	/* There are both types of devices */
+	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
 
+	/* Stream flash does not rely on erase, it does it when device needs it */
+	if (!(flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT)) {
+		return 0;
+	}
+#endif
 	rc = flash_get_page_info_by_offs(ctx->fdev, off, &page);
 	if (rc != 0) {
 		LOG_ERR("Error %d while getting page info", rc);
@@ -100,6 +109,9 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
 	}
 
 	return rc;
+#else
+	return 0;
+#endif
 }
 
 #endif /* CONFIG_STREAM_FLASH_ERASE */
@@ -128,10 +140,10 @@ static int flash_sync(struct stream_flash_ctx *ctx)
 		}
 	}
 
-	fill_length = flash_get_write_block_size(ctx->fdev);
+	fill_length = ctx->write_block_size;
 	if (ctx->buf_bytes % fill_length) {
 		fill_length -= ctx->buf_bytes % fill_length;
-		filler = flash_get_parameters(ctx->fdev)->erase_value;
+		filler = ctx->erase_value;
 
 		memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
 	} else {
@@ -249,6 +261,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		      uint8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb)
 {
+	const struct flash_parameters *params;
 	if (!ctx || !fdev || !buf) {
 		return -EFAULT;
 	}
@@ -267,7 +280,10 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		.total_size = 0
 	};
 
-	if (buf_len % flash_get_write_block_size(fdev)) {
+	params = flash_get_parameters(fdev);
+	ctx->write_block_size = params->write_block_size;
+
+	if (buf_len % ctx->write_block_size) {
 		LOG_ERR("Buffer size is not aligned to minimal write-block-size");
 		return -EFAULT;
 	}
@@ -281,10 +297,11 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 	}
 
 	if ((offset + size) > inspect_flash_ctx.total_size ||
-	    offset % flash_get_write_block_size(fdev)) {
+	    offset % ctx->write_block_size) {
 		LOG_ERR("Incorrect parameter");
 		return -EFAULT;
 	}
+
 
 	ctx->fdev = fdev;
 	ctx->buf = buf;
@@ -299,6 +316,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 #ifdef CONFIG_STREAM_FLASH_ERASE
 	ctx->last_erased_page_start_offset = -1;
 #endif
+	ctx->erase_value = params->erase_value;
 
 	return 0;
 }

@@ -130,6 +130,8 @@ class BuildConfiguration:
 
     Kconfig configuration values are available (parsed from .config).'''
 
+    config_prefix = 'CONFIG'
+
     def __init__(self, build_dir: str):
         self.build_dir = build_dir
         self.options: Dict[str, Union[str, int]] = {}
@@ -153,8 +155,9 @@ class BuildConfiguration:
 
     def _parse(self):
         filename = self.path
-        opt_value = re.compile('^(?P<option>CONFIG_[A-Za-z0-9_]+)=(?P<value>.*)$')
-        not_set = re.compile('^# (?P<option>CONFIG_[A-Za-z0-9_]+) is not set$')
+
+        opt_value = re.compile(f'^(?P<option>{self.config_prefix}_[A-Za-z0-9_]+)=(?P<value>.*)$')
+        not_set = re.compile(f'^# (?P<option>{self.config_prefix}_[A-Za-z0-9_]+) is not set$')
 
         with open(filename, 'r') as f:
             for line in f:
@@ -187,6 +190,22 @@ class BuildConfiguration:
                     # '# CONFIG_FOO is not set' means a boolean option is false.
                     self.options[match.group('option')] = False
 
+class SysbuildConfiguration(BuildConfiguration):
+    '''This helper class provides access to sysbuild-time configuration.
+
+    Configuration options can be read as if the object were a dict,
+    either object['SB_CONFIG_FOO'] or object.get('SB_CONFIG_FOO').
+
+    Kconfig configuration values are available (parsed from .config).'''
+
+    config_prefix = 'SB_CONFIG'
+
+    def _parse(self):
+        # If the build does not use sysbuild, skip parsing the file.
+        if not os.path.exists(self.path):
+            return
+        super()._parse()
+
 class MissingProgram(FileNotFoundError):
     '''FileNotFoundError subclass for missing program dependencies.
 
@@ -200,7 +219,7 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
-_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach'}
+_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot'}
 
 @dataclass
 class RunnerCaps:
@@ -212,7 +231,7 @@ class RunnerCaps:
     Available capabilities:
 
     - commands: set of supported commands; default is {'flash',
-      'debug', 'debugserver', 'attach'}.
+      'debug', 'debugserver', 'attach', 'simulate', 'robot'}.
 
     - dev_id: whether the runner supports device identifiers, in the form of an
       -i, --dev-id option. This is useful when the user has multiple debuggers
@@ -236,6 +255,10 @@ class RunnerCaps:
     - reset: whether the runner supports a --reset option, which
       resets the device after a flash operation is complete.
 
+    - extload: whether the runner supports a --extload option, which
+      must be given one time and is passed on to the underlying tool
+      that the runner wraps.
+
     - tool_opt: whether the runner supports a --tool-opt (-O) option, which
       can be given multiple times and is passed on to the underlying tool
       that the runner wraps.
@@ -243,6 +266,8 @@ class RunnerCaps:
     - file: whether the runner supports a --file option, which specifies
       exactly the file that should be used to flash, overriding any default
       discovered in the build directory.
+
+    - hide_load_files: whether the elf/hex/bin file arguments should be hidden.
     '''
 
     commands: Set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
@@ -250,8 +275,10 @@ class RunnerCaps:
     flash_addr: bool = False
     erase: bool = False
     reset: bool = False
+    extload: bool = False
     tool_opt: bool = False
     file: bool = False
+    hide_load_files: bool = False
 
     def __post_init__(self):
         if not self.commands.issubset(_RUNNERCAPS_COMMANDS):
@@ -362,7 +389,7 @@ class ZephyrBinaryRunner(abc.ABC):
     This class provides an API for these commands. Every subclass is
     called a 'runner' for short. Each runner has a name (like
     'pyocd'), and declares commands it can handle (like
-    'flash'). Boards (like 'nrf52dk_nrf52832') declare which runner(s)
+    'flash'). Boards (like 'nrf52dk/nrf52832') declare which runner(s)
     are compatible with them to the Zephyr build system, along with
     information on how to configure the runner to work with the board.
 
@@ -506,18 +533,23 @@ class ZephyrBinaryRunner(abc.ABC):
             parser.add_argument('-f', '--file', help=argparse.SUPPRESS)
             parser.add_argument('-t', '--file-type', help=argparse.SUPPRESS)
 
-        parser.add_argument('--elf-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
-        parser.add_argument('--hex-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
-        parser.add_argument('--bin-file',
-                        metavar='FILE',
-                        action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
-                        help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
+        if caps.hide_load_files:
+            parser.add_argument('--elf-file', help=argparse.SUPPRESS)
+            parser.add_argument('--hex-file', help=argparse.SUPPRESS)
+            parser.add_argument('--bin-file', help=argparse.SUPPRESS)
+        else:
+            parser.add_argument('--elf-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.elf' if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--hex-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.hex' if not caps.file else 'Deprecated, use -f/--file instead.')
+            parser.add_argument('--bin-file',
+                                metavar='FILE',
+                                action=(partial(depr_action, cls=cls, replacement='-f/--file') if caps.file else None),
+                                help='path to zephyr.bin' if not caps.file else 'Deprecated, use -f/--file instead.')
 
         parser.add_argument('--erase', '--no-erase', nargs=0,
                             action=_ToggleAction,
@@ -530,6 +562,10 @@ class ZephyrBinaryRunner(abc.ABC):
                             help=("reset device after flashing, or don't. "
                                   "Default action depends on each specific runner."
                                   if caps.reset else argparse.SUPPRESS))
+
+        parser.add_argument('--extload', dest='extload',
+                            help=(cls.extload_help() if caps.extload
+                                  else argparse.SUPPRESS))
 
         parser.add_argument('-O', '--tool-opt', dest='tool_opt',
                             default=[], action='append',
@@ -561,6 +597,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--erase')
         if args.reset and not caps.reset:
             _missing_cap(cls, '--reset')
+        if args.extload and not caps.extload:
+            _missing_cap(cls, '--extload')
         if args.tool_opt and not caps.tool_opt:
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
@@ -635,6 +673,13 @@ class ZephyrBinaryRunner(abc.ABC):
         return self._build_conf
 
     @property
+    def sysbuild_conf(self) -> SysbuildConfiguration:
+        '''Get a SysbuildConfiguration for the sysbuild directory.'''
+        if not hasattr(self, '_sysbuild_conf'):
+            self._sysbuild_conf = SysbuildConfiguration(os.path.dirname(self.cfg.build_dir))
+        return self._sysbuild_conf
+
+    @property
     def thread_info_enabled(self) -> bool:
         '''Returns True if self.build_conf has
         CONFIG_DEBUG_THREAD_INFO enabled.
@@ -650,6 +695,15 @@ class ZephyrBinaryRunner(abc.ABC):
                   connected.'''
 
     @classmethod
+    def extload_help(cls) -> str:
+        ''' Get the ArgParse help text for the --extload option.'''
+        return '''External loader to be used by stm32cubeprogrammer
+                  to program the targeted external memory.
+                  The runner requires the external loader (*.stldr) filename.
+                  This external loader (*.stldr) must be located within
+                  STM32CubeProgrammer/bin/ExternalLoader directory.'''
+
+    @classmethod
     def tool_opt_help(cls) -> str:
         ''' Get the ArgParse help text for the --tool-opt option.'''
         return '''Option to pass on to the underlying tool used
@@ -658,24 +712,26 @@ class ZephyrBinaryRunner(abc.ABC):
                   in the order they appear on the command line.'''
 
     @staticmethod
-    def require(program: str) -> str:
+    def require(program: str, path: Optional[str] = None) -> str:
         '''Require that a program is installed before proceeding.
 
         :param program: name of the program that is required,
                         or path to a program binary.
+        :param path:    PATH where to search for the program binary.
+                        By default check on the system PATH.
 
         If ``program`` is an absolute path to an existing program
         binary, this call succeeds. Otherwise, try to find the program
-        by name on the system PATH.
+        by name on the system PATH or in the given PATH, if provided.
 
         If the program can be found, its path is returned.
         Otherwise, raises MissingProgram.'''
-        ret = shutil.which(program)
+        ret = shutil.which(program, path=path)
         if ret is None:
             raise MissingProgram(program)
         return ret
 
-    def run_server_and_client(self, server, client):
+    def run_server_and_client(self, server, client, **kwargs):
         '''Run a server that ignores SIGINT, and a client that handles it.
 
         This routine portably:
@@ -684,20 +740,22 @@ class ZephyrBinaryRunner(abc.ABC):
           SIGINT
         - runs ``client`` in a subprocess while temporarily ignoring SIGINT
         - cleans up the server after the client exits.
+        - the keyword arguments, if any, will be passed down to both server and
+          client subprocess calls
 
         It's useful to e.g. open a GDB server and client.'''
-        server_proc = self.popen_ignore_int(server)
+        server_proc = self.popen_ignore_int(server, **kwargs)
         try:
-            self.run_client(client)
+            self.run_client(client, **kwargs)
         finally:
             server_proc.terminate()
             server_proc.wait()
 
-    def run_client(self, client):
+    def run_client(self, client, **kwargs):
         '''Run a client that handles SIGINT.'''
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
-            self.check_call(client)
+            self.check_call(client, **kwargs)
         finally:
             signal.signal(signal.SIGINT, previous)
 

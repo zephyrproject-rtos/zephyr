@@ -49,6 +49,20 @@
 		status = "okay";
 	};
 
+	fakedeferdriver@E7000000 {
+		compatible = "fakedeferdriver";
+		reg = <0x0 0xE7000000 0x0 0x2000>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
+	fakedeferdriver@E8000000 {
+		compatible = "fakedeferdriver";
+		reg = <0x0 0xE8000000 0x0 0x2000>;
+		status = "okay";
+		zephyr,deferred-init;
+	};
+
 	fakedomain_0: fakedomain_0 {
 		compatible = "fakedomain";
 		status = "okay";

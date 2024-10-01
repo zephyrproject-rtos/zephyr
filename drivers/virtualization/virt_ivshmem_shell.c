@@ -23,8 +23,13 @@ K_THREAD_STACK_DEFINE(doorbell_stack, STACK_SIZE);
 static bool doorbell_started;
 static struct k_thread doorbell_thread;
 
-static void doorbell_notification_thread(const struct shell *sh)
+static void doorbell_notification_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct shell *sh = p1;
+
 	while (1) {
 		unsigned int signaled;
 		int vector;
@@ -174,7 +179,7 @@ static int cmd_ivshmem_get_notified(const struct shell *sh,
 		tid = k_thread_create(
 			&doorbell_thread,
 			doorbell_stack, STACK_SIZE,
-			(k_thread_entry_t)doorbell_notification_thread,
+			doorbell_notification_thread,
 			(void *)sh, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 		if (!tid) {

@@ -78,7 +78,7 @@ static unsigned int get_exception(unsigned int vector)
 /*
  * Debug exception handler.
  */
-static void z_gdb_interrupt(unsigned int vector, z_arch_esf_t *esf)
+static void z_gdb_interrupt(unsigned int vector, struct arch_esf *esf)
 {
 	debug_ctx.exception = get_exception(vector);
 
@@ -174,12 +174,8 @@ size_t arch_gdb_reg_readone(struct gdb_ctx *ctx, uint8_t *buf, size_t buflen,
 		 * registers instead of stopping in the middle of
 		 * "info registers all".
 		 */
-		if (buflen >= 2) {
-			memcpy(buf, "xx", 2);
-			ret = 2;
-		} else {
-			ret = 0;
-		}
+		memcpy(buf, "xx", 2);
+		ret = 2;
 	} else {
 		ret = bin2hex((const uint8_t *)&(ctx->registers[regno]),
 			      sizeof(ctx->registers[regno]),
@@ -216,19 +212,43 @@ size_t arch_gdb_reg_writeone(struct gdb_ctx *ctx, uint8_t *hex, size_t hexlen,
 	return ret;
 }
 
-static __used void z_gdb_debug_isr(z_arch_esf_t *esf)
+static __used void z_gdb_debug_isr(struct arch_esf *esf)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:enter %s (IV_DEBUG)\n", __func__);
+#endif
+
 	z_gdb_interrupt(IV_DEBUG, esf);
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:exit %s (IV_DEBUG)\n", __func__);
+#endif
 }
 
-static __used void z_gdb_break_isr(z_arch_esf_t *esf)
+static __used void z_gdb_break_isr(struct arch_esf *esf)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:enter %s (IV_BREAKPOINT)\n", __func__);
+#endif
+
 	z_gdb_interrupt(IV_BREAKPOINT, esf);
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:exit %s (IV_BREAKPOINT)\n", __func__);
+#endif
 }
 
 void arch_gdb_init(void)
 {
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s awaits GDB connection\n", __func__);
+#endif
+
 	__asm__ volatile ("int3");
+
+#ifdef CONFIG_GDBSTUB_TRACE
+	printk("gdbstub:%s GDB is connected\n", __func__);
+#endif
 }
 
 /* Hook current IDT. */

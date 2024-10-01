@@ -35,7 +35,7 @@
 #include "at_apb_uart_regs_core_macro.h"
 #endif
 
-#if defined(CONFIG_SOC_SERIES_ATMx2) || defined(CONFIG_SOC_SERIES_ATM33) || \
+#if defined(CONFIG_SOC_SERIES_ATMX2) || defined(CONFIG_SOC_SERIES_ATM33) || \
 	(defined(CONFIG_SOC_SERIES_ATM34) && !defined(CMSDK_AT_UART_STATE__RX_IDLE__READ))
 #define RTS_GPIO_REQUIRED 1
 #endif
@@ -663,7 +663,7 @@ static int uart_atm_fifo_read(const struct device *dev, uint8_t *rx_data, const 
 		rx_data[num_rx++] = (unsigned char)dev_cfg->uart->data;
 	}
 
-	/**
+	/*
 	 * Do not forget to clear the RX interrupt when the size is same as
 	 * available data in the RX buffer.
 	 */

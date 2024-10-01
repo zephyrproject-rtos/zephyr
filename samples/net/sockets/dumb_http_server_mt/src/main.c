@@ -20,6 +20,12 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 
 #define MY_PORT 8080
 
+/* If accept returns an error, then we are probably running
+ * out of resource. Sleep a small amount of time in order the
+ * system to cool down.
+ */
+#define ACCEPT_ERROR_WAIT 100 /* in ms */
+
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define STACK_SIZE 4096
 
@@ -268,8 +274,9 @@ static int process_tcp(int *sock, int *accepted)
 	client = accept(*sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
 	if (client < 0) {
-		LOG_ERR("Error in accept %d, stopping server", -errno);
-		return -errno;
+		LOG_DBG("Error in accept %d, ignored", -errno);
+		k_msleep(ACCEPT_ERROR_WAIT);
+		return 0;
 	}
 
 	slot = get_free_slot(accepted);
@@ -287,7 +294,7 @@ static int process_tcp(int *sock, int *accepted)
 			&tcp6_handler_thread[slot],
 			tcp6_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp6_handler_stack[slot]),
-			(k_thread_entry_t)client_conn_handler,
+			client_conn_handler,
 			INT_TO_POINTER(slot),
 			&accepted[slot],
 			&tcp6_handler_tid[slot],
@@ -302,7 +309,7 @@ static int process_tcp(int *sock, int *accepted)
 			&tcp4_handler_thread[slot],
 			tcp4_handler_stack[slot],
 			K_THREAD_STACK_SIZEOF(tcp4_handler_stack[slot]),
-			(k_thread_entry_t)client_conn_handler,
+			client_conn_handler,
 			INT_TO_POINTER(slot),
 			&accepted[slot],
 			&tcp4_handler_tid[slot],

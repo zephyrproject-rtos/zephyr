@@ -1,8 +1,0 @@
-# STM32F469I-DISCO board configuration
-
-# Copyright (c) 2016 Linaro Limited.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_STM32F469I_DISCO
-	bool "STM32F469I-DISCO Development Board"
-	depends on SOC_STM32F469XX

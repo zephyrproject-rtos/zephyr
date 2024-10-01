@@ -1,0 +1,21 @@
+identifier: slwrb4170a
+name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band Radio Board (SLWRB4170A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - gpio
+  - nvs
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

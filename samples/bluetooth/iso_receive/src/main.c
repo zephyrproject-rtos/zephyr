@@ -277,9 +277,19 @@ static struct bt_iso_big_sync_param big_sync_param = {
 	.bis_channels = bis,
 	.num_bis = BIS_ISO_CHAN_COUNT,
 	.bis_bitfield = (BIT_MASK(BIS_ISO_CHAN_COUNT) << 1),
-	.mse = 1,
+	.mse = BT_ISO_SYNC_MSE_ANY, /* any number of subevents */
 	.sync_timeout = 100, /* in 10 ms units */
 };
+
+static void reset_semaphores(void)
+{
+	k_sem_reset(&sem_per_adv);
+	k_sem_reset(&sem_per_sync);
+	k_sem_reset(&sem_per_sync_lost);
+	k_sem_reset(&sem_per_big_info);
+	k_sem_reset(&sem_big_sync);
+	k_sem_reset(&sem_big_sync_lost);
+}
 
 int main(void)
 {
@@ -328,6 +338,7 @@ int main(void)
 	printk("Success.\n");
 
 	do {
+		reset_semaphores();
 		per_adv_lost = false;
 
 		printk("Start scanning...");

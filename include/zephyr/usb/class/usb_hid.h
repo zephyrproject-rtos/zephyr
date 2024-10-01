@@ -14,6 +14,7 @@
 #define ZEPHYR_INCLUDE_USB_HID_CLASS_DEVICE_H_
 
 #include <zephyr/usb/class/hid.h>
+#include <zephyr/usb/usb_ch9.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,9 +54,7 @@ struct hid_ops {
 	 * the next transfer.
 	 */
 	hid_int_ready_callback int_in_ready;
-#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	hid_int_ready_callback int_out_ready;
-#endif
 };
 
 /**

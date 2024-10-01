@@ -137,6 +137,7 @@
 #define HCR_FMO_BIT		BIT(3)
 #define HCR_IMO_BIT		BIT(4)
 #define HCR_AMO_BIT		BIT(5)
+#define HCR_TGE_BIT		BIT(27)
 #define HCR_RW_BIT		BIT(31)
 
 /* System register interface to GICv3 */
@@ -170,7 +171,7 @@
 #define SGIR_AFF1_SHIFT		(16)
 #define SGIR_AFF2_SHIFT		(32)
 #define SGIR_AFF3_SHIFT		(48)
-#define SGIR_AFF_MASK		(0xf)
+#define SGIR_AFF_MASK		(0xff)
 #define SGIR_INTID_SHIFT	(24)
 #define SGIR_INTID_MASK		(0xf)
 #define SGIR_IRM_SHIFT		(40)

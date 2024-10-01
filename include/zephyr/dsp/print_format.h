@@ -13,7 +13,7 @@
  * @ingroup math_dsp
  * @defgroup math_printing Helper macros for printing Q values.
  *
- * Extends the existing inttypes headers for print formatting. Useage:
+ * Extends the existing inttypes headers for print formatting. Usage:
  * @code{c}
  * printk("Value=%" PRIq "\n", PRIq_arg(value, 6, 2));
  * @endcode

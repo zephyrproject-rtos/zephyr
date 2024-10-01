@@ -21,12 +21,13 @@ LOG_MODULE_REGISTER(sd, CONFIG_SD_LOG_LEVEL);
 /* Idle all cards on bus. Can be used to clear errors on cards */
 static inline int sd_idle(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 
 	/* Reset card with CMD0 */
 	cmd.opcode = SD_GO_IDLE_STATE;
 	cmd.arg = 0x0;
 	cmd.response_type = (SD_RSP_TYPE_NONE | SD_SPI_RSP_TYPE_R1);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }
@@ -34,13 +35,14 @@ static inline int sd_idle(struct sd_card *card)
 /* Sends CMD8 during SD initialization */
 static int sd_send_interface_condition(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 	int ret;
 	uint32_t resp;
 
 	cmd.opcode = SD_SEND_IF_COND;
 	cmd.arg = SD_IF_COND_VHS_3V3 | SD_IF_COND_CHECK;
 	cmd.response_type = (SD_RSP_TYPE_R7 | SD_SPI_RSP_TYPE_R7);
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	if (ret) {
@@ -70,13 +72,14 @@ static int sd_send_interface_condition(struct sd_card *card)
 /* Sends CMD59 to enable CRC checking for SD card in SPI mode */
 static int sd_enable_crc(struct sd_card *card)
 {
-	struct sdhc_command cmd = {0};
+	struct sdhc_command cmd;
 
 	/* CMD59 for CRC mode is only valid for SPI hosts */
 	__ASSERT_NO_MSG(card->host_props.is_spi);
 	cmd.opcode = SD_SPI_CRC_ON_OFF;
 	cmd.arg = 0x1; /* Enable CRC */
 	cmd.response_type = SD_SPI_RSP_TYPE_R1;
+	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	return sdhc_request(card->sdhc, &cmd, NULL);
 }

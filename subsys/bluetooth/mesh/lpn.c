@@ -13,7 +13,6 @@
 #include <zephyr/bluetooth/mesh.h>
 
 #include "crypto.h"
-#include "adv.h"
 #include "mesh.h"
 #include "net.h"
 #include "transport.h"
@@ -297,11 +296,11 @@ static void clear_friendship(bool force, bool disable)
 	if (!disable) {
 		lpn_set_state(BT_MESH_LPN_ENABLED);
 
+		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
+
 		if (!IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_enable();
 		}
-
-		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 	}
 
 	if (was_established) {
@@ -571,7 +570,6 @@ static void friend_response_received(struct bt_mesh_lpn *lpn)
 		lpn->fsn++;
 	}
 
-	bt_mesh_scan_disable();
 	lpn_set_state(BT_MESH_LPN_ESTABLISHED);
 	lpn->req_attempts = 0U;
 	lpn->sent_req = 0U;
@@ -582,6 +580,7 @@ static void friend_response_received(struct bt_mesh_lpn *lpn)
 	int32_t timeout = poll_timeout(lpn);
 
 	k_work_reschedule(&lpn->timer, K_MSEC(timeout));
+	bt_mesh_scan_disable();
 }
 
 void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
@@ -676,7 +675,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	err = send_friend_poll();
 	if (err) {
-		/* Will retry sending later */
+		LOG_WRN("LPN didn't succeed poll sending (err %d)", err);
 		for (int i = 0; i < ARRAY_SIZE(lpn->cred); i++) {
 			if (lpn->sub->keys[i].valid) {
 				bt_mesh_friend_cred_destroy(&lpn->cred[i]);
@@ -687,7 +686,6 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		lpn->recv_win = 0U;
 		lpn->queue_size = 0U;
-		return err;
 	}
 
 	return 0;
@@ -859,9 +857,9 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 {
 	if (lpn->established) {
 		LOG_WRN("No response from Friend during ReceiveWindow");
-		bt_mesh_scan_disable();
 		lpn_set_state(BT_MESH_LPN_ESTABLISHED);
 		k_work_reschedule(&lpn->timer, K_MSEC(POLL_RETRY_TIMEOUT));
+		bt_mesh_scan_disable();
 	} else {
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
@@ -905,19 +903,19 @@ static void lpn_timeout(struct k_work *work)
 		send_friend_req(lpn);
 		break;
 	case BT_MESH_LPN_REQ_WAIT:
-		bt_mesh_scan_enable();
 		k_work_reschedule(&lpn->timer, K_MSEC(lpn->adv_duration + FRIEND_REQ_SCAN));
 		lpn_set_state(BT_MESH_LPN_WAIT_OFFER);
+		bt_mesh_scan_enable();
 		break;
 	case BT_MESH_LPN_WAIT_OFFER:
 		LOG_WRN("No acceptable Friend Offers received");
-		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
-			bt_mesh_scan_disable();
-		}
-
 		lpn_set_state(BT_MESH_LPN_ENABLED);
 		lpn->sent_req = 0U;
 		k_work_reschedule(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
+
+		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
+			bt_mesh_scan_disable();
+		}
 		break;
 	case BT_MESH_LPN_ESTABLISHED:
 		if (lpn->req_attempts < REQ_ATTEMPTS(lpn)) {
@@ -941,8 +939,8 @@ static void lpn_timeout(struct k_work *work)
 	case BT_MESH_LPN_RECV_DELAY:
 		k_work_reschedule(&lpn->timer,
 				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn)));
-		bt_mesh_scan_enable();
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
+		bt_mesh_scan_enable();
 		break;
 	case BT_MESH_LPN_WAIT_UPDATE:
 		update_timeout(lpn);

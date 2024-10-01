@@ -3,7 +3,7 @@ sample:
 tests:
   sample.console.echo:
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT
     tags: console
     harness: keyboard

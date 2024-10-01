@@ -1,0 +1,12 @@
+# Silicon Labs EFR32BG13P (Blue Gecko) MCU configuration options
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFR32BG13P
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 47
+
+endif # SOC_SERIES_EFR32BG13P

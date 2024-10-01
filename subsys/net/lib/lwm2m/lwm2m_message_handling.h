@@ -39,6 +39,8 @@
 #define NUM_OUTPUT_BLOCK_CONTEXT CONFIG_LWM2M_NUM_OUTPUT_BLOCK_CONTEXT
 #endif
 
+int coap_options_to_path(struct coap_option *opt, int options_count,
+				struct lwm2m_obj_path *path);
 /* LwM2M message functions */
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 struct lwm2m_message *find_msg(struct coap_pending *pending, struct coap_reply *reply);

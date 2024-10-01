@@ -141,15 +141,15 @@ extern "C" {
 		(Z_LOG_STR_WITH_PREFIX(__VA_ARGS__)), (__VA_ARGS__))
 
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
-	(_level <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
+	((_level) <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
 #define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
 	(IS_ENABLED(CONFIG_LOG) &&					    \
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
-	(_level <= __log_level) &&					    \
-	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
+	((_level) <= __log_level) &&					    \
+	((_level) <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
 	))
 
@@ -190,6 +190,30 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_INST(_inst) COND_CODE_1(CONFIG_LOG, (_inst), NULL)
 
+/* If strings are removed from the binary then there is a risk of creating invalid
+ * cbprintf package if %p is used with character pointer which is interpreted as
+ * string. A compile time check is performed (since format string is known at
+ * compile time) and check fails logging message is not created but error is
+ * emitted instead. String check may increase compilation time so it is not
+ * always performed (could significantly increase CI time).
+ */
+#ifdef CONFIG_LOG_FMT_STRING_VALIDATE
+#define LOG_STRING_WARNING(_mode, _src, ...) \
+	    Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
+			     Z_LOG_LOCAL_DOMAIN_ID, _src, LOG_LEVEL_ERR, NULL, 0, \
+			     "char pointer used for %%p, cast to void *:\"%s\"", \
+			     GET_ARG_N(1, __VA_ARGS__))
+
+#define LOG_POINTERS_VALIDATE(string_ok, ...) \
+	_Pragma("GCC diagnostic push") \
+	_Pragma("GCC diagnostic ignored \"-Wpointer-arith\"") \
+	string_ok = Z_CBPRINTF_POINTERS_VALIDATE(__VA_ARGS__); \
+	_Pragma("GCC diagnostic pop")
+#else
+#define LOG_POINTERS_VALIDATE(string_ok, ...) string_ok = true
+#define LOG_STRING_WARNING(_mode, _src, ...)
+#endif
+
 /*****************************************************************************/
 /****************** Macros for standard logging ******************************/
 /*****************************************************************************/
@@ -227,13 +251,19 @@ static inline char z_log_minimal_level_to_char(int level)
 	} \
 	\
 	bool is_user_context = k_is_user_context(); \
-	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
 	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER((_dsource)->filters)) { \
 		break; \
 	} \
 	int _mode; \
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
-		(void *)_dsource : (void *)_source; \
+		(void *)(_dsource) : (void *)(_source); \
+	bool string_ok; \
+	LOG_POINTERS_VALIDATE(string_ok, __VA_ARGS__); \
+	if (!string_ok) { \
+		LOG_STRING_WARNING(_mode, _src, __VA_ARGS__); \
+		break; \
+	} \
 	Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), _mode, \
 				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, NULL,\
 			  0, __VA_ARGS__); \
@@ -290,7 +320,7 @@ static inline char z_log_minimal_level_to_char(int level)
 		break; \
 	} \
 	/* For instance logging check instance specific static level */ \
-	if (_inst & !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
+	if (_inst && !IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) { \
 		if (_level > ((struct log_source_const_data *)_source)->level) { \
 			break; \
 		} \
@@ -301,17 +331,17 @@ static inline char z_log_minimal_level_to_char(int level)
 	\
 	if (IS_ENABLED(CONFIG_LOG_MODE_MINIMAL)) { \
 		Z_LOG_TO_PRINTK(_level, "%s", _str); \
-		z_log_minimal_hexdump_print(_level, \
-					    (const char *)_data, _len);\
+		z_log_minimal_hexdump_print((_level), \
+					    (const char *)(_data), (_len));\
 		break; \
 	} \
-	if (!IS_ENABLED(CONFIG_LOG_FRONTEND) && IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
-	    !is_user_context && _level > Z_LOG_RUNTIME_FILTER(filters)) { \
+	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && \
+	    !is_user_context && (_level) > Z_LOG_RUNTIME_FILTER(filters)) { \
 		break; \
 	} \
 	int mode; \
 	void *_src = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
-		(void *)_dsource : (void *)_source; \
+		(void *)(_dsource) : (void *)(_source); \
 	Z_LOG_MSG_CREATE(UTIL_NOT(IS_ENABLED(CONFIG_USERSPACE)), mode, \
 				  Z_LOG_LOCAL_DOMAIN_ID, _src, _level, \
 			  _data, _len, \
@@ -348,6 +378,13 @@ static inline char z_log_minimal_level_to_char(int level)
 /** @brief Number of slots in one word. */
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
+/** @brief Maximum number of backends supported when runtime filtering is enabled. */
+#define LOG_FILTERS_MAX_BACKENDS \
+	(LOG_FILTERS_NUM_OF_SLOTS - (1 + IS_ENABLED(CONFIG_LOG_FRONTEND)))
+
+/** @brief Slot reserved for the frontend. Last slot is used. */
+#define LOG_FRONTEND_SLOT_ID (LOG_FILTERS_NUM_OF_SLOTS - 1)
+
 /** @brief Slot mask. */
 #define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1U)
 
@@ -380,7 +417,7 @@ static inline char z_log_minimal_level_to_char(int level)
  * two other backends are set for ERR, returned level is INF.
  */
 #define Z_LOG_RUNTIME_FILTER(_filter) \
-	LOG_FILTER_SLOT_GET(&_filter, LOG_FILTER_AGGR_SLOT_IDX)
+	LOG_FILTER_SLOT_GET(&(_filter), LOG_FILTER_AGGR_SLOT_IDX)
 
 /** @brief Log level value used to indicate log entry that should not be
  *	   formatted (raw string).
@@ -413,7 +450,7 @@ TYPE_SECTION_END_EXTERN(struct log_source_const_data, log_const);
 		z_log_printf_arg_checker(__VA_ARGS__); \
 	} \
 	Z_LOG_MSG_CREATE(!IS_ENABLED(CONFIG_USERSPACE), _mode, \
-			  Z_LOG_LOCAL_DOMAIN_ID, (uintptr_t)_is_raw, \
+			  Z_LOG_LOCAL_DOMAIN_ID, (const void *)(uintptr_t)_is_raw, \
 			  LOG_LEVEL_INTERNAL_RAW_STRING, NULL, 0, __VA_ARGS__);\
 } while (0)
 
@@ -464,7 +501,7 @@ void z_log_printf_arg_checker(const char *fmt, ...)
 }
 
 /**
- * @brief Writes a generic log message to the logging v2.
+ * @brief Write a generic log message.
  *
  * @note This function is intended to be used when porting other log systems.
  *
@@ -472,7 +509,7 @@ void z_log_printf_arg_checker(const char *fmt, ...)
  * @param fmt            String to format.
  * @param ap             Pointer to arguments list.
  */
-static inline void log2_generic(uint8_t level, const char *fmt, va_list ap)
+static inline void log_generic(uint8_t level, const char *fmt, va_list ap)
 {
 	z_log_msg_runtime_vcreate(Z_LOG_LOCAL_DOMAIN_ID, NULL, level,
 				   NULL, 0, 0, fmt, ap);

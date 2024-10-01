@@ -1,0 +1,17 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/kinetis/MKE15Z256VLL7-pinctrl.h>
+
+&pinctrl {
+	lpuart1_default: lpuart1_default {
+		group0 {
+			pinmux = <LPUART1_RX_PTC6>,
+				<LPUART1_TX_PTC7>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};

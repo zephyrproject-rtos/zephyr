@@ -4,6 +4,19 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/irq.h>
+#include <irq_ctrl.h>
+#if defined(CONFIG_BOARD_NATIVE_SIM)
+#include <nsi_cpu_if.h>
+#include <nsi_main_semipublic.h>
+#elif defined(CONFIG_BOARD_NATIVE_POSIX)
+/* Note: native_posix will be deprecated soon */
+extern void posix_init(int argc, char *argv[]);
+extern void posix_exec_for(uint64_t us);
+#define nsi_init posix_init
+#define nsi_exec_for posix_exec_for
+#else
+#error "Platform not supported"
+#endif
 
 /* Fuzz testing is coverage-based, so we want to hide a failure case
  * (a write through a null pointer in this case) down inside a call
@@ -49,8 +62,8 @@ GEN_CHECK(5, 6)
 GEN_CHECK(6, 0)
 
 /* Fuzz input received from LLVM via "interrupt" */
-extern const uint8_t *posix_fuzz_buf;
-extern size_t posix_fuzz_sz;
+static const uint8_t *fuzz_buf;
+static size_t fuzz_sz;
 
 K_SEM_DEFINE(fuzz_sem, 0, K_SEM_MAX_LIMIT);
 
@@ -76,7 +89,42 @@ int main(void)
 		/* Execute the fuzz case we got from LLVM and passed
 		 * through an interrupt to this thread.
 		 */
-		check0(posix_fuzz_buf, posix_fuzz_sz);
+		check0(fuzz_buf, fuzz_sz);
 	}
+	return 0;
+}
+
+/**
+ * Entry point for fuzzing. Works by placing the data
+ * into two known symbols, triggering an app-visible interrupt, and
+ * then letting the simulator run for a fixed amount of time (intended to be
+ * "long enough" to handle the event and reach a quiescent state
+ * again)
+ */
+#if defined(CONFIG_BOARD_NATIVE_SIM)
+NATIVE_SIMULATOR_IF /* We expose this function to the final runner link stage*/
+#endif
+int LLVMFuzzerTestOneInput(const uint8_t *data, size_t sz)
+{
+	static bool runner_initialized;
+
+	if (!runner_initialized) {
+		nsi_init(0, NULL);
+		runner_initialized = true;
+	}
+
+	/* Provide the fuzz data to the embedded OS as an interrupt, with
+	 * "DMA-like" data placed into native_fuzz_buf/sz
+	 */
+	fuzz_buf = (void *)data;
+	fuzz_sz = sz;
+
+	hw_irq_ctrl_set_irq(CONFIG_ARCH_POSIX_FUZZ_IRQ);
+
+	/* Give the OS time to process whatever happened in that
+	 * interrupt and reach an idle state.
+	 */
+	nsi_exec_for(k_ticks_to_us_ceil64(CONFIG_ARCH_POSIX_FUZZ_TICKS));
+
 	return 0;
 }

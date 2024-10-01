@@ -18,12 +18,12 @@ This sample application uses an DPS310 sensor connected to a board via I2C.
 Connect the sensor pins according to the connection diagram given in the
 `dps310 datasheet`_ at page 18 figure 7.
 
-Build and flash this sample (for example, for the nrf52840dk_nrf52840 board)
+Build and flash this sample (for example, for the nrf52840dk/nrf52840 board)
 using these commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/dps310
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: flash
    :compact:
 

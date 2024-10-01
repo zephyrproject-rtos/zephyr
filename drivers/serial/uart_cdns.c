@@ -83,8 +83,6 @@ static int uart_cdns_fill_fifo(const struct device *dev, const uint8_t *tx_data,
 
 	for (i = 0; i < len && (!uart_cdns_is_tx_fifo_full(uart_regs)); i++) {
 		uart_regs->rx_tx_fifo = tx_data[i];
-		while (!uart_cdns_is_tx_fifo_empty(uart_regs)) {
-		}
 	}
 	return i;
 }
@@ -108,14 +106,20 @@ void uart_cdns_enable_tx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
-	uart_regs->intr_enable |= CSR_TTRIG_MASK;
+	/*
+	 * TX empty interrupt only triggered when TX removes the last byte from the
+	 * TX FIFO. We need another way generate the first interrupt. This is why
+	 * we have the timer involved here
+	 */
+	uart_regs->rx_timeout = DEFAULT_RTO_PERIODS_FACTOR;
+	uart_regs->intr_enable = CSR_TEMPTY_MASK | CSR_TOUT_MASK;
 }
 
 void uart_cdns_disable_tx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
-	uart_regs->intr_disable |= CSR_TTRIG_MASK;
+	uart_regs->intr_disable = CSR_TEMPTY_MASK | CSR_TOUT_MASK;
 }
 
 static int uart_cdns_irq_tx_ready(const struct device *dev)
@@ -132,8 +136,8 @@ void uart_cdns_enable_rx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
-	uart_regs->rx_timeout = DEFAULT_RTO_PERIODS_FACTOR;
-	uart_regs->intr_enable |= (CSR_RTRIG_MASK | CSR_RBRK_MASK | CSR_TOUT_MASK);
+	uart_regs->rx_fifo_trigger_level = 1;
+	uart_regs->intr_enable = CSR_RTRIG_MASK;
 }
 
 /** Disable RX UART interrupt */
@@ -141,7 +145,7 @@ void uart_cdns_disable_rx_irq(const struct device *dev)
 {
 	struct uart_cdns_regs *uart_regs = DEV_UART(dev);
 
-	uart_regs->intr_disable |= (CSR_RTRIG_MASK | CSR_RBRK_MASK | CSR_TOUT_MASK);
+	uart_regs->intr_disable = CSR_RTRIG_MASK;
 }
 
 static int uart_cdns_irq_rx_ready(const struct device *dev)
@@ -203,6 +207,10 @@ static void uart_cdns_irq_handler(const struct device *dev)
 	/* clear events */
 	/* need to make local copy of the status */
 	isr_status = uart_regs->channel_intr_status;
+
+	if (isr_status & CSR_TOUT_MASK) {
+		uart_regs->intr_disable = CSR_TOUT_MASK;
+	}
 
 	irq_unlock(key);
 }

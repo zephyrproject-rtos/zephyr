@@ -101,11 +101,16 @@ struct usbc_port_data {
 	const struct device *tcpc;
 	/** VBUS Measurement and control device on this port */
 	const struct device *vbus;
+	/** Power Path Controller device on this port */
+	const struct device *ppc;
 
 	/** Device Policy Manager Request FIFO */
 	struct k_fifo request_fifo;
 	/** Device Policy manager Request */
 	struct request_value request;
+
+	/** Bypass next sleep and request one more iteration of the USB-C state machines */
+	bool bypass_next_sleep;
 
 	/* USB-C Callbacks */
 
@@ -210,5 +215,38 @@ struct usbc_port_data {
 	/** Device Policy Manager data */
 	void *dpm_data;
 };
+
+#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+/**
+ * @brief Function that enables the source path either using callback or by the TCPC.
+ * If source and sink paths are controlled by the TCPC, this callback doesn't have to be set.
+ *
+ * @param dev USB-C connector device
+ * @param tcpc Type-C Port Controller device
+ * @param en True to enable the sourcing, false to disable
+ * @return int 0 if success, -ENOSYS if both callback and TCPC function are not implemented.
+ *             In case of error, value from any of the functions is returned
+ */
+static inline int usbc_policy_src_en(const struct device *dev, const struct device *tcpc, bool en)
+{
+	struct usbc_port_data *data = dev->data;
+	int ret_cb = -ENOSYS;
+	int ret_tcpc;
+
+	if (data->policy_cb_src_en != NULL) {
+		ret_cb = data->policy_cb_src_en(dev, en);
+		if (ret_cb != 0 && ret_cb != -ENOSYS) {
+			return ret_cb;
+		}
+	}
+
+	ret_tcpc = tcpc_set_src_ctrl(tcpc, en);
+	if (ret_tcpc == -ENOSYS) {
+		return ret_cb;
+	}
+
+	return ret_tcpc;
+}
+#endif
 
 #endif /* ZEPHYR_SUBSYS_USBC_STACK_PRIV_H_ */

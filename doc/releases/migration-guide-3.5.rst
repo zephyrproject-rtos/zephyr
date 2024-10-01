@@ -70,6 +70,16 @@ C Library
     compiler will now warn about declarations of `main` which don't conform to
     the Zephyr required type -- ``int main(void)``.
 
+  * Picolibc has four different printf/scanf variants supported in Zephyr,
+    'double', 'long long', 'integer', and 'minimal. 'double' offers a
+    complete printf implementation with exact floating point in decimal and
+    hexadecimal formats, full integer support including long long, C99
+    integer size specifiers (j, z, t) and POSIX positional arguments. 'long
+    long' mode removes float support, 'integer' removes long long support
+    while 'minimal' mode also removes support for format modifiers and
+    positional arguments. Building the library as a module allows finer
+    control over the feature set provided at each level.
+
   * Picolibc's default floating point input/output code is larger than the
     minimal C library version (this is necessary to conform with the C
     language "round trip" requirements for these operations). If you use
@@ -78,6 +88,25 @@ C Library
     :kconfig:option:`CONFIG_PICOLIBC_IO_FLOAT_EXACT`, which switches Picolibc
     to a smaller, but inexact conversion algorithm. This requires building
     Picolibc as a module.
+
+Optional Modules
+================
+
+The following modules have been made optional and are not downloaded with `west update` by default anymore:
+
+* ``chre``
+* ``lz4``
+* ``nanopb``
+* ``psa-arch-tests``
+* ``sof``
+* ``tf-m-tests``
+* ``tflite-micro``
+* ``thrift``
+* ``zscilib``
+
+To enable them again use the ``west config manifest.project-filter -- +<module
+name>`` command, or ``west config manifest.group-filter -- +optional`` to
+enable all optional modules, and then run ``west update`` again.
 
 Device Drivers and Device Tree
 ==============================

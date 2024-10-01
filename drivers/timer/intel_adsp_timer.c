@@ -27,7 +27,7 @@
 
 #define COMPARATOR_IDX  0 /* 0 or 1 */
 
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 #define TIMER_IRQ ACE_IRQ_TO_ZEPHYR(ACE_INTL_TTS)
 #else
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
@@ -198,7 +198,7 @@ static void irq_init(void)
 	 * (for per-core control) above the interrupt controller.
 	 * Drivers need to do that part.
 	 */
-#ifdef CONFIG_SOC_SERIES_INTEL_ACE
+#ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 	ACE_DINT[cpu].ie[ACE_INTL_TTS] |= BIT(COMPARATOR_IDX + 1);
 	sys_write32(sys_read32(DSPWCTCS_ADDR) | ADSP_SHIM_DSPWCTCS_TTIE(COMPARATOR_IDX),
 			DSPWCTCS_ADDR);
@@ -210,10 +210,8 @@ static void irq_init(void)
 
 void smp_timer_init(void)
 {
-	irq_init();
 }
 
-/* Runs on core 0 only */
 static int sys_clock_driver_init(void)
 {
 	uint64_t curr = count();
@@ -225,14 +223,11 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-#ifdef CONFIG_PM
-
-void sys_clock_idle_exit(void)
+/* Runs on core 0 only */
+void intel_adsp_clock_soft_off_exit(void)
 {
-	sys_clock_driver_init();
+	(void)sys_clock_driver_init();
 }
-
-#endif
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
 	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -11,7 +11,7 @@
 
 #define EXPECTED(x)  ((x) * CONFIG_MM_DRV_PAGE_SIZE)
 
-static struct mem_drv_bank  bank_data = {0x123, 0x234, 0x345};
+static struct sys_mm_drv_bank bank_data = {0x123, 0x234, 0x345};
 
 static void test_stats(const char *error_string,
 		       struct sys_memory_stats *stats,

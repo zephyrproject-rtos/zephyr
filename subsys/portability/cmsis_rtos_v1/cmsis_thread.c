@@ -29,6 +29,8 @@ static inline uint32_t cmsis_to_zephyr_priority(int32_t c_prio)
 
 static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg2);
+
 	void * (*fun_ptr)(void *) = arg3;
 
 	fun_ptr(arg1);
@@ -37,7 +39,7 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 /* clear related bit in cmsis thread status bitarray
  * when terminating a thread
  */
-void z_thread_cmsis_status_mask_clear(struct k_thread *thread)
+void thread_abort_hook(struct k_thread *thread)
 {
 	uint32_t offset, instance;
 
@@ -45,7 +47,17 @@ void z_thread_cmsis_status_mask_clear(struct k_thread *thread)
 
 	if (thread_def != NULL) {
 		/* get thread instance index according to stack address */
-		offset = thread->stack_info.start - (uintptr_t)thread_def->stack_mem;
+		uintptr_t stack_start;
+
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+		/* The offset calculation below requires physical address. */
+		extern int arch_page_phys_get(void *virt, uintptr_t *phys);
+		(void)arch_page_phys_get((void *)thread->stack_info.start, &stack_start);
+#else
+		stack_start = thread->stack_info.start;
+#endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
+
+		offset = stack_start - (uintptr_t)thread_def->stack_mem;
 		instance = offset / K_THREAD_STACK_LEN(CONFIG_CMSIS_THREAD_MAX_STACK_SIZE);
 		sys_bitarray_clear_bit((sys_bitarray_t *)(thread_def->status_mask), instance);
 	}
@@ -109,7 +121,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 
 	tid = k_thread_create(&cm_thread[instance],
 			stk_ptr[instance], stacksz,
-			(k_thread_entry_t)zephyr_thread_wrapper,
+			zephyr_thread_wrapper,
 			(void *)arg, NULL, thread_def->pthread,
 			prio, 0, K_NO_WAIT);
 

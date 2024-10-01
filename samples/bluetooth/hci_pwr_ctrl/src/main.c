@@ -29,6 +29,10 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_HRS_VAL)),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
 #define DEVICE_BEACON_TXPOWER_NUM  8
@@ -39,8 +43,7 @@ static K_THREAD_STACK_DEFINE(pwr_thread_stack, 512);
 static const int8_t txpower[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 							  -15, -18, -23, -30};
 static const struct bt_le_adv_param *param =
-	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
-			0x0020, 0x0020, NULL);
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME, 0x0020, 0x0020, NULL);
 
 static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 {
@@ -61,9 +64,7 @@ static void read_conn_rssi(uint16_t handle, int8_t *rssi)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_READ_RSSI, buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_read_rssi *)rsp->data)->status : 0;
-		printk("Read RSSI err: %d reason 0x%02x\n", err, reason);
+		printk("Read RSSI err: %d\n", err);
 		return;
 	}
 
@@ -96,10 +97,7 @@ static void set_tx_power(uint8_t handle_type, uint16_t handle, int8_t tx_pwr_lvl
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_vs_write_tx_power_level *)
-			  rsp->data)->status : 0;
-		printk("Set Tx power err: %d reason 0x%02x\n", err, reason);
+		printk("Set Tx power err: %d\n", err);
 		return;
 	}
 
@@ -131,10 +129,7 @@ static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lv
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
 				   buf, &rsp);
 	if (err) {
-		uint8_t reason = rsp ?
-			((struct bt_hci_rp_vs_read_tx_power_level *)
-			  rsp->data)->status : 0;
-		printk("Read Tx power err: %d reason 0x%02x\n", err, reason);
+		printk("Read Tx power err: %d\n", err);
 		return;
 	}
 
@@ -206,7 +201,7 @@ static void bt_ready(int err)
 
 	/* Start advertising */
 	err = bt_le_adv_start(param, ad, ARRAY_SIZE(ad),
-			      NULL, 0);
+			      sd, ARRAY_SIZE(sd));
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;

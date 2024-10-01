@@ -1,0 +1,53 @@
+# Copyright (c) 2024 Gustavo Silva
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENS160
+	bool "ENS160 multi-gas sensor"
+	default y
+	depends on DT_HAS_SCIOSENSE_ENS160_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SCIOSENSE_ENS160),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SCIOSENSE_ENS160),spi)
+	help
+	  Enable driver for ENS160 Digital Metal Oxide Multi-Gas Sensor.
+
+if ENS160
+
+choice
+	prompt "Trigger Mode"
+	default ENS160_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ENS160_TRIGGER_NONE
+	bool "No trigger"
+
+config ENS160_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ENS160_TRIGGER
+
+config ENS160_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ENS160_TRIGGER
+
+endchoice # Trigger Mode
+
+config ENS160_TRIGGER
+	bool
+
+config ENS160_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ENS160_TRIGGER_OWN_THREAD && ENS160_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ENS160_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ENS160_TRIGGER_OWN_THREAD && ENS160_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ENS160

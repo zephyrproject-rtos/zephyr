@@ -21,6 +21,23 @@ LOGGING_FORMAT = "[%(levelname)s][%(name)s] %(message)s"
 GDBSERVER_HOST = ""
 
 
+class FakeSocket:
+    def __init__(self) -> None:
+        self.in_stream = sys.stdin.buffer
+        self.out_stream = sys.stdout.buffer
+
+    def recv(self, bufsize):
+        return self.in_stream.read(bufsize)
+
+    def send(self, data):
+        n = self.out_stream.write(data)
+        self.out_stream.flush()
+        return n
+
+    def close(self):
+        pass
+
+
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
 
@@ -30,6 +47,8 @@ def parse_args():
                         help="Print extra debugging information")
     parser.add_argument("--port", type=int, default=1234,
                         help="GDB server port")
+    parser.add_argument("--pipe", action="store_true",
+                        help="Use stdio to communicate with gdb")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print more information")
 
@@ -99,19 +118,23 @@ def main():
 
     gdbstub = gdbstubs.get_gdbstub(logf, elff)
 
-    # Start a GDB server
-    gdbserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if not args.pipe:
+        # Start a GDB server
+        gdbserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # Reuse address so we don't have to wait for socket to be
-    # close before we can bind to the port again
-    gdbserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Reuse address so we don't have to wait for socket to be
+        # close before we can bind to the port again
+        gdbserver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    gdbserver.bind((GDBSERVER_HOST, args.port))
-    gdbserver.listen(1)
+        gdbserver.bind((GDBSERVER_HOST, args.port))
+        gdbserver.listen(1)
 
-    logger.info(f"Waiting GDB connection on port {args.port}...")
+        logger.info(f"Waiting GDB connection on port {args.port}...")
 
-    conn, remote = gdbserver.accept()
+        conn, remote = gdbserver.accept()
+    else:
+        conn = FakeSocket()
+        remote = "pipe"
 
     if conn:
         logger.info(f"Accepted GDB connection from {remote}")

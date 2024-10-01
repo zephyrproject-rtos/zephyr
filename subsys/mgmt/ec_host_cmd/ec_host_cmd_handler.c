@@ -47,6 +47,8 @@ static struct ec_host_cmd ec_host_cmd = {
 	.rx_ctx = {
 			.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF, (hc_rx_buffer),
 					   (NULL)),
+			.len_max = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF,
+					       (CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_SIZE), (0)),
 		},
 	.tx = {
 			.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF, (hc_tx_buffer),
@@ -62,7 +64,10 @@ static bool cmd_in_progress;
 
 /* The final result of the last command that has sent EC_HOST_CMD_IN_PROGRESS */
 static enum ec_host_cmd_status saved_status = EC_HOST_CMD_UNAVAILABLE;
-#endif
+static struct k_work work_in_progress;
+ec_host_cmd_in_progress_cb_t cb_in_progress;
+static void *user_data_in_progress;
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
 #ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
 static uint16_t suppressed_cmds[CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_NUMBER];
@@ -94,6 +99,36 @@ enum ec_host_cmd_status ec_host_cmd_send_in_progress_status(void)
 	saved_status = EC_HOST_CMD_UNAVAILABLE;
 
 	return ret;
+}
+
+enum ec_host_cmd_status ec_host_cmd_send_in_progress_continue(ec_host_cmd_in_progress_cb_t cb,
+							      void *user_data)
+{
+	if (cmd_in_progress) {
+		return EC_HOST_CMD_BUSY;
+	}
+
+	cmd_in_progress = true;
+	cb_in_progress = cb;
+	user_data_in_progress = user_data;
+	saved_status = EC_HOST_CMD_UNAVAILABLE;
+	LOG_INF("HC pending");
+	k_work_submit(&work_in_progress);
+
+	return EC_HOST_CMD_SUCCESS;
+}
+
+static void handler_in_progress(struct k_work *work)
+{
+	if (cb_in_progress != NULL) {
+		saved_status = cb_in_progress(user_data_in_progress);
+		LOG_INF("HC pending done, result=%d", saved_status);
+	} else {
+		saved_status = EC_HOST_CMD_UNAVAILABLE;
+		LOG_ERR("HC incorrect IN_PROGRESS callback");
+	}
+	cb_in_progress = NULL;
+	cmd_in_progress = false;
 }
 #endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
 
@@ -257,35 +292,11 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
 
-#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
-	if (cmd_in_progress) {
-		/* We previously got EC_HOST_CMD_IN_PROGRESS. This must be the completion
-		 * of that command, so save the result code.
-		 */
-		LOG_INF("HC pending done, size=%d, result=%d",
-			args->output_buf_size, status);
-
-		/* Don't support saving response data, so mark the response as unavailable
-		 * in that case.
-		 */
-		if (args->output_buf_size != 0) {
-			saved_status = EC_HOST_CMD_UNAVAILABLE;
-		} else {
-			saved_status = status;
-		}
-
-		/* We can't send the response back to the host now since we already sent
-		 * the in-progress response and the host is on to other things now.
-		 */
-		cmd_in_progress = false;
-
-		return EC_HOST_CMD_SUCCESS;
-
-	} else if (status == EC_HOST_CMD_IN_PROGRESS) {
-		cmd_in_progress = true;
-		LOG_INF("HC pending");
+	if (hc->state != EC_HOST_CMD_STATE_PROCESSING) {
+		LOG_ERR("Unexpected state while sending");
+		return -ENOTSUP;
 	}
-#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
+	hc->state = EC_HOST_CMD_STATE_SENDING;
 
 	if (status != EC_HOST_CMD_SUCCESS) {
 		const struct ec_host_cmd_request_header *const rx_header =
@@ -385,9 +396,13 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		.reserved = NULL,
 	};
 
+	__ASSERT(hc->state != EC_HOST_CMD_STATE_DISABLED, "HC backend not initialized");
+
 	while (1) {
+		hc->state = EC_HOST_CMD_STATE_RECEIVING;
 		/* Wait until RX messages is received on host interface */
 		k_sem_take(&hc->rx_ready, K_FOREVER);
+		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
 		ec_host_cmd_log_request(rx->buf);
 
@@ -457,6 +472,10 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	/* Allow writing to rx buff at startup */
 	k_sem_init(&hc->rx_ready, 0, 1);
 
+#ifdef CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS
+	k_work_init(&work_in_progress, handler_in_progress);
+#endif /* CONFIG_EC_HOST_CMD_IN_PROGRESS_STATUS */
+
 	handler_tx_buf = hc->tx.buf;
 	handler_rx_buf = hc->rx_ctx.buf;
 	handler_tx_buf_end = handler_tx_buf + CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_SIZE;
@@ -475,6 +494,8 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 		LOG_ERR("No buffer for Host Command communication");
 		return -EIO;
 	}
+
+	hc->state = EC_HOST_CMD_STATE_RECEIVING;
 
 	/* Check if a backend uses provided buffers. The buffer pointers can be shifted within the
 	 * buffer to make space for preamble. Make sure the rx/tx pointers are within the provided

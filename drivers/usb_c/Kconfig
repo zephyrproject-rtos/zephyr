@@ -5,3 +5,4 @@
 
 source "drivers/usb_c/tcpc/Kconfig"
 source "drivers/usb_c/vbus/Kconfig"
+source "drivers/usb_c/ppc/Kconfig"

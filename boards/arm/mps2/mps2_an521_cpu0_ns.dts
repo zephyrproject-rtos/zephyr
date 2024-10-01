@@ -1,0 +1,144 @@
+/*
+ * Copyright (c) 2018-2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "arm,mps2";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &led_0;
+		led1 = &led_1;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram;
+		zephyr,flash = &code;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&gpio_led0 0>;
+			label = "USERLED0";
+		};
+		led_1: led_1 {
+			gpios = <&gpio_led0 1>;
+			label = "USERLED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_0: button_0 {
+			label = "USERPB0";
+			gpios = <&gpio_button 0>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		user_button_1: button_1 {
+			label = "USERPB1";
+			gpios = <&gpio_button 1>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	/*
+	 * The memory regions defined below are according to AN521:
+	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
+	 *
+	 * Please see tables mentioned in individual comments below for details.
+	 */
+
+	ssram1: memory@0 {
+		/* Table 3-2, row 1. */
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SSRAM1";
+	};
+
+	ssram2_3: memory@28000000 {
+		/* Table 3-4, rows 8 and 9. */
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x28000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SSRAM2_3";
+	};
+
+	psram: memory@80000000 {
+		/* Table 3-6, row 1. */
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(16)>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* This code memory region must match what the TF-M
+		 * project has defined for that board - a single image boot is
+		 * assumed. Please see the memory layout in:
+		 *
+		 * https://github.com/zephyrproject-rtos/trusted-firmware-m/blob/master/platform/ext/target/arm/mps2/an521/partition/flash_layout.h
+		 */
+		code: memory@100000 {
+			reg = <0x00100000 DT_SIZE_K(512)>;
+		};
+
+		/* This ram memory region's size is chosen to avoid conflict
+		 * with the mps2_an521_remote board's RAM region.
+		 *
+		 * Its available address space must be compatible with what
+		 * TF-M assigns to NS firmware.
+		 */
+		ram: memory@28100000 {
+			reg = <0x28100000 DT_SIZE_K(512)>;
+		};
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			#include "mps2_an521-common.dtsi"
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

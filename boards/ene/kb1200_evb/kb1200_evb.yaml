@@ -1,0 +1,13 @@
+identifier: kb1200_evb
+name: KB1200 EVB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - uart
+ram: 64
+flash: 256

@@ -1,0 +1,15 @@
+identifier: circuitdojo_feather/nrf9160
+name: CircuitDojo-Feather-nRF9160
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 64
+flash: 256
+supported:
+  - i2c
+  - pwm
+  - watchdog
+  - counter

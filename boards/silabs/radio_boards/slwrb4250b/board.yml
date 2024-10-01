@@ -1,0 +1,4 @@
+boards:
+  - name: slwrb4250b
+    socs:
+      - name: efr32fg1p133f256gm48

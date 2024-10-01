@@ -223,7 +223,7 @@ static int gpio_npm6001_init(const struct device *dev)
                                                                                \
 	static struct gpio_npm6001_data gpio_npm6001_data##n;                  \
                                                                                \
-	DEVICE_DT_INST_DEFINE(n, &gpio_npm6001_init, NULL,                     \
+	DEVICE_DT_INST_DEFINE(n, gpio_npm6001_init, NULL,                      \
 			      &gpio_npm6001_data##n, &gpio_npm6001_config##n,  \
 			      POST_KERNEL, CONFIG_GPIO_NPM6001_INIT_PRIORITY,  \
 			      &gpio_npm6001_api);

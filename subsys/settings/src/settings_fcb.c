@@ -74,7 +74,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 		 */
 		if (fcb_free_sector_cnt(&cf->cf_fcb) < 1) {
 
-			rc = flash_area_erase(cf->cf_fcb.fap,
+			rc = flash_area_flatten(cf->cf_fcb.fap,
 					cf->cf_fcb.f_active.fe_sector->fs_off,
 					cf->cf_fcb.f_active.fe_sector->fs_size);
 
@@ -424,7 +424,7 @@ int settings_backend_init(void)
 			return rc;
 		}
 
-		rc = flash_area_erase(fap, 0, fap->fa_size);
+		rc = flash_area_flatten(fap, 0, fap->fa_size);
 		flash_area_close(fap);
 
 		if (rc != 0) {

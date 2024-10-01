@@ -29,6 +29,12 @@ config MQTT_LIB_TLS
 	help
 	  Enable TLS support for socket MQTT Library
 
+config MQTT_LIB_TLS_USE_ALPN
+	bool "ALPN support for MQTT"
+	depends on MQTT_LIB_TLS
+	help
+	  Enable ALPN protocol for socket MQTT Library.
+
 config MQTT_LIB_WEBSOCKET
 	bool "Websocket support for socket MQTT Library"
 	help

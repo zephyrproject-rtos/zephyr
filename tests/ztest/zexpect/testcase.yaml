@@ -3,17 +3,15 @@
 
 common:
   integration_platforms:
-    - native_posix
+    - native_sim
   tags:
     - test_framework
 tests:
   testing.ztest.expect:
     integration_platforms:
-      - native_posix
+      - native_sim
   testing.ztest.expect_cpp:
     extra_configs:
-      - CONFIG_CPLUSPLUS=y
-    integration_platforms:
-      - native_posix
+      - CONFIG_CPP=y
   testing.ztest.expect.unit:
     type: unit

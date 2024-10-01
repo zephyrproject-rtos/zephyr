@@ -1,0 +1,5 @@
+board:
+  name: arduino_giga_r1
+  vendor: arduino
+  socs:
+    - name: stm32h747xx

@@ -1,0 +1,55 @@
+boards:
+- name: ATMEVK-3330-QN-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM33xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3330e-QN-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM33xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3330e-QN-7
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM33xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3325-QK-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM33xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3325-LQK
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM33xx-5
+      variants:
+      - name: 'ns'

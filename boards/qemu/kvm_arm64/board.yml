@@ -1,0 +1,5 @@
+board:
+  name: qemu_kvm_arm64
+  vendor: arm
+  socs:
+  - name: qemu_virt_arm64

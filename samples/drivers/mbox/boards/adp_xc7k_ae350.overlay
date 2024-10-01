@@ -16,4 +16,10 @@
 		compatible = "mmio-sram";
 		reg = <0x00000000 0x10000000 >;
 	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox 1>, <&mbox 0>;
+		mbox-names = "tx", "rx";
+	};
 };

@@ -35,7 +35,7 @@ The BLOB Transfer Server is instantiated on an element with a set of event handl
        .cb = &blob_cb,
    };
 
-   static struct bt_mesh_model models[] = {
+   static const struct bt_mesh_model models[] = {
        BT_MESH_MODEL_BLOB_SRV(&blob_srv),
    };
 
@@ -77,7 +77,7 @@ Transfer recovery
 *****************
 
 The state of the BLOB transfer is stored persistently. If a reboot occurs, the BLOB Transfer Server
-will attempt to recover the transfer. When the Bluetooth mesh subsystem is started (for instance by
+will attempt to recover the transfer. When the Bluetooth Mesh subsystem is started (for instance by
 calling :c:func:`bt_mesh_init`), the BLOB Transfer Server will check for aborted transfers, and call
 the :c:member:`recover <bt_mesh_blob_srv_cb.recover>` callback if there is any. In the recover
 callback, the user must provide a BLOB stream to use for the rest of the transfer. If the recover

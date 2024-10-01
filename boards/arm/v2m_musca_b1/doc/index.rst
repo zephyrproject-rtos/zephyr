@@ -98,7 +98,7 @@ See the `V2M Musca B1 Website`_ for a complete list of V2M Musca board hardware
 features.
 
 The default configuration can be found in the defconfig file:
-``boards/arm/v2m_musca_b1/v2m_musca_b1_defconfig``.
+:zephyr_file:`boards/arm/v2m_musca_b1/v2m_musca_b1_defconfig`.
 
 Interrupt Controller
 ====================
@@ -205,7 +205,7 @@ Peripheral Mapping:
    - I2C_0_SDA : D14
    - I2C_0_SCL : D15
 
-For mode details please refer to `Musca B1 Technical Reference Manual (TRM)`_.
+For more details please refer to `Musca B1 Technical Reference Manual (TRM)`_.
 
 
 RGB LED

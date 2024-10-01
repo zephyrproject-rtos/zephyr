@@ -77,7 +77,7 @@ class Priority:
                                _DEVICE_INIT_LEVELS[self._level], self._priority)
 
     def __str__(self):
-        return "%s %d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
+        return "%s+%d" % (_DEVICE_INIT_LEVELS[self._level], self._priority)
 
     def __lt__(self, other):
         return self._level_priority < other._level_priority
@@ -172,7 +172,7 @@ class ZephyrInitLevels:
         elif elfclass == 64:
             ptrsize = 8
         else:
-            ValueError(f"Unknown pointer size for ELF class f{elfclass}")
+            raise ValueError(f"Unknown pointer size for ELF class f{elfclass}")
 
         section = self._elf.get_section(shidx)
         start = section.header.sh_addr
@@ -214,7 +214,7 @@ class ZephyrInitLevels:
                 ordinal = self._device_ord_from_name(arg1_name)
                 if ordinal:
                     prio = Priority(level, priority)
-                    self.devices[ordinal] = prio
+                    self.devices[ordinal] = (prio, arg0_name)
 
                 addr += size
                 priority += 1
@@ -244,7 +244,6 @@ class Validator():
 
         self._obj = ZephyrInitLevels(elf_file_path)
 
-        self.warnings = 0
         self.errors = 0
 
     def _check_dep(self, dev_ord, dep_ord):
@@ -268,41 +267,35 @@ class Validator():
                 self.log.info(f"Swapped priority: {dev_compat}, {dep_compat}")
                 dev_ord, dep_ord = dep_ord, dev_ord
 
-        dev_prio = self._obj.devices.get(dev_ord, None)
-        dep_prio = self._obj.devices.get(dep_ord, None)
+        dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
+        dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
 
         if not dev_prio or not dep_prio:
             return
 
         if dev_prio == dep_prio:
-            self.warnings += 1
-            self.log.warning(
-                    f"{dev_node.path} {dev_prio} == {dep_node.path} {dep_prio}")
+            raise ValueError(f"{dev_node.path} and {dep_node.path} have the "
+                             f"same priority: {dev_prio}")
         elif dev_prio < dep_prio:
+            if not self.errors:
+                self.log.error("Device initialization priority validation failed, "
+                               "the sequence of initialization calls does not match "
+                               "the devicetree dependencies.")
             self.errors += 1
             self.log.error(
-                    f"{dev_node.path} {dev_prio} < {dep_node.path} {dep_prio}")
+                    f"{dev_node.path} <{dev_init}> is initialized before its dependency "
+                    f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})")
         else:
             self.log.info(
-                    f"{dev_node.path} {dev_prio} > {dep_node.path} {dep_prio}")
-
-    def _check_edt_r(self, dev_ord, dev):
-        """Recursively check for dependencies of a device."""
-        for dep in dev.depends_on:
-            self._check_dep(dev_ord, dep.dep_ordinal)
-        if dev._binding and dev._binding.child_binding:
-            for child in dev.children.values():
-                if "compatible" in child.props:
-                    continue
-                if dev._binding.path != child._binding.path:
-                    continue
-                self._check_edt_r(dev_ord, child)
+                    f"{dev_node.path} <{dev_init}> {dev_prio} > "
+                    f"{dep_node.path} <{dep_init}> {dep_prio}")
 
     def check_edt(self):
         """Scan through all known devices and validate the init priorities."""
         for dev_ord in self._obj.devices:
             dev = self._ord2node[dev_ord]
-            self._check_edt_r(dev_ord, dev)
+            for dep in dev.depends_on:
+                self._check_dep(dev_ord, dep.dep_ordinal)
 
     def print_initlevels(self):
         for level, calls in self._obj.initlevels.items():
@@ -322,8 +315,6 @@ def _parse_args(argv):
     parser.add_argument("-v", "--verbose", action="count",
                         help=("enable verbose output, can be used multiple times "
                               "to increase verbosity level"))
-    parser.add_argument("-w", "--fail-on-warning", action="store_true",
-                        help="fail on both warnings and errors")
     parser.add_argument("--always-succeed", action="store_true",
                         help="always exit with a return code of 0, used for testing")
     parser.add_argument("-o", "--output",
@@ -331,7 +322,7 @@ def _parse_args(argv):
     parser.add_argument("-i", "--initlevels", action="store_true",
                         help="print the initlevel functions instead of checking the device dependencies")
     parser.add_argument("--edt-pickle", default=pathlib.Path("edt.pickle"),
-                        help="name of the the pickled edtlib.EDT file",
+                        help="name of the pickled edtlib.EDT file",
                         type=pathlib.Path)
 
     return parser.parse_args(argv)
@@ -373,9 +364,6 @@ def main(argv=None):
 
     if args.always_succeed:
         return 0
-
-    if args.fail_on_warning and validator.warnings:
-        return 1
 
     if validator.errors:
         return 1

@@ -34,7 +34,7 @@ The devicetree files inside the :file:`zephyr` directory look like this:
 
 Generally speaking, every supported board has a :file:`BOARD.dts` file
 describing its hardware. For example, the ``reel_board`` has
-:zephyr_file:`boards/arm/reel_board/reel_board.dts`.
+:zephyr_file:`boards/phytec/reel_board/reel_board.dts`.
 
 :file:`BOARD.dts` includes one or more ``.dtsi`` files. These ``.dtsi`` files
 describe the CPU or system-on-chip Zephyr runs on, perhaps by including other
@@ -129,7 +129,7 @@ These are created in your application's build directory.
    input to :file:`gen_defines.py` and used to create :file:`zephyr.dts` and
    :file:`devicetree_generated.h`.
 
-:file:`<build>/zephyr/include/generated/devicetree_generated.h`
+:file:`<build>/zephyr/include/generated/zephyr/devicetree_generated.h`
    The generated macros and additional comments describing the devicetree.
    Included by ``devicetree.h``.
 

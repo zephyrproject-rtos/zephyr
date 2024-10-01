@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <string.h>
 
 /* This assumes that bufs and buf_copy are copies from the values passed
@@ -23,7 +23,7 @@ static struct spi_buf_set *copy_and_check(struct spi_buf_set *bufs,
 	}
 
 	/* Validate the array of struct spi_buf instances */
-	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
+	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(bufs->buffers,
 					   bufs->count,
 					   sizeof(struct spi_buf)));
 
@@ -40,7 +40,7 @@ static struct spi_buf_set *copy_and_check(struct spi_buf_set *bufs,
 		 */
 		const struct spi_buf *buf = &bufs->buffers[i];
 
-		Z_OOPS(Z_SYSCALL_MEMORY(buf->buf, buf->len, writable));
+		K_OOPS(K_SYSCALL_MEMORY(buf->buf, buf->len, writable));
 	}
 
 	return bufs;
@@ -76,17 +76,17 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 	struct spi_buf_set rx_bufs_copy;
 	struct spi_config config_copy;
 
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
-	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, transceive));
+	K_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	K_OOPS(K_SYSCALL_DRIVER_SPI(dev, transceive));
 
 	if (tx_bufs) {
 		const struct spi_buf_set *tx =
 			(const struct spi_buf_set *)tx_bufs;
 
-		Z_OOPS(Z_SYSCALL_MEMORY_READ(tx_bufs,
+		K_OOPS(K_SYSCALL_MEMORY_READ(tx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&tx_bufs_copy, tx, sizeof(tx_bufs_copy));
-		Z_OOPS(Z_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
+		K_OOPS(K_SYSCALL_VERIFY(tx_bufs_copy.count < 32));
 	} else {
 		memset(&tx_bufs_copy, 0, sizeof(tx_bufs_copy));
 	}
@@ -95,17 +95,17 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 		const struct spi_buf_set *rx =
 			(const struct spi_buf_set *)rx_bufs;
 
-		Z_OOPS(Z_SYSCALL_MEMORY_READ(rx_bufs,
+		K_OOPS(K_SYSCALL_MEMORY_READ(rx_bufs,
 					     sizeof(struct spi_buf_set)));
 		memcpy(&rx_bufs_copy, rx, sizeof(rx_bufs_copy));
-		Z_OOPS(Z_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
+		K_OOPS(K_SYSCALL_VERIFY(rx_bufs_copy.count < 32));
 	} else {
 		memset(&rx_bufs_copy, 0, sizeof(rx_bufs_copy));
 	}
 
 	memcpy(&config_copy, config, sizeof(*config));
 	if (spi_cs_is_gpio(&config_copy)) {
-		Z_OOPS(Z_SYSCALL_OBJ(config_copy.cs.gpio.port,
+		K_OOPS(K_SYSCALL_OBJ(config_copy.cs.gpio.port,
 				     K_OBJ_DRIVER_GPIO));
 	}
 
@@ -114,13 +114,13 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 					&tx_bufs_copy,
 					&rx_bufs_copy);
 }
-#include <syscalls/spi_transceive_mrsh.c>
+#include <zephyr/syscalls/spi_transceive_mrsh.c>
 
 static inline int z_vrfy_spi_release(const struct device *dev,
 				     const struct spi_config *config)
 {
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(config, sizeof(*config)));
-	Z_OOPS(Z_SYSCALL_DRIVER_SPI(dev, release));
+	K_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
+	K_OOPS(K_SYSCALL_DRIVER_SPI(dev, release));
 	return z_impl_spi_release((const struct device *)dev, config);
 }
-#include <syscalls/spi_release_mrsh.c>
+#include <zephyr/syscalls/spi_release_mrsh.c>

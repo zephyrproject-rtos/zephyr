@@ -52,7 +52,7 @@ void *gnttab_get_page(void);
 
 /*
  * Releases provided page, that was used for mapping foreign grant frame,
- * should be called after unmaping.
+ * should be called after unmapping.
  *
  * @param page_addr - pointer to start address of used page.
  */

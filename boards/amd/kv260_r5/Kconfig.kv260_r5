@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Linaro.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KV260_R5
+	select SOC_XILINX_ZYNQMP_RPU

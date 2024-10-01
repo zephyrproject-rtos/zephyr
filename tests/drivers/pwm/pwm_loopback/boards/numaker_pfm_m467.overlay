@@ -6,8 +6,8 @@
 	epwm1_default: epwm1_default {
 		group0 {
 			/* EVB's D5, D3 --> PC12, PC10 */
-			pinmux = <PC12MFP_EPWM1_CH0 0x0000>,
-				 <PC10MFP_EPWM1_CH2 0x0000>;
+			pinmux = <PC12MFP_EPWM1_CH0>,
+				 <PC10MFP_EPWM1_CH2>;
 		};
 	};
 };

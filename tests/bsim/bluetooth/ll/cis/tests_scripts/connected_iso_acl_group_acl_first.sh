@@ -12,19 +12,19 @@ EXECUTE_TIMEOUT=200
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=2 -testid=peripheral
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=3 -testid=peripheral
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=4 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

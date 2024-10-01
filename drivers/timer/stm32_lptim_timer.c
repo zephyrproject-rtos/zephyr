@@ -17,6 +17,8 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/spinlock.h>
 
@@ -61,11 +63,10 @@ static const struct device *const clk_ctrl = DEVICE_DT_GET(STM32_CLOCK_CONTROL_N
  *    0xFFFF / (LSE freq (32768Hz) / 128)
  */
 
-static uint32_t lptim_clock_freq = KHZ(32);
 static int32_t lptim_time_base;
-
+static uint32_t lptim_clock_freq = CONFIG_STM32_LPTIM_CLOCK;
 /* The prescaler given by the DTS and to apply to the lptim_clock_freq */
-#define LPTIM_CLOCK_RATIO DT_PROP(DT_DRV_INST(0), st_prescaler)
+static uint32_t lptim_clock_presc = DT_PROP(DT_DRV_INST(0), st_prescaler);
 
 /* Minimum nb of clock cycles to have to set autoreload register correctly */
 #define LPTIM_GUARD_VALUE 2
@@ -81,16 +82,31 @@ static bool autoreload_ready = true;
 
 static struct k_spinlock lock;
 
-/* For tick accuracy, a specific tick to freq ratio is expected */
-/* This check assumes LSI@32KHz or LSE@32768Hz */
-#if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
-#if (((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSI) &&	\
-		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4000)) ||			\
-	((DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(0), 1, bus) == STM32_SRC_LSE) &&	\
-		(CONFIG_SYS_CLOCK_TICKS_PER_SEC != 4096)))
-#warning Advised tick freq is 4096 for LSE / 4000 for LSI
-#endif
-#endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+
+#define CURRENT_CPU \
+	(COND_CODE_1(CONFIG_SMP, (arch_curr_cpu()->id), (_current_cpu->id)))
+
+#define cycle_t uint32_t
+
+/* This local variable indicates that the timeout was set right before
+ * entering standby state.
+ *
+ * It is used for chips that has to use a separate standby timer in such
+ * case because the LPTIM is not clocked in some low power mode state.
+ */
+static bool timeout_stdby;
+
+/* Cycle counter before entering the standby state. */
+static cycle_t lptim_cnt_pre_stdby;
+
+/* Standby timer value before entering the standby state. */
+static uint32_t stdby_timer_pre_stdby;
+
+/* Standby timer used for timer while entering the standby state */
+static const struct device *stdby_timer = DEVICE_DT_GET(DT_CHOSEN(st_lptim_stdby_timer));
+
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
 static inline bool arrm_state_get(void)
 {
@@ -183,14 +199,73 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	ARG_UNUSED(idle);
 
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	const struct pm_state_info *next;
+
+	next = pm_policy_next_state(CURRENT_CPU, ticks);
+
+	/* Check if STANBY or STOP3 is requested */
+	timeout_stdby = false;
+	if ((next != NULL) && idle) {
+#ifdef CONFIG_PM_S2RAM
+		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
+			timeout_stdby = true;
+		}
+#endif
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+		if ((next->state == PM_STATE_SUSPEND_TO_IDLE) && (next->substate_id == 4)) {
+			timeout_stdby = true;
+		}
+#endif
+	}
+
+	if (timeout_stdby) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+		struct counter_alarm_cfg cfg = {
+			.callback = NULL,
+			.ticks = counter_us_to_ticks(stdby_timer, timeout_us),
+			.user_data = NULL,
+			.flags = 0,
+		};
+
+		/* Set the alarm using timer that runs the standby.
+		 * Needed rump-up/setting time, lower accurency etc. should be
+		 * included in the exit-latency in the power state definition.
+		 */
+		counter_cancel_channel_alarm(stdby_timer, 0);
+		counter_set_channel_alarm(stdby_timer, 0, &cfg);
+
+		/* Store current values to calculate a difference in
+		 * measurements after exiting the standby state.
+		 */
+		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
+		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
+
+		/* Stop clocks for LPTIM, since RTC is used instead */
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+
+		return;
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
+	/*
+	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = y, ticks equals to -1
+	 * is treated as a lptim off ; never waking up ; lptim not clocked anymore
+	 */
 	if (ticks == K_TICKS_FOREVER) {
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 		return;
 	}
+	/*
+	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n, ticks equals to INT_MAX
+	 * is treated as a maximum possible value LPTIM_MAX_TIMEBASE (16bit counter)
+	 */
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
 	err = clock_control_on(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
@@ -342,12 +417,8 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
-#if defined(LL_APB1_GRP1_PERIPH_LPTIM1)
-	LL_APB1_GRP1_ReleaseReset(LL_APB1_GRP1_PERIPH_LPTIM1);
-#elif defined(LL_APB3_GRP1_PERIPH_LPTIM1)
+#if defined(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN)
 	LL_SRDAMR_GRP1_EnableAutonomousClock(LL_SRDAMR_GRP1_PERIPH_LPTIM1AMEN);
-#elif defined(LL_APB7_GRP1_PERIPH_LPTIM1)
-	LL_APB7_GRP1_ReleaseReset(LL_APB7_GRP1_PERIPH_LPTIM1);
 #endif
 
 	/* Enable LPTIM clock source */
@@ -387,21 +458,24 @@ static int sys_clock_driver_init(void)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(DT_PROP(DT_DRV_INST(0), st_static_prescaler))) {
-		/*
-		 * LPTIM of the stm32, like stm32U5, which has a clock source x2.
-		 * A full 16bit LPTIM counter is counting 4s at 2 * 1/32768 (with LSE)
-		 * Time base = (4s * freq) - 1
-		 */
-		lptim_clock_freq = lptim_clock_freq / 2;
-	}
+#if !defined(CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE)
 	/*
-	 * Else, a full 16bit LPTIM counter is counting 2s at 1/32768 (with LSE)
-	 * Time base = (2s * freq) - 1
+	 * Check coherency between CONFIG_SYS_CLOCK_TICKS_PER_SEC
+	 * and the lptim_clock_freq which is the CONFIG_STM32_LPTIM_CLOCK reduced
+	 * by the lptim_clock_presc
 	 */
+	if (lptim_clock_presc <= 8) {
+		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / 8 >= CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		 "It is recommended to set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/8");
+	} else {
+		__ASSERT(CONFIG_STM32_LPTIM_CLOCK / lptim_clock_presc >=
+			CONFIG_SYS_CLOCK_TICKS_PER_SEC,
+		 "Set SYS_CLOCK_TICKS_PER_SEC to CONFIG_STM32_LPTIM_CLOCK/lptim_clock_presc");
+	}
+#endif /* !CONFIG_STM32_LPTIM_TICK_FREQ_RATIO_OVERRIDE */
 
 	/* Actual lptim clock freq when the clock source is reduced by the prescaler */
-	lptim_clock_freq = lptim_clock_freq / LPTIM_CLOCK_RATIO;
+	lptim_clock_freq = lptim_clock_freq / lptim_clock_presc;
 
 	/* Clear the event flag and possible pending interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -417,8 +491,10 @@ static int sys_clock_driver_init(void)
 	/* configure the LPTIM counter */
 	LL_LPTIM_SetClockSource(LPTIM, LL_LPTIM_CLK_SOURCE_INTERNAL);
 	/* the LPTIM clock freq is affected by the prescaler */
-	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(LPTIM_CLOCK_RATIO)) << LPTIM_CFGR_PRESC_Pos));
+	LL_LPTIM_SetPrescaler(LPTIM, (__CLZ(__RBIT(lptim_clock_presc)) << LPTIM_CFGR_PRESC_Pos));
+
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	LL_LPTIM_OC_SetPolarity(LPTIM, LL_LPTIM_CHANNEL_CH1,
 				LL_LPTIM_OUTPUT_POLARITY_REGULAR);
@@ -432,6 +508,7 @@ static int sys_clock_driver_init(void)
 	LL_LPTIM_TrigSw(LPTIM);
 
 #if defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Enable the LPTIM before proceeding with configuration */
 	LL_LPTIM_Enable(LPTIM);
@@ -456,9 +533,8 @@ static int sys_clock_driver_init(void)
 	stm32_lptim_wait_ready();
 	LL_LPTIM_ClearFlag_ARROK(LPTIM);
 
-	accumulated_lptim_cnt = 0;
-
 #if !defined(CONFIG_SOC_SERIES_STM32U5X) && \
+	!defined(CONFIG_SOC_SERIES_STM32H5X) && \
 	!defined(CONFIG_SOC_SERIES_STM32WBAX)
 	/* Enable the LPTIM counter */
 	LL_LPTIM_Enable(LPTIM);
@@ -488,6 +564,63 @@ static int sys_clock_driver_init(void)
 
 #endif
 	return 0;
+}
+
+void stm32_clock_control_standby_exit(void)
+{
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	if (clock_control_get_status(clk_ctrl,
+				     (clock_control_subsys_t) &lptim_clk[0])
+				     != CLOCK_CONTROL_STATUS_ON) {
+		sys_clock_driver_init();
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+}
+
+void sys_clock_idle_exit(void)
+{
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	if (timeout_stdby) {
+		cycle_t missed_lptim_cnt;
+		uint32_t stdby_timer_diff, stdby_timer_post, dticks;
+		uint64_t stdby_timer_us;
+
+		/* Get current value for standby timer and reset LPTIM counter value
+		 * to start anew.
+		 */
+		LL_LPTIM_ResetCounter(LPTIM);
+		counter_get_value(stdby_timer, &stdby_timer_post);
+
+		/* Calculate how much time has passed since last measurement for standby timer */
+		/* Check IDLE timer overflow */
+		if (stdby_timer_pre_stdby > stdby_timer_post) {
+			stdby_timer_diff =
+				(counter_get_top_value(stdby_timer) - stdby_timer_pre_stdby) +
+				stdby_timer_post + 1;
+
+		} else {
+			stdby_timer_diff = stdby_timer_post - stdby_timer_pre_stdby;
+		}
+		stdby_timer_us = counter_ticks_to_us(stdby_timer, stdby_timer_diff);
+
+		/* Convert standby time in LPTIM cnt */
+		missed_lptim_cnt = (sys_clock_hw_cycles_per_sec() * stdby_timer_us) /
+				   USEC_PER_SEC;
+		/* Add the LPTIM cnt pre standby */
+		missed_lptim_cnt += lptim_cnt_pre_stdby;
+
+		/* Update the cycle counter to include the cycles missed in standby */
+		accumulated_lptim_cnt += missed_lptim_cnt;
+
+		/* Announce the passed ticks to the kernel */
+		dticks = (missed_lptim_cnt * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+				/ lptim_clock_freq;
+		sys_clock_announce(dticks);
+
+		/* We've already performed all needed operations */
+		timeout_stdby = false;
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 }
 
 SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,

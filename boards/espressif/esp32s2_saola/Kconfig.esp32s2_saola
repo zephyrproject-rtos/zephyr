@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S2_SAOLA
+	select SOC_ESP32S2_WROVER_N4R2

@@ -15,9 +15,9 @@
 
 struct counter_alarm_cfg alarm_cfg;
 
-#if defined(CONFIG_BOARD_ATSAMD20_XPRO)
+#if defined(CONFIG_BOARD_SAMD20_XPRO)
 #define TIMER DT_NODELABEL(tc4)
-#elif defined(CONFIG_SOC_FAMILY_SAM)
+#elif defined(CONFIG_SOC_FAMILY_ATMEL_SAM)
 #define TIMER DT_NODELABEL(tc0)
 #elif defined(CONFIG_COUNTER_MICROCHIP_MCP7940N)
 #define TIMER DT_NODELABEL(extrtc0)
@@ -53,6 +53,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_NODELABEL(timer0)
 #elif defined(CONFIG_COUNTER_TIMER_RPI_PICO)
 #define TIMER DT_NODELABEL(timer)
+#else
+#error Unable to find a counter device node in devicetree
 #endif
 
 static void test_counter_interrupt_fn(const struct device *counter_dev,

@@ -74,6 +74,7 @@ config FULL_LIBCPP_SUPPORTED
 choice LIBCPP_IMPLEMENTATION
 	prompt "C++ Standard Library Implementation"
 	default EXTERNAL_LIBCPP if REQUIRES_FULL_LIBCPP && NATIVE_BUILD
+	default LIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
 	default GLIBCXX_LIBCPP if REQUIRES_FULL_LIBCPP
 	default MINIMAL_LIBCPP
 
@@ -96,6 +97,17 @@ config GLIBCXX_LIBCPP
 	  Build with GNU C++ Standard Library (libstdc++) provided by the GNU
 	  Compiler Collection (GCC)-based toolchain.
 
+config LIBCXX_LIBCPP
+	bool "LLVM C++ Standard Library"
+	depends on !NATIVE_APPLICATION
+	depends on NEWLIB_LIBC
+	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm"
+	select FULL_LIBCPP_SUPPORTED
+	help
+	  Build with LLVM C++ Standard Library (libc++) provided by LLVM
+	  toolchain. Information about library can be found at
+	  https://libcxx.llvm.org
+
 config ARCMWDT_LIBCPP
 	bool "ARC MWDT C++ Library"
 	depends on !NATIVE_APPLICATION
@@ -116,17 +128,6 @@ config EXTERNAL_MODULE_LIBCPP
 
 endchoice # LIBCPP_IMPLEMENTATION
 
-config CPP_MAIN
-	bool "[DEPRECATED] C++ main() function definition"
-	select DEPRECATED
-	help
-	  This option used to be necessary to instruct the Zephyr kernel to
-	  call 'int main(void)' instead of the old Zephyr default, 'void
-	  main(void)'.
-
-	  As the Zephyr type now matches the C++ required type, this option
-	  is no longer necessary.
-
 if !MINIMAL_LIBCPP
 
 config CPP_EXCEPTIONS
@@ -143,15 +144,13 @@ config CPP_RTTI
 endif # !MINIMAL_LIBCPP
 
 config CPP_STATIC_INIT_GNU
-	# As of today only ARC MWDT toolchain doesn't support GNU-compatible
-	# initialization of CPP static objects, new toolchains can be added
-	# here if required.
-	def_bool "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "arcmwdt"
+	bool
+	select STATIC_INIT_GNU
+	select DEPRECATED
 	help
-	  GNU-compatible initialization of CPP static objects
+	  GNU-compatible initialization of CPP static objects.
+	  This option is deprecated in favour of STATIC_INIT_GNU
 
 endif # CPP
-
-rsource "Kconfig.deprecated"
 
 endmenu

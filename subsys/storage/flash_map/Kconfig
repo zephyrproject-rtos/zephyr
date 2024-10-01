@@ -43,27 +43,27 @@ config FLASH_MAP_LABELS
 	  flash_map list shell command.
 
 if FLASH_AREA_CHECK_INTEGRITY
+
 choice FLASH_AREA_CHECK_INTEGRITY_BACKEND
 	prompt "Crypto backend for the flash check functions"
-	default FLASH_AREA_CHECK_INTEGRITY_TC
+	default FLASH_AREA_CHECK_INTEGRITY_PSA if BUILD_WITH_TFM
+	default FLASH_AREA_CHECK_INTEGRITY_MBEDTLS if !BUILD_WITH_TFM
 
-config FLASH_AREA_CHECK_INTEGRITY_TC
-	bool "Use TinyCrypt"
-	select TINYCRYPT
-	select TINYCRYPT_SHA256
+config FLASH_AREA_CHECK_INTEGRITY_PSA
+	bool "Use PSA"
+	select PSA_WANT_ALG_SHA_256
 	help
-	  Use TinyCrypt library to perform the integrity check.
+	  Use the PSA API to perform the integrity check.
 
 config FLASH_AREA_CHECK_INTEGRITY_MBEDTLS
-	bool "Use MBEDTLS"
+	bool "Use Mbed TLS"
 	select MBEDTLS
-	select MBEDTLS_MD
-	select MBEDTLS_MAC_SHA256_ENABLED
-	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_SHA256
 	help
-	  Use MBEDTLS library to perform the integrity check.
+	  Use the Mbed TLS library to perform the integrity check.
 
 endchoice
-endif
+
+endif # FLASH_AREA_CHECK_INTEGRITY
 
 endif

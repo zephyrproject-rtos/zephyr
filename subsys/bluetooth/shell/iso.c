@@ -24,6 +24,15 @@
 
 #include "bt.h"
 
+#if defined(CONFIG_BT_ISO_TX)
+#define DEFAULT_IO_QOS                                                                             \
+	{                                                                                          \
+		.sdu = 40u, .phy = BT_GAP_LE_PHY_2M, .rtn = 2u,                                    \
+	}
+
+#define TX_BUF_TIMEOUT K_SECONDS(1)
+
+static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
 static uint32_t cis_sn_last;
 static uint32_t bis_sn_last;
 static int64_t cis_sn_last_updated_ticks;
@@ -59,7 +68,9 @@ static uint32_t get_next_sn(uint32_t last_sn, int64_t *last_ticks,
 
 	return (uint32_t)next_sn;
 }
+#endif /* CONFIG_BT_ISO_TX */
 
+#if defined(CONFIG_BT_ISO_RX)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		struct net_buf *buf)
 {
@@ -68,6 +79,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 			    chan, buf->len, info->seq_num, info->ts);
 	}
 }
+#endif /* CONFIG_BT_ISO_RX */
 
 static void iso_connected(struct bt_iso_chan *chan)
 {
@@ -83,6 +95,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 		return;
 	}
 
+#if defined(CONFIG_BT_ISO_TX)
 	if (iso_info.type == BT_ISO_CHAN_TYPE_CONNECTED) {
 		cis_sn_last = 0U;
 		cis_sn_last_updated_ticks = k_uptime_ticks();
@@ -90,6 +103,7 @@ static void iso_connected(struct bt_iso_chan *chan)
 		bis_sn_last = 0U;
 		bis_sn_last_updated_ticks = k_uptime_ticks();
 	}
+#endif /* CONFIG_BT_ISO_TX */
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -99,19 +113,12 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 }
 
 static struct bt_iso_chan_ops iso_ops = {
-	.recv		= iso_recv,
-	.connected	= iso_connected,
-	.disconnected	= iso_disconnected,
+#if defined(CONFIG_BT_ISO_RX)
+	.recv = iso_recv,
+#endif /* CONFIG_BT_ISO_RX */
+	.connected = iso_connected,
+	.disconnected = iso_disconnected,
 };
-
-#define DEFAULT_IO_QOS \
-{ \
-	.sdu		= 40u, \
-	.phy		= BT_GAP_LE_PHY_2M, \
-	.rtn		= 2u, \
-}
-
-static struct bt_iso_chan_io_qos iso_tx_qos = DEFAULT_IO_QOS;
 
 #if defined(CONFIG_BT_ISO_UNICAST)
 static uint32_t cis_sdu_interval_us;
@@ -131,15 +138,65 @@ struct bt_iso_chan iso_chan = {
 };
 
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  8, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 #if defined(CONFIG_BT_ISO_CENTRAL)
 static struct bt_iso_cig *cig;
 
+static long parse_interval(const struct shell *sh, const char *interval_str)
+{
+	unsigned long interval;
+	int err;
+
+	err = 0;
+	interval = shell_strtoul(interval_str, 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse interval: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(interval,
+		      BT_ISO_SDU_INTERVAL_MIN,
+		      BT_ISO_SDU_INTERVAL_MAX)) {
+		shell_error(sh, "Invalid interval %lu", interval);
+
+		return -ENOEXEC;
+	}
+
+	return interval;
+}
+
+static long parse_latency(const struct shell *sh, const char *latency_str)
+{
+	unsigned long latency;
+	int err;
+
+	err = 0;
+	latency = shell_strtoul(latency_str, 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse latency: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(latency,
+		      BT_ISO_LATENCY_MIN,
+		      BT_ISO_LATENCY_MAX)) {
+		shell_error(sh, "Invalid latency %lu", latency);
+
+		return -ENOEXEC;
+	}
+
+	return latency;
+}
+
+
+
 static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	struct bt_iso_cig_param param;
+	struct bt_iso_cig_param param = {0};
 	struct bt_iso_chan *chans[CIS_ISO_CHAN_COUNT];
 
 	if (cig != NULL) {
@@ -164,33 +221,44 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 
 	err = 0;
 	if (argc > 2) {
-		unsigned long interval;
+		long interval;
 
 		interval = shell_strtoul(argv[2], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse interval: %d", err);
-
-			return -ENOEXEC;
+		interval = parse_interval(sh, argv[2]);
+		if (interval < 0) {
+			return interval;
 		}
 
-		if (!IN_RANGE(interval,
-			      BT_ISO_SDU_INTERVAL_MIN,
-			      BT_ISO_SDU_INTERVAL_MAX)) {
-			shell_error(sh, "Invalid interval %lu", interval);
-
-			return -ENOEXEC;
-		}
-
-		param.interval = interval;
+		param.c_to_p_interval = interval;
 	} else {
-		param.interval = 10000;
+		param.c_to_p_interval = 10000;
 	}
-	cis_sdu_interval_us = param.interval;
 
 	if (argc > 3) {
+		long interval;
+
+		interval = parse_interval(sh, argv[3]);
+		if (interval < 0) {
+			return interval;
+		}
+
+		param.p_to_c_interval = interval;
+	} else {
+		param.p_to_c_interval = param.c_to_p_interval;
+	}
+
+	/* cis_sdu_interval_us is used to increase the sequence number.
+	 * cig_create can be called before an ACL is created, so the role
+	 * information may not be available.
+	 * Since we are central however we can safely set the cis_sdu_interval
+	 * to the Central to Peer interval
+	 */
+	cis_sdu_interval_us = param.c_to_p_interval;
+
+	if (argc > 4) {
 		unsigned long packing;
 
-		packing = shell_strtoul(argv[3], 0, &err);
+		packing = shell_strtoul(argv[4], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse packing: %d", err);
 
@@ -208,10 +276,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		param.packing = 0;
 	}
 
-	if (argc > 4) {
+	if (argc > 5) {
 		unsigned long framing;
 
-		framing = shell_strtoul(argv[4], 0, &err);
+		framing = shell_strtoul(argv[5], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse framing: %d", err);
 
@@ -229,33 +297,38 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		param.framing = 0;
 	}
 
-	if (argc > 5) {
-		unsigned long latency;
+	if (argc > 6) {
+		long latency;
 
-		latency = shell_strtoul(argv[5], 0, &err);
-		if (err != 0) {
-			shell_error(sh, "Could not parse latency: %d", err);
+		latency = parse_latency(sh, argv[6]);
 
-			return -ENOEXEC;
+		if (latency < 0) {
+			return latency;
 		}
 
-		if (!IN_RANGE(latency,
-			      BT_ISO_LATENCY_MIN,
-			      BT_ISO_LATENCY_MAX)) {
-			shell_error(sh, "Invalid latency %lu", latency);
-
-			return -ENOEXEC;
-		}
-
-		param.latency = latency;
+		param.c_to_p_latency = latency;
 	} else {
-		param.latency = 10;
+		param.c_to_p_latency = 10;
 	}
 
-	if (argc > 6) {
+	if (argc > 7) {
+		long latency;
+
+		latency = parse_latency(sh, argv[7]);
+
+		if (latency < 0) {
+			return latency;
+		}
+
+		param.p_to_c_latency = latency;
+	} else {
+		param.p_to_c_latency = param.c_to_p_latency;
+	}
+
+	if (argc > 7) {
 		unsigned long sdu;
 
-		sdu = shell_strtoul(argv[6], 0, &err);
+		sdu = shell_strtoul(argv[7], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse sdu: %d", err);
 
@@ -277,10 +350,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 7) {
+	if (argc > 8) {
 		unsigned long phy;
 
-		phy = shell_strtoul(argv[7], 0, &err);
+		phy = shell_strtoul(argv[8], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse phy: %d", err);
 
@@ -304,10 +377,10 @@ static int cmd_cig_create(const struct shell *sh, size_t argc, char *argv[])
 		}
 	}
 
-	if (argc > 8) {
+	if (argc > 9) {
 		unsigned long rtn;
 
-		rtn = shell_strtoul(argv[8], 0, &err);
+		rtn = shell_strtoul(argv[9], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse rtn: %d", err);
 
@@ -504,13 +577,17 @@ static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 				  cis_sdu_interval_us);
 
 	while (count--) {
-		buf = net_buf_alloc(&tx_pool, K_FOREVER);
+		buf = net_buf_alloc(&tx_pool, TX_BUF_TIMEOUT);
+		if (buf == NULL) {
+			shell_error(sh, "Failed to get buffer...");
+			return -ENOEXEC;
+		}
+
 		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
 		net_buf_add_mem(buf, buf_data, len);
-		shell_info(sh, "send: %d bytes of data", len);
-		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last,
-				       BT_ISO_TIMESTAMP_NONE);
+		shell_info(sh, "send: %d bytes of data with PSN %u", len, cis_sn_last);
+		ret = bt_iso_chan_send(&iso_chan, buf, cis_sn_last);
 		if (ret < 0) {
 			shell_print(sh, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
@@ -612,23 +689,25 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	len = MIN(bis_iso_chan.qos->tx->sdu, CONFIG_BT_ISO_TX_MTU);
-
 	bis_sn_last = get_next_sn(bis_sn_last, &bis_sn_last_updated_ticks,
 				  bis_sdu_interval_us);
 
 	while (count--) {
-		for (int i = 0; i < BIS_ISO_CHAN_COUNT; i++) {
-			buf = net_buf_alloc(&bis_tx_pool, K_FOREVER);
-			net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+		buf = net_buf_alloc(&bis_tx_pool, TX_BUF_TIMEOUT);
+		if (buf == NULL) {
+			shell_error(sh, "Failed to get buffer...");
+			return -ENOEXEC;
+		}
 
-			net_buf_add_mem(buf, buf_data, len);
-			ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last,
-					       BT_ISO_TIMESTAMP_NONE);
-			if (ret < 0) {
-				shell_print(sh, "[%i]: Unable to broadcast: %d", i, -ret);
-				net_buf_unref(buf);
-				return -ENOEXEC;
-			}
+		net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
+
+		net_buf_add_mem(buf, buf_data, len);
+		shell_info(sh, "send: %d bytes of data with PSN %u", len, bis_sn_last);
+		ret = bt_iso_chan_send(&bis_iso_chan, buf, bis_sn_last);
+		if (ret < 0) {
+			shell_print(sh, "Unable to broadcast: %d", -ret);
+			net_buf_unref(buf);
+			return -ENOEXEC;
 		}
 	}
 
@@ -640,7 +719,7 @@ static int cmd_broadcast(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_big_create(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
-	struct bt_iso_big_create_param param;
+	struct bt_iso_big_create_param param = {0};
 	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
 
 	if (!adv) {
@@ -860,8 +939,10 @@ static int cmd_big_term(const struct shell *sh, size_t argc, char *argv[])
 SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 #if defined(CONFIG_BT_ISO_UNICAST)
 #if defined(CONFIG_BT_ISO_CENTRAL)
-	SHELL_CMD_ARG(cig_create, NULL, "[dir=tx,rx,txrx] [interval] [packing] [framing] "
-		      "[latency] [sdu] [phy] [rtn]", cmd_cig_create, 1, 8),
+	SHELL_CMD_ARG(cig_create, NULL,
+		      "[dir=tx,rx,txrx] [C to P interval] [P to C interval] "
+		      "[packing] [framing] [C to P latency] [P to C latency] [sdu] [phy] [rtn]",
+		      cmd_cig_create, 1, 10),
 	SHELL_CMD_ARG(cig_term, NULL, "Terminate the CIG", cmd_cig_term, 1, 0),
 #if defined(CONFIG_BT_SMP)
 	SHELL_CMD_ARG(connect, NULL, "Connect ISO Channel [security level]", cmd_connect, 1, 1),
@@ -876,10 +957,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(listen, NULL, "<dir=tx,rx,txrx>", cmd_listen, 2, 0),
 #endif /* CONFIG_BT_SMP */
 #endif /* CONFIG_BT_ISO_PERIPHERAL */
-	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]",
-		      cmd_send, 1, 1),
-	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel",
-		      cmd_disconnect, 1, 0),
+#if defined(CONFIG_BT_ISO_TX)
+	SHELL_CMD_ARG(send, NULL, "Send to ISO Channel [count]", cmd_send, 1, 1),
+#endif /* CONFIG_BT_ISO_TX */
+	SHELL_CMD_ARG(disconnect, NULL, "Disconnect ISO Channel", cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(tx_sync_read_cis, NULL, "Read CIS TX sync info", cmd_tx_sync_read_cis, 1, 0),
 #endif /* CONFIG_BT_ISO_UNICAST */
 #if defined(CONFIG_BT_ISO_BROADCASTER)
@@ -889,8 +970,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 	SHELL_CMD_ARG(tx_sync_read_bis, NULL, "Read BIS TX sync info", cmd_tx_sync_read_bis, 1, 0),
 #endif /* CONFIG_BT_ISO_BROADCASTER */
 #if defined(CONFIG_BT_ISO_SYNC_RECEIVER)
-	SHELL_CMD_ARG(sync-big, NULL, "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
-		      "[timeout] [enc <broadcast code>]", cmd_big_sync, 2, 4),
+	SHELL_CMD_ARG(sync-big, NULL,
+		      "Synchronize to a BIG as a receiver <BIS bitfield> [mse] "
+		      "[timeout] [enc <broadcast code>]",
+		      cmd_big_sync, 2, 4),
 #endif /* CONFIG_BT_ISO_SYNC_RECEIVER */
 #if defined(CONFIG_BT_ISO_BROADCAST)
 	SHELL_CMD_ARG(term-big, NULL, "Terminate a BIG", cmd_big_term, 1, 0),
@@ -900,14 +983,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(iso_cmds,
 
 static int cmd_iso(const struct shell *sh, size_t argc, char **argv)
 {
-	if (argc > 1) {
-		shell_error(sh, "%s unknown parameter: %s",
-			    argv[0], argv[1]);
-	} else {
-		shell_error(sh, "%s Missing subcommand", argv[0]);
+	if (argc == 1) {
+		shell_help(sh);
+
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
-	return -ENOEXEC;
+	shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -EINVAL;
 }
 
 SHELL_CMD_ARG_REGISTER(iso, &iso_cmds, "Bluetooth ISO shell commands",

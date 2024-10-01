@@ -1,188 +1,100 @@
 .. _emulators:
 
-Peripheral and Hardware Emulators
-#################################
+Zephyr's device emulators/simulators
+####################################
 
 Overview
 ========
 
-Zephyr supports a simple emulator framework to support testing of drivers
-without requiring real hardware.
+Zephyr includes in its codebase a set of device emulators/simulators.
+With this we refer to SW components which are built together with the embedded SW
+and present themselves as devices of a given class to the rest of the system.
 
-Emulators are used to emulate hardware devices, to support testing of
-various subsystems. For example, it is possible to write an emulator
-for an I2C compass such that it appears on the I2C bus and can be used
-just like a real hardware device.
+These device emulators/simulators can be built for any target which has sufficient RAM and flash,
+even if some may have extra functionality which is only available in some targets.
 
-Emulators often implement special features for testing. For example a
-compass may support returning bogus data if the I2C bus speed is too
-high, or may return invalid measurements if calibration has not yet
-been completed. This allows for testing that high-level code can
-handle these situations correctly. Test coverage can therefore
-approach 100% if all failure conditions are emulated.
+.. note::
 
-Concept
-=======
+   | Zephyr also includes and uses many other types of simulators/emulators, including CPU and
+     platform simulators, radio simulators, and several build targets which allow running the
+     embedded code in the development host.
+   | Some of Zephyr communication controllers/drivers include also either loopback modes or loopback
+     devices.
+   | This page does not cover any of these.
 
-The diagram below shows application code / high-level tests at the top.
-This is the ultimate application we want to run.
+.. note::
+   Drivers which are specific to some platform, like for example the
+   :ref:`native_sim specific drivers <native_sim_peripherals>` which
+   emulate a peripheral class by connecting to host APIs are not covered by this page.
 
-.. figure:: img/arch.png
-   :align: center
-   :alt: Emulator architecture showing tests, emulators and drivers
-
-Below that are peripheral drivers, such as the AT24 EEPROM driver. We can test
-peripheral drivers using an emulation driver connected via a native_posix I2C
-controller/emulator which passes I2C traffic from the AT24 driver to the AT24
-simulator.
-
-Separately we can test the STM32 and NXP I2C drivers on real hardware using API
-tests. These require some sort of device attached to the bus, but with this, we
-can validate much of the driver functionality.
-
-Putting the two together, we can test the application and peripheral code
-entirely on native_posix. Since we know that the I2C driver on the real hardware
-works, we should expect the application and peripheral drivers to work on the
-real hardware also.
-
-Using the above framework we can test an entire application (e.g. Embedded
-Controller) on native_posix using emulators for all non-chip drivers:
-
-.. figure:: img/app.png
-   :align: center
-   :alt: Example system, using emulators to implement a PC EC
-
-The 'real' code is shown in green. The Zephyr emulation-framework code is shown
-in yellow. The blue boxes are the extra code we have to write to emulate the
-peripherals.
-
-With this approach we can:
-
-* Write individual tests for each driver (green), covering all failure modes,
-  error conditions, etc.
-
-* Ensure 100% test coverage for drivers (green)
-
-* Write tests for combinations of drivers, such as GPIOs provided by an I2C GPIO
-  expander driver talking over an I2C bus, with the GPIOs controlling a charger.
-  All of this can work in the emulated environment or on real hardware.
-
-* Write a complex application that ties together all of these pieces and runs on
-  native_posix. We can develop on a host, use source-level debugging, etc.
-
-* Transfer the application to any board which provides the required features
-  (e.g. I2C, enough GPIOs), by adding Kconfig and devicetree fragments.
-
-Creating a Device Driver Emulator
-=================================
-
-The emulator subsystem is modeled on the :ref:`device_model_api`.  You create
-an emulator instance using one of the :c:func:`EMUL_DT_DEFINE()` or
-:c:func:`EMUL_DT_INST_DEFINE()` APIs.
-
-Emulators for peripheral devices reuse the same devicetree node as the real
-device driver. This means that your emulator defines `DT_DRV_COMPAT` using the
-same ``compat`` value from the real driver.
-
-.. code-block:: C
-
-  /* From drivers/sensor/bm160/bm160.c */
-  #define DT_DRV_COMPAT bosch_bmi160
-
-  /* From subsys/emul/emul_bmi160.c */
-  #define DT_DRV_COMPAT bosch_bmi160
-
-The ``EMUL_DT_DEFINE()`` function accepts two API types:
-
-  #. ``bus_api`` - This points to the API for the upstream bus that the emulator
-     connects to. The ``bus_api`` parameter is required.  The supported
-     emulated bus types include I2C, SPI, and eSPI.
-  #. ``_backend_api`` - This points to the device-class specific backend API for
-     the emulator. The ``_backend_api`` parameter is optional.
-
-The diagram below demonstrates the logical organization of the ``bus_api`` and
-``_backend_api`` using the BC1.2 charging detector driver as the model
-device-class.
-
-.. figure:: img/device_class_emulator.png
-   :align: center
-   :alt: Device class example, demonstrating BC1.2 charging detectors.
-
-The real code is shown in green, while the emulator code is shown in yellow.
-
-The ``bus_api`` connects the BC1.2 emulators to the ``native_posix`` I2C
-controller. The real BC1.2 drivers are unchanged and operate exactly as if there
-was a physical I2C controller present in the system. The ``native_posix`` I2C
-controller uses the ``bus_api`` to initiate register reads and writes to the
-emulator.
-
-The ``_backend_api`` provides a mechanism for tests to manipulate the emulator
-out of band.  Each device class defines it's own API functions.  The backend API
-functions focus on high-level behavior and do not provide hooks for specific
-emulators.
-
-In the case of the BC1.2 charging detector the backend API provides functions
-to simulate connecting and disconnecting a charger to the emulated BC1.2 device.
-Each emulator is responsible for updating the correct vendor specific registers
-and potentially signalling an interrupt.
-
-Example test flow:
-
-  #. Test registers BC1.2 detection callback using the Zephyr BC1.2 driver API.
-  #. Test connects a charger using the BC1.2 emulator backend.
-  #. Test verifies B1.2 detection callback invoked with correct charger type.
-  #. Test disconnects a charger using the BC1.2 emulator backend.
-
-With this architecture, the same test can be used will all supported drivers in
-the same driver class.
 
 Available Emulators
 ===================
 
-Zephyr includes the following emulators:
+**ADC emulator**
+  * A fake driver which pretends to be actual ADC, and can be used for testing higher-level API
+    for ADC devices.
+  * Main Kconfig option: :kconfig:option:`CONFIG_ADC_EMUL`
+  * DT binding: :dtcompatible:`zephyr,adc-emul`
 
-* EEPROM, which uses a file as the EEPROM contents
+**DMA emulator**
+  * Emulated DMA controller
+  * Main Kconfig option: :kconfig:option:`CONFIG_DMA_EMUL`
+  * DT binding: :dtcompatible:`zephyr,dma-emul`
 
-* I2C emulator driver, allowing drivers to be connected to an emulator so that
-  tests can be performed without access to the real hardware
+**EEPROM emulator**
+  * Emulate an EEPROM on a flash partition
+  * Main Kconfig option: :kconfig:option:`CONFIG_EEPROM_EMULATOR`
+  * DT binding: :dtcompatible:`zephyr,emu-eeprom`
 
-* SPI emulator driver, which does the same for SPI
+.. _emul_eeprom_simu_brief:
 
-* eSPI emulator driver, which does the same for eSPI. The emulator is being
-  developed to support more functionalities.
+**EEPROM simulator**
+  * Emulate an EEPROM on RAM
+  * Main Kconfig option: :kconfig:option:`CONFIG_EEPROM_SIMULATOR`
+  * DT binding: :dtcompatible:`zephyr,sim-eeprom`
+  * Note: For :ref:`native targets <native_sim>` it is also possible to keep the content
+    as a file on the host filesystem.
 
-* CAN loopback driver
+**External bus and bus connected peripheral emulators**
+  * :ref:`Documentation <bus_emul>`
+  * Allow emulating external buses like I2C or SPI and peripherals connected to them.
 
-A GPIO emulator is planned but is not yet complete.
+.. _emul_flash_simu_brief:
 
-Samples
-=======
+**Flash simulator**
+  * Emulate a flash on RAM
+  * Main Kconfig option: :kconfig:option:`CONFIG_FLASH_SIMULATOR`
+  * DT binding: :dtcompatible:`zephyr,sim-flash`
+  * Note: For native targets it is also possible to keep the content as a file on the host
+    filesystem. Check :ref:`the native_sim flash simulator section <nsim_per_flash_simu>`.
 
-Here are some examples present in Zephyr:
+**GPIO emulator**
+  * Emulated GPIO controllers which can be driven from SW
+  * Main Kconfig option: :kconfig:option:`CONFIG_GPIO_EMUL`
+  * DT binding: :dtcompatible:`zephyr,gpio-emul`
 
-#. Bosch BMI160 sensor driver connected via both I2C and SPI to an emulator:
+**I2C emulator**
+  * Emulated I2C bus. See :ref:`bus emulators <bus_emul>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_I2C_EMUL`
+  * DT binding: :dtcompatible:`zephyr,i2c-emul-controller`
 
-   .. zephyr-app-commands::
-      :app: tests/drivers/sensor/accel/
-      :board: native_posix
-      :goals: build
+**RTC emulator**
+  * Emulated RTC peripheral. See :ref:`RTC emulated device section <rtc_api_emul_dev>`
+  * Main Kconfig option: :kconfig:option:`CONFIG_RTC_EMUL`
+  * DT binding: :dtcompatible:`zephyr,rtc-emul`
 
-#. Simple test of the EEPROM emulator:
+**SPI emulator**
+  * Emulated SPI bus. See :ref:`bus emulators <bus_emul>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_SPI_EMUL`
+  * DT binding: :dtcompatible:`zephyr,spi-emul-controller`
 
-   .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
-      :board: native_posix
-      :goals: build
+**MSPI emulator**
+  * Emulated MSPI bus. See :ref:`bus emulators <bus_emul>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_MSPI_EMUL`
+  * DT binding: :dtcompatible:`zephyr,mspi-emul-controller`
 
-#. The same test has a second EEPROM which is an Atmel AT24 EEPROM driver
-   connected via I2C an emulator:
-
-   .. zephyr-app-commands::
-      :app: tests/drivers/eeprom
-      :board: native_posix
-      :goals: build
-
-API Reference
-*************
-
-.. doxygengroup:: io_emulators
+**UART emulator**
+  * Emulated UART bus. See :ref:`bus emulators <bus_emul>`.
+  * Main Kconfig option: :kconfig:option:`CONFIG_UART_EMUL`
+  * DT binding: :dtcompatible:`zephyr,uart-emul`

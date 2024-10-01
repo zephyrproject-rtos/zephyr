@@ -36,7 +36,7 @@ extern "C" {
  *   @ref gpio_emul_input_set_masked in order to emulate GPIO events
  *
  * An example of an appropriate Device Tree overlay file is in
- * tests/drivers/gpio/gpio_basic_api/boards/native_posix_64.overlay.
+ * tests/drivers/gpio/gpio_basic_api/boards/native_sim.overlay.
  *
  * An example of registering a callback to emulate "wiring" as well as
  * an example of calling @ref gpio_emul_input_set is in the file

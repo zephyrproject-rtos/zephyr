@@ -4,15 +4,26 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
-      - nrf52840dk_nrf52840
+      - native_sim
+      - nrf52840dk/nrf52840
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester.nxp:
+    # Disabling monolithic since CI environment doesn't use blobs
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - rd_rw612_bga
+      - frdm_rw612
+    extra_configs:
+      - CONFIG_NXP_MONOLITHIC_BT=n
   bluetooth.general.tester_le_audio:
     build_only: true
     platform_allow:
       - qemu_x86
       - native_posix
-      - nrf5340dk_nrf5340_cpuapp
+      - native_sim
+      - nrf5340dk/nrf5340/cpuapp
     extra_args: OVERLAY_CONFIG="overlay-le-audio.conf"
     tags: bluetooth
     harness: bluetooth
@@ -21,16 +32,8 @@ tests:
     platform_allow:
       - qemu_x86
       - native_posix
-      - nrf52840dk_nrf52840
+      - native_sim
+      - nrf52840dk/nrf52840
     extra_args: OVERLAY_CONFIG="overlay-mesh.conf"
-    tags: bluetooth
-    harness: bluetooth
-  bluetooth.general.tester_mesh_v1d1:
-    build_only: true
-    platform_allow:
-      - qemu_x86
-      - native_posix
-      - nrf52840dk_nrf52840
-    extra_args: OVERLAY_CONFIG="overlay-mesh.conf;overlay-mesh-v1d1.conf"
     tags: bluetooth
     harness: bluetooth

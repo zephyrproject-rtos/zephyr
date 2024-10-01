@@ -34,7 +34,7 @@ Caveats
   application should build and run for other platforms with same connectivity.
 
 * The sample provides overlay files to enable other technologies like WIFI,
-  modem, BLE IPSP, 802.15.4 or OpenThread.  These technologies depends on
+  802.15.4 or OpenThread.  These technologies depends on
   hardware resources and the correspondent overlay was designed to be generic
   instead full optimized.
 
@@ -188,7 +188,7 @@ for details.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: [ frdm_k64f | nrf52840dk_nrf52840 | nucleo_f767zi ]
+    :board: [ frdm_k64f | nrf52840dk/nrf52840 | nucleo_f767zi ]
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-wifi.conf;overlay-prj.conf"
     :shield: esp_8266_arduino
@@ -199,23 +199,7 @@ for details.
     The board disco_l475_iot1 is not supported.  The es-WIFI driver currently
     doesn't support UDP.
 
-Step 4.3: Build for Modem
--------------------------
-
-Modem needs add ``overlay-modem.conf``.  Now, a DTC overlay file is used to
-configure the glue between the modem and an arduino headers.  The modem config
-uses PPP over GSM modem, see :zephyr:code-sample:`gsm-modem` sample application.
-
-.. zephyr-app-commands::
-    :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: [ frdm_k64f | nrf52840dk_nrf52840 | nucleo_f767zi ]
-    :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-modem.conf;overlay-prj.conf" \
-      -DDTC_OVERLAY_FILE=arduino.overlay
-    :goals: build
-    :compact:
-
-Step 4.4: Build for IEEE 802.15.4 [experimental]
+Step 4.3: Build for IEEE 802.15.4 [experimental]
 ------------------------------------------------
 
 For IEEE 802.15.4 needs add ``overlay-802154.conf``.  This requires two nodes:
@@ -227,7 +211,7 @@ tested with both native linux driver and ``atusb`` and with ``wpanusb`` sample.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
+    :board: nrf52840dk/nrf52840
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
     :goals: build
@@ -242,26 +226,7 @@ tested with both native linux driver and ``atusb`` and with ``wpanusb`` sample.
     :goals: build
     :compact:
 
-Step 4.5: Build for BLE IPSP [experimental]
--------------------------------------------
-
-The BLE IPSP needs ``overlay-ipsp.conf``.  This may requires two nodes:
-one will be the host and the second one will be the device under test.  The
-validation needs a Linux kernel >= 4.9 with all 6loWPAN support.  In this
-particular case the Bluetooth 6LoWPAN module is needed. The start point is try
-reproduce the Zephyr :ref:`bluetooth-ipsp-sample`. It is out of scope
-at this moment provide support since it is experimental.  The gateway was
-tested with native linux driver and an USB dongle.
-
-.. zephyr-app-commands::
-    :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
-    :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-ipsp.conf;overlay-prj.conf"
-    :goals: build
-    :compact:
-
-Step 4.6: Build for OpenThread Network [experimental]
+Step 4.4: Build for OpenThread Network [experimental]
 -----------------------------------------------------
 
 The OpenThread requires the ``overlay-ot.conf``.  It requires two nodes:
@@ -273,7 +238,7 @@ gateway was tested using two boards with OpenThread 1.1.1 on NCP mode.
 
 .. zephyr-app-commands::
     :zephyr-app: zephyr/samples/subsys/mgmt/updatehub
-    :board: nrf52840dk_nrf52840
+    :board: nrf52840dk/nrf52840
     :build-dir: app
     :gen-args: -DEXTRA_CONF_FILE="overlay-ot.conf;overlay-prj.conf"
     :goals: build
@@ -482,7 +447,6 @@ The below list of hardware have been used by UpdateHub team.
    3, "MODEM (PPP)", "SIMCOM 808"
    4, "IEEE 802.15.4 (6loWPAN)", "Native,
    :ref:`RF2XX <atmel_at86rf2xx_transceivers>`"
-   5, "BLE IPSP (6loWPAN)", Native
    6, "OpenThread Network", Native
 
 .. csv-table::

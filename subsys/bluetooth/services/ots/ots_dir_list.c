@@ -33,7 +33,7 @@ static size_t dir_list_object_record_size(const struct bt_gatt_ots_object *obj)
 	/* ID */
 	len += BT_OTS_OBJ_ID_SIZE;
 
-	/* Name length (single octect is used for the name length) */
+	/* Name length (single octet is used for the name length) */
 	len += sizeof(uint8_t);
 
 	/* Name */

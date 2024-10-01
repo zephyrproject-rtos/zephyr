@@ -44,6 +44,26 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	return length;
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32WBAX) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32WLX)
+struct stm32_eui64 {
+	uint32_t id[2];
+};
+
+int z_impl_hwinfo_get_device_eui64(uint8_t *buffer)
+{
+	struct stm32_eui64 dev_eui64;
+
+	dev_eui64.id[0] = sys_cpu_to_be32(READ_REG(*((uint32_t *)UID64_BASE + 1U)));
+	dev_eui64.id[1] = sys_cpu_to_be32(READ_REG(*((uint32_t *)UID64_BASE)));
+
+	memcpy(buffer, dev_eui64.id, sizeof(dev_eui64));
+
+	return 0;
+}
+#endif
+
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
@@ -130,7 +150,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (LL_PWR_IsActiveFlag_C1SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
-#elif defined(PWR_FLAG_SB)
+#elif defined(PWR_FLAG_SB) || defined(PWR_FLAG_SBF)
 	if (LL_PWR_IsActiveFlag_SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
@@ -149,6 +169,8 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_CPU2();
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM7)
 	LL_PWR_ClearFlag_CPU();
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	LL_PWR_ClearFlag_STOP_SB();
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 	LL_PWR_ClearFlag_MCU();
 #elif defined(CONFIG_SOC_SERIES_STM32WLX) || defined(CONFIG_SOC_SERIES_STM32WBX)

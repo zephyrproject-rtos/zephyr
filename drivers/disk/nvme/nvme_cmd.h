@@ -1,6 +1,9 @@
 /*
+ * Copyright (c) 2022 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (c) 2022 Intel Corp.
+ *
+ * Derived from FreeBSD original driver made by Jim Harris
+ * with contributions from Alexander Motin and Wojciech Macek
  */
 
 #ifndef ZEPHYR_DRIVERS_DISK_NVME_NVME_COMMAND_H_

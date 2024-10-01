@@ -6,11 +6,7 @@
  */
 
 #include <stdbool.h>
-#ifdef CONFIG_ARCH_POSIX
-#include <fcntl.h>
-#else
 #include <zephyr/posix/fcntl.h>
-#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -21,7 +17,7 @@ LOG_MODULE_REGISTER(net_sock_can, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/net/canbus.h>
 #include <zephyr/net/socketcan.h>
@@ -62,14 +58,14 @@ int zcan_socket(int family, int type, int proto)
 	int fd;
 	int ret;
 
-	fd = z_reserve_fd();
+	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
 	}
 
 	ret = net_context_get(family, type, proto, &ctx);
 	if (ret < 0) {
-		z_free_fd(fd);
+		zvfs_free_fd(fd);
 		errno = -ret;
 		return -1;
 	}
@@ -84,8 +80,8 @@ int zcan_socket(int family, int type, int proto)
 	 */
 	k_condvar_init(&ctx->cond.recv);
 
-	z_finalize_fd(fd, ctx,
-		      (const struct fd_op_vtable *)&can_sock_fd_op_vtable);
+	zvfs_finalize_typed_fd(fd, ctx, (const struct fd_op_vtable *)&can_sock_fd_op_vtable,
+			    ZVFS_MODE_IFSOCK);
 
 	return fd;
 }

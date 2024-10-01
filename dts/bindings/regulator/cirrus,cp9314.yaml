@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cirrus CP9314 Buck Switched Cap DC/DC Converter
+
+  converter@72 {
+    compatible = "cirrus,cp9314";
+    reg = <0x72>;
+
+    cirrus,initial-switched-capacitor-mode = "2:1";
+  };
+
+compatible: "cirrus,cp9314"
+
+include:
+  - name: i2c-device.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-boot-on
+
+properties:
+  reg:
+    required: true
+
+  cirrus,en-gpios:
+    type: phandle-array
+    description: GPIO tied to EN pin
+
+  cirrus,pgood-gpios:
+    type: phandle-array
+    description: GPIO tied to PGOOD pin
+
+  cirrus,initial-switched-capacitor-mode:
+    type: string
+    enum:
+      - "2:1"
+      - "3:1"
+    description: |
+      Desired switched capacitor ratio set at initialization. This entry will overwrite
+      the selection set by the PROG resistor.

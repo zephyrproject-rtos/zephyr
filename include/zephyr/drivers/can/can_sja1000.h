@@ -102,15 +102,9 @@ typedef uint8_t (*can_sja1000_read_reg_t)(const struct device *dev, uint8_t reg)
  * @brief SJA1000 driver internal configuration structure.
  */
 struct can_sja1000_config {
+	const struct can_driver_config common;
 	can_sja1000_read_reg_t read_reg;
 	can_sja1000_write_reg_t write_reg;
-	uint32_t bitrate;
-	uint32_t sample_point;
-	uint32_t sjw;
-	uint32_t phase_seg1;
-	uint32_t phase_seg2;
-	const struct device *phy;
-	uint32_t max_bitrate;
 	uint8_t ocr;
 	uint8_t cdr;
 	const void *custom;
@@ -125,17 +119,17 @@ struct can_sja1000_config {
  * @param _write_reg Driver frontend SJA100 register write function
  * @param _ocr Initial SJA1000 Output Control Register (OCR) value
  * @param _cdr Initial SJA1000 Clock Divider Register (CDR) value
+ * @param _min_bitrate minimum bitrate supported by the CAN controller
  */
-#define CAN_SJA1000_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg, _ocr, _cdr)             \
+#define CAN_SJA1000_DT_CONFIG_GET(node_id, _custom, _read_reg, _write_reg, _ocr, _cdr,             \
+				  _min_bitrate)                                                    \
 	{                                                                                          \
-		.read_reg = _read_reg, .write_reg = _write_reg,                                    \
-		.bitrate = DT_PROP(node_id, bus_speed), .sjw = DT_PROP(node_id, sjw),              \
-		.phase_seg1 = DT_PROP_OR(node_id, phase_seg1, 0),                                  \
-		.phase_seg2 = DT_PROP_OR(node_id, phase_seg2, 0),                                  \
-		.sample_point = DT_PROP_OR(node_id, sample_point, 0),                              \
-		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, 1000000),                   \
-		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),                           \
-		.ocr = _ocr, .cdr = _cdr, .custom = _custom,                                       \
+		.common = CAN_DT_DRIVER_CONFIG_GET(node_id, _min_bitrate, 1000000),                \
+		.read_reg = _read_reg,                                                             \
+		.write_reg = _write_reg,                                                           \
+		.ocr = _ocr,                                                                       \
+		.cdr = _cdr,                                                                       \
+		.custom = _custom,                                                                 \
 	}
 
 /**
@@ -147,10 +141,13 @@ struct can_sja1000_config {
  * @param _write_reg Driver frontend SJA100 register write function
  * @param _ocr Initial SJA1000 Output Control Register (OCR) value
  * @param _cdr Initial SJA1000 Clock Divider Register (CDR) value
+ * @param _min_bitrate minimum bitrate supported by the CAN controller
  * @see CAN_SJA1000_DT_CONFIG_GET()
  */
-#define CAN_SJA1000_DT_CONFIG_INST_GET(inst, _custom, _read_reg, _write_reg, _ocr, _cdr)           \
-	CAN_SJA1000_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _read_reg, _write_reg, _ocr, _cdr)
+#define CAN_SJA1000_DT_CONFIG_INST_GET(inst, _custom, _read_reg, _write_reg, _ocr, _cdr,           \
+				       _min_bitrate)                                               \
+	CAN_SJA1000_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _read_reg, _write_reg, _ocr, _cdr,   \
+				  _min_bitrate)
 
 /**
  * @brief SJA1000 driver internal RX filter structure.
@@ -165,14 +162,11 @@ struct can_sja1000_rx_filter {
  * @brief SJA1000 driver internal data structure.
  */
 struct can_sja1000_data {
+	struct can_driver_data common;
 	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_MAX_FILTER);
 	struct can_sja1000_rx_filter filters[CONFIG_CAN_MAX_FILTER];
 	struct k_mutex mod_lock;
-	bool started;
-	can_mode_t mode;
 	enum can_state state;
-	can_state_change_callback_t state_change_cb;
-	void *state_change_cb_data;
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;
 	void *tx_user_data;
@@ -238,13 +232,13 @@ int can_sja1000_add_rx_filter(const struct device *dev, can_rx_callback_t callba
  */
 void can_sja1000_remove_rx_filter(const struct device *dev, int filter_id);
 
-#ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
+#ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 /**
  * @brief SJA1000 callback API upon recovering the CAN bus
  * See @a can_recover() for argument description
  */
 int can_sja1000_recover(const struct device *dev, k_timeout_t timeout);
-#endif /* !CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
+#endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
 /**
  * @brief SJA1000 callback API upon getting the CAN controller state
@@ -265,12 +259,6 @@ void can_sja1000_set_state_change_callback(const struct device *dev,
  * See @a can_get_max_filters() for argument description
  */
 int can_sja1000_get_max_filters(const struct device *dev, bool ide);
-
-/**
- * @brief SJA1000 callback API upon getting the maximum supported bitrate
- * See @a can_get_max_bitrate() for argument description
- */
-int can_sja1000_get_max_bitrate(const struct device *dev, uint32_t *max_bitrate);
 
 /**
  * @brief SJA1000 IRQ handler callback.

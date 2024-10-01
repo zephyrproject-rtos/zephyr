@@ -232,7 +232,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>; //RCC_APB1ENR1_CAN1EN
 			status = "disabled";
-			sample-point = <875>;
 		};
 
 		sdmmc1: sdmmc@40012800 {
@@ -273,5 +272,13 @@
 
 	die_temp: dietemp {
 		ts-cal2-temp = <110>;
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
 	};
 };

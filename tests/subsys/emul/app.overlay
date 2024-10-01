@@ -19,13 +19,13 @@
 
 	emul_tester_a: driver@aa {
 		compatible = "vnd,emul-tester";
-                reg = <0xaa>;
+		reg = <0xaa>;
 		status = "okay";
 		scale = <1>;
 	};
 	emul_tester_b: driver@bb {
 		compatible = "vnd,emul-tester";
-                reg = <0xbb>;
+		reg = <0xbb>;
 		status = "okay";
 		scale = <10>;
 	};

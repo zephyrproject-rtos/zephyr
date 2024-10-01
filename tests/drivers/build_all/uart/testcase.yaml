@@ -7,6 +7,5 @@ tests:
   drivers.uart.build:
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
-    tags: uart_cdns
     extra_configs:
       - CONFIG_SERIAL=y

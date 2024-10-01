@@ -20,9 +20,9 @@ tests:
     integration_platforms:
       - qemu_x86
     tags: tensorflow
-    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    filter: CONFIG_FULL_LIBC_SUPPORTED
   sample.tensorflow.helloworld.cmsis_nn:
     tags: tensorflow
-    platform_allow: mps3_an547
+    platform_allow: mps3/an547
     extra_configs:
       - CONFIG_TENSORFLOW_LITE_MICRO_CMSIS_NN_KERNELS=y

@@ -9,18 +9,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <zephyr/shell/shell.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/mcs.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-
-#include "shell/bt.h"
 #include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/util.h>
 
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include "../media_proxy_internal.h" /* For MPL_NO_TRACK_ID - TODO: Fix */
 
-#include <zephyr/logging/log.h>
+#include "shell/bt.h"
 
 LOG_MODULE_REGISTER(bt_media_controller_shell, CONFIG_BT_MCS_LOG_LEVEL);
 
@@ -356,7 +364,7 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 	}
 
 	if (id == 0) {
-		shell_print(ctx_shell, "Player: %p, Search result not avilable", plr);
+		shell_print(ctx_shell, "Player: %p, Search result not available", plr);
 	}
 
 	(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
@@ -595,7 +603,7 @@ static int cmd_media_read_playback_speed(const struct shell *sh, size_t argc, ch
 	int err = media_proxy_ctrl_get_playback_speed(current_player);
 
 	if (err) {
-		shell_error(ctx_shell, "Playback speed get get failed (%d)", err);
+		shell_error(ctx_shell, "Playback speed get failed (%d)", err);
 	}
 
 	return err;
@@ -662,14 +670,14 @@ static int cmd_media_read_current_track_obj_id(const struct shell *sh, size_t ar
 	return err;
 }
 
-/* TDOD: cmd_media_set_current_track_obj_id */
+/* TODO: cmd_media_set_current_track_obj_id */
 
 static int cmd_media_read_next_track_obj_id(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = media_proxy_ctrl_get_next_track_id(current_player);
 
 	if (err) {
-		shell_error(ctx_shell, "Nect track ID get failed (%d)", err);
+		shell_error(ctx_shell, "Next track ID get failed (%d)", err);
 	}
 
 	return err;

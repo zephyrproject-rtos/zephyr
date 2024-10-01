@@ -7,7 +7,7 @@ description: GPIO controller for Davinci and Keystone devices.
 
 compatible: "ti,davinci-gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [base.yaml, gpio-controller.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

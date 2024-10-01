@@ -10,14 +10,12 @@ common:
   min_ram: 24
   integration_platforms:
     - qemu_x86_64
-    - mps2_an385
+    - mps2/an385
   harness: console
   harness_config:
     type: one_line
     regex:
       - .*success
-  platform_exclude:
-    - esp32_net
 
 
 tests:

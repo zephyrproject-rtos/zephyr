@@ -15,13 +15,12 @@ static int cmd_od_priv_gatt_proxy_set(const struct shell *sh, size_t argc,
 				      char *argv[])
 {
 	uint8_t val, val_rsp;
+	uint16_t net_idx = bt_mesh_shell_target_ctx.net_idx;
+	uint16_t addr = bt_mesh_shell_target_ctx.dst;
 	int err = 0;
 
-	struct bt_mesh_msg_ctx ctx = BT_MESH_MSG_CTX_INIT_DEV(bt_mesh_shell_target_ctx.net_idx,
-							      bt_mesh_shell_target_ctx.dst);
-
 	if (argc < 2) {
-		err = bt_mesh_od_priv_proxy_cli_get(&ctx, &val_rsp);
+		err = bt_mesh_od_priv_proxy_cli_get(net_idx, addr, &val_rsp);
 	} else {
 		val = shell_strtoul(argv[1], 0, &err);
 
@@ -30,7 +29,7 @@ static int cmd_od_priv_gatt_proxy_set(const struct shell *sh, size_t argc,
 			return err;
 		}
 
-		err = bt_mesh_od_priv_proxy_cli_set(&ctx, val, &val_rsp);
+		err = bt_mesh_od_priv_proxy_cli_set(net_idx, addr, val, &val_rsp);
 	}
 
 	if (err) {

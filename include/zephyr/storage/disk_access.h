@@ -39,7 +39,13 @@ extern "C" {
  * @brief perform any initialization
  *
  * This call is made by the consumer before doing any IO calls so that the
- * disk or the backing device can do any initialization.
+ * disk or the backing device can do any initialization. Although still
+ * supported for legacy compatibility, users should instead call
+ * @ref disk_access_ioctl with the IOCTL @ref DISK_IOCTL_CTRL_INIT.
+ *
+ * Disk initialization is reference counted, so only the first successful call
+ * to initialize a uninitialized (or previously de-initialized) disk will
+ * actually initialize the disk
  *
  * @param[in] pdrv          Disk name
  *

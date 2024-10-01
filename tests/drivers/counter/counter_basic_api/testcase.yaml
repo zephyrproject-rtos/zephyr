@@ -12,7 +12,9 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow:
+      - nrf52840dk/nrf52840
+      - nrf52_bsim
     timeout: 400
     extra_configs:
       - CONFIG_ZERO_LATENCY_IRQS=y
@@ -23,7 +25,19 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: nucleo_f429zi
+    platform_allow:
+      - nucleo_f429zi
+      - nucleo_wba52cg
+      - google_dragonclaw
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_RTC_STM32_SUBSECONDS=y
+  drivers.counter.basic_api.rtc_1khz:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: mimxrt685_evk/mimxrt685s/cm33
+    timeout: 400
+    extra_args:
+      DTC_OVERLAY_FILE="boards/mimxrt685_evk_rtc_1khz.overlay"

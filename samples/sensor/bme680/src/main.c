@@ -21,7 +21,11 @@ int main(void)
 
 	printf("Device %p name is %s\n", dev, dev->name);
 
+#ifndef CONFIG_COVERAGE
 	while (1) {
+#else
+	for (int i = 0; i < 5; i++) {
+#endif
 		k_sleep(K_MSEC(3000));
 
 		sensor_sample_fetch(dev);

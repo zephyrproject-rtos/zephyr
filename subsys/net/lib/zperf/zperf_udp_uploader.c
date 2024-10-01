@@ -38,7 +38,8 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 	results->nb_packets_lost = ntohl(UNALIGNED_GET(&stat->error_cnt));
 	results->nb_packets_outorder =
 		ntohl(UNALIGNED_GET(&stat->outorder_cnt));
-	results->total_len = ntohl(UNALIGNED_GET(&stat->total_len2));
+	results->total_len = (((uint64_t)ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
+		ntohl(UNALIGNED_GET(&stat->total_len2));
 	results->time_in_us = ntohl(UNALIGNED_GET(&stat->stop_usec)) +
 		ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
 	results->jitter_in_us = ntohl(UNALIGNED_GET(&stat->jitter2)) +
@@ -49,7 +50,8 @@ static inline int zperf_upload_fin(int sock,
 				   uint32_t nb_packets,
 				   uint64_t end_time,
 				   uint32_t packet_size,
-				   struct zperf_results *results)
+				   struct zperf_results *results,
+				   bool is_mcast_pkt)
 {
 	uint8_t stats[sizeof(struct zperf_udp_datagram) +
 		      sizeof(struct zperf_server_hdr)] = { 0 };
@@ -95,19 +97,24 @@ static inline int zperf_upload_fin(int sock,
 			continue;
 		}
 
-		/* Receive statistics */
-		ret = zsock_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
-				       sizeof(rcvtimeo));
-		if (ret < 0) {
-			NET_ERR("setsockopt error (%d)", errno);
-			continue;
-		}
+		/* Multicast only send the negative sequence number packet
+		 * and doesn't wait for a server ack
+		 */
+		if (!is_mcast_pkt) {
+			/* Receive statistics */
+			ret = zsock_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &rcvtimeo,
+					       sizeof(rcvtimeo));
+			if (ret < 0) {
+				NET_ERR("setsockopt error (%d)", errno);
+				continue;
+			}
 
-		ret = zsock_recv(sock, stats, sizeof(stats), 0);
-		if (ret == -EAGAIN) {
-			NET_WARN("Stats receive timeout");
-		} else if (ret < 0) {
-			NET_ERR("Failed to receive packet (%d)", errno);
+			ret = zsock_recv(sock, stats, sizeof(stats), 0);
+			if (ret == -EAGAIN) {
+				NET_WARN("Stats receive timeout");
+			} else if (ret < 0) {
+				NET_ERR("Failed to receive packet (%d)", errno);
+			}
 		}
 	}
 
@@ -132,11 +139,12 @@ static inline int zperf_upload_fin(int sock,
 }
 
 static int udp_upload(int sock, int port,
-		      unsigned int duration_in_ms,
-		      unsigned int packet_size,
-		      unsigned int rate_in_kbps,
+		      const struct zperf_upload_params *param,
 		      struct zperf_results *results)
 {
+	uint32_t duration_in_ms = param->duration_ms;
+	uint32_t packet_size = param->packet_size;
+	uint32_t rate_in_kbps = param->rate_kbps;
 	uint32_t packet_duration_us = zperf_packet_duration(packet_size, rate_in_kbps);
 	uint32_t packet_duration = k_us_to_ticks_ceil32(packet_duration_us);
 	uint32_t delay = packet_duration;
@@ -144,6 +152,7 @@ static int udp_upload(int sock, int port,
 	int64_t start_time, end_time;
 	int64_t print_time, last_loop_time;
 	uint32_t print_period;
+	bool is_mcast_pkt = false;
 	int ret;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -247,8 +256,19 @@ static int udp_upload(int sock, int port,
 
 	end_time = k_uptime_ticks();
 
+	if (param->peer_addr.sa_family == AF_INET) {
+		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
+			is_mcast_pkt = true;
+		}
+	} else if (param->peer_addr.sa_family == AF_INET6) {
+		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
+			is_mcast_pkt = true;
+		}
+	} else {
+		return -EINVAL;
+	}
 	ret = zperf_upload_fin(sock, nb_packets, end_time, packet_size,
-			       results);
+			       results, is_mcast_pkt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -256,7 +276,7 @@ static int udp_upload(int sock, int port,
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
 	results->client_time_in_us =
-				k_ticks_to_us_ceil32(end_time - start_time);
+				k_ticks_to_us_ceil64(end_time - start_time);
 	results->packet_size = packet_size;
 
 	return 0;
@@ -268,6 +288,7 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	int port = 0;
 	int sock;
 	int ret;
+	struct ifreq req;
 
 	if (param == NULL || result == NULL) {
 		return -EINVAL;
@@ -284,13 +305,23 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 	}
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
-					 param->options.priority, IPPROTO_UDP);
+					 param->options.priority, 0, IPPROTO_UDP);
 	if (sock < 0) {
 		return sock;
 	}
 
-	ret = udp_upload(sock, port, param->duration_ms, param->packet_size,
-			 param->rate_kbps, result);
+	if (param->if_name[0]) {
+		(void)memset(req.ifr_name, 0, sizeof(req.ifr_name));
+		strncpy(req.ifr_name, param->if_name, IFNAMSIZ);
+		req.ifr_name[IFNAMSIZ - 1] = 0;
+
+		if (zsock_setsockopt(sock, SOL_SOCKET, SO_BINDTODEVICE, &req,
+				     sizeof(struct ifreq)) != 0) {
+			NET_WARN("setsockopt SO_BINDTODEVICE error (%d)", -errno);
+		}
+	}
+
+	ret = udp_upload(sock, port, param, result);
 
 	zsock_close(sock);
 

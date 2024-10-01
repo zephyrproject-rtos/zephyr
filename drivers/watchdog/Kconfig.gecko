@@ -9,7 +9,7 @@ config WDT_GECKO
 	bool "Gecko series Watchdog (WDOG) Driver"
 	default y
 	depends on DT_HAS_SILABS_GECKO_WDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	select SOC_GECKO_WDOG
-	default y
 	help
 	  Enable WDOG driver for Silicon Labs Gecko MCUs.

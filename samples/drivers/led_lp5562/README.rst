@@ -35,7 +35,7 @@ a LP5562 LED driver on the bus I2C0 at the address 0x30.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led_lp5562
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build
    :compact:
 

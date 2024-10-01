@@ -10,6 +10,6 @@
 
 __syscall void test_cpu_write_reg(void);
 
-#include <syscalls/test_syscalls.h>
+#include <zephyr/syscalls/test_syscalls.h>
 
 #endif /* _TEST_SYSCALLS_H_ */

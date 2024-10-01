@@ -15,7 +15,7 @@
  *
  * The core Zephyr API to this device is as a counter, with the
  * following limitations:
- * * counter_read() and counter_*_alarm() cannot be invoked from
+ * * ``counter_read()`` and ``counter_*_alarm()`` cannot be invoked from
  *   interrupt context, as they require communication with the device
  *   over an I2C bus.
  * * many other counter APIs, such as start/stop/set_top_value are not
@@ -596,6 +596,6 @@ int maxim_ds3231_check_alarms(const struct device *dev);
 #endif
 
 /* @todo this should be syscalls/drivers/rtc/maxim_ds3231.h */
-#include <syscalls/maxim_ds3231.h>
+#include <zephyr/syscalls/maxim_ds3231.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_DS3231_H_ */

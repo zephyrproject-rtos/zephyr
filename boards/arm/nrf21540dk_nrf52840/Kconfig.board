@@ -1,8 +1,0 @@
-# nRF21540 DK NRF52840 board configuration
-
-# Copyright (c) 2020 Nordic Semiconductor ASA
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NRF21540DK_NRF52840
-	bool "nRF21540 DK NRF52840"
-	depends on SOC_NRF52840_QIAA

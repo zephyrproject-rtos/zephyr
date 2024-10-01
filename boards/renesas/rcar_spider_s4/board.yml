@@ -1,0 +1,5 @@
+board:
+  name: rcar_spider_s4
+  vendor: renesas
+  socs:
+  - name: r8a779f0

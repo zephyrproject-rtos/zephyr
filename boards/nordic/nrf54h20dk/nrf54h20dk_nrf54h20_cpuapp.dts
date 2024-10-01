@@ -1,0 +1,294 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54h20_cpuapp.dtsi>
+#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
+#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+
+/delete-node/ &cpurad_cpusys_ipc;
+/delete-node/ &cpusec_cpurad_ipc;
+
+/ {
+	compatible = "nordic,nrf54h20dk_nrf54h20-cpuapp";
+	model = "Nordic nRF54H20 DK nRF54H20 Application MCU";
+
+	chosen {
+		zephyr,console = &uart136;
+		zephyr,code-partition = &cpuapp_slot0_partition;
+		zephyr,flash = &mram1x;
+		zephyr,sram = &cpuapp_data;
+		zephyr,shell-uart = &uart136;
+		zephyr,ieee802154 = &cpuapp_ieee802154;
+		zephyr,bt-hci = &bt_hci_ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,canbus = &can120;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		led3 = &led3;
+		resetinfo = &cpuapp_resetinfo;
+		pwm-led0 = &pwm_led2;
+		sw0 = &button0;
+		sw1 = &button1;
+		sw2 = &button2;
+		sw3 = &button3;
+		ipc-to-cpusys = &cpuapp_cpusys_ipc;
+		watchdog0 = &wdt010;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		button2: button_2 {
+			gpios = <&gpio0 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		button3: button_3 {
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio9 0 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio9 1 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio9 2 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 2";
+		};
+
+		led3: led_3 {
+			gpios = <&gpio9 3 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		/*
+		 * LEDs are connected to GPIO Port 9 - pins 0-3. There is no valid hardware
+		 * configuration to pass PWM signal on pis 0 and 1. First valid config is P9.2.
+		 * Signal on PWM130's channel 0 can be passed directly on GPIO Port 9 pin 2.
+		 */
+		pwm_led2: pwm_led_2 {
+			pwms = <&pwm130 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+&cpuapp_ram0x_region {
+	status = "okay";
+};
+
+&cpuapp_cpurad_ram0x_region {
+	status = "okay";
+};
+
+&shared_ram3x_region {
+	status = "okay";
+};
+
+&ram21_region {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+	interrupts = <96 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupt-names = "irq0";
+	/* irq0: 0: cpuapp-cpusec, 6: cpuapp-cpusys, 13: cpuapp-cpuppr, 18: cpuapp-cpurad */
+	nordic,interrupt-mapping = <0x00042041 0>;
+};
+
+&cpurad_bellboard {
+	status = "okay";
+};
+
+&cpusys_vevif {
+	status = "okay";
+};
+
+&cpusec_cpuapp_ipc {
+	mbox-names = "tx", "rx";
+	tx-region = <&cpuapp_cpusec_ipc_shm>;
+	rx-region = <&cpusec_cpuapp_ipc_shm>;
+};
+
+ipc0: &cpuapp_cpurad_ipc {
+	status = "okay";
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpurad_ipc_shm>;
+	rx-region = <&cpurad_cpuapp_ipc_shm>;
+	tx-blocks = <32>;
+	rx-blocks = <32>;
+
+	bt_hci_ipc0: bt_hci_ipc0 {
+		compatible = "zephyr,bt-hci-ipc";
+		status = "okay";
+	};
+};
+
+&cpuapp_cpusys_ipc {
+	status = "okay";
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpusys_ipc_shm>;
+	rx-region = <&cpusys_cpuapp_ipc_shm>;
+};
+
+&cpuapp_cpuppr_ipc {
+	mbox-names = "rx", "tx";
+	tx-region = <&cpuapp_cpuppr_ipc_shm>;
+	rx-region = <&cpuppr_cpuapp_ipc_shm>;
+};
+
+&cpuapp_dma_region {
+	status = "okay";
+};
+
+&dma_fast_region {
+	status = "okay";
+};
+
+&cpuapp_rx_partitions {
+	status = "okay";
+};
+
+&cpuapp_rw_partitions {
+	status = "okay";
+};
+
+&cpuppr_vpr {
+	execution-memory = <&cpuppr_code_data>;
+	source-memory = <&cpuppr_code_partition>;
+};
+
+&gpiote130 {
+	status = "okay";
+	owned-channels = <0 1 2 3 4 5 6 7>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio9 {
+	status = "okay";
+};
+
+&grtc {
+	status = "okay";
+	child-owned-channels = <5 6>;
+	nonsecure-channels = <5 6>;
+	owned-channels = <4 5 6>;
+};
+
+&uart135 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart135_default>;
+	pinctrl-1 = <&uart135_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart136 {
+	status = "okay";
+	memory-regions = <&cpuapp_dma_region>;
+	current-speed = <115200>;
+	pinctrl-0 = <&uart136_default>;
+	pinctrl-1 = <&uart136_sleep>;
+	pinctrl-names = "default", "sleep";
+	hw-flow-control;
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	cs-gpios = <&gpio6 3 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&exmif_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	mx25uw63: mx25uw6345g@0 {
+		compatible = "jedec,spi-nor";
+		status = "disabled";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(48)>;
+		jedec-id = [c2 84 37];
+		sfdp-bfp = [
+			e5 20 8a ff  ff ff ff 03  00 ff 00 ff  00 ff 00 ff
+			ee ff ff ff  ff ff 00 ff  ff ff 00 ff  0c 20 10 d8
+			00 ff 00 ff  87 79 01 00  84 12 00 c4  cc 04 67 46
+			30 b0 30 b0  f4 bd d5 5c  00 00 00 ff  10 10 00 20
+			00 00 00 00  00 00 7c 23  48 00 00 00  00 00 88 88
+		];
+		size = <67108864>;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <30000>;
+	};
+};
+
+&cpuapp_ieee802154 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&canpll {
+	status = "okay";
+};
+
+&can120 {
+	status = "okay";
+	pinctrl-0 = <&can120_default>;
+	pinctrl-names = "default";
+};
+
+&pwm130 {
+	status = "okay";
+	pinctrl-0 = <&pwm130_default>;
+	pinctrl-1 = <&pwm130_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&cpuapp_dma_region>;
+};
+
+&adc {
+	memory-regions = <&cpuapp_dma_region>;
+	status = "okay";
+};

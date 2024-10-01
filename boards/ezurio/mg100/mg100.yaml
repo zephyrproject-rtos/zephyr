@@ -1,0 +1,21 @@
+identifier: mg100
+name: mg100
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - ble
+  - counter
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - netif:modem
+vendor: ezurio

@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -18,8 +17,6 @@ LOG_MODULE_REGISTER(regulator_fixed, CONFIG_REGULATOR_LOG_LEVEL);
 
 struct regulator_fixed_config {
 	struct regulator_common_config common;
-	uint32_t startup_delay_us;
-	uint32_t off_on_delay_us;
 	struct gpio_dt_spec enable;
 };
 
@@ -39,10 +36,6 @@ static int regulator_fixed_enable(const struct device *dev)
 	ret = gpio_pin_set_dt(&cfg->enable, 1);
 	if (ret < 0) {
 		return ret;
-	}
-
-	if (cfg->off_on_delay_us > 0U) {
-		k_sleep(K_USEC(cfg->off_on_delay_us));
 	}
 
 	return 0;
@@ -91,12 +84,8 @@ static const struct regulator_driver_api regulator_fixed_api = {
 static int regulator_fixed_init(const struct device *dev)
 {
 	const struct regulator_fixed_config *cfg = dev->config;
-	bool init_enabled;
-	int ret;
 
 	regulator_common_data_init(dev);
-
-	init_enabled = regulator_common_is_init_enabled(dev);
 
 	if (cfg->enable.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->enable)) {
@@ -104,22 +93,14 @@ static int regulator_fixed_init(const struct device *dev)
 			return -ENODEV;
 		}
 
-		if (init_enabled) {
-			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_ACTIVE);
-			if (ret < 0) {
-				return ret;
-			}
+		int ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT);
 
-			k_busy_wait(cfg->startup_delay_us);
-		} else {
-			ret = gpio_pin_configure_dt(&cfg->enable, GPIO_OUTPUT_INACTIVE);
-			if (ret < 0) {
-				return ret;
-			}
+		if (ret < 0) {
+			return ret;
 		}
 	}
 
-	return regulator_common_init(dev, init_enabled);
+	return regulator_common_init(dev, false);
 }
 
 #define REGULATOR_FIXED_DEFINE(inst)                                              \
@@ -130,8 +111,6 @@ static int regulator_fixed_init(const struct device *dev)
                                                                                   \
 	static const struct regulator_fixed_config config##inst = {               \
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),             \
-		.startup_delay_us = DT_INST_PROP(inst, startup_delay_us),         \
-		.off_on_delay_us = DT_INST_PROP(inst, off_on_delay_us),           \
 		.enable = GPIO_DT_SPEC_INST_GET_OR(inst, enable_gpios, {0}),      \
 	};                                                                        \
                                                                                   \

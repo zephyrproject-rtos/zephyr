@@ -579,9 +579,10 @@ void lll_conn_isr_tx(void *param)
 	}
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US + (EVENT_CLOCK_JITTER_US << 1) +
-	       RANGE_DELAY_US + HCTO_START_DELAY_US;
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
+	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
+	       HAL_RADIO_TMR_START_DELAY_US;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	hcto += cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
@@ -1094,7 +1095,7 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 		ant = radio_df_pdu_antenna_switch_pattern_get();
 		iq_report = ull_df_iq_report_alloc();
 
-		iq_report->hdr.type = NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT;
+		iq_report->rx.hdr.type = NODE_RX_TYPE_CONN_IQ_SAMPLE_REPORT;
 		iq_report->sample_count = radio_df_iq_samples_amount_get();
 		iq_report->packet_status = packet_status;
 		iq_report->rssi_ant_id = ant;
@@ -1105,11 +1106,11 @@ static inline bool create_iq_report(struct lll_conn *lll, uint8_t rssi_ready, ui
 		 */
 		iq_report->event_counter = lll->event_counter - 1;
 
-		ftr = &iq_report->hdr.rx_ftr;
+		ftr = &iq_report->rx.rx_ftr;
 		ftr->param = lll;
 		ftr->rssi = ((rssi_ready) ? radio_rssi_get() : BT_HCI_LE_RSSI_NOT_AVAILABLE);
 
-		ull_rx_put(iq_report->hdr.link, iq_report);
+		ull_rx_put(iq_report->rx.hdr.link, iq_report);
 
 		return true;
 	}

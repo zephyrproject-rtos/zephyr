@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC
+	string
+	help
+	  SoC name. The value of this setting must be defined by the selected
+	  SoC for hw model v2.
+
+config SOC_SERIES
+	string
+	help
+	  SoC series. The value of this setting must be defined by the selected
+	  SoC if the SoC belongs to a common series.
+
+config SOC_FAMILY
+	string
+	help
+	  SoC family. The value of this setting must be defined by the selected
+	  SoC if the SoC belongs to a SoC family. Usually a SoC family also
+	  indicates the vendor of the SoC.
+
+# This loads custom SoC root Kconfig (only available if custom SoC root are defined)
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc.arch"

@@ -408,7 +408,7 @@ static uint16_t gadc_process_samples(struct device const *dev, GADC_CHANNEL_ID c
 	}
 
 	LOG_INF("sample_x4: %u, zerovolt: %u, result: %f V", sample_x4, gadc_zerovolt_meas_x4,
-		result);
+		(double)result);
 
 	return (uint16_t)((result * 1000.0f) + 0.5f);
 }

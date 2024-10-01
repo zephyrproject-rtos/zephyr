@@ -33,8 +33,8 @@ supports the Arduino connector. The connections are:
 Usage
 *****
 
-The shield can be used in any application by setting ``SHIELD`` to
-``npm1100_ek``.
+The shield can be used in any application by setting ``--shield npm1100_ek``
+when invoking ``west build``.
 
 References
 **********

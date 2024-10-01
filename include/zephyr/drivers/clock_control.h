@@ -17,6 +17,8 @@
 /**
  * @brief Clock Control Interface
  * @defgroup clock_control_interface Clock Control Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -97,7 +99,7 @@ typedef int (*clock_control_configure_fn)(const struct device *dev,
 					  clock_control_subsys_t sys,
 					  void *data);
 
-struct clock_control_driver_api {
+__subsystem struct clock_control_driver_api {
 	clock_control			on;
 	clock_control			off;
 	clock_control_async_on_fn	async_on;

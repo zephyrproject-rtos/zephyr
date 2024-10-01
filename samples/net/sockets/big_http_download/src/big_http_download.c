@@ -21,7 +21,9 @@
 #include <unistd.h>
 #include <netdb.h>
 
-#else
+#endif
+
+#if defined(__ZEPHYR__)
 
 #include <zephyr/net/socket.h>
 #include <zephyr/kernel.h>

@@ -1,0 +1,23 @@
+#
+#  Copyright (c) 2024 Vitrolife A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "VEAA sample application"
+
+config SAMPLE_USE_SHELL
+	bool "Use sensor shell and disable loop"
+	default n
+	select SHELL
+	select SENSOR_SHELL
+
+config SAMPLE_LOOP_INTERVAL
+	int "Sample loop delay in milliseconds"
+	default 200
+
+config SAMPLE_LOOP_INCREMENT
+	int "Sample kPa increment per loop"
+	default 1
+
+source "Kconfig.zephyr"

@@ -4,7 +4,7 @@ common:
 tests:
   libraries.libc.sprintf:
     extra_args: CONF_FILE=prj.conf
-    filter: not CONFIG_SOC_MCIMX7_M4 and CONFIG_STDOUT_CONSOLE
+    filter: not CONFIG_SOC_MCIMX7D_M4 and CONFIG_STDOUT_CONSOLE
     integration_platforms:
       - qemu_x86
     arch_exclude: posix

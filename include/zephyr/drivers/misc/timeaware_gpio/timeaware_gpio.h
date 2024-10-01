@@ -14,6 +14,8 @@
 /**
  * @brief Time-aware GPIO Interface
  * @defgroup tgpio_interface Time-aware GPIO Interface
+ * @since 3.5
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -24,7 +26,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,7 +86,7 @@ static inline int z_impl_tgpio_port_get_time(const struct device *dev, uint64_t 
  * @brief Get current running rate
  *
  * @param dev TGPIO device
- * @param cycles pointer to store current running requency
+ * @param cycles pointer to store current running frequency
  *
  * @return 0 if successful, negative errno code on failure.
  */
@@ -188,6 +190,6 @@ static inline int z_impl_tgpio_pin_read_ts_ec(const struct device *dev, uint32_t
 }
 #endif
 
-#include <syscalls/timeaware_gpio.h>
+#include <zephyr/syscalls/timeaware_gpio.h>
 
 #endif /* ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO */

@@ -9,6 +9,7 @@
 
 #include <soc.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include "hal/cpu.h"
 #include "hal/ccm.h"
@@ -188,6 +189,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 	struct ull_hdr *ull;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint8_t pkt_flags;
 	uint32_t ret;
 	uint8_t phy;
 
@@ -292,7 +294,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 
 	if (!link) {
 		pdu = radio_pkt_empty_get();
-		pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+		pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED : PDU_BIS_LLID_START_CONTINUE;
 		pdu->len = 0U;
 	} else {
 		pdu = (void *)tx->pdu;
@@ -340,38 +342,39 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 			lll->cssn++;
 		}
 
-		lll->ctrl_chan_use = data_chan_use;
 		pdu->cstf = 1U;
 	} else {
 		pdu->cstf = 0U;
 	}
 	pdu->cssn = lll->cssn;
 
-	/* Encryption */
-	if (pdu->len && lll->enc) {
-		uint8_t pkt_flags;
-
+	/* Radio packet configuration */
+	pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS, phy,
+					 RADIO_PKT_CONF_CTE_DISABLED);
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
+		/* Encryption */
 		lll->ccm_tx.counter = payload_count;
 
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
 		mem_xor_32(lll->ccm_tx.iv, lll->ccm_tx.iv, access_addr);
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
-						 phy,
-						 RADIO_PKT_CONF_CTE_DISABLED);
 		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
 				    (lll->max_pdu + PDU_MIC_SIZE), pkt_flags);
+
 		radio_pkt_tx_set(radio_ccm_iso_tx_pkt_set(&lll->ccm_tx,
 						RADIO_PKT_CONF_PDU_TYPE_BIS,
 						pdu));
 	} else {
-		uint8_t pkt_flags;
+		if (lll->enc) {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    (lll->max_pdu + PDU_MIC_SIZE),
+					    pkt_flags);
+		} else {
+			radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT,
+					    lll->max_pdu, pkt_flags);
+		}
 
-		pkt_flags = RADIO_PKT_CONF_FLAGS(RADIO_PKT_CONF_PDU_TYPE_BIS,
-						 phy,
-						 RADIO_PKT_CONF_CTE_DISABLED);
-		radio_pkt_configure(RADIO_PKT_CONF_LENGTH_8BIT, lll->max_pdu,
-				    pkt_flags);
 		radio_pkt_tx_set(pdu);
 	}
 
@@ -460,11 +463,11 @@ static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_done)
 {
 	struct pdu_bis *pdu = NULL;
+	uint8_t data_chan_use = 0;
 	struct lll_adv_iso *lll;
 	uint8_t access_addr[4];
 	uint64_t payload_count;
 	uint16_t data_chan_id;
-	uint8_t data_chan_use;
 	uint8_t crc_init[3];
 	uint8_t bis;
 
@@ -525,7 +528,6 @@ static void isr_tx_common(void *param,
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
 		payload_count = lll->payload_count - lll->bn;
-		data_chan_use = lll->ctrl_chan_use;
 
 	} else if (((lll->chm_req - lll->chm_ack) & CHM_STATE_MASK) ==
 		   CHM_STATE_SEND) {
@@ -549,7 +551,6 @@ static void isr_tx_common(void *param,
 		/* control subevent to use bis = 0 and se_n = 1 */
 		bis = 0U;
 		payload_count = lll->payload_count - lll->bn;
-		data_chan_use = lll->ctrl_chan_use;
 
 	} else {
 		struct lll_adv_iso_stream *stream;
@@ -649,13 +650,14 @@ static void isr_tx_common(void *param,
 		}
 		if (!link || (tx->payload_count != payload_count)) {
 			pdu = radio_pkt_empty_get();
-			pdu->ll_id = PDU_BIS_LLID_START_CONTINUE;
+			pdu->ll_id = lll->framing ? PDU_BIS_LLID_FRAMED :
+						    PDU_BIS_LLID_START_CONTINUE;
 			pdu->len = 0U;
 		} else {
 			pdu = (void *)tx->pdu;
 		}
 		pdu->cssn = lll->cssn;
-		pdu->cstf = 0U;
+		pdu->cstf = (lll->term_req || !!(lll->chm_req - lll->chm_ack));
 
 #else /* TEST_WITH_DUMMY_PDU */
 		pdu = radio_pkt_scratch_get();
@@ -684,10 +686,22 @@ static void isr_tx_common(void *param,
 	}
 	pdu->rfu = 0U;
 
+	if (!bis) {
+		const uint16_t event_counter = payload_count / lll->bn;
+
+		/* Calculate the radio channel to use for ISO event */
+		data_chan_use = lll_chan_iso_event(event_counter, data_chan_id,
+						   lll->data_chan_map,
+						   lll->data_chan_count,
+						   &lll->data_chan_prn_s,
+						   &lll->data_chan_remap_idx);
+	}
+
 	lll_chan_set(data_chan_use);
 
 	/* Encryption */
-	if (pdu->len && lll->enc) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    pdu->len && lll->enc) {
 		lll->ccm_tx.counter = payload_count;
 
 		(void)memcpy(lll->ccm_tx.iv, lll->giv, 4U);
@@ -828,7 +842,7 @@ static void isr_done_term(void *param)
 			sync_lll = adv_lll->sync;
 			if (sync_lll->iso_chm_done_req ==
 			    sync_lll->iso_chm_done_ack) {
-				struct node_rx_hdr *rx;
+				struct node_rx_pdu *rx;
 
 				/* Request ULL to update the channel map in the
 				 * BIGInfo struct present in the current PDU of
@@ -844,10 +858,10 @@ static void isr_done_term(void *param)
 				rx = ull_pdu_rx_alloc();
 				LL_ASSERT(rx);
 
-				rx->type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
+				rx->hdr.type = NODE_RX_TYPE_BIG_CHM_COMPLETE;
 				rx->rx_ftr.param = lll;
 
-				ull_rx_put_sched(rx->link, rx);
+				ull_rx_put_sched(rx->hdr.link, rx);
 			}
 
 			/* Use new channel map */

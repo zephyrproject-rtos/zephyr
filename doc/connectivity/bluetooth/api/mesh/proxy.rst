@@ -3,7 +3,7 @@
 Proxy
 #####
 
-The Proxy feature allows legacy devices like phones to access the Bluetooth mesh network through
+The Proxy feature allows legacy devices like phones to access the Bluetooth Mesh network through
 GATT. The Proxy feature is only compiled in if the :kconfig:option:`CONFIG_BT_MESH_GATT_PROXY`
 option is set. The Proxy feature state is controlled by the :ref:`bluetooth_mesh_models_cfg_srv`,
 and the initial value can be set with :c:member:`bt_mesh_cfg_srv.gatt_proxy`.
@@ -31,7 +31,7 @@ In the case where both GATT Proxy and Private GATT Proxy states are disabled on 
 device cannot connect to it. A node supporting the :ref:`bluetooth_mesh_od_srv` may however be
 solicited to advertise connectable advertising events without enabling the Private GATT Proxy state.
 To solicit the node, the legacy device can send a Solicitation PDU by calling the
-:func:`bt_mesh_proxy_solicit` function.  To enable this feature, the client must to be compiled with
+:func:`bt_mesh_proxy_solicit` function.  To enable this feature, the device must to be compiled with
 the :kconfig:option:`CONFIG_BT_MESH_PROXY_SOLICITATION` option set.
 
 Solicitation PDUs are non-mesh, non-connectable, undirected advertising messages containing Proxy

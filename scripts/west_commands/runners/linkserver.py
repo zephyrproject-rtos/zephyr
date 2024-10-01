@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # Copyright (c) 2017 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -25,7 +25,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, device, core,
                  linkserver=DEFAULT_LINKSERVER_EXE,
                  dt_flash=True, erase=True,
-                 probe=1,
+                 probe='#1',
                  gdb_host='',
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
@@ -71,8 +71,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
         parser.add_argument('--core', required=False, help='core of the device')
 
-        parser.add_argument('--probe', default=1,
-                            help='interface to use (index, no serial number), default is 1')
+        parser.add_argument('--probe', default='#1',
+                            help='interface to use (index, or serial number, default is #1')
 
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
@@ -111,7 +111,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         if not hasattr(self, '_linkserver_version'):
             linkserver_version_cmd=[self.linkserver, "-v"]
             ls_output=self.check_output(linkserver_version_cmd)
-            self.linkserver_version = str(ls_output.split()[1].decode())
+            self.linkserver_version = str(ls_output.split()[1].decode()).lower()
 
         return self.linkserver_version
 
@@ -130,7 +130,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             linkserver_cmd = ([self.linkserver] +
                               ["gdbserver"]    +
-                              ["--probe", "#"+str(self.probe) ] +
+                              ["--probe", str(self.probe) ] +
                               ["--gdb-port", str(self.gdb_port )] +
                               ["--semihost-port", str(self.semihost_port) ] +
                               _cmd_core +
@@ -164,13 +164,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def do_erase(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] +
-                          [self.device+_cmd_core] + ["erase"])
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] +
+                          [self.device] + ["erase"])
         self.logger.debug("flash erase command = " + str(linkserver_cmd))
         self.check_call(linkserver_cmd)
 
@@ -186,18 +181,16 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
     def flash(self, **kwargs):
 
-        if self.core is not None:
-            _cmd_core = ":"+self.core
-        else:
-            _cmd_core = ""
-
-        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", "#"+str(self.probe)] + self.override_cli + [self.device+_cmd_core])
+        linkserver_cmd = ([self.linkserver, "flash"] + ["--probe", str(self.probe)] + self.override_cli + [self.device])
         self.logger.debug(f'LinkServer cmd:  + {linkserver_cmd}')
 
         if self.erase:
             self.do_erase()
 
-        if self.bin_name is not None and os.path.isfile(self.bin_name):
+        # Use .hex or .bin, preferring .hex over .bin
+        if self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
+            flash_cmd = (["load", self.hex_name])
+        elif self.bin_name is not None and os.path.isfile(self.bin_name):
             if self.dt_flash:
                 load_addr = self.flash_address_from_build_conf(self.build_conf)
             else:
@@ -206,13 +199,21 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
             flash_cmd = (["load", "--addr", str(load_addr), self.bin_name])
         else:
-            err = 'Cannot flash; no bin ({}) file found.'
-            raise ValueError(err.format(self.bin_name))
+            err = 'Cannot flash; no hex ({}) or bin ({}) file found.'
+            raise ValueError(err.format(self.hex_name, self.bin_name))
 
-        # Flash the selected elf file
+        # Flash the selected file
         linkserver_cmd = linkserver_cmd + flash_cmd
         self.logger.debug("flash command = " + str(linkserver_cmd))
         kwargs = {}
         if not self.logger.isEnabledFor(logging.DEBUG):
-            kwargs['stderr'] = subprocess.DEVNULL
+            if self.linkserver_version_str < "v1.3.15":
+                kwargs['stderr'] = subprocess.DEVNULL
+            else:
+                kwargs['stdout'] = subprocess.DEVNULL
+
         self.check_call(linkserver_cmd, **kwargs)
+
+    def supports_hex(self):
+        # v1.5.30 has added flash support for Intel Hex files.
+        return self.linkserver_version_str >= "v1.5.30"

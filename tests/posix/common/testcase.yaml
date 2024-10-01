@@ -1,15 +1,15 @@
 common:
-  filter: not (CONFIG_NATIVE_BUILD and CONFIG_EXTERNAL_LIBC)
-  # FIXME: qemu_leon3 is excluded because of the alignment-related failure
-  #        reported in the GitHub issue zephyrproject-rtos/zephyr#48992.
-  platform_exclude: qemu_leon3
+  filter: not CONFIG_NATIVE_LIBC
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
   tags: posix
   min_ram: 64
   timeout: 240
 tests:
   portability.posix.common:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
@@ -17,12 +17,14 @@ tests:
       - qemu_x86
   portability.posix.common.newlib:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
       - lpcxpresso55s06
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
+    arch_exclude:
+      - posix
     integration_platforms:
       - qemu_x86
   portability.posix.common.armclang_std_libc:
@@ -35,7 +37,7 @@ tests:
       - CONFIG_ARCMWDT_LIBC=y
   portability.posix.common.tls:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
     filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
     extra_configs:
@@ -45,23 +47,25 @@ tests:
       - qemu_x86
   portability.posix.common.tls.newlib:
     platform_exclude:
-      - nsim_sem_mpu_stack_guard
+      - nsim/nsim_sem/mpu_stack_guard
       - intel_ehl_crb
       - lpcxpresso55s06
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and
       CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_exclude:
+      - posix
     integration_platforms:
       - qemu_x86
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
   portability.posix.common.nsim:
-    platform_allow: nsim_sem_mpu_stack_guard
+    platform_allow: nsim/nsim_sem/mpu_stack_guard
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
       - CONFIG_TEST_HW_STACK_PROTECTION=n
   portability.posix.common.newlib.nsim:
-    platform_allow: nsim_sem_mpu_stack_guard
+    platform_allow: nsim/nsim_sem/mpu_stack_guard
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
@@ -77,7 +81,7 @@ tests:
     extra_configs:
       - CONFIG_SPIN_VALIDATE=n
     integration_platforms:
-      - mps2_an385
+      - mps2/an385
   portability.posix.common.signal.strsignal_no_desc:
     extra_configs:
       - CONFIG_POSIX_SIGNAL_STRING_DESC=n
@@ -91,5 +95,11 @@ tests:
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=y
       - CONFIG_THREAD_STACK_INFO=y
-      - CONFIG_DYNAMIC_THREAD_POOL_SIZE=5
       - CONFIG_HEAP_MEM_POOL_SIZE=16384
+  portability.posix.common.static_stack:
+    integration_platforms:
+      - qemu_x86
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_DYNAMIC_THREAD=n
+      - CONFIG_THREAD_STACK_INFO=n

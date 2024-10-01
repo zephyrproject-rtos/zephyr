@@ -113,7 +113,7 @@ static int reset_min_max_measured_values_cb(uint16_t obj_inst_id,
 static int sensor_value_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 				 uint16_t res_inst_id, uint8_t *data,
 				 uint16_t data_len, bool last_block,
-				 size_t total_size)
+				 size_t total_size, size_t offset)
 {
 	int i;
 
@@ -178,8 +178,8 @@ static struct lwm2m_engine_obj_inst *voltage_sensor_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES(SENSOR_VALUE_RID, res[index], i, res_inst[index], j, 1,
 		     false, true, &sensor_value[index], sizeof(*sensor_value),
 		     NULL, NULL, NULL, sensor_value_write_cb, NULL);
-	INIT_OBJ_RES_DATA(SENSOR_UNITS_RID, res[index], i, res_inst[index], j,
-			  units[index], UNIT_STR_MAX_SIZE);
+	INIT_OBJ_RES_DATA_LEN(SENSOR_UNITS_RID, res[index], i, res_inst[index], j,
+			  units[index], UNIT_STR_MAX_SIZE, 0);
 	INIT_OBJ_RES_DATA(MIN_MEASURED_VALUE_RID, res[index], i,
 			  res_inst[index], j, &min_measured_value[index],
 			  sizeof(*min_measured_value));
@@ -195,8 +195,8 @@ static struct lwm2m_engine_obj_inst *voltage_sensor_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(CURRENT_CALIBRATION_RID, res[index], i,
 			  res_inst[index], j, &calibration_coefficient[index],
 			  sizeof(*calibration_coefficient));
-	INIT_OBJ_RES_DATA(APPLICATION_TYPE_RID, res[index], i, res_inst[index],
-			  j, app_type[index], APP_TYPE_STR_MAX_SIZE);
+	INIT_OBJ_RES_DATA_LEN(APPLICATION_TYPE_RID, res[index], i, res_inst[index],
+			  j, app_type[index], APP_TYPE_STR_MAX_SIZE, 0);
 
 #if defined(CONFIG_LWM2M_IPSO_VOLTAGE_SENSOR_VERSION_1_1)
 	INIT_OBJ_RES_OPTDATA(TIMESTAMP_RID, res[index], i, res_inst[index], j);
@@ -229,5 +229,4 @@ static int ipso_voltage_sensor_init(void)
 	return 0;
 }
 
-SYS_INIT(ipso_voltage_sensor_init, APPLICATION,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(ipso_voltage_sensor_init);

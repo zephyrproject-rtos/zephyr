@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CPU_H_
 
 #if defined(CONFIG_ARM_MPU)
 #include <zephyr/arch/arm/cortex_a_r/mpu.h>
@@ -26,6 +26,7 @@
 #define MODE_SYS	0x1f
 #define MODE_MASK	0x1f
 
+#define E_BIT	(1 << 9)
 #define A_BIT	(1 << 8)
 #define I_BIT	(1 << 7)
 #define F_BIT	(1 << 6)
@@ -116,4 +117,4 @@
 	 (((_aff1) & SGIR_AFF_MASK) << SGIR_AFF1_SHIFT) |		\
 	 ((_tgt) & SGIR_TGT_MASK))
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_CPU_H_ */

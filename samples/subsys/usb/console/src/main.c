@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sample_usbd.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/usb/usb_device.h>
@@ -14,66 +16,25 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	     "Console device is not ACM CDC UART device");
 
 #if defined(CONFIG_USB_DEVICE_STACK_NEXT)
-USBD_CONFIGURATION_DEFINE(config_1,
-			  USB_SCD_SELF_POWERED,
-			  200);
-
-USBD_DESC_LANG_DEFINE(sample_lang);
-USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, "ZEPHYR");
-USBD_DESC_PRODUCT_DEFINE(sample_product, "Zephyr USBD ACM console");
-USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn, "0123456789ABCDEF");
-
-USBD_DEVICE_DEFINE(sample_usbd,
-		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
-		   0x2fe3, 0x0001);
+static struct usbd_context *sample_usbd;
 
 static int enable_usb_device_next(void)
 {
 	int err;
 
-	err = usbd_add_descriptor(&sample_usbd, &sample_lang);
-	if (err) {
-		return err;
+	sample_usbd = sample_usbd_init_device(NULL);
+	if (sample_usbd == NULL) {
+		return -ENODEV;
 	}
 
-	err = usbd_add_descriptor(&sample_usbd, &sample_mfr);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_add_descriptor(&sample_usbd, &sample_product);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_add_descriptor(&sample_usbd, &sample_sn);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_add_configuration(&sample_usbd, &config_1);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_register_class(&sample_usbd, "cdc_acm_0", 1);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_init(&sample_usbd);
-	if (err) {
-		return err;
-	}
-
-	err = usbd_enable(&sample_usbd);
+	err = usbd_enable(sample_usbd);
 	if (err) {
 		return err;
 	}
 
 	return 0;
 }
-#endif /* IS_ENABLED(CONFIG_USB_DEVICE_STACK_NEXT) */
+#endif /* defined(CONFIG_USB_DEVICE_STACK_NEXT) */
 
 int main(void)
 {

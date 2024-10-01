@@ -23,7 +23,7 @@ include_guard(GLOBAL)
 
 if(SYSBUILD)
   add_custom_target(sysbuild_cache)
-  file(STRINGS "${SYSBUILD_CACHE}" sysbuild_cache_strings)
+  file(STRINGS "${SYSBUILD_CACHE}" sysbuild_cache_strings ENCODING UTF-8)
   foreach(str ${sysbuild_cache_strings})
     # Using a regex for matching whole 'VAR_NAME:TYPE=VALUE' will strip semi-colons
     # thus resulting in lists to become strings.

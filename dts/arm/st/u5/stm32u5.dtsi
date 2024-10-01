@@ -2,6 +2,7 @@
  * Copyright (c) 2021 The Chromium OS Authors
  * Copyright (c) 2021 Linaro Limited
  * Copyright (c) 2023 PSICONTROL nv
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +19,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/memory-controller/stm32-fmc-nor-psram.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <freq.h>
 
 / {
@@ -41,7 +43,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <8>;
 			};
 		};
 
@@ -63,6 +64,13 @@
 				power-state-name = "suspend-to-idle";
 				substate-id = <3>;
 				min-residency-us = <900>;
+			};
+			/omit-if-no-ref/ stop3: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <4>;
+				min-residency-us = <200000>;
+				exit-latency-us = <130>;
 			};
 		};
 	};
@@ -434,7 +442,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00000800>;
 			interrupts = <67 1>;
 			interrupt-names = "wakeup";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -446,7 +453,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000020>;
 			interrupts = <68 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -458,7 +464,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00001000>;
 			interrupts = <98 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -470,7 +475,6 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00002000>;
 			interrupts = <110 0>;
 			interrupt-names = "global";
-			st,static-prescaler;
 			status = "disabled";
 		};
 
@@ -480,6 +484,7 @@
 			interrupts = <2 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB3 0x00200000>;
 			prescaler = <32768>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
@@ -803,11 +808,9 @@
 			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
 			reg-names = "m_can", "message_ram";
 			interrupts = <39 0>, <40 0>;
-			interrupt-names = "LINE_0", "LINE_1";
+			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000200>;
 			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
-			sample-point = <875>;
-			sample-point-data = <875>;
 			status = "disabled";
 		};
 
@@ -845,6 +848,87 @@
 				status = "disabled";
 			};
 		};
+
+		pwr: power@46020800 {
+			compatible = "st,stm32-pwr";
+			reg = <0x46020800 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			wkup-pins-nb = <8>; /* 8 system wake-up pins */
+			wkup-pin-srcs = <3>; /* 3 gpio sources associated with each wkup pin */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpiob 2 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpioe 4 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioc 13 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpioe 5 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioa 1 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpiob 6 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpiob 1 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpiob 7 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioa 3 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpiob 8 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@6 {
+				reg = <0x6>;
+				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioa 5 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpioe 7 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@7 {
+				reg = <0x7>;
+				wkup-gpios = <&gpiob 15 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioa 6 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpioe 8 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+
+			wkup-pin@8 {
+				reg = <0x8>;
+				wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_PIN_SRC_0>,
+					     <&gpioa 7 STM32_PWR_WKUP_PIN_SRC_1>,
+					     <&gpiob 10 STM32_PWR_WKUP_PIN_SRC_2>;
+			};
+		};
+
+	};
+
+	swj_port: swj_port {
+		compatible = "swj-connector";
+		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
+			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
+			     &debug_jtrst_pb4>;
+		pinctrl-1 = <&analog_pa13 &analog_pa14 &analog_pa15
+			     &analog_pb3 &analog_pb4>;
+		pinctrl-names = "default", "sleep";
 	};
 
 	die_temp: dietemp {
@@ -886,6 +970,38 @@
 		compatible = "st,stm32-vbat";
 		ratio = <4>;
 		io-channels = <&adc4 14>;
+		status = "disabled";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus2: smbus2 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c2>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
+	};
+
+	smbus4: smbus4 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c4>;
 		status = "disabled";
 	};
 };

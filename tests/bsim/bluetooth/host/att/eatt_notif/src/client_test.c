@@ -27,7 +27,7 @@ CREATE_FLAG(flag_is_encrypted);
 
 static struct bt_conn *g_conn;
 static const struct bt_gatt_attr *local_attr;
-static struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
+static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 #define NUM_NOTIF 100
 #define SAMPLE_DATA 1
@@ -251,7 +251,7 @@ static void test_main(void)
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

@@ -1,0 +1,5 @@
+board:
+  name: 96b_wistrio
+  vendor: 96boards
+  socs:
+    - name: stm32l151xba

@@ -23,13 +23,13 @@
 #define BT_UUID_CUSTOM_SERVICE_VAL \
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef0)
 
-static struct bt_uuid_128 primary_service_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 primary_service_uuid = BT_UUID_INIT_128(
 	BT_UUID_CUSTOM_SERVICE_VAL);
 
-static struct bt_uuid_128 read_characteristic_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 read_characteristic_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
-static struct bt_uuid_128 write_characteristic_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 write_characteristic_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef2));
 
 static int signed_value;
@@ -76,6 +76,7 @@ BT_GATT_SERVICE_DEFINE(primary_service,
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_CUSTOM_SERVICE_VAL),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -127,7 +128,7 @@ static void bt_ready(void)
 		adv_param.options |= BT_LE_ADV_OPT_DIR_ADDR_RPA;
 		err = bt_le_adv_start(&adv_param, NULL, 0, NULL, 0);
 	} else {
-		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+		err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	}
 
 	if (err) {

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2021, Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/delete-property/ magn0;
+		accel0 = &lsm303dlhc_accel;
+	};
+};
+
+&i2c1 {
+	/delete-node/ lsm303agr-magn@1e;
+	/delete-node/ lsm303agr-accel@19;
+
+	lsm303dlhc_magn: lsm303dlhc-magn@1e {
+		compatible = "st,lsm303dlhc-magn";
+		status = "okay";
+		reg = <0x1e>;
+	};
+
+	lsm303dlhc_accel: lsm303dlhc-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
+		status = "okay";
+		reg = <0x19>;
+		irq-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>,
+			  <&gpioe 5 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -3,22 +3,22 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-mainmenu "Hawkbit sample configuration"
+mainmenu "hawkBit sample configuration"
 
 choice
-	prompt "Hawkbit mode"
+	prompt "hawkBit mode"
 	default HAWKBIT_POLLING
 	depends on HAWKBIT
 
 config HAWKBIT_POLLING
-	bool "Hawkbit Polling mode"
+	bool "hawkBit Polling mode"
 	help
 	  Polling mode runs automatically on a predefined period, probing the
 	  server for updates and installing them without requiring user
 	  intervention.
 
 config HAWKBIT_MANUAL
-	bool "Hawkbit manual mode"
+	bool "hawkBit manual mode"
 	help
 	  Manual mode requires the user to call the server probe and then, if
 	  there is an available update, also requires the user to decide if

@@ -19,6 +19,11 @@
 
 #include <mgmt/mcumgr/grp/img_mgmt/img_mgmt_priv.h>
 
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO)
+#include <zephyr/retention/retention.h>
+#include <zephyr/retention/blinfo.h>
+#endif
+
 LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 #define SLOT0_PARTITION		slot0_partition
@@ -181,7 +186,7 @@ img_mgmt_flash_area_id(int slot)
  * find any unused and non-active available (auto-select); any other positive
  * value is direct (slot + 1) to be used; if checks are positive, then area
  * ID is returned, -1 is returned otherwise.
- * Note that auto-selection is performed only between two two first slots.
+ * Note that auto-selection is performed only between the two first slots.
  */
 static int img_mgmt_get_unused_slot_area_id(int slot)
 {
@@ -221,14 +226,11 @@ static int img_mgmt_get_unused_slot_area_id(int slot)
 #endif
 }
 #elif CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
-static int img_mgmt_get_unused_slot_area_id(int image)
+static int img_mgmt_get_unused_slot_area_id(unsigned int image)
 {
 	int area_id = -1;
 	int slot = 0;
 
-	if (image == -1) {
-		image = 0;
-	}
 	slot = img_mgmt_get_opposite_slot(img_mgmt_active_slot(image));
 
 	if (!img_mgmt_slot_in_use(slot)) {
@@ -292,12 +294,17 @@ int img_mgmt_erase_slot(int slot)
 	rc = img_mgmt_flash_check_empty_inner(fa);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fa, 0, fa->fa_size);
+		rc = flash_area_flatten(fa, 0, fa->fa_size);
 
 		if (rc != 0) {
 			LOG_ERR("Failed to erase flash area: %d", rc);
 			rc = IMG_MGMT_ERR_FLASH_ERASE_FAILED;
 		}
+	} else if (rc == 1) {
+		/* A return value of 1 indicates that the slot is already erased, thus
+		 * return a success code to the client
+		 */
+		rc = 0;
 	}
 
 	flash_area_close(fa);
@@ -366,12 +373,12 @@ int img_mgmt_read(int slot, unsigned int offset, void *dst, unsigned int num_byt
 int img_mgmt_write_image_data(unsigned int offset, const void *data, unsigned int num_bytes,
 			      bool last)
 {
-	/* Even if CONFIG_HEAP_MEM_POOL_SIZE will be able to match size of the structure,
+	/* Even if K_HEAP_MEM_POOL_SIZE will be able to match size of the structure,
 	 * keep in mind that when application will put the heap under pressure, obtaining
 	 * of a flash image context may not be possible, so plan bigger heap size or
 	 * make sure to limit application pressure on heap when DFU is expected.
 	 */
-	BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >= (sizeof(struct flash_img_context)),
+	BUILD_ASSERT(K_HEAP_MEM_POOL_SIZE >= (sizeof(struct flash_img_context)),
 		     "Not enough heap mem for flash_img_context.");
 
 	int rc = IMG_MGMT_ERR_OK;
@@ -466,7 +473,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 
 	size_t erase_size = page.start_offset + page.size - fa->fa_off;
 
-	rc = flash_area_erase(fa, 0, erase_size);
+	rc = flash_area_flatten(fa, 0, erase_size);
 
 	if (rc != 0) {
 		LOG_ERR("image slot erase of 0x%zx bytes failed (err %d)", erase_size,
@@ -491,7 +498,7 @@ int img_mgmt_erase_image_data(unsigned int off, unsigned int num_bytes)
 		off = page.start_offset - fa->fa_off;
 		erase_size = fa->fa_size - off;
 
-		rc = flash_area_erase(fa, off, erase_size);
+		rc = flash_area_flatten(fa, off, erase_size);
 		if (rc != 0) {
 			LOG_ERR("image slot trailer erase of 0x%zx bytes failed (err %d)",
 					erase_size, rc);
@@ -559,6 +566,18 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 	if (req->off == 0) {
 		/* First upload chunk. */
 		const struct flash_area *fa;
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
+	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
+	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0
+		const struct flash_area *fa_current;
+		int current_img_area;
+#elif defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO)
+		int max_image_size;
+#endif
 
 		if (req->img_data.len < sizeof(struct image_header)) {
 			/*  Image header is the first thing in the image */
@@ -571,6 +590,7 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action, img_mgmt_err_str_hdr_malformed);
 			return IMG_MGMT_ERR_INVALID_LENGTH;
 		}
+
 		action->size = req->size;
 
 		hdr = (struct image_header *)req->img_data.value;
@@ -620,6 +640,72 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			LOG_ERR("Upload too large for slot: %u > %u", req->size, fa->fa_size);
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
+	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
+	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0
+		/* Check if slot1 is larger than slot0 by the update size, if so then the size
+		 * check can be skipped because the devicetree partitions are okay
+		 */
+		current_img_area = img_mgmt_flash_area_id(req->image);
+
+		if (current_img_area < 0) {
+			/* Current slot cannot be determined */
+			LOG_ERR("Failed to determine active slot for image %d: %d", req->image,
+				current_img_area);
+			return IMG_MGMT_ERR_ACTIVE_SLOT_NOT_KNOWN;
+		}
+
+		rc = flash_area_open(current_img_area, &fa_current);
+		if (rc) {
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+				img_mgmt_err_str_flash_open_failed);
+			LOG_ERR("Failed to open flash area ID %u: %d", current_img_area, rc);
+			flash_area_close(fa);
+			return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
+		}
+
+		flash_area_close(fa_current);
+
+		LOG_DBG("Primary size: %d, secondary size: %d, overhead: %d, max update size: %d",
+			fa_current->fa_size, fa->fa_size, CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE,
+			(fa->fa_size + CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE));
+
+		if (fa_current->fa_size >= (fa->fa_size + CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE)) {
+			/* Upgrade slot is of sufficient size, nothing to check */
+			LOG_INF("Upgrade slots already sized appropriately, "
+				"CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD is not needed");
+			goto skip_size_check;
+		}
+
+		if (req->size > (fa->fa_size - CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE)) {
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+				img_mgmt_err_str_image_too_large);
+			flash_area_close(fa);
+			LOG_ERR("Upload too large for slot (with end offset): %u > %u", req->size,
+				(fa->fa_size - CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE));
+			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
+		}
+
+skip_size_check:
+#elif defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO)
+		rc = blinfo_lookup(BLINFO_MAX_APPLICATION_SIZE, (char *)&max_image_size,
+				   sizeof(max_image_size));
+
+		if (rc == sizeof(max_image_size) && max_image_size > 0 &&
+		    req->size > max_image_size) {
+			IMG_MGMT_UPLOAD_ACTION_SET_RC_RSN(action,
+				img_mgmt_err_str_image_too_large);
+			flash_area_close(fa);
+			LOG_ERR("Upload too large for slot (with max image size): %u > %u",
+				req->size, max_image_size);
+			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
+		}
+#endif
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_REJECT_DIRECT_XIP_MISMATCHED_SLOT)
 		if (hdr->ih_flags & IMAGE_F_ROM_FIXED) {

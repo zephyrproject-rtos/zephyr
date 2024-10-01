@@ -29,9 +29,10 @@
 		};
 	};
 
-	tcml:memory@1fff8000 {
+	/* TCML 0x1fff8000 is aliased at 0 */
+	tcml:memory@0 {
 		compatible = "nxp,imx-itcm";
-		reg = <0x1fff8000 DT_SIZE_K(32)>;
+		reg = <0x00000000 DT_SIZE_K(32)>;
 	};
 
 	tcmu:memory@20000000 {

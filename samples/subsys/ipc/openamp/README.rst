@@ -17,34 +17,34 @@ Building the application for lpcxpresso54114_m4
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: lpcxpresso54114_m4
+   :board: lpcxpresso54114/lpc54114/m4
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for lpcxpresso55s69_cpu0
-*************************************************
+Building the application for lpcxpresso55s69/lpc55s69/cpu0
+**********************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: lpcxpresso55s69_cpu0
+   :board: lpcxpresso55s69/lpc55s69/cpu0
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for mps2_an521
-***************************************
+Building the application for mps2/an521/cpu0
+********************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: mps2_an521
+   :board: mps2/an521/cpu0
    :goals: debug
    :west-args: --sysbuild
 
-Building the application for v2m_musca_b1
-*****************************************
+Building the application for v2m_musca_b1/musca_b1
+**************************************************
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/openamp
-   :board: v2m_musca_b1
+   :board: v2m_musca_b1/musca_b1
    :goals: debug
    :west-args: --sysbuild
 

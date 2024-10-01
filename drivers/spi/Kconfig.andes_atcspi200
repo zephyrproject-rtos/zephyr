@@ -11,3 +11,12 @@ config SPI_ANDES_ATCSPI200
 	depends on DT_HAS_ANDESTECH_ATCSPI200_ENABLED
 	help
 	  Enable driver for Andes ATCSPI200 SPI controller
+
+if SPI_ANDES_ATCSPI200
+
+config ANDES_SPI_DMA_MODE
+	bool "Using DMA mode for spi"
+	default y
+	depends on DMA
+
+endif # SPI_ANDES_ATCSPI200

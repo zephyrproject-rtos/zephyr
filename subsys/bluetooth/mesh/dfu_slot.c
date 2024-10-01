@@ -95,9 +95,9 @@ static void slot_erase(struct slot *slot_to_erase)
 	uint16_t idx = ARRAY_INDEX(slots, slot_to_erase);
 	char buf[SLOT_ENTRY_BUFLEN];
 
-	settings_delete(slot_entry_encode(idx, buf, PROP_HEADER));
-	settings_delete(slot_entry_encode(idx, buf, PROP_FWID));
-	settings_delete(slot_entry_encode(idx, buf, PROP_METADATA));
+	(void)settings_delete(slot_entry_encode(idx, buf, PROP_HEADER));
+	(void)settings_delete(slot_entry_encode(idx, buf, PROP_FWID));
+	(void)settings_delete(slot_entry_encode(idx, buf, PROP_METADATA));
 }
 
 static void slot_index_defrag(void)

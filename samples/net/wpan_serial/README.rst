@@ -51,7 +51,7 @@ Building and Running
 
    .. zephyr-app-commands::
      :zephyr-app: samples/net/wpan_serial
-     :board: atsamr21_xpro
+     :board: samr21_xpro
      :goals: build flash
      :compact:
 

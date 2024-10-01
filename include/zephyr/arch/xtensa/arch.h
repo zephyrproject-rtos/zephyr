@@ -7,7 +7,7 @@
  * @file
  * @brief Xtensa specific kernel interface header
  * This header contains the Xtensa specific kernel interface.  It is included
- * by the generic kernel interface header (include/arch/cpu.h)
+ * by the generic kernel interface header (include/zephyr/arch/cpu.h)
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
@@ -23,81 +23,144 @@
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/arch/xtensa/syscall.h>
 #include <zephyr/arch/xtensa/thread.h>
 #include <zephyr/arch/xtensa/irq.h>
 #include <xtensa/config/core.h>
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/arch/xtensa/gdbstub.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/arch/xtensa/thread_stack.h>
+#include <zephyr/sys/slist.h>
 
+#include <zephyr/drivers/timer/system_timer.h>
+
+#ifdef CONFIG_XTENSA_MMU
 #include <zephyr/arch/xtensa/xtensa_mmu.h>
-
-#ifdef CONFIG_KERNEL_COHERENCE
-#define ARCH_STACK_PTR_ALIGN XCHAL_DCACHE_LINESIZE
-#else
-#define ARCH_STACK_PTR_ALIGN 16
 #endif
 
-/* Xtensa GPRs are often designated by two different names */
-#define sys_define_gpr_with_alias(name1, name2) union { uint32_t name1, name2; }
+#ifdef CONFIG_XTENSA_MPU
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
 
-#include <zephyr/arch/xtensa/exc.h>
+/**
+ * @defgroup xtensa_apis Xtensa APIs
+ * @{
+ * @}
+ *
+ * @defgroup xtensa_internal_apis Xtensa Internal APIs
+ * @ingroup xtensa_apis
+ * @{
+ * @}
+ */
+
+#include <zephyr/arch/xtensa/exception.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern void xtensa_arch_except(int reason_p);
+struct arch_mem_domain {
+#ifdef CONFIG_XTENSA_MMU
+	uint32_t *ptables __aligned(CONFIG_MMU_PAGE_SIZE);
+	uint8_t asid;
+	bool dirty;
+#endif
+#ifdef CONFIG_XTENSA_MPU
+	struct xtensa_mpu_map mpu_map;
+#endif
+	sys_snode_t node;
+};
+
+/**
+ * @brief Generate hardware exception.
+ *
+ * This generates hardware exception which is used by ARCH_EXCEPT().
+ *
+ * @param reason_p Reason for exception.
+ */
+void xtensa_arch_except(int reason_p);
+
+/**
+ * @brief Generate kernel oops.
+ *
+ * This generates kernel oops which is used by arch_syscall_oops().
+ *
+ * @param reason_p Reason for exception.
+ * @param ssf Stack pointer.
+ */
+void xtensa_arch_kernel_oops(int reason_p, void *ssf);
+
+#ifdef CONFIG_USERSPACE
 
 #define ARCH_EXCEPT(reason_p) do { \
-	xtensa_arch_except(reason_p); \
+	if (k_is_user_context()) { \
+		arch_syscall_invoke1(reason_p, \
+			K_SYSCALL_XTENSA_USER_FAULT); \
+	} else { \
+		xtensa_arch_except(reason_p); \
+	} \
 	CODE_UNREACHABLE; \
 } while (false)
 
+#else
+
+#define ARCH_EXCEPT(reason_p) do { \
+		xtensa_arch_except(reason_p); \
+		CODE_UNREACHABLE; \
+	} while (false)
+
+#endif
+
+__syscall void xtensa_user_fault(unsigned int reason);
+
+#include <zephyr/syscalls/arch.h>
+
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
+void z_irq_priority_set(uint32_t irq, uint32_t prio, uint32_t flags);
 
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-{ \
-	Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
-}
+	{ \
+		Z_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
+	}
 
-#define XTENSA_ERR_NORET
-
-extern uint32_t sys_clock_cycle_get_32(void);
-
+/** Implementation of @ref arch_k_cycle_get_32. */
 static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return sys_clock_cycle_get_32();
 }
 
-extern uint64_t sys_clock_cycle_get_64(void);
-
+/** Implementation of @ref arch_k_cycle_get_64. */
 static inline uint64_t arch_k_cycle_get_64(void)
 {
 	return sys_clock_cycle_get_64();
 }
 
+/** Implementation of @ref arch_nop. */
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
+/**
+ * @brief Lock VECBASE if supported by hardware.
+ *
+ * The bit 0 of VECBASE acts as a lock bit on hardware supporting
+ * this feature. When this bit is set, VECBASE cannot be changed
+ * until it is cleared by hardware reset. When the hardware does not
+ * support this bit, it is hardwired to 0.
+ */
 static ALWAYS_INLINE void xtensa_vecbase_lock(void)
 {
 	int vecbase;
 
 	__asm__ volatile("rsr.vecbase %0" : "=r" (vecbase));
-
-	/* In some targets the bit 0 of VECBASE works as lock bit.
-	 * When this bit set, VECBASE can't be changed until it is cleared by
-	 * reset. When the target does not have it, it is hardwired to 0.
-	 **/
 	__asm__ volatile("wsr.vecbase %0; rsync" : : "r" (vecbase | 1));
 }
 
-#if defined(CONFIG_XTENSA_RPO_CACHE)
-#if defined(CONFIG_ARCH_HAS_COHERENCE)
+#if defined(CONFIG_XTENSA_RPO_CACHE) || defined(__DOXYGEN__)
+#if defined(CONFIG_ARCH_HAS_COHERENCE) || defined(__DOXYGEN__)
+/** Implementation of @ref arch_mem_coherent. */
 static inline bool arch_mem_coherent(void *ptr)
 {
 	size_t addr = (size_t) ptr;
@@ -106,91 +169,6 @@ static inline bool arch_mem_coherent(void *ptr)
 }
 #endif
 
-static inline bool arch_xtensa_is_ptr_cached(void *ptr)
-{
-	size_t addr = (size_t) ptr;
-
-	return (addr >> 29) == CONFIG_XTENSA_CACHED_REGION;
-}
-
-static inline bool arch_xtensa_is_ptr_uncached(void *ptr)
-{
-	size_t addr = (size_t) ptr;
-
-	return (addr >> 29) == CONFIG_XTENSA_UNCACHED_REGION;
-}
-
-static ALWAYS_INLINE uint32_t z_xtrpoflip(uint32_t addr, uint32_t rto, uint32_t rfrom)
-{
-	/* The math here is all compile-time: when the two regions
-	 * differ by a power of two, we can convert between them by
-	 * setting or clearing just one bit.  Otherwise it needs two
-	 * operations.
-	 */
-	uint32_t rxor = (rto ^ rfrom) << 29;
-
-	rto <<= 29;
-	if (Z_IS_POW2(rxor)) {
-		if ((rxor & rto) == 0) {
-			return addr & ~rxor;
-		} else {
-			return addr | rxor;
-		}
-	} else {
-		return (addr & ~(7U << 29)) | rto;
-	}
-}
-/**
- * @brief Return cached pointer to a RAM address
- *
- * The Xtensa coherence architecture maps addressable RAM twice, in
- * two different 512MB regions whose L1 cache settings can be
- * controlled independently.  So for any given pointer, it is possible
- * to convert it to and from a cached version.
- *
- * This function takes a pointer to any addressable object (either in
- * cacheable memory or not) and returns a pointer that can be used to
- * refer to the same memory through the L1 data cache.  Data read
- * through the resulting pointer will reflect locally cached values on
- * the current CPU if they exist, and writes will go first into the
- * cache and be written back later.
- *
- * @see arch_xtensa_uncached_ptr()
- *
- * @param ptr A pointer to a valid C object
- * @return A pointer to the same object via the L1 dcache
- */
-static inline void __sparse_cache *arch_xtensa_cached_ptr(void *ptr)
-{
-	return (__sparse_force void __sparse_cache *)z_xtrpoflip((uint32_t) ptr,
-						CONFIG_XTENSA_CACHED_REGION,
-						CONFIG_XTENSA_UNCACHED_REGION);
-}
-
-/**
- * @brief Return uncached pointer to a RAM address
- *
- * The Xtensa coherence architecture maps addressable RAM twice, in
- * two different 512MB regions whose L1 cache settings can be
- * controlled independently.  So for any given pointer, it is possible
- * to convert it to and from a cached version.
- *
- * This function takes a pointer to any addressable object (either in
- * cacheable memory or not) and returns a pointer that can be used to
- * refer to the same memory while bypassing the L1 data cache.  Data
- * in the L1 cache will not be inspected nor modified by the access.
- *
- * @see arch_xtensa_cached_ptr()
- *
- * @param ptr A pointer to a valid C object
- * @return A pointer to the same object bypassing the L1 dcache
- */
-static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
-{
-	return (void *)z_xtrpoflip((__sparse_force uint32_t)ptr,
-				   CONFIG_XTENSA_UNCACHED_REGION,
-				   CONFIG_XTENSA_CACHED_REGION);
-}
 
 /* Utility to generate an unrolled and optimal[1] code sequence to set
  * the RPO TLB registers (contra the HAL cacheattr macros, which
@@ -238,15 +216,28 @@ static inline void *arch_xtensa_uncached_ptr(void __sparse_cache *ptr)
 	addr += addrincr;					\
 } while (0)
 
-#define ARCH_XTENSA_SET_RPO_TLB() do {				\
-	register uint32_t addr = 0, addrincr = 0x20000000;	\
-	FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
-} while (0)
+/**
+ * @brief Setup RPO TLB registers.
+ */
+#define ARCH_XTENSA_SET_RPO_TLB()					\
+	do {								\
+		register uint32_t addr = 0, addrincr = 0x20000000;	\
+		FOR_EACH(_SET_ONE_TLB, (;), 0, 1, 2, 3, 4, 5, 6, 7);	\
+	} while (0)
+#endif /* CONFIG_XTENSA_RPO_CACHE */
 
-#endif
-
-#ifdef CONFIG_XTENSA_MMU
-extern void arch_xtensa_mmu_post_init(bool is_core0);
+#if defined(CONFIG_XTENSA_MMU) || defined(__DOXYGEN__)
+/**
+ * @brief Perform additional steps after MMU initialization.
+ *
+ * This performs additional steps related to memory management
+ * after the main MMU initialization code. This needs to defined
+ * in the SoC layer. Default is do no nothing.
+ *
+ * @param is_core0 True if this is called while executing on
+ *                 CPU core #0.
+ */
+void arch_xtensa_mmu_post_init(bool is_core0);
 #endif
 
 #ifdef __cplusplus

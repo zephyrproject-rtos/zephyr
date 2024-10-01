@@ -14,8 +14,8 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
-            ngpios = <4>;
+			ngpios = <4>;
 			status = "okay";
 		};
-    };
+	};
 };

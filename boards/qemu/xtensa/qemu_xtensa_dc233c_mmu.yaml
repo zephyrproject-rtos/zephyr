@@ -1,0 +1,13 @@
+identifier: qemu_xtensa/dc233c/mmu
+name: QEMU Emulation for Xtensa with MMU
+type: qemu
+simulation: qemu
+arch: xtensa
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

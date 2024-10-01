@@ -1,0 +1,28 @@
+board:
+  name: nsim
+  vendor: snps
+  socs:
+  - name: nsim_em
+  - name: nsim_em7d_v22
+  - name: nsim_em11d
+  - name: nsim_hs
+    variants:
+    - name: sram
+    - name: smp
+    - name: flash_xip
+    - name: mpuv6
+    - name: hostlink
+  - name: nsim_hs5x
+    variants:
+    - name: smp
+      variants:
+      - name: 12cores
+  - name: nsim_hs6x
+    variants:
+    - name: smp
+      variants:
+      - name: 12cores
+  - name: nsim_sem
+    variants:
+    - name: mpu_stack_guard
+  - name: nsim_vpx5

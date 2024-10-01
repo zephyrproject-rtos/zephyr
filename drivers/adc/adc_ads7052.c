@@ -219,8 +219,12 @@ static int ads7052_read_channel(const struct device *dev, uint8_t channel, uint1
 	return 0;
 }
 
-static void ads7052_acquisition_thread(struct ads7052_data *data)
+static void ads7052_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct ads7052_data *data = p1;
 	uint16_t result = 0;
 	uint8_t channel;
 	int err = 0;
@@ -271,8 +275,8 @@ static int adc_ads7052_init(const struct device *dev)
 	}
 
 	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_ADS7052_ACQUISITION_THREAD_STACK_SIZE,
-			(k_thread_entry_t)ads7052_acquisition_thread, data, NULL, NULL,
+			K_KERNEL_STACK_SIZEOF(data->stack),
+			ads7052_acquisition_thread, data, NULL, NULL,
 			CONFIG_ADC_ADS7052_ACQUISITION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	adc_context_unlock_unconditionally(&data->ctx);

@@ -129,9 +129,9 @@ NET_BUF_POOL_FIXED_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_
 
 #else /* !CONFIG_NET_BUF_FIXED_DATA_SIZE */
 
-NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
+NET_BUF_POOL_VAR_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT, CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
-NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_BUF_DATA_POOL_SIZE,
+NET_BUF_POOL_VAR_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT, CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE,
 			CONFIG_NET_PKT_BUF_USER_DATA_SIZE, NULL);
 
 #endif /* CONFIG_NET_BUF_FIXED_DATA_SIZE */
@@ -263,7 +263,7 @@ void net_pkt_allocs_foreach(net_pkt_allocs_cb_t cb, void *user_data)
 			NET_ERR("**ERROR** frag %p not in use (%s:%s():%d)", \
 				frag, __FILE__, __func__, __LINE__);     \
 		}                                                       \
-	} while (0)
+	} while (false)
 
 const char *net_pkt_slab2str(struct k_mem_slab *slab)
 {
@@ -315,10 +315,10 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	while (frag) {
 		total += frag->len;
 
-		frag_size = frag->size;
+		frag_size = net_buf_max_len(frag);
 
 		NET_INFO("[%d] frag %p len %d max len %u size %d pool %p",
-			 count, frag, frag->len, net_buf_max_len(frag),
+			 count, frag, frag->len, frag->size,
 			 frag_size, net_buf_pool_get(frag->pool_id));
 
 		count++;
@@ -1197,6 +1197,67 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	return 0;
 }
 
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+int net_pkt_alloc_buffer_raw_debug(struct net_pkt *pkt, size_t size,
+				   k_timeout_t timeout, const char *caller,
+				   int line)
+#else
+int net_pkt_alloc_buffer_raw(struct net_pkt *pkt, size_t size,
+			     k_timeout_t timeout)
+#endif
+{
+	struct net_buf_pool *pool = NULL;
+	struct net_buf *buf;
+
+	if (size == 0) {
+		return 0;
+	}
+
+	if (k_is_in_isr()) {
+		timeout = K_NO_WAIT;
+	}
+
+	NET_DBG("Data allocation size %zu", size);
+
+	if (pkt->context) {
+		pool = get_data_pool(pkt->context);
+	}
+
+	if (!pool) {
+		pool = pkt->slab == &tx_pkts ? &tx_bufs : &rx_bufs;
+	}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	buf = pkt_alloc_buffer(pool, size, timeout, caller, line);
+#else
+	buf = pkt_alloc_buffer(pool, size, timeout);
+#endif
+
+	if (!buf) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
+			size, caller, line);
+#else
+		NET_ERR("Data buffer (%zd) allocation failed.", size);
+#endif
+		return -ENOMEM;
+	}
+
+	net_pkt_append_buffer(pkt, buf);
+
+#if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
+	/* net_buf allocators shrink the buffer size to the requested size.
+	 * We don't want this behavior here, so restore the real size of the
+	 * last fragment.
+	 */
+	buf = net_buf_frag_last(buf);
+	buf->size = CONFIG_NET_BUF_DATA_SIZE;
+#endif
+
+	return 0;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout,
 				 const char *caller, int line)
@@ -1756,7 +1817,7 @@ static int32_t net_pkt_find_offset(struct net_pkt *pkt, uint8_t *ptr)
 	buf = pkt->buffer;
 
 	while (buf) {
-		if (buf->data <= ptr && ptr <= (buf->data + buf->len)) {
+		if (buf->data <= ptr && ptr < (buf->data + buf->len)) {
 			ret = offset + (ptr - buf->data);
 			break;
 		}
@@ -1811,7 +1872,11 @@ static void clone_pkt_attributes(struct net_pkt *pkt, struct net_pkt *clone_pkt)
 	net_pkt_set_captured(clone_pkt, net_pkt_is_captured(pkt));
 	net_pkt_set_eof(clone_pkt, net_pkt_eof(pkt));
 	net_pkt_set_ptp(clone_pkt, net_pkt_is_ptp(pkt));
+	net_pkt_set_tx_timestamping(clone_pkt, net_pkt_is_tx_timestamping(pkt));
+	net_pkt_set_rx_timestamping(clone_pkt, net_pkt_is_rx_timestamping(pkt));
 	net_pkt_set_forwarding(clone_pkt, net_pkt_forwarding(pkt));
+	net_pkt_set_chksum_done(clone_pkt, net_pkt_is_chksum_done(pkt));
+	net_pkt_set_ip_reassembled(pkt, net_pkt_is_ip_reassembled(pkt));
 
 	net_pkt_set_l2_bridged(clone_pkt, net_pkt_is_l2_bridged(pkt));
 	net_pkt_set_l2_processed(clone_pkt, net_pkt_is_l2_processed(pkt));
@@ -2067,8 +2132,9 @@ size_t net_pkt_get_contiguous_len(struct net_pkt *pkt)
 		size_t len;
 
 		len = net_pkt_is_being_overwritten(pkt) ?
-			pkt->cursor.buf->len : pkt->cursor.buf->size;
+			pkt->cursor.buf->len : net_buf_max_len(pkt->cursor.buf);
 		len -= pkt->cursor.pos - pkt->cursor.buf->data;
+
 		return len;
 	}
 

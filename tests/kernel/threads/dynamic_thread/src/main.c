@@ -16,16 +16,16 @@ static K_SEM_DEFINE(end_sem, 0, 1);
 static ZTEST_BMEM struct k_thread *dyn_thread;
 static struct k_thread *dynamic_threads[CONFIG_MAX_THREAD_BYTES * 8];
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
 {
 	if (reason != K_ERR_KERNEL_OOPS) {
 		printk("wrong error reason\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 	if (k_current_get() != dyn_thread) {
 		printk("wrong thread crashed\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }
@@ -156,10 +156,10 @@ ZTEST(thread_dynamic, test_thread_index_management)
 
 	switch (K_OBJ_THREAD) {
 	/** @cond keep_doxygen_away */
-	#include <otype-to-size.h>
+	#include <zephyr/otype-to-size.h>
 	/** @endcond */
 	}
-	blob = z_dynamic_object_aligned_create(16, ret);
+	blob = k_object_create_dynamic_aligned(16, ret);
 	zassert_true(blob != NULL, "out of heap memory");
 
 	/* Free one of the threads... */

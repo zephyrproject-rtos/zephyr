@@ -5,35 +5,35 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 FUNC_NORETURN void z_mips_fatal_error(unsigned int reason,
-					  const z_arch_esf_t *esf)
+					  const struct arch_esf *esf)
 {
+#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
-		printk("$ 0   :         (ze) %08lx(at) %08lx(v0) %08lx(v1)\n",
+		LOG_ERR("$ 0   :         (ze) %08lx(at) %08lx(v0) %08lx(v1)\n",
 			esf->at, esf->v0, esf->v1);
-		printk("$ 4   : %08lx(a0) %08lx(a1) %08lx(a2) %08lx(a3)\n",
+		LOG_ERR("$ 4   : %08lx(a0) %08lx(a1) %08lx(a2) %08lx(a3)\n",
 			esf->a0, esf->a1, esf->a2, esf->a3);
-		printk("$ 8   : %08lx(t0) %08lx(t1) %08lx(t2) %08lx(t3)\n",
+		LOG_ERR("$ 8   : %08lx(t0) %08lx(t1) %08lx(t2) %08lx(t3)\n",
 			esf->t0, esf->t1, esf->t2, esf->t3);
-		printk("$12   : %08lx(t4) %08lx(t5) %08lx(t6) %08lx(t7)\n",
+		LOG_ERR("$12   : %08lx(t4) %08lx(t5) %08lx(t6) %08lx(t7)\n",
 			esf->t4, esf->t5, esf->t6, esf->t7);
-		printk("...\n");
-		printk("$24   : %08lx(t8) %08lx(t9)\n",
+		LOG_ERR("...\n");
+		LOG_ERR("$24   : %08lx(t8) %08lx(t9)\n",
 			esf->t8, esf->t9);
-		printk("$28   : %08lx(gp)         (sp)         (s8) %08lx(ra)\n",
+		LOG_ERR("$28   : %08lx(gp)         (sp)         (s8) %08lx(ra)\n",
 			esf->gp, esf->ra);
 
-		printk("EPC   : %08lx\n", esf->epc);
+		LOG_ERR("EPC   : %08lx\n", esf->epc);
 
-		printk("Status: %08lx\n", esf->status);
-		printk("Cause : %08lx\n", esf->cause);
-		printk("BadVA : %08lx\n", esf->badvaddr);
+		LOG_ERR("Status: %08lx\n", esf->status);
+		LOG_ERR("Cause : %08lx\n", esf->cause);
+		LOG_ERR("BadVA : %08lx\n", esf->badvaddr);
 	}
-
+#endif /* CONFIG_EXCEPTION_DEBUG */
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
@@ -84,7 +84,7 @@ static char *cause_str(unsigned long cause)
 	}
 }
 
-void _Fault(z_arch_esf_t *esf)
+void _Fault(struct arch_esf *esf)
 {
 	unsigned long cause;
 

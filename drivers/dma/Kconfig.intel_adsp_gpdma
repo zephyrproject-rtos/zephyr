@@ -21,7 +21,7 @@ config DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP
 
 config DMA_INTEL_ADSP_GPDMA_HAS_LLP
 	bool "Intel ADSP GPDMA Linear Link Position Feature"
-	default y if SOC_SERIES_INTEL_ACE
+	default y if SOC_SERIES_INTEL_ADSP_ACE
 	help
 	  Intel ADSP GPDMA may optionally have a linear link position
 	  feature.

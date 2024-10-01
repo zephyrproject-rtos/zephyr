@@ -1,12 +1,28 @@
-# Copyright (c) 2022 Intel Corporation
+# Copyright (c) 2024 Intel Corporation
 # Copyright (c) 2022 Esco Medical ApS
 # Copyright (c) 2020 TDK Invensense
 # SPDX-License-Identifier: Apache-2.0
 
-description: ICM-42688 motion tracking device
+description: |
+    ICM-42688 motion tracking device
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in a .dts or .dtsi file you may include icm42688.h
+    and use the macros defined there.
 
+    Example:
+    #include <zephyr/dt-bindings/sensor/icm42688.h>
+
+    icm42688: icm42688@0 {
+      ...
+
+      accel-pwr-mode = <ICM42688_ACCEL_LN>;
+      accel-fs = <ICM42688_ACCEL_FS_16G>;
+      accel-odr = <ICM42688_ACCEL_ODR_2000>;
+      gyro-pwr-mode= <ICM42688_GYRO_LN>;
+      gyro-fs = <ICM42688_GYRO_FS_2000>;
+      gyro-odr = <ICM42688_GYRO_ODR_2000>;
+    };
 compatible: "invensense,icm42688"
-
 include: [sensor-device.yaml, spi-device.yaml]
 
 properties:
@@ -17,80 +33,95 @@ properties:
       property value should ensure the flags properly describe the
       signal that is presented to the driver.
 
-  accel-hz:
+  accel-pwr-mode:
     type: int
+    default: 0
     description: |
-      Default frequency of accelerometer. (Unit - Hz)
-      Maps to ACCEL_ODR field in ACCEL_CONFIG0 setting
-      Power-on reset value is 1000.
-    default: 1000
+      Specify the default accelerometer power mode.
+      Default is power-up configuration.
     enum:
-      - 1
-      - 3
-      - 6
-      - 12
-      - 25
-      - 50
-      - 100
-      - 200
-      - 500
-      - 1000
-      - 2000
-      - 4000
-      - 8000
-      - 16000
-      - 32000
+      - 0 # ICM42688_DT_ACCEL_OFF
+      - 2 # ICM42688_DT_ACCEL_LP
+      - 3 # ICM42688_DT_ACCEL_LN
 
-  gyro-hz:
+  accel-odr:
     type: int
+    default: 6
     description: |
-      Default frequency of gyroscope. (Unit - Hz)
-      Maps to GYRO_ODR field in GYRO_CONFIG0 setting
-      Power-on reset value is 1000.
-    default: 1000
+      Specify the default accelerometer output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
     enum:
-      - 1
-      - 3
-      - 6
-      - 12
-      - 25
-      - 50
-      - 100
-      - 200
-      - 500
-      - 1000
-      - 2000
-      - 4000
-      - 8000
-      - 16000
-      - 32000
+      - 1  # ICM42688_DT_ACCEL_ODR_32000
+      - 2  # ICM42688_DT_ACCEL_ODR_16000
+      - 3  # ICM42688_DT_ACCEL_ODR_8000
+      - 4  # ICM42688_DT_ACCEL_ODR_4000
+      - 5  # ICM42688_DT_ACCEL_ODR_2000
+      - 6  # ICM42688_DT_ACCEL_ODR_1000
+      - 7  # ICM42688_DT_ACCEL_ODR_200
+      - 8  # ICM42688_DT_ACCEL_ODR_100
+      - 9  # ICM42688_DT_ACCEL_ODR_50
+      - 10 # ICM42688_DT_ACCEL_ODR_25
+      - 11 # ICM42688_DT_ACCEL_ODR_12_5
+      - 12 # ICM42688_DT_ACCEL_ODR_6_25
+      - 13 # ICM42688_DT_ACCEL_ODR_3_125
+      - 14 # ICM42688_DT_ACCEL_ODR_1_5625
+      - 15 # ICM42688_DT_ACCEL_ODR_500
 
   accel-fs:
     type: int
+    default: 0
     description: |
-      Default full scale of accelerometer. (Unit - g)
-      Maps to ACCEL_FS_SEL field in ACCEL_CONFIG0 setting
-      Power-on reset value is 16
-    default: 16
+      Specify the accelerometer range in g.
+      Default is power-up configuration.
     enum:
-      - 16
-      - 8
-      - 4
-      - 2
+      - 0 # ICM42688_DT_ACCEL_FS_16G
+      - 1 # ICM42688_DT_ACCEL_FS_8G
+      - 2 # ICM42688_DT_ACCEL_FS_4G
+      - 3 # ICM42688_DT_ACCEL_FS_2G
+
+  gyro-pwr-mode:
+    type: int
+    default: 0
+    description: |
+      Specify the default gyro power mode.
+      Default is power-up configuration.
+    enum:
+      - 0 # ICM42688_DT_GYRO_OFF
+      - 1 # ICM42688_DT_GYRO_STANDBY
+      - 3 # ICM42688_DT_GYRO_LN
+
+  gyro-odr:
+    type: int
+    default: 6
+    description: |
+      Specify the default gyro output data rate expressed in samples per second (Hz).
+      Default is power-up configuration.
+    enum:
+      - 1  # ICM42688_DT_GYRO_ODR_32000
+      - 2  # ICM42688_DT_GYRO_ODR_16000
+      - 3  # ICM42688_DT_GYRO_ODR_8000
+      - 4  # ICM42688_DT_GYRO_ODR_4000
+      - 5  # ICM42688_DT_GYRO_ODR_2000
+      - 6  # ICM42688_DT_GYRO_ODR_1000
+      - 7  # ICM42688_DT_GYRO_ODR_200
+      - 8  # ICM42688_DT_GYRO_ODR_100
+      - 9  # ICM42688_DT_GYRO_ODR_50
+      - 10 # ICM42688_DT_GYRO_ODR_25
+      - 11 # ICM42688_DT_GYRO_ODR_12_5
+      - 15 # ICM42688_DT_GYRO_ODR_500
 
   gyro-fs:
     type: int
+    default: 0
     description: |
-      Default full scale of gyroscope. (Unit - DPS)
-      Maps to GYRO_FS_SEL field in GYRO_CONFIG0 setting
-      Power-on reset value is 2000
-    default: 2000
+      Specify the gyro range in degrees per second.
+      Default is power-up configuration.
     enum:
-      - 2000
-      - 1000
-      - 500
-      - 250
-      - 125
-      - 63
-      - 31
-      - 16
+      - 0 # ICM42688_DT_GYRO_FS_2000
+      - 1 # ICM42688_DT_GYRO_FS_1000
+      - 2 # ICM42688_DT_GYRO_FS_500
+      - 3 # ICM42688_DT_GYRO_FS_250
+      - 4 # ICM42688_DT_GYRO_FS_125
+      - 5 # ICM42688_DT_GYRO_FS_62_5
+      - 6 # ICM42688_DT_GYRO_FS_31_25
+      - 7 # ICM42688_DT_GYRO_FS_15_625

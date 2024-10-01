@@ -23,32 +23,23 @@
 
 			/* limits are set to min/max allowed values */
 			npm1300_ek_buck1: BUCK1 {
-				regulator-min-microvolt = <1800000>;
+				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
 			};
 
 			npm1300_ek_buck2: BUCK2 {
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
-				regulator-init-microvolt = <3300000>;
-				retention-microvolt = <2500000>;
-				enable-gpios = <&npm1300_ek_gpio 1 GPIO_ACTIVE_LOW>;
-				retention-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_HIGH>;
-				pwm-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
 			};
 
 			npm1300_ek_ldo1: LDO1 {
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
-				regulator-initial-mode = <NPM1300_LDSW_MODE_LDO>;
-				enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
 			};
 
 			npm1300_ek_ldo2: LDO2 {
 				regulator-min-microvolt = <1000000>;
 				regulator-max-microvolt = <3300000>;
-				regulator-initial-mode = <NPM1300_LDSW_MODE_LDSW>;
-				enable-gpios = <&npm1300_ek_gpio 2 GPIO_ACTIVE_LOW>;
 			};
 		};
 

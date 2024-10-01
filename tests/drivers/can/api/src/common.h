@@ -52,6 +52,7 @@
  * @brief Common variables.
  */
 extern ZTEST_DMEM const struct device *const can_dev;
+extern ZTEST_DMEM const struct device *const can_phy;
 extern struct k_sem rx_callback_sem;
 extern struct k_sem tx_callback_sem;
 extern struct k_msgq can_msgq;
@@ -86,25 +87,27 @@ extern const struct can_frame test_std_rtr_frame_1;
  */
 extern const struct can_frame test_ext_rtr_frame_1;
 
+#ifdef CONFIG_CAN_FD_MODE
 /**
- * @brief Standard (11-bit) CAN ID frame 1 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 1 with CAN FD payload.
  */
 extern const struct can_frame test_std_fdf_frame_1;
 
 /**
- * @brief Standard (11-bit) CAN ID frame 2 with CAN-FD payload.
+ * @brief Standard (11-bit) CAN ID frame 2 with CAN FD payload.
  */
 extern const struct can_frame test_std_fdf_frame_2;
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Standard (11-bit) CAN ID filter 1. This filter matches
- * ``test_std_frame_1``.
+ * ``test_std_frame_1`` and ``test_std_fdf_frame_1``.
  */
 extern const struct can_filter test_std_filter_1;
 
 /**
  * @brief Standard (11-bit) CAN ID filter 2. This filter matches
- * ``test_std_frame_2``.
+ * ``test_std_frame_2`` and ``test_std_fdf_frame_2``.
  */
 extern const struct can_filter test_std_filter_2;
 
@@ -145,34 +148,10 @@ extern const struct can_filter test_ext_masked_filter_1;
 extern const struct can_filter test_ext_masked_filter_2;
 
 /**
- * @brief Standard (11-bit) CAN ID RTR filter 1. This filter matches
- * ``test_std_rtr_frame_1``.
- */
-extern const struct can_filter test_std_rtr_filter_1;
-
-/**
- * @brief Extended (29-bit) CAN ID RTR filter 1. This filter matches
- * ``test_ext_rtr_frame_1``.
- */
-extern const struct can_filter test_ext_rtr_filter_1;
-
-/**
  * @brief Standard (11-bit) CAN ID filter. This filter matches
  * ``TEST_CAN_SOME_STD_ID``.
  */
 extern const struct can_filter test_std_some_filter;
-
-/**
- * @brief Standard (11-bit) CAN-FD ID filter 1. This filter matches
- * ``test_std_fdf_frame_1``.
- */
-extern const struct can_filter test_std_fdf_filter_1;
-
-/**
- * @brief Standard (11-bit) CAN-FD ID filter 2. This filter matches
- * ``test_std_fdf_frame_2``.
- */
-extern const struct can_filter test_std_fdf_filter_2;
 
 /**
  * @brief Assert that two CAN frames are equal given a CAN ID mask.
@@ -184,3 +163,10 @@ extern const struct can_filter test_std_fdf_filter_2;
 void assert_frame_equal(const struct can_frame *frame1,
 			const struct can_frame *frame2,
 			uint32_t id_mask);
+
+/**
+ * @brief Common setup function for the CAN controller device under test.
+ *
+ * @param initial_mode Initial CAN controller operational mode.
+ */
+void can_common_test_setup(can_mode_t initial_mode);

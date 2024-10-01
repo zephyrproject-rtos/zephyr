@@ -8,6 +8,13 @@
 #include <zephyr/arch/xtensa/irq.h>
 #include <zephyr/sys/__assert.h>
 
+#include <kernel_arch_func.h>
+
+#include <xtensa_internal.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
 /**
  * @internal
  *
@@ -56,3 +63,25 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 }
 #endif /* !CONFIG_MULTI_LEVEL_INTERRUPTS */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
+void z_irq_spurious(const void *arg)
+{
+	int irqs, ie;
+
+	ARG_UNUSED(arg);
+
+	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs));
+	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
+	LOG_ERR(" ** Spurious INTERRUPT(s) %p, INTENABLE = %p",
+		(void *)irqs, (void *)ie);
+	xtensa_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+}
+
+int xtensa_irq_is_enabled(unsigned int irq)
+{
+	uint32_t ie;
+
+	__asm__ volatile("rsr.intenable %0" : "=r"(ie));
+
+	return (ie & (1 << irq)) != 0U;
+}

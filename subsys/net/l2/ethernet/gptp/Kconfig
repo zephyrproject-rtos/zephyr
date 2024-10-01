@@ -103,34 +103,19 @@ config NET_GPTP_CLOCK_ACCURACY
 	default 0x31 if NET_GPTP_CLOCK_ACCURACY_GT_10S
 	default 0xfe
 
+config NET_GPTP_STACK_SIZE
+	int "gPTP thread stack size"
+	default 2048
+	help
+	  Set the gPTP thread stack size in bytes. The gPTP thread handles the
+	  gPTP state machine. There is one gPTP thread in the system.
+
 config NET_GPTP_NUM_PORTS
 	int "Number of gPTP ports"
 	default 1
 	help
 	  Configures the gPTP stack to work with the given number of ports.
 	  The port concept is the same thing as network interface.
-
-config NET_GPTP_VLAN
-	bool "Run gPTP over VLAN link"
-	depends on NET_VLAN
-	select NET_L2_ETHERNET_MGMT
-	select NET_MGMT_EVENT
-	select NET_MGMT_EVENT_INFO
-	help
-	  This setting allows gPTP to run over VLAN link. Currently only
-	  one port can have VLAN tag set. Note that CONFIG_NET_GPTP_VLAN_TAG
-	  setting must have a proper tag value set, otherwise the gPTP over
-	  VLAN will not work.
-
-config NET_GPTP_VLAN_TAG
-	int "VLAN tag to use"
-	default 4095
-	depends on NET_GPTP_VLAN
-	help
-	  The VLAN tag to use when sending and receiving gPTP messages.
-	  The default value 4095 (0x0fff) means unspecified tag which is
-	  not a valid value. This means that you need to set the tag to
-	  a valid value.
 
 config NET_GPTP_NEIGHBOR_PROP_DELAY_THR
 	int "Set neighbor propagation delay threshold (ns)"

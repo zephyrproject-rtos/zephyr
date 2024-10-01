@@ -30,6 +30,8 @@ BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
 /**
  * @brief Retained memory driver interface
  * @defgroup retained_mem_interface Retained memory driver interface
+ * @since 3.4
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -190,6 +192,6 @@ static inline int z_impl_retained_mem_clear(const struct device *dev)
 }
 #endif
 
-#include <syscalls/retained_mem.h>
+#include <zephyr/syscalls/retained_mem.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_ */

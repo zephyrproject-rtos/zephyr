@@ -4,7 +4,13 @@
 # Common fields for STM32 UART peripherals.
 description: STM32 UART-BASE
 
-include: [uart-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+include:
+  - name: uart-controller.yaml
+    property-blocklist:
+      - clock-frequency
+  - name: pinctrl-device.yaml
+  - name: reset-device.yaml
+  - name: uart-controller-pin-inversion.yaml
 
 properties:
   reg:
@@ -31,18 +37,6 @@ properties:
     type: boolean
     description:
       Swap the TX and RX pins. Used in case of a cross wired connection.
-
-  tx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of tx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
-
-  rx-invert:
-    type: boolean
-    description: |
-      Invert the binary logic of rx pin. When enabled, physical logic levels are inverted and
-      we use 1=Low, 0=High instead of 1=High, 0=Low.
 
   pinctrl-0:
     required: true
@@ -86,3 +80,13 @@ properties:
     description: |
       Invert the binary logic of the de pin. When enabled, physical logic levels are inverted and
       we use 1=Low, 0=High instead of 1=High, 0=Low.
+
+  fifo-enable:
+    type: boolean
+    description: |
+      Enables transmit and receive FIFO using default FIFO configuration (typically threshold is
+      set to 1/8).
+      In TX, FIFO allows to work in burst mode, easing scheduling of loaded applications. It also
+      allows more reliable communication with UART devices sensitive to variation of inter-frames
+      delays.
+      In RX, FIFO reduces overrun occurrences.

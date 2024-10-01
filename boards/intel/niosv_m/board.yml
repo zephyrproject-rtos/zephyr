@@ -1,0 +1,4 @@
+board:
+  name: niosv_m
+  socs:
+    - name: niosv_m

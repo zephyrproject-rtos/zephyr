@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_ARM_MPU_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_ARM_MPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
 
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
@@ -15,6 +15,7 @@
 #elif defined(CONFIG_CPU_CORTEX_M23) || \
 	defined(CONFIG_CPU_CORTEX_M33) || \
 	defined(CONFIG_CPU_CORTEX_M55) || \
+	defined(CONFIG_CPU_CORTEX_M85) || \
 	defined(CONFIG_AARCH32_ARMV8_R)
 #include <zephyr/arch/arm/mpu/arm_mpu_v8.h>
 #else
@@ -74,4 +75,4 @@ extern const struct arm_mpu_config mpu_config;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MPU_ARM_MPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_ */

@@ -3,13 +3,8 @@
 # Copyright (c) 2022 Synopsys
 # SPDX-License-Identifier: Apache-2.0
 
-config ARC_HAS_DSP
-	bool
-	help
-	  This option is enabled when the ARC CPU has hardware DSP unit.
-
 menu "ARC DSP Options"
-depends on ARC_HAS_DSP
+depends on CPU_HAS_DSP
 
 config ARC_DSP
 	bool "digital signal processing (DSP)"
@@ -22,7 +17,7 @@ config ARC_DSP_TURNED_OFF
 	help
 	  This option disables DSP block via resetting DSP_CRTL register.
 
-config ARC_DSP_SHARING
+config DSP_SHARING
 	bool "DSP register sharing"
 	depends on ARC_DSP && MULTITHREADING
 	select ARC_HAS_ACCL_REGS
@@ -49,7 +44,7 @@ config ARC_XY_ENABLE
 config ARC_AGU_SHARING
 	bool "ARC address generation unit register sharing"
 	depends on ARC_XY_ENABLE && MULTITHREADING
-	default y if ARC_DSP_SHARING
+	default y if DSP_SHARING
 	help
 	  This option enables preservation of the hardware AGU registers
 	  across context switches to allow multiple threads to perform concurrent

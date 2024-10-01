@@ -1,0 +1,25 @@
+# PAN1783 EVB board configuration
+
+# Copyright (c) 2023 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRFX_IPC
+	default MBOX
+
+if SOC_NRF5340_CPUAPP_QKAA
+
+config BT_HCI_IPC
+	default y if BT
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BT_HCI_IPC
+
+endif # SOC_NRF5340_CPUAPP_QKAA
+
+if SOC_NRF5340_CPUNET_QKAA
+
+config BT_CTLR
+	default y if BT
+
+endif # SOC_NRF5340_CPUNET_QKAA

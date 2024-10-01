@@ -1,0 +1,186 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7rs/stm32h7s7X8.dtsi>
+#include <st/h7/stm32h7s7l8hx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32H7S78 DISCOVERY KIT board";
+	compatible = "st,stm32h7s78-dk";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpioo 1 GPIO_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		orange_led: led_2 {
+			gpios = <&gpioo 5 GPIO_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+		red_led: led_3 {
+			gpios = <&gpiom 2 GPIO_ACTIVE_LOW>;
+			label = "User LD3";
+		};
+		blue_led: led_4 {
+			gpios = <&gpiom 3 GPIO_ACTIVE_LOW>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		die-temp0 = &die_temp;
+		volt-sensor0 = &vref;
+		volt-sensor1 = &vbat;
+	};
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	hse-bypass; /* X3 is a 24MHz oscillator on PH0 */
+	status = "okay";
+};
+
+&pll {
+	div-m = <12>;
+	mul-n = <250>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	div-s = <2>;
+	div-t = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(250)>;
+	dcpre = <1>;
+	hpre = <1>;
+	ppre1 = <2>;
+	ppre2 = <2>;
+	ppre4 = <2>;
+	ppre5 = <2>;
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_pd1 &uart4_rx_pd0>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	pinctrl-0 = <&uart7_tx_pe8 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim2_ch4_pa3>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch2_pb5>;
+		pinctrl-names = "default";
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&wwdg {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_inp2_pf13>; /* Arduino A4 */
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&spi4 {
+	pinctrl-0 = <&spi4_nss_pe4 &spi4_sck_pe12
+		     &spi4_miso_pe13 &spi4_mosi_pe14>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+&vbat {
+	status = "okay";
+};

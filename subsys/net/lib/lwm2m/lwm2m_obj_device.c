@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2018-2019 Foundries.io
+ * Copyright (c) 2023 FTP Technologies
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <stdio.h>
 #include <zephyr/init.h>
+#include <zephyr/settings/settings.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -89,7 +91,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 				 DEVICE_EXT_DEV_INFO_MAX)
 
 /* resource state variables */
-static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
+static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX] = { LWM2M_DEVICE_ERROR_NONE };
 static time_t time_temp;
 static time_t time_offset;
 static uint8_t  binding_mode[DEVICE_STRING_SHORT];
@@ -129,29 +131,52 @@ static struct lwm2m_engine_res_inst res_inst[RESOURCE_INSTANCE_COUNT];
 /* save error code resource instance point so we can easily clear later */
 static struct lwm2m_engine_res_inst *error_code_ri;
 
+#define SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE "lwm2m_obj_dev"
+#define ERROR_LIST_KEY "err"
+
 /* callbacks */
 
-static int reset_error_list_cb(uint16_t obj_inst_id,
-			       uint8_t *args, uint16_t args_len)
+static void reset_error_list(void)
 {
 	int i;
 
 	/* "delete" error codes */
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
-		error_code_list[i] = 0;
+		error_code_list[i] = LWM2M_DEVICE_ERROR_NONE;
 		error_code_ri[i].res_inst_id = RES_INSTANCE_NOT_CREATED;
 	}
 
 	/* Default error code indicating no error */
 	error_code_ri[0].res_inst_id = 0;
+}
 
-	return 0;
+static int reset_error_list_cb(uint16_t obj_inst_id,
+			       uint8_t *args, uint16_t args_len)
+{
+	int ret = 0;
+
+	ARG_UNUSED(obj_inst_id);
+	ARG_UNUSED(args);
+	ARG_UNUSED(args_len);
+
+	reset_error_list();
+
+	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
+
+	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
+		ret = settings_delete(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE "/" ERROR_LIST_KEY);
+		if (ret != 0) {
+			LOG_ERR("Couldn't save error list: %d", ret);
+		}
+	}
+
+	return ret;
 }
 
 static void *current_time_read_cb(uint16_t obj_inst_id, uint16_t res_id,
 				  uint16_t res_inst_id, size_t *data_len)
 {
-	time_temp = time_offset + (k_uptime_get() / 1000);
+	time_temp = time_offset + k_uptime_seconds();
 	*data_len = sizeof(time_temp);
 
 	return &time_temp;
@@ -165,15 +190,15 @@ static void *current_time_pre_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 }
 
 static int current_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
-				      uint16_t res_inst_id,
-				      uint8_t *data, uint16_t data_len,
-				      bool last_block, size_t total_size)
+				      uint16_t res_inst_id, uint8_t *data,
+				      uint16_t data_len, bool last_block,
+				      size_t total_size, size_t offset)
 {
 	if (data_len == 4U) {
-		time_offset = *(uint32_t *)data - (uint32_t)(k_uptime_get() / 1000);
+		time_offset = *(uint32_t *)data - k_uptime_seconds();
 		return 0;
 	} else if (data_len == 8U) {
-		time_offset = *(time_t *)data - (time_t)(k_uptime_get() / 1000);
+		time_offset = *(time_t *)data - (time_t)k_uptime_seconds();
 		return 0;
 	}
 
@@ -182,13 +207,13 @@ static int current_time_post_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 }
 
 /* error code function */
-
 int lwm2m_device_add_err(uint8_t error_code)
 {
+	int ret = 0;
 	int i;
 
 	for (i = 0; i < DEVICE_ERROR_CODE_MAX; i++) {
-		if (error_code_list[i] == 0) {
+		if (error_code_list[i] == LWM2M_DEVICE_ERROR_NONE) {
 			break;
 		}
 
@@ -206,7 +231,15 @@ int lwm2m_device_add_err(uint8_t error_code)
 	error_code_ri[i].res_inst_id = i;
 	lwm2m_notify_observer(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_ERROR_CODE_ID);
 
-	return 0;
+	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
+		ret = settings_save_one(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE "/" ERROR_LIST_KEY,
+					error_code_list, i + 1);
+		if (ret != 0) {
+			LOG_ERR("Couldn't save error list: %d", ret);
+		}
+	}
+
+	return ret;
 }
 
 static void device_periodic_service(struct k_work *work)
@@ -218,6 +251,52 @@ int lwm2m_update_device_service_period(uint32_t period_ms)
 {
 	return lwm2m_engine_update_service_period(device_periodic_service, period_ms);
 }
+
+static int lwm2m_obj_device_settings_set(const char *name, size_t len,
+					 settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+	int rc;
+	int i;
+
+	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
+		if (settings_name_steq(name, ERROR_LIST_KEY, &next) && !next) {
+			if (len > sizeof(error_code_list)) {
+				LOG_ERR("Error code list too large: %zu", len);
+				return -EINVAL;
+			}
+
+			rc = read_cb(cb_arg, error_code_list, sizeof(error_code_list));
+			if (rc == 0) {
+				reset_error_list();
+				return 0;
+			} else if (rc > 0) {
+				for (i = 0; i < ARRAY_SIZE(error_code_list); i++) {
+					if (i < rc) {
+						error_code_ri[i].res_inst_id = i;
+					} else {
+						/* Reset remaining error code instances */
+						error_code_list[i] = LWM2M_DEVICE_ERROR_NONE;
+						error_code_ri[i].res_inst_id =
+							RES_INSTANCE_NOT_CREATED;
+					}
+				}
+				return 0;
+			}
+
+			LOG_ERR("Error code list read failure: %d", rc);
+
+			return rc;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static struct settings_handler lwm2m_obj_device_settings_handler = {
+	.name = SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE,
+	.h_set = lwm2m_obj_device_settings_set,
+};
 
 static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 {
@@ -251,8 +330,8 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 			 NULL, current_time_post_write_cb, NULL);
 	INIT_OBJ_RES_OPTDATA(DEVICE_UTC_OFFSET_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TIMEZONE_ID, res, i, res_inst, j);
-	INIT_OBJ_RES_DATA(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
-			  res_inst, j, binding_mode, DEVICE_STRING_SHORT);
+	INIT_OBJ_RES_DATA_LEN(DEVICE_SUPPORTED_BINDING_MODES_ID, res, i,
+			  res_inst, j, binding_mode, DEVICE_STRING_SHORT, strlen(binding_mode) + 1);
 	INIT_OBJ_RES_OPTDATA(DEVICE_TYPE_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_HARDWARE_VERSION_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_SOFTWARE_VERSION_ID, res, i, res_inst, j);
@@ -271,7 +350,7 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 static int lwm2m_device_init(void)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
-	int ret = 0;
+	int ret;
 
 	/* Set default values */
 	time_offset = 0U;
@@ -294,13 +373,27 @@ static int lwm2m_device_init(void)
 		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
 
-	/* Create the default error code resource instance */
-	lwm2m_device_add_err(0);
+	/* Ensure error list is reset if not loaded from settings */
+	reset_error_list();
+
+	/* Load error code resource instances */
+	if (IS_ENABLED(CONFIG_LWM2M_DEVICE_ERROR_CODE_SETTINGS)) {
+		ret = settings_register(&lwm2m_obj_device_settings_handler);
+		if (ret == 0) {
+			ret = settings_load_subtree(SETTINGS_SUBTREE_LWM2M_OBJ_DEVICE);
+			if (ret != 0) {
+				LOG_ERR("Settings load failed: %d", ret);
+			}
+		} else {
+			LOG_ERR("Settings register failed: %d", ret);
+		}
+	}
 
 	/* call device_periodic_service() every 10 seconds */
 	ret = lwm2m_engine_add_service(device_periodic_service,
 				       DEVICE_SERVICE_INTERVAL_MS);
+
 	return ret;
 }
 
-SYS_INIT(lwm2m_device_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_CORE_INIT(lwm2m_device_init);

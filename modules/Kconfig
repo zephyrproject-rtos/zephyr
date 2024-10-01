@@ -12,8 +12,6 @@ comment "Available modules."
 
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
-comment "Optional modules. Make sure they're installed, via the project manifest."
-
 source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
 source "modules/Kconfig.chre"
@@ -30,10 +28,10 @@ source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
 source "modules/Kconfig.picolibc"
 source "modules/Kconfig.nxp_s32"
+source "modules/Kconfig.renesas_fsp"
 source "modules/Kconfig.silabs"
 source "modules/Kconfig.simplelink"
 source "modules/Kconfig.sof"
-source "modules/Kconfig.st"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
@@ -45,6 +43,7 @@ source "modules/Kconfig.xtensa"
 source "modules/zcbor/Kconfig"
 source "modules/Kconfig.mcuboot"
 source "modules/Kconfig.intel"
+source "modules/hostap/Kconfig"
 
 comment "Unavailable modules, please install those via the project manifest."
 

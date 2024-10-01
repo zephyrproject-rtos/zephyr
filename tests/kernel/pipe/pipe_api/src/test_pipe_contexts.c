@@ -353,6 +353,8 @@ ZTEST(pipe_api, test_half_pipe_put_get)
 	size_t rd_byte = 0;
 	int ret;
 
+	memset(rx_data, 0, sizeof(rx_data));
+
 	/* TESTPOINT: min_xfer > bytes_to_read */
 	ret = k_pipe_put(&kpipe, &rx_data[0], 1, &rd_byte, 24, K_NO_WAIT);
 	zassert_true(ret == -EINVAL);

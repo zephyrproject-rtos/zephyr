@@ -25,7 +25,7 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_posix`
+- :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` or :ref:`networking_with_native_sim`
 - Linux machine
 - Leshan Demo Server (https://eclipse.org/leshan/)
 
@@ -49,9 +49,6 @@ samples/net/lwm2m_client directory:
     * - :file:`overlay-dtls.conf`
       - This overlay config can be added for DTLS support via MBEDTLS.
 
-    * - :file:`overlay-bt.conf`
-      - This overlay config can be added to enable Bluetooth networking support.
-
     * - :file:`overlay-queue.conf`
       - This overlay config can be added to enable LWM2M Queue Mode support.
 
@@ -68,8 +65,8 @@ Build the lwm2m-client sample application like this:
    :compact:
 
 The easiest way to setup this sample application is to build and run it
-as native POSIX application or as a QEMU target using the default configuration :file:`prj.conf`.
-This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_posix`.
+as a native_sim application or as a QEMU target using the default configuration :file:`prj.conf`.
+This requires a small amount of setup described in :ref:`networking_with_eth_qemu`, :ref:`networking_with_qemu` and :ref:`networking_with_native_sim`.
 
 Download and run the latest build of the Leshan Demo Server:
 
@@ -178,32 +175,6 @@ instance. In that case, the user should make sure to update the port number in
 the overlay file for Bootstrap over DTLS (5784 in case of Leshan Demo Bootstrap
 Server) and to configure correct security mode in the ``LWM2M Bootstrap Server``
 tab in the web UI (Pre-shared Key).
-
-Bluetooth Support
-=================
-
-To build the lwm2m-client sample for hardware requiring Bluetooth for
-networking (IPSP node connected via 6lowpan) do the following:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/lwm2m_client
-   :host-os: unix
-   :board: <board to use>
-   :conf: "prj.conf overlay-bt.conf"
-   :goals: build
-   :compact:
-
-The overlay-\*.conf files can also be combined.  For example, you could build a
-DTLS-enabled LwM2M client sample for BLENano2 hardware by using the following
-commands (requires Bluetooth for networking):
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/lwm2m_client
-   :host-os: unix
-   :board: nrf52_blenano2
-   :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
-   :goals: build
-   :compact:
 
 OpenThread Support
 ==================

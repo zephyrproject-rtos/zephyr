@@ -70,7 +70,7 @@ properties:
     type: int
     default: 0
     description: |
-      Column Address Space bit width. For example, if the coulmn address is
+      Column Address Space bit width. For example, if the column address is
       [2:0] of QSPI_SFAR/AHB address, then the column address space bit width
       must be 3. If there is no column address separation in any serial flash
       device connected to this controller, this value must be programmed to 0.

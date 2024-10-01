@@ -107,6 +107,11 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 		return -EINVAL;
 	}
 
+	if (value >= BIT(12)) {
+		LOG_ERR("value %d out of range", value);
+		return -EINVAL;
+	}
+
 	k_sem_take(&dev_data->dac_channels[channel].sem, K_FOREVER);
 
 	/* Trigger conversion */

@@ -1,0 +1,7 @@
+# Particle Boron configuration
+
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PARTICLE_BORON
+	select SOC_NRF52840_QIAA

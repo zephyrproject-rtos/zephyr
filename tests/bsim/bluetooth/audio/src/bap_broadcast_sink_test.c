@@ -4,43 +4,80 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
+
+#include "bstests.h"
 #include "common.h"
 
+#if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 extern enum bst_result_t bst_result;
 
-CREATE_FLAG(broadcaster_found);
-CREATE_FLAG(base_received);
+CREATE_FLAG(flag_broadcaster_found);
+CREATE_FLAG(flag_base_received);
 CREATE_FLAG(flag_base_metadata_updated);
-CREATE_FLAG(pa_synced);
+CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_syncable);
-CREATE_FLAG(pa_sync_lost);
+CREATE_FLAG(flag_pa_sync_lost);
 CREATE_FLAG(flag_received);
+CREATE_FLAG(flag_pa_request);
+CREATE_FLAG(flag_bis_sync_requested);
 
 static struct bt_bap_broadcast_sink *g_sink;
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
-static struct bt_bap_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
+static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_stream *streams[ARRAY_SIZE(broadcast_sink_streams)];
+static uint32_t requested_bis_sync;
+static struct bt_le_ext_adv *ext_adv;
+static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
+
+#define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
+#define SUPPORTED_MIN_OCTETS_PER_FRAME 30
+#define SUPPORTED_MAX_OCTETS_PER_FRAME 155
+#define SUPPORTED_MAX_FRAMES_PER_SDU   1
+
+/* We support 1 or 2 channels, so the maximum SDU size we support will be 2 times the maximum frame
+ * size per frame we support
+ */
+#define SUPPORTED_MAX_SDU_SIZE (2 * SUPPORTED_MAX_FRAMES_PER_SDU * SUPPORTED_MAX_OCTETS_PER_FRAME)
+
+BUILD_ASSERT(CONFIG_BT_ISO_RX_MTU >= SUPPORTED_MAX_SDU_SIZE);
+
+#define SUPPORTED_CONTEXTS (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 static const struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP_LC3(
-	BT_AUDIO_CODEC_LC3_FREQ_ANY, BT_AUDIO_CODEC_LC3_DURATION_ANY,
-	BT_AUDIO_CODEC_LC3_CHAN_COUNT_SUPPORT(1, 2), 30, 240, 2,
-	(BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA));
+	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY, SUPPORTED_CHAN_COUNTS,
+	SUPPORTED_MIN_OCTETS_PER_FRAME, SUPPORTED_MAX_OCTETS_PER_FRAME,
+	SUPPORTED_MAX_FRAMES_PER_SDU, SUPPORTED_CONTEXTS);
 
 static K_SEM_DEFINE(sem_started, 0U, ARRAY_SIZE(streams));
 static K_SEM_DEFINE(sem_stopped, 0U, ARRAY_SIZE(streams));
-
-static uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 
 /* Create a mask for the maximum BIS we can sync to using the number of streams
  * we have. We add an additional 1 since the bis indexes start from 1 and not
@@ -49,46 +86,170 @@ static uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(streams) + 1U);
 static uint32_t bis_index_bitfield;
 
-static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base)
+static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
+{
+	struct bt_audio_codec_cfg codec_cfg = {0};
+	enum bt_audio_location chan_allocation;
+	uint8_t frames_blocks_per_sdu;
+	size_t min_sdu_size_required;
+	uint16_t octets_per_frame;
+	uint8_t chan_cnt;
+	int ret;
+
+	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
+	if (ret < 0) {
+		printk("Could not get subgroup codec_cfg: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_freq(&codec_cfg);
+	if (ret >= 0) {
+		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+		if (freq < 0) {
+			printk("Invalid subgroup frequency value: %d (%d)\n", ret, freq);
+
+			return false;
+		}
+	} else {
+		printk("Could not get subgroup frequency: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(&codec_cfg);
+	if (ret >= 0) {
+		const int frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+		if (frame_duration_us < 0) {
+			printk("Invalid subgroup frame duration value: %d (%d)\n", ret,
+			       frame_duration_us);
+
+			return false;
+		}
+	} else {
+		printk("Could not get subgroup frame duration: %d\n", ret);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(&codec_cfg, &chan_allocation, false);
+	if (ret == 0) {
+		chan_cnt = bt_audio_get_chan_count(chan_allocation);
+	} else {
+		printk("Could not get subgroup channel allocation: %d\n", ret);
+		/* Channel allocation is an optional field, and omitting it implicitly means mono */
+		chan_cnt = 1U;
+	}
+
+	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+		printk("Unsupported channel count: %u\n", chan_cnt);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(&codec_cfg);
+	if (ret > 0) {
+		octets_per_frame = (uint16_t)ret;
+	} else {
+		printk("Could not get subgroup octets per frame: %d\n", ret);
+
+		return false;
+	}
+
+	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
+		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
+		printk("Unsupported octets per frame: %u\n", octets_per_frame);
+
+		return false;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(&codec_cfg, false);
+	if (ret > 0) {
+		frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Could not get subgroup octets per frame: %d\n", ret);
+		/* Frame blocks per SDU is optional and is implicitly 1 */
+		frames_blocks_per_sdu = 1U;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
+	if (min_sdu_size_required > SUPPORTED_MAX_SDU_SIZE) {
+		printk("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		       "shall be at minimum %zu, we only support %d\n",
+		       chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+		       SUPPORTED_MAX_SDU_SIZE);
+
+		return false;
+	}
+
+	return true;
+}
+
+static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *user_data)
+{
+	static uint8_t metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE];
+	static size_t metadata_size;
+	uint8_t *meta;
+	int ret;
+
+	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
+	if (ret < 0) {
+		FAIL("Could not get subgroup meta: %d\n", ret);
+		return false;
+	}
+
+	if (TEST_FLAG(flag_base_received) &&
+	    ((size_t)ret != metadata_size || memcmp(meta, metadata, metadata_size) != 0)) {
+		printk("Metadata updated\n");
+		SET_FLAG(flag_base_metadata_updated);
+	}
+
+	metadata_size = (size_t)ret;
+	(void)memcpy(metadata, meta, metadata_size);
+
+	if (!valid_base_subgroup(subgroup)) {
+		printk("Invalid or unsupported subgroup\n");
+		return false;
+	}
+
+	return true;
+}
+
+static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
+			 size_t base_size)
 {
 	uint32_t base_bis_index_bitfield = 0U;
+	int ret;
 
-	if (TEST_FLAG(base_received)) {
+	printk("Received BASE with %d subgroups from broadcast sink %p\n",
+	       bt_bap_base_get_subgroup_count(base), sink);
 
-		if (base->subgroup_count > 0 &&
-		    memcmp(metadata, base->subgroups[0].codec_cfg.meta,
-			   sizeof(base->subgroups[0].codec_cfg.meta)) != 0) {
-
-			(void)memcpy(metadata, base->subgroups[0].codec_cfg.meta,
-				     sizeof(base->subgroups[0].codec_cfg.meta));
-
-			SET_FLAG(flag_base_metadata_updated);
-		}
-
+	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, NULL);
+	if (ret != 0) {
+		FAIL("Failed to parse subgroups: %d\n", ret);
 		return;
 	}
 
-	printk("Received BASE with %u subgroups from broadcast sink %p\n",
-	       base->subgroup_count, sink);
-
-
-	for (size_t i = 0U; i < base->subgroup_count; i++) {
-		for (size_t j = 0U; j < base->subgroups[i].bis_count; j++) {
-			const uint8_t index = base->subgroups[i].bis_data[j].index;
-
-			base_bis_index_bitfield |= BIT(index);
-		}
+	ret = bt_bap_base_get_bis_indexes(base, &base_bis_index_bitfield);
+	if (ret != 0) {
+		FAIL("Failed to BIS indexes: %d\n", ret);
+		return;
 	}
 
 	bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
 
-	SET_FLAG(base_received);
+	SET_FLAG(flag_base_received);
 }
 
-static void syncable_cb(struct bt_bap_broadcast_sink *sink, bool encrypted)
+static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
 	printk("Broadcast sink %p syncable with%s encryption\n",
-	       sink, encrypted ? "" : "out");
+	       sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
@@ -104,7 +265,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 
-	if (TEST_FLAG(broadcaster_found)) {
+	if (TEST_FLAG(flag_broadcaster_found)) {
 		/* no-op*/
 		return false;
 	}
@@ -132,7 +293,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 	       le_addr, info->sid);
 
-	SET_FLAG(broadcaster_found);
+	SET_FLAG(flag_broadcaster_found);
 
 	/* Store info for PA sync parameters */
 	memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
@@ -161,7 +322,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
 		       broadcaster_broadcast_id);
 
-		SET_FLAG(pa_synced);
+		SET_FLAG(flag_pa_synced);
 	}
 }
 
@@ -172,7 +333,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 		printk("PA sync %p lost with reason %u\n", sync, info->reason);
 		pa_sync = NULL;
 
-		SET_FLAG(pa_sync_lost);
+		SET_FLAG(flag_pa_sync_lost);
 	}
 }
 
@@ -185,10 +346,204 @@ static struct bt_pacs_cap cap = {
 	.codec_cap = &codec_cap,
 };
 
+static int pa_sync_req_cb(struct bt_conn *conn,
+			  const struct bt_bap_scan_delegator_recv_state *recv_state,
+			  bool past_avail, uint16_t pa_interval)
+{
+	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
+	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
+		/* Already syncing */
+		/* TODO: Terminate existing sync and then sync to new?*/
+		return -EALREADY;
+	}
+
+	req_recv_state = recv_state;
+
+	SET_FLAG(flag_pa_request);
+
+	return 0;
+}
+
+static int pa_sync_term_req_cb(struct bt_conn *conn,
+			       const struct bt_bap_scan_delegator_recv_state *recv_state)
+{
+	if (pa_sync == NULL || recv_state->pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
+		return -EALREADY;
+	}
+
+	req_recv_state = recv_state;
+
+	UNSET_FLAG(flag_pa_request);
+
+	return 0;
+}
+
+static int bis_sync_req_cb(struct bt_conn *conn,
+			   const struct bt_bap_scan_delegator_recv_state *recv_state,
+			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
+{
+	printk("BIS sync request received for %p: 0x%08x\n", recv_state, bis_sync_req[0]);
+	/* We only care about a single subgroup in this test */
+	requested_bis_sync = bis_sync_req[0];
+	broadcaster_broadcast_id = recv_state->broadcast_id;
+	if (bis_sync_req[0] != 0) {
+		SET_FLAG(flag_bis_sync_requested);
+	} else {
+		UNSET_FLAG(flag_bis_sync_requested);
+	}
+
+	return 0;
+}
+
+static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.pa_sync_req = pa_sync_req_cb,
+	.pa_sync_term_req = pa_sync_term_req_cb,
+	.bis_sync_req = bis_sync_req_cb,
+};
+
+static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
+{
+	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	enum bt_audio_location chan_allocation;
+	uint8_t frames_blocks_per_sdu;
+	size_t min_sdu_size_required;
+	uint16_t octets_per_frame;
+	uint8_t chan_cnt;
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret >= 0) {
+		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+		if (freq < 0) {
+			FAIL("Invalid frequency value: %d (%d)\n", ret, freq);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frequency: %d\n", ret);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret >= 0) {
+		const int frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+		if (frame_duration_us < 0) {
+			FAIL("Invalid frame duration value: %d (%d)\n", ret, frame_duration_us);
+
+			return;
+		}
+	} else {
+		FAIL("Could not get frame duration: %d\n", ret);
+
+		return;
+	}
+
+	/* The broadcast source sets the channel allocation in the BIS to
+	 * BT_AUDIO_LOCATION_FRONT_LEFT
+	 */
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_allocation, false);
+	if (ret == 0) {
+		if (chan_allocation != BT_AUDIO_LOCATION_FRONT_CENTER) {
+			FAIL("Unexpected channel allocation: 0x%08X", chan_allocation);
+
+			return;
+		}
+
+		chan_cnt = bt_audio_get_chan_count(chan_allocation);
+	} else {
+		FAIL("Could not get subgroup channel allocation: %d\n", ret);
+
+		return;
+	}
+
+	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+		FAIL("Unsupported channel count: %u\n", chan_cnt);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret > 0) {
+		octets_per_frame = (uint16_t)ret;
+	} else {
+		FAIL("Could not get subgroup octets per frame: %d\n", ret);
+
+		return;
+	}
+
+	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
+		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
+		FAIL("Unsupported octets per frame: %u\n", octets_per_frame);
+
+		return;
+	}
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, false);
+	if (ret > 0) {
+		frames_blocks_per_sdu = (uint8_t)ret;
+	} else {
+		printk("Could not get octets per frame: %d\n", ret);
+		/* Frame blocks per SDU is optional and is implicitly 1 */
+		frames_blocks_per_sdu = 1U;
+	}
+
+	/* An SDU can consist of X frame blocks, each with Y frames (one per channel) of size Z in
+	 * them. The minimum SDU size required for this is X * Y * Z.
+	 */
+	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
+	if (min_sdu_size_required > stream->qos->sdu) {
+		FAIL("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+		     "shall be at minimum %zu, but the stream has been configured for %u\n",
+		     chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+		     stream->qos->sdu);
+
+		return;
+	}
+}
+
 static void started_cb(struct bt_bap_stream *stream)
 {
+	struct bt_bap_ep_info info;
+	int err;
+
+	err = bt_bap_ep_get_info(stream->ep, &info);
+	if (err != 0) {
+		FAIL("Failed to get EP info: %d\n", err);
+		return;
+	}
+
+	if (info.state != BT_BAP_EP_STATE_STREAMING) {
+		FAIL("Unexpected EP state: %d\n", info.state);
+		return;
+	}
+
+	if (info.dir != BT_AUDIO_DIR_SINK) {
+		FAIL("Unexpected info.dir: %d\n", info.dir);
+		return;
+	}
+
+	if (info.can_send) {
+		FAIL("info.can_send is true\n");
+		return;
+	}
+
+	if (!info.can_recv) {
+		FAIL("info.can_recv is false\n");
+		return;
+	}
+
+	if (info.paired_ep != NULL) {
+		FAIL("Unexpected info.paired_ep: %p\n", info.paired_ep);
+		return;
+	}
+
 	printk("Stream %p started\n", stream);
 	k_sem_give(&sem_started);
+
+	validate_stream_codec_cfg(stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
@@ -201,7 +556,47 @@ static void recv_cb(struct bt_bap_stream *stream,
 		    const struct bt_iso_recv_info *info,
 		    struct net_buf *buf)
 {
-	SET_FLAG(flag_received);
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	if ((test_stream->rx_cnt % 100U) == 0U) {
+		printk("[%zu]: Incoming audio on stream %p len %u and ts %u\n", test_stream->rx_cnt,
+		       stream, buf->len, info->ts);
+	}
+
+	if (test_stream->rx_cnt > 0U && info->ts == test_stream->last_info.ts) {
+		FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
+		return;
+	}
+
+	if (test_stream->rx_cnt > 0U && info->seq_num == test_stream->last_info.seq_num) {
+		FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_ERROR) {
+		/* Fail the test if we have not received what we expected */
+		if (!TEST_FLAG(flag_received)) {
+			FAIL("ISO receive error\n");
+		}
+
+		return;
+	}
+
+	if (info->flags & BT_ISO_FLAGS_LOST) {
+		FAIL("ISO receive lost\n");
+		return;
+	}
+
+	if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
+		test_stream->rx_cnt++;
+
+		if (test_stream->rx_cnt >= MIN_SEND_COUNT) {
+			/* We set the flag is just one stream has received the expected */
+			SET_FLAG(flag_received);
+		}
+	} else {
+		FAIL("Unexpected data received\n");
+	}
 }
 
 static struct bt_bap_stream_ops stream_ops = {
@@ -241,15 +636,16 @@ static int init(void)
 		return err;
 	}
 
+	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	bt_le_scan_cb_register(&bap_scan_cb);
 
-	UNSET_FLAG(broadcaster_found);
-	UNSET_FLAG(base_received);
-	UNSET_FLAG(pa_synced);
+	UNSET_FLAG(flag_broadcaster_found);
+	UNSET_FLAG(flag_base_received);
+	UNSET_FLAG(flag_pa_synced);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
-		streams[i] = &broadcast_sink_streams[i];
+		streams[i] = bap_stream_from_audio_test_stream(&broadcast_sink_streams[i]);
 		bt_bap_stream_cb_register(streams[i], &stream_ops);
 	}
 
@@ -264,15 +660,15 @@ static uint16_t interval_to_sync_timeout(uint16_t pa_interval)
 		/* Use maximum value to maximize chance of success */
 		pa_timeout = BT_GAP_PER_ADV_MAX_TIMEOUT;
 	} else {
-		/* Ensure that the following calculation does not overflow silently */
-		__ASSERT(SYNC_RETRY_COUNT < 10, "SYNC_RETRY_COUNT shall be less than 10");
+		uint32_t interval_ms;
+		uint32_t timeout;
 
 		/* Add retries and convert to unit in 10's of ms */
-		pa_timeout = ((uint32_t)pa_interval * SYNC_RETRY_COUNT) / 10;
+		interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(pa_interval);
+		timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
 
 		/* Enforce restraints */
-		pa_timeout =
-			CLAMP(pa_timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
+		pa_timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
 	}
 
 	return pa_timeout;
@@ -290,6 +686,18 @@ static int pa_sync_create(void)
 
 	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
 }
+static void test_pa_sync_delete(void)
+{
+	int err;
+
+	err = bt_le_per_adv_sync_delete(pa_sync);
+	if (err != 0) {
+		FAIL("Unable to stop sink: %d", err);
+		return;
+	}
+
+	pa_sync = NULL;
+}
 
 static void test_scan_and_pa_sync(void)
 {
@@ -302,7 +710,7 @@ static void test_scan_and_pa_sync(void)
 		return;
 	}
 
-	WAIT_FOR_FLAG(broadcaster_found);
+	WAIT_FOR_FLAG(flag_broadcaster_found);
 
 	printk("Broadcast source found, stopping scan\n");
 	err = bt_le_scan_stop();
@@ -320,7 +728,7 @@ static void test_scan_and_pa_sync(void)
 	}
 
 	printk("Waiting for PA sync\n");
-	WAIT_FOR_FLAG(pa_synced);
+	WAIT_FOR_FLAG(flag_pa_synced);
 }
 
 static void test_broadcast_sink_create(void)
@@ -474,6 +882,7 @@ static void test_broadcast_delete(void)
 	}
 
 	/* No "sync lost" event is generated when we initialized the disconnect */
+	g_sink = NULL;
 }
 
 static void test_broadcast_delete_inval(void)
@@ -483,6 +892,39 @@ static void test_broadcast_delete_inval(void)
 	err = bt_bap_broadcast_sink_delete(NULL);
 	if (err == 0) {
 		FAIL("bt_bap_broadcast_sink_delete did not fail with NULL sink\n");
+		return;
+	}
+}
+
+static void test_start_adv(void)
+{
+	const struct bt_data ad[] = {
+		BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+		BT_DATA_BYTES(BT_DATA_UUID16_ALL, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL),
+			      BT_UUID_16_ENCODE(BT_UUID_PACS_VAL)),
+		BT_DATA_BYTES(BT_DATA_SVC_DATA16, BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
+	};
+	int err;
+
+	/* Create a connectable advertising set */
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_CONN, NULL, &ext_adv);
+	if (err != 0) {
+		FAIL("Failed to create advertising set (err %d)\n", err);
+
+		return;
+	}
+
+	err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
+	if (err != 0) {
+		FAIL("Failed to set advertising data (err %d)\n", err);
+
+		return;
+	}
+
+	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0) {
+		FAIL("Failed to start advertising set (err %d)\n", err);
+
 		return;
 	}
 }
@@ -503,7 +945,7 @@ static void test_common(void)
 	test_broadcast_sink_create();
 
 	printk("Broadcast source PA synced, waiting for BASE\n");
-	WAIT_FOR_FLAG(base_received);
+	WAIT_FOR_FLAG(flag_base_received);
 	printk("BASE received\n");
 
 	printk("Waiting for BIG syncable\n");
@@ -514,22 +956,27 @@ static void test_common(void)
 
 	printk("Waiting for data\n");
 	WAIT_FOR_FLAG(flag_received);
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
 	/* Ensure that we also see the metadata update */
 	printk("Waiting for metadata update\n");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
+
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 }
 
 static void test_main(void)
 {
 	test_common();
 
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
 	/* The order of PA sync lost and BIG Sync lost is irrelevant
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
 	 */
 	printk("Waiting for PA disconnected\n");
-	WAIT_FOR_FLAG(pa_sync_lost);
+	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
 	printk("Waiting for streams to be stopped\n");
 	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
@@ -552,25 +999,85 @@ static void test_sink_disconnect(void)
 
 	test_broadcast_delete_inval();
 	test_broadcast_delete();
-	g_sink = NULL;
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
 
 	PASS("Broadcast sink disconnect passed\n");
+}
+
+static void broadcast_sink_with_assistant(void)
+{
+	int err;
+
+	err = init();
+	if (err) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	test_start_adv();
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	test_scan_and_pa_sync();
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	test_broadcast_sync();
+
+	printk("Waiting for data\n");
+	WAIT_FOR_FLAG(flag_received);
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+
+	/* Ensure that we also see the metadata update */
+	printk("Waiting for metadata update\n");
+	WAIT_FOR_FLAG(flag_base_metadata_updated)
+	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
+
+	printk("Waiting for BIG sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the broadcast source know it can stop */
+
+	PASS("Broadcast sink with assistant passed\n");
 }
 
 static const struct bst_test_instance test_broadcast_sink[] = {
 	{
 		.test_id = "broadcast_sink",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_main
+		.test_main_f = test_main,
 	},
 	{
 		.test_id = "broadcast_sink_disconnect",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
-		.test_main_f = test_sink_disconnect
+		.test_main_f = test_sink_disconnect,
 	},
-	BSTEST_END_MARKER
+	{
+		.test_id = "broadcast_sink_with_assistant",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_assistant,
+	},
+	BSTEST_END_MARKER,
 };
 
 struct bst_test_list *test_broadcast_sink_install(struct bst_test_list *tests)

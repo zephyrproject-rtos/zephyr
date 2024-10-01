@@ -14,7 +14,8 @@
 
 LOG_MODULE_REGISTER(cst816s, CONFIG_INPUT_LOG_LEVEL);
 
-#define CST816S_CHIP_ID 0xB4
+#define CST816S_CHIP_ID1 0xB4
+#define CST816S_CHIP_ID2 0xB5
 
 #define CST816S_REG_DATA                0x00
 #define CST816S_REG_GESTURE_ID          0x01
@@ -173,12 +174,11 @@ static void cst816s_chip_reset(const struct device *dev)
 	int ret;
 
 	if (gpio_is_ready_dt(&config->rst_gpio)) {
-		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
+		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("Could not configure reset GPIO pin");
 			return;
 		}
-		gpio_pin_set_dt(&config->rst_gpio, 1);
 		k_msleep(CST816S_RESET_DELAY);
 		gpio_pin_set_dt(&config->rst_gpio, 0);
 		k_msleep(CST816S_WAIT_DELAY);
@@ -203,7 +203,7 @@ static int cst816s_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	if (chip_id != CST816S_CHIP_ID) {
+	if ((chip_id != CST816S_CHIP_ID1) && (chip_id != CST816S_CHIP_ID2)) {
 		LOG_ERR("CST816S wrong chip id: returned 0x%x", chip_id);
 		return -ENODEV;
 	}

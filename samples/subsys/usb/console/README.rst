@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: usb-cdc-acm-console
    :name: Console over USB CDC ACM
-   :relevant-api: _usb_device_core_api usbd_api uart_interface
+   :relevant-api: _usb_device_core_api usbd_api
 
    Output "Hello World!" to the console over USB CDC ACM.
 
@@ -29,7 +29,7 @@ for the reel_board board:
 
 Plug the board into a host device, for sample, a PC running Linux OS.
 The board will be detected as a CDC_ACM serial device. To see the console output
-from the sample, use a command similar to "minicom -D /dev/ttyACM0".
+from the sample, use a command similar to :command:`minicom -D /dev/ttyACM0`.
 
 .. code-block:: console
 
@@ -41,5 +41,5 @@ from the sample, use a command similar to "minicom -D /dev/ttyACM0".
 Troubleshooting
 ===============
 
-You may need to stop modemmanager via "sudo stop modemmanager", if it is
+You may need to stop :program:`modemmanager` via :command:`sudo stop modemmanager`, if it is
 trying to access the device in the background.

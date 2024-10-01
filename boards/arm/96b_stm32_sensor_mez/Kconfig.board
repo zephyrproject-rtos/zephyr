@@ -1,8 +1,0 @@
-# 96Boards STM32 Sensor Mezzanine board configuration
-
-# Copyright (c) 2018 Linaro Limited.
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_96B_STM32_SENSOR_MEZ
-	bool "96Boards STM32 Sensor Mezzanine Board"
-	depends on SOC_STM32F446XX

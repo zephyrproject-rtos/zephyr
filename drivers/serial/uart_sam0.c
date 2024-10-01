@@ -1270,7 +1270,7 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 	(DT_INST_PROP(n, txpo) << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #define UART_SAM0_SERCOM_COLLISION_DETECT(n) \
-	(DT_INST_PROP_OR(n, collision_detection, false))
+	(DT_INST_PROP(n, collision_detection))
 
 #ifdef MCLK
 #define UART_SAM0_CONFIG_DEFN(n)					\

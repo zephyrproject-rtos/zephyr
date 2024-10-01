@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_TYPES_H_
 #define ZEPHYR_INCLUDE_POSIX_TYPES_H_
 
-#ifndef CONFIG_ARCH_POSIX
+#if !(defined(CONFIG_ARCH_POSIX) && defined(CONFIG_EXTERNAL_LIBC))
 #include <sys/types.h>
 #endif
 
@@ -19,6 +19,10 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if !defined(CONFIG_ARCMWDT_LIBC)
+typedef int pid_t;
 #endif
 
 #ifndef __useconds_t_defined
@@ -37,15 +41,10 @@ typedef unsigned long timer_t;
 
 /* Thread attributes */
 struct pthread_attr {
-	int priority;
 	void *stack;
-	uint32_t stacksize;
-	uint32_t flags;
-	uint32_t delayedstart;
-	uint32_t schedpolicy;
-	int32_t detachstate;
-	uint32_t initialized;
+	uint32_t details[2];
 };
+
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
 	|| defined(CONFIG_ARCMWDT_LIBC)
 typedef struct pthread_attr pthread_attr_t;
@@ -63,7 +62,8 @@ typedef struct k_sem sem_t;
 typedef uint32_t pthread_mutex_t;
 
 struct pthread_mutexattr {
-	int type;
+	unsigned char type: 2;
+	bool initialized: 1;
 };
 #if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
 	|| defined(CONFIG_ARCMWDT_LIBC)
@@ -93,13 +93,20 @@ typedef struct pthread_barrierattr {
 
 typedef uint32_t pthread_rwlockattr_t;
 
-typedef struct pthread_rwlock_obj {
-	struct k_sem rd_sem;
-	struct k_sem wr_sem;
-	struct k_sem reader_active;/* blocks WR till reader has acquired lock */
-	int32_t status;
-	k_tid_t wr_owner;
-} pthread_rwlock_t;
+typedef uint32_t pthread_rwlock_t;
+
+struct pthread_once {
+	bool flag;
+};
+
+#if defined(CONFIG_MINIMAL_LIBC) || defined(CONFIG_PICOLIBC) || defined(CONFIG_ARMCLANG_STD_LIBC) \
+	|| defined(CONFIG_ARCMWDT_LIBC)
+typedef uint32_t pthread_key_t;
+typedef struct pthread_once pthread_once_t;
+#endif
+
+/* Newlib typedefs pthread_once_t as a struct with two ints */
+BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
 
 #ifdef __cplusplus
 }

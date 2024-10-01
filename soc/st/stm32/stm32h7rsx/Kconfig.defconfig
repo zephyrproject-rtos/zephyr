@@ -1,0 +1,16 @@
+# ST Microelectronics STM32H7RS MCU line
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32H7RS series
+
+if SOC_SERIES_STM32H7RSX
+
+rsource "Kconfig.defconfig.stm32h7*"
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x0   if !BOOTLOADER_MCUBOOT
+
+endif # SOC_SERIES_STM32H7RSX

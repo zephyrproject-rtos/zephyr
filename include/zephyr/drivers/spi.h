@@ -15,6 +15,8 @@
 /**
  * @brief SPI Interface
  * @defgroup spi_interface SPI Interface
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -37,9 +39,12 @@ extern "C" {
  * @name SPI operational mode
  * @{
  */
-#define SPI_OP_MODE_MASTER	0U
-#define SPI_OP_MODE_SLAVE	BIT(0)
+#define SPI_OP_MODE_MASTER	0U      /**< Master mode. */
+#define SPI_OP_MODE_SLAVE	BIT(0)  /**< Slave mode. */
+/** @cond INTERNAL_HIDDEN */
 #define SPI_OP_MODE_MASK	0x1U
+/** @endcond */
+/** Get SPI operational mode. */
 #define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 /** @} */
 
@@ -70,8 +75,10 @@ extern "C" {
  * support this, and can be used for testing purposes only.
  */
 #define SPI_MODE_LOOP		BIT(3)
-
+/** @cond INTERNAL_HIDDEN */
 #define SPI_MODE_MASK		(0xEU)
+/** @endcond */
+/** Get SPI polarity and phase mode bits. */
 #define SPI_MODE_GET(_mode_)			\
 	((_mode_) & SPI_MODE_MASK)
 
@@ -81,19 +88,22 @@ extern "C" {
  * @name SPI Transfer modes (host controller dependent)
  * @{
  */
-#define SPI_TRANSFER_MSB	(0U)
-#define SPI_TRANSFER_LSB	BIT(4)
+#define SPI_TRANSFER_MSB	(0U)    /**< Most significant bit first. */
+#define SPI_TRANSFER_LSB	BIT(4)  /**< Least significant bit first. */
 /** @} */
 
 /**
  * @name SPI word size
  * @{
  */
+/** @cond INTERNAL_HIDDEN */
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
+/** @endcond */
+/** Get SPI word size. */
 #define SPI_WORD_SIZE_GET(_operation_)					\
 	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
-
+/** Set SPI word size. */
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
 /** @} */
@@ -102,16 +112,16 @@ extern "C" {
  * @name Specific SPI devices control bits
  * @{
  */
-/* Requests - if possible - to keep CS asserted after the transaction */
+/** Requests - if possible - to keep CS asserted after the transaction */
 #define SPI_HOLD_ON_CS		BIT(12)
-/* Keep the device locked after the transaction for the current config.
+/** Keep the device locked after the transaction for the current config.
  * Use this with extreme caution (see spi_release() below) as it will
  * prevent other callers to access the SPI device until spi_release() is
  * properly called.
  */
 #define SPI_LOCK_ON		BIT(13)
 
-/* Active high logic on CS - Usually, and by default, CS logic is active
+/** Active high logic on CS. Usually, and by default, CS logic is active
  * low. However, some devices may require the reverse logic: active high.
  * This bit will request the controller to use that logic. Note that not
  * all controllers are able to handle that natively. In this case deferring
@@ -130,12 +140,13 @@ extern "C" {
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
  */
-#define SPI_LINES_SINGLE	(0U << 16)
-#define SPI_LINES_DUAL		(1U << 16)
-#define SPI_LINES_QUAD		(2U << 16)
-#define SPI_LINES_OCTAL		(3U << 16)
+#define SPI_LINES_SINGLE	(0U << 16)     /**< Single line */
+#define SPI_LINES_DUAL		(1U << 16)     /**< Dual lines */
+#define SPI_LINES_QUAD		(2U << 16)     /**< Quad lines */
+#define SPI_LINES_OCTAL		(3U << 16)     /**< Octal lines */
 
-#define SPI_LINES_MASK		(0x3U << 16)
+#define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
+
 /** @} */
 
 /**
@@ -225,22 +236,28 @@ struct spi_cs_control {
  *
  * Example devicetree fragment:
  *
- *     spi@... {
+ * @code{.devicetree}
+ *     spi@abcd0001 {
  *             cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
  *             spidev: spi-device@0 { ... };
  *     };
+ * @endcode
  *
  * Example usage:
  *
+ * @code{.c}
  *     struct spi_cs_control ctrl =
  *             SPI_CS_CONTROL_INIT(DT_NODELABEL(spidev), 2);
+ * @endcode
  *
  * This example is equivalent to:
  *
+ * @code{.c}
  *     struct spi_cs_control ctrl = {
  *             .gpio = SPI_CS_GPIOS_DT_SPEC_GET(DT_NODELABEL(spidev)),
  *             .delay = 2,
  *     };
+ * @endcode
  *
  * @param node_id Devicetree node identifier for a device on a SPI bus
  * @param delay_ The @p delay field to set in the @p spi_cs_control
@@ -332,7 +349,10 @@ struct spi_config {
 		.frequency = DT_PROP(node_id, spi_max_frequency),	\
 		.operation = (operation_) |				\
 			DT_PROP(node_id, duplex) |			\
-			DT_PROP(node_id, frame_format),			\
+			DT_PROP(node_id, frame_format) |			\
+			COND_CODE_1(DT_PROP(node_id, spi_cpol), SPI_MODE_CPOL, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_cpha), SPI_MODE_CPHA, (0)) |	\
+			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
 		.slave = DT_REG_ADDR(node_id),				\
 		.cs = SPI_CS_CONTROL_INIT(node_id, delay_),		\
 	}
@@ -353,12 +373,11 @@ struct spi_config {
 
 /**
  * @brief Complete SPI DT information
- *
- * @param bus is the SPI bus
- * @param config is the slave specific configuration
  */
 struct spi_dt_spec {
+	/** SPI bus */
 	const struct device *bus;
+	/** Slave specific configuration */
 	struct spi_config config;
 };
 
@@ -370,9 +389,8 @@ struct spi_dt_spec {
  * data from the devicetree.
  *
  * Important: multiple fields are automatically constructed by this macro
- * which must be checked before use. @ref spi_is_ready performs the required
+ * which must be checked before use. @ref spi_is_ready_dt performs the required
  * @ref device_is_ready checks.
- * @deprecated Use @ref spi_is_ready_dt instead.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
  *                struct spi_dt_spec to create an initializer for
@@ -402,25 +420,24 @@ struct spi_dt_spec {
 
 /**
  * @brief SPI buffer structure
- *
- * @param buf is a valid pointer on a data buffer, or NULL otherwise.
- * @param len is the length of the buffer or, if buf is NULL, will be the
- *    length which as to be sent as dummy bytes (as TX buffer) or
- *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
+	/** Valid pointer to a data buffer, or NULL otherwise */
 	void *buf;
+	/** Length of the buffer @a buf.
+	 * If @a buf is NULL, length which as to be sent as dummy bytes (as TX
+	 * buffer) or the length of bytes that should be skipped (as RX buffer).
+	 */
 	size_t len;
 };
 
 /**
  * @brief SPI buffer array structure
- *
- * @param buffers is a valid pointer on an array of spi_buf, or NULL.
- * @param count is the length of the array pointed by buffers.
  */
 struct spi_buf_set {
+	/** Pointer to an array of spi_buf, or NULL */
 	const struct spi_buf *buffers;
+	/** Length of the array pointed by @a buffers */
 	size_t count;
 };
 
@@ -598,7 +615,7 @@ typedef void (*spi_callback_t)(const struct device *dev, int result, void *data)
 /**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
- * See spi_transceive_async() for argument descriptions
+ * See spi_transceive_signal() for argument descriptions
  */
 typedef int (*spi_api_io_async)(const struct device *dev,
 				const struct spi_config *config,
@@ -663,29 +680,6 @@ static inline bool spi_cs_is_gpio(const struct spi_config *config)
 static inline bool spi_cs_is_gpio_dt(const struct spi_dt_spec *spec)
 {
 	return spi_cs_is_gpio(&spec->config);
-}
-
-/**
- * @brief Validate that SPI bus is ready.
- *
- * @param spec SPI specification from devicetree
- *
- * @retval true if the SPI bus is ready for use.
- * @retval false if the SPI bus is not ready for use.
- */
-__deprecated
-static inline bool spi_is_ready(const struct spi_dt_spec *spec)
-{
-	/* Validate bus is ready */
-	if (!device_is_ready(spec->bus)) {
-		return false;
-	}
-	/* Validate CS gpio port is ready, if it is used */
-	if (spi_cs_is_gpio_dt(spec) &&
-	    !gpio_is_ready_dt(&spec->config.cs.gpio)) {
-		return false;
-	}
-	return true;
 }
 
 /**
@@ -783,6 +777,7 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
  *        previous operations.
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
+ * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful.
  * @retval -errno Negative errno code on failure.
  */
@@ -938,20 +933,6 @@ static inline int spi_transceive_signal(const struct device *dev,
 }
 
 /**
- * @brief Alias for spi_transceive_signal for backwards compatibility
- *
- * @deprecated Use @ref spi_transceive_signal instead.
- */
-__deprecated static inline int spi_transceive_async(const struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *sig)
-{
-	return spi_transceive_signal(dev, config, tx_bufs, rx_bufs, sig);
-}
-
-/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * @note This function is asynchronous.
@@ -971,6 +952,7 @@ __deprecated static inline int spi_transceive_async(const struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
+ * @retval frames Positive number of frames received in slave mode.
  * @retval 0 If successful
  * @retval -errno Negative errno code on failure.
  */
@@ -983,24 +965,11 @@ static inline int spi_read_signal(const struct device *dev,
 }
 
 /**
- * @brief Alias for spi_read_signal for backwards compatibility
- *
- * @deprecated Use @ref spi_read_signal instead.
- */
-__deprecated static inline int spi_read_async(const struct device *dev,
-				 const struct spi_config *config,
-				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *sig)
-{
-	return spi_read_signal(dev, config, rx_bufs, sig);
-}
-
-/**
  * @brief Write the specified amount of data from the SPI driver.
  *
  * @note This function is asynchronous.
  *
- * @note This function is a helper function calling spi_transceive_async.
+ * @note This function is a helper function calling spi_transceive_signal.
  *
  * @note This function is available only if @kconfig{CONFIG_SPI_ASYNC}
  * and @kconfig{CONFIG_POLL} are selected.
@@ -1024,19 +993,6 @@ static inline int spi_write_signal(const struct device *dev,
 				  struct k_poll_signal *sig)
 {
 	return spi_transceive_signal(dev, config, tx_bufs, NULL, sig);
-}
-
-/**
- * @brief Alias for spi_write_signal for backwards compatibility
- *
- * @deprecated Use @ref spi_write_signal instead.
- */
-__deprecated static inline int spi_write_async(const struct device *dev,
-				 const struct spi_config *config,
-				 const struct spi_buf_set *tx_bufs,
-				 struct k_poll_signal *sig)
-{
-	return spi_write_signal(dev, config, tx_bufs, sig);
 }
 
 #endif /* CONFIG_POLL */
@@ -1311,6 +1267,6 @@ static inline int spi_release_dt(const struct spi_dt_spec *spec)
  * @}
  */
 
-#include <syscalls/spi.h>
+#include <zephyr/syscalls/spi.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_SPI_H_ */

@@ -6,7 +6,7 @@
 description: |
   Infineon Cat1 ADC
   Each ADC group Cat1 is assigned to a Zephyr device. Refer to the Infineon PSoC6 reference
-  manual (Section Port I/O functions) for the group/chanel mapping to a specific port-pin on
+  manual (Section Port I/O functions) for the group/channel mapping to a specific port-pin on
   the board.  For example on the cy8cproto_062_4343w P10.0 is mapped to adc0,channel0 and
   P10.1 is mapped to adc0,channel1.
 

@@ -24,7 +24,7 @@ ZTEST(posix_headers, test_arpa_inet_h)
 	zassert_not_equal(-1, ntohl(0));
 	zassert_not_equal(-1, ntohs(0));
 
-	if (IS_ENABLED(CONFIG_POSIX_API)) {
+	if (IS_ENABLED(CONFIG_POSIX_NETWORKING)) {
 		/* zassert_not_null(inet_addr); */ /* not implemented */
 		/* zassert_not_null(inet_ntoa); */ /* not implemented */
 		zassert_not_null(inet_ntop);

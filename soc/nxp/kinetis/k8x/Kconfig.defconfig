@@ -1,0 +1,23 @@
+# Kinetis K8x series configuration options
+
+# Copyright (c) 2019 SEAL AG
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_KINETIS_K8X
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 106
+
+config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
+	default y
+
+config KINETIS_FLASH_CONFIG_FOPT
+	default 0x3f
+	depends on KINETIS_FLASH_CONFIG
+
+config GPIO
+	default y
+
+endif # SOC_SERIES_KINETIS_K8X

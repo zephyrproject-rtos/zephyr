@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/misc/timeaware_gpio/timeaware_gpio.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 /* TGPIO Register offsets */
 #define ART_L           0x00 /* ART lower 32 bit reg */

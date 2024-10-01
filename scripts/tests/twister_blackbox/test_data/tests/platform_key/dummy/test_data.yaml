@@ -1,0 +1,7 @@
+tests:
+  platform_key.dummy:
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    platform_key:
+      - simulation

@@ -1,0 +1,6 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+uart2: &scb2 {
+	hw-flow-control;
+	pinctrl-0 = <&p3_3_scb2_uart_tx &p3_2_scb2_uart_rx &p3_1_scb2_uart_rts &p3_0_scb2_uart_cts>;
+};

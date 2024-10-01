@@ -1,8 +1,0 @@
-# Atmel SAM4E Xplained Pro Board selection
-
-# Copyright (c) 2019 Gerson Fernando Budke
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_SAM4E_XPRO
-	bool "Atmel SAM4E Xplained Pro"
-	depends on SOC_PART_NUMBER_SAM4E16E

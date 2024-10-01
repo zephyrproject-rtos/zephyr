@@ -1,9 +1,0 @@
-# Copyright (c) 2019-2020 Cobham Gaisler AB
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_QEMU_LEON3
-	bool "QEMU LEON3 target"
-	depends on SOC_LEON3
-	select QEMU_TARGET
-	select CPU_HAS_FPU

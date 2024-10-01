@@ -13,6 +13,15 @@ menuconfig SPI
 
 if SPI
 
+config SPI_SHELL
+	bool "SPI Shell"
+	depends on SHELL
+	help
+	  Enable SPI Shell.
+
+	  The currently SPI shell supports simple SPI write/read (transceive)
+	  operation.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	select POLL
@@ -45,7 +54,7 @@ config SPI_EXTENDED_MODES
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Device driver initialization priority.
 
@@ -73,7 +82,11 @@ source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
+source "drivers/spi/Kconfig.mcux_ecspi"
+
 source "drivers/spi/Kconfig.mcux_flexcomm"
+
+source "drivers/spi/Kconfig.mcux_flexio"
 
 source "drivers/spi/Kconfig.mcux_lpspi"
 
@@ -136,5 +149,15 @@ source "drivers/spi/Kconfig.ambiq"
 source "drivers/spi/Kconfig.rpi_pico"
 
 source "drivers/spi/Kconfig.ifx_cat1"
+
+source "drivers/spi/Kconfig.sedi"
+
+source "drivers/spi/Kconfig.npcx"
+
+source "drivers/spi/Kconfig.mchp_mss"
+
+source "drivers/spi/Kconfig.grlib_spimctrl"
+
+source "drivers/spi/Kconfig.max32"
 
 endif # SPI

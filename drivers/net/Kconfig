@@ -15,14 +15,12 @@ menuconfig NET_PPP
 	depends on NET_NATIVE
 	select RING_BUFFER
 	select CRC
-	select UART_MUX if GSM_MUX
 
 if NET_PPP
 
 config NET_PPP_ASYNC_UART
 	bool "Asynchronous UART API is used"
 	depends on UART_ASYNC_API
-	depends on !GSM_MUX
 
 config NET_PPP_DRV_NAME
 	string "PPP Driver name"
@@ -70,6 +68,24 @@ config NET_PPP_VERIFY_FCS
 	  to disable this as it takes some time to verify the received
 	  packet.
 
+config NET_PPP_CAPTURE
+	bool "Capture received PPP packets"
+	depends on NET_CAPTURE_COOKED_MODE
+	help
+	  This enables PPP packet capture. One needs to configure the
+	  packet capturing in core network stack to send the captured packets
+	  to outside system. This requires a non-PPP network connection
+	  where the captured packets are sent for processing. Note that you
+	  cannot use the PPP connection to sending packets as that would
+	  lead recursion.
+
+config NET_PPP_CAPTURE_BUF_SIZE
+	int "Capture buffer for storing full PPP packets"
+	depends on NET_PPP_CAPTURE
+	default 1500
+	help
+	  The captured PPP frames are temporarily stored into this buffer.
+
 config PPP_MAC_ADDR
 	string "MAC address for the interface"
 	help
@@ -94,11 +110,12 @@ config PPP_NET_IF_NO_AUTO_START
 if NET_PPP_ASYNC_UART
 
 config NET_PPP_ASYNC_UART_TX_BUF_LEN
-	int "Buffer length from where the write to async UART is done"
+	int "Length of the UART TX buffer to which data is written."
 	default 2048
-	help
-	  This options sets the size of the UART TX buffer where data
-	  is being written from to UART.
+
+config NET_PPP_ASYNC_UART_TX_TIMEOUT
+	int "The timeout for UART transfers in milliseconds, or 0 for no timeout."
+	default 0
 
 config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
 	int "UART RX recovery timeout in milliseconds"
@@ -109,10 +126,6 @@ config NET_PPP_ASYNC_UART_RX_RECOVERY_TIMEOUT
 
 config NET_PPP_ASYNC_UART_RX_ENABLE_TIMEOUT
 	int "A timeout for uart_rx_enable() in milliseconds"
-	default 100
-
-config NET_PPP_ASYNC_UART_TX_TIMEOUT
-	int "A timeout for uart_tx() in milliseconds"
 	default 100
 
 endif # NET_PPP_ASYNC_UART
@@ -156,7 +169,6 @@ config SLIP_STATISTICS
 config SLIP_TAP
 	bool "Use TAP interface to host"
 	default y
-	select NET_L2_ETHERNET
 	help
 	  In TAP the Ethernet frames are transferred over SLIP.
 
@@ -227,5 +239,35 @@ config NET_CANBUS_INIT_PRIORITY
 	  driver.
 
 endif # NET_CAN
+
+#
+# Native simulator offloaded sockets
+#
+
+menuconfig NET_NATIVE_OFFLOADED_SOCKETS
+	bool "Native Simulator offloaded sockets"
+	depends on ARCH_POSIX
+	depends on NATIVE_LIBRARY
+	depends on NET_SOCKETS_OFFLOAD
+	help
+	  Offloaded sockets for Native Simulator utilize host BSD sockets API (like socket(),
+	  connect(), send(), recvfrom(), etc.) in order to provide networking capability.
+
+	  This driver main advantage is that it is possible to use this driver without any
+	  additional setup on the host side, unlike with the native TAP Ethernet driver.
+
+if NET_NATIVE_OFFLOADED_SOCKETS
+
+config NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL
+	int "Interval between epoll_wait() calls (in simulated microseconds)"
+	default 1000
+	help
+	  Number of simulated microseconds before next epoll_wait() call, when there were no pending
+	  events detected.
+
+	  Decrease that value when lower network traffic latency is expected, at the expense of more
+	  CPU processing overhead.
+
+endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS

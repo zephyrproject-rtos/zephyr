@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2021, NXP
+ * Copyright 2021-2023 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <nxp/nxp_rt11xx.dtsi>
+#include <zephyr/dt-bindings/memory-controller/nxp,flexram.h>
 
 / {
 	cpus {
@@ -22,11 +23,34 @@
 		/delete-node/ dma-controller@40c14000;
 
 		flexram: flexram@40028000 {
+			compatible = "nxp,flexram";
+
 			reg = <0x40028000 0x4000>;
 			interrupts = <50 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flexram,bank-size = <32>;
+			flexram,num-ram-banks = <16>;
+			flexram,has-magic-addr;
+			/* same as default fuse value */
+			flexram,bank-spec = <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_DTCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>,
+					     <FLEXRAM_ITCM>;
 
 			itcm: itcm@0 {
 				compatible = "zephyr,memory-region", "nxp,imx-itcm";
@@ -39,6 +63,8 @@
 				reg = <0x20000000 DT_SIZE_K(256)>;
 				zephyr,memory-region = "DTCM";
 			};
+
+			/* no ocram node for this bank-spec */
 		};
 
 		/*
@@ -77,7 +103,7 @@
 		};
 
 		mailbox_a: mailbox@40c48000 {
-			compatible = "nxp,imx-mu-rev2";
+			compatible = "nxp,imx-mu";
 			reg = <0x40c48000 0x4000>;
 			interrupts = <118 0>;
 			rdc = <0>;

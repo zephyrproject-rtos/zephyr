@@ -6,8 +6,7 @@ menu "RISCV Options"
 
 config ARCH
 	string
-	default "riscv64" if 64BIT
-	default "riscv32"
+	default "riscv"
 
 config FLOAT_HARD
 	bool "Hard-float calling convention"
@@ -31,7 +30,6 @@ config RISCV_GP
 config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	bool "Do not use mret outside a trap handler context"
 	depends on MULTITHREADING
-	depends on !RISCV_PMP
 	help
 	  Use mret instruction only when in a trap handler.
 	  This is for RISC-V implementations that require every mret to be
@@ -39,13 +37,27 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+config RISCV_EXCEPTION_STACK_TRACE
+	bool
+	default y
+	imply THREAD_STACK_INFO
+	help
+	  Internal config to enable runtime stack traces on fatal exceptions.
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
-	bool "Include Reset vector"
+	bool "Jumps to __initialize directly"
 	help
-	  Include the reset vector stub, which initializes the stack and
-	  prepares for running C code.
+	  Select 'y' here to use the Zephyr provided default implementation that
+	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
+	  custom `__reset` routine.
+
+config RISCV_PRIVILEGED
+	bool
+	select ARCH_HAS_RAMFUNC_SUPPORT if XIP
+	help
+	  Option selected by SoCs implementing the RISC-V privileged ISA.
 
 config RISCV_SOC_HAS_ISR_STACKING
 	bool
@@ -76,7 +88,14 @@ config RISCV_SOC_HAS_ISR_STACKING
 	    guarded by !_ASMLANGUAGE. The ESF should be defined to account for
 	    the hardware stacked registers in the proper order as they are
 	    saved on the stack by the hardware, and the registers saved by the
-	    software macros. The structure must be called '__esf'.
+	    software macros. The structure must be called 'struct arch_esf'.
+
+config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	bool
+	help
+	  This allows the SoC to overwrite the irq handling. If enabled, the
+	  function __soc_handle_all_irqs has to be implemented. It shall service
+	  and clear all pending interrupts.
 
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	bool
@@ -147,13 +166,32 @@ config RISCV_SOC_OFFSETS
 	    in offsets.h. The last one should not end in a semicolon.
 	    See gen_offset.h for more details.
 
+config RISCV_HAS_PLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config RISCV_SOC_EXCEPTION_FROM_IRQ
+	bool
+	help
+	  Option selected by SoCs that require a custom mechanism to check if
+	  an exception is the result of an interrupt or not. If selected,
+	  __soc_is_irq() needs to be implemented by the SoC.
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
 	help
 	  Enable SOC-based interrupt initialization
 	  (call soc_interrupt_init, within _IntLibInit when enabled)
 
-config RISCV_SOC_MCAUSE_EXCEPTION_MASK
+config RISCV_MCAUSE_EXCEPTION_MASK
 	hex
 	default 0x7FFFFFFFFFFFFFFF if 64BIT
 	default 0x7FFFFFFF
@@ -167,11 +205,6 @@ config RISCV_GENERIC_TOOLCHAIN
 	  Compile using generic riscv32 toolchain.
 	  Allow SOCs that have custom extended riscv ISA to still
 	  compile with generic riscv32 toolchain.
-
-config RISCV_HAS_CPU_IDLE
-	bool "Does SOC has CPU IDLE instruction"
-	help
-	  Does SOC has CPU IDLE instruction
 
 config GEN_ISR_TABLES
 	default y
@@ -203,6 +236,15 @@ config RV_BOOT_HART
 	  For RISC-V systems such as MPFS and FU540 this would be set to 1 to
 	  skip the E51 HART 0 as it is not usable in SMP configurations.
 
+config RISCV_HART_MASK
+	int
+	default -1
+	help
+	  Configures the mask for the HART ID.
+	  For RISC-V systems with HART ID starting from non-zero value,
+	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
+	  such that we can extract the bits that start from 0.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	select THREAD_STACK_INFO
@@ -214,6 +256,8 @@ config RISCV_PMP
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select THREAD_LOCAL_STORAGE if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
+	select MEM_DOMAIN_ISOLATED_STACKS
 	help
 	  MCU implements Physical Memory Protection.
 
@@ -325,6 +369,7 @@ config ARCH_IRQ_VECTOR_TABLE_ALIGN
 
 config RISCV_TRAP_HANDLER_ALIGNMENT
 	int "Alignment of RISC-V trap handler in bytes"
+	default 64 if RISCV_HAS_CLIC
 	default 4
 	help
 	  This value configures the alignment of RISC-V trap handling
@@ -333,12 +378,11 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  The minimum alignment is 4 bytes according to the Spec.
 
 config GEN_IRQ_VECTOR_TABLE
-	select RISCV_VECTORED_MODE if SOC_FAMILY_RISCV_PRIVILEGED
+	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
 rsource "Kconfig.isa"
-rsource "Kconfig.core"
 
 endmenu

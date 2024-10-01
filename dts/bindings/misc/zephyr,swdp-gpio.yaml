@@ -1,0 +1,102 @@
+# Copyright (c) 2019 Phytec Messtechnik GmbH
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This is a representation of the Serial Wire Debug Port interface
+  implementation by GPIO bit-banging.
+
+  Schematic using dual-supply bus transceiver and separate dout and dnoe pins
+
+         VCC_3V3                      VCC_REF
+            ^                           ^
+            |       +-------------+     |
+            +-------|vcca     vccb|-----+
+                    |             |
+   clk-gpios -------|a           b|-------------- SWD CLK
+                    |             |
+   noe-gpios -------|dir       gnd|-----+
+                    +-------------+     |
+                     74LVC1T45          v
+                                       GND
+
+
+         VCC_3V3                      VCC_REF
+            ^                           ^
+            |       +-------------+     |
+            +-------|vcca     vccb|-----+
+                    |             |
+   dio-gpios -------|a           b|------------*- SWD DIO
+                    |             |            |
+            +-------|dir       gnd|-----+      |
+            |       +-------------+     |      |
+            v        74LVC1T45          v      |
+           GND                         GND     |
+                                               |
+                                               |
+         VCC_3V3                      VCC_REF  |
+            ^                           ^      |
+            |       +-------------+     |      |
+            +-------|vcca     vccb|-----+      |
+                    |             |            |
+  dout-gpios -------|a           b|------------+
+                    |             |
+  dnoe-gpios -------|dir       gnd|-----+
+                    +-------------+     |
+                     74LVC1T45          v
+                                       GND
+
+  Direct connection using only dio pin for SWD DIO.
+
+   clk-gpios ------------------------------------ SWD CLK
+
+   dio-gpios ------------------------------------ SWD DIO
+
+  Of course, bidirectional bus transceiver between dio and SWD DIO can also be
+  used together with noe pin to enable/disable transceivers.
+
+compatible: "zephyr,swdp-gpio"
+
+include: base.yaml
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for SWCLK output
+
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin used for SWDIO input. This pin is also used for the SWDIO output
+      if separate output pin is not defined.
+
+  dout-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO pin used for SWDIO output.
+
+  dnoe-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used to disable the SWDIO output buffer behind optional
+      pin dout-gpios.
+
+  noe-gpios:
+    type: phandle-array
+    description: |
+      Optional pin to disable all bus transceivers if any are present.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO pin used for RESET output.
+
+  port-write-cycles:
+    type: int
+    required: true
+    description: |
+      Number of processor cycles for I/O Port write operations.For example, the
+      GPIO clock may be different from the CPU clock. This can usually be
+      found in the SoC documentation.

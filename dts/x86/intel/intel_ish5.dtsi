@@ -18,17 +18,10 @@
 			substate-id = <1>;
 		};
 
-		d0i1: d0i1 {
-			compatible = "zephyr,power-state";
-			power-state-name = "suspend-to-idle";
-			min-residency-us = <2000>;
-			substate-id = <2>;
-		};
-
 		d0i2: d0i2 {
 			compatible = "zephyr,power-state";
 			power-state-name = "suspend-to-ram";
-			min-residency-us = <4000>;
+			min-residency-us = <10000>;
 			substate-id = <3>;
 		};
 
@@ -48,7 +41,7 @@
 			device_type = "cpu";
 			compatible = "intel,ish";
 			reg = <0>;
-			cpu-power-states = <&d0i0 &d0i1 &d0i2 &d0i3>;
+			cpu-power-states = <&d0i0 &d0i2 &d0i3>;
 		};
 	};
 
@@ -161,6 +154,43 @@
 			ngpios = <32>;
 			interrupts = <13 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
 
+			status = "okay";
+		};
+
+		spi0: spi@8000000 {
+			compatible = "intel,sedi-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x8000000 0x1000>;
+			peripheral-id = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <19 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
+
+		spi1: spi@8002000 {
+			compatible = "intel,sedi-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x8002000 0x1000>;
+			peripheral-id = <1>;
+			interrupt-parent = <&intc>;
+			interrupts = <20 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "disabled";
+		};
+
+		dma0: dma@10100000 {
+			compatible = "intel,sedi-dma";
+			#dma-cells = <2>;
+			dma-channels = <8>;
+			peripheral-id = <0>;
+			reg = <0x10100000 0x1000>;
+			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			dma-buf-size-alignment = <4>;
+			dma-copy-alignment = <4>;
 			status = "okay";
 		};
 	};

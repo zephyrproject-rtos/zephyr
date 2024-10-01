@@ -1,0 +1,37 @@
+# Copyright (c) 2021-2024 Atmosic
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_ATM
+
+rsource "*/Kconfig.defconfig"
+
+config SOC_FAMILY_ATM
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+config AUTO_TEST
+	bool "Enable Auto Test"
+	default n
+
+if ENTROPY_ATM_TRNG
+
+# default the RNG to a PRNG seeded by the ATM TRNG
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR
+endchoice
+
+# For standalone HCI apps, Tinycrypt is required for CSPRNG
+config TINYCRYPT
+	default y if BT_HCI_RAW && BT_HCI_RAW_H4
+
+if MBEDTLS || TINYCRYPT
+# ATM TRNG HW should be used as an entropy source for a
+# secure PRNG implementation.  Use the default AES-CTR mode drbg.
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+endif # MBEDTLS || TINYCRYPT
+
+endif # ENTROPY_ATM_TRNG
+
+endif # SOC_FAMILY_ATM

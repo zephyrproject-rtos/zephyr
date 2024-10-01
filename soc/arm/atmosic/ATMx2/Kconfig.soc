@@ -1,8 +1,0 @@
-choice
-prompt "ATMx2 selection"
-depends on SOC_SERIES_ATMx2
-
-config SOC_ATMx2xx_x1x
-	bool "ATMx2xx-x1x"
-
-endchoice

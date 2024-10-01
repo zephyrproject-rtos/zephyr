@@ -44,11 +44,11 @@ K_KERNEL_STACK_DEFINE(_firq_interrupt_stack, CONFIG_ARC_FIRQ_STACK_SIZE);
 void z_arc_firq_stack_set(void)
 {
 #ifdef CONFIG_SMP
-	char *firq_sp = Z_KERNEL_STACK_BUFFER(
+	char *firq_sp = K_KERNEL_STACK_BUFFER(
 		  _firq_interrupt_stack[z_arc_v2_core_id()]) +
 		  CONFIG_ARC_FIRQ_STACK_SIZE;
 #else
-	char *firq_sp = Z_KERNEL_STACK_BUFFER(_firq_interrupt_stack) +
+	char *firq_sp = K_KERNEL_STACK_BUFFER(_firq_interrupt_stack) +
 		  CONFIG_ARC_FIRQ_STACK_SIZE;
 #endif
 

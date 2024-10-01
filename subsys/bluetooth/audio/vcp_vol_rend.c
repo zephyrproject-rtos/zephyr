@@ -8,23 +8,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/vcp.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/__assert.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "audio_internal.h"
 #include "vcp_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_VCP_VOL_REND_LOG_LEVEL
-#include <zephyr/logging/log.h>
+
 LOG_MODULE_REGISTER(bt_vcp_vol_rend);
 
 #define VOLUME_DOWN(current_vol) \
@@ -97,7 +113,7 @@ static void notify_work_reschedule(struct bt_vcp_vol_rend *inst, enum vol_rend_n
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule %s notification err %d", vol_rend_notify_str(notify),
 			err);
-	} else {
+	} else if (!K_TIMEOUT_EQ(delay, K_NO_WAIT)) {
 		LOG_DBG("%s notification scheduled in %dms", vol_rend_notify_str(notify),
 			k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&inst->notify_work)));
 	}

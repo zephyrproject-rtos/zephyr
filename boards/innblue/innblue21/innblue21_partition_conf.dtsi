@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2020 InnBlue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Default Flash planning for nRF9160_innblue21.
+ *
+ * Zephyr build for nRF9160 with ARM TrustZone-M support,
+ * implies building Secure and Non-Secure Zephyr images.
+ *
+ * Secure image will be placed, by default, in flash0
+ * (or in slot0, if MCUboot is present).
+ * Secure image will use sram0 for system memory.
+ *
+ * Non-Secure image will be placed in slot0_ns, and use
+ * sram0_ns for system memory.
+ *
+ * Note that the Secure image only requires knowledge of
+ * the beginning of the Non-Secure image (not its size).
+ */
+
+&slot0_partition {
+	reg = <0x00010000 0x40000>;
+};
+
+&slot0_ns_partition {
+	reg = <0x00050000 0x30000>;
+};
+
+&slot1_partition {
+	reg = <0x00080000 0x40000>;
+};
+
+&slot1_ns_partition {
+	reg = <0x000c0000 0x30000>;
+};
+
+/* Default SRAM planning when building for nRF9160 with
+ * ARM TrustZone-M support
+ * - Lowest 64 kB SRAM allocated to Secure image (sram0).
+ * - 64 kB SRAM reserved for and used by the BSD socket
+ *   library.
+ * - Upper 128 kB allocated to Non-Secure image (sram0_ns).
+ */
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&sram0_bsd {
+	reg = <0x20010000 DT_SIZE_K(64)>;
+};
+
+&sram0_ns {
+	reg = <0x20020000 DT_SIZE_K(128)>;
+};

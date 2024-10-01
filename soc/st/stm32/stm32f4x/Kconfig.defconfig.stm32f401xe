@@ -1,0 +1,11 @@
+# ST STM32F401RE MCU configuration options
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F401XE
+
+config NUM_IRQS
+	default 85
+
+endif # SOC_STM32F401XE

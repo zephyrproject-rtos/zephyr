@@ -11,6 +11,7 @@
 #include "../../../lib/crc/crc32_sw.c"
 #include "../../../lib/crc/crc32c_sw.c"
 #include "../../../lib/crc/crc7_sw.c"
+#include "../../../lib/crc/crc24_sw.c"
 
 ZTEST(crc, test_crc32c)
 {
@@ -48,6 +49,22 @@ ZTEST(crc, test_crc32_ieee)
 	zassert_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B);
 	zassert_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926);
 	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4);
+}
+
+ZTEST(crc, test_crc24_pgp)
+{
+	uint8_t test1[] = { 'A' };
+	uint8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	uint8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r' };
+
+	zassert_equal(crc24_pgp(test1, sizeof(test1)), 0x00FE86FA);
+	zassert_equal(crc24_pgp(test2, sizeof(test2)), 0x0021CF02);
+	zassert_equal(crc24_pgp(test3, sizeof(test3)), 0x004662E9);
+
+	/* Compute a CRC in several steps */
+	zassert_equal(crc24_pgp_update(CRC24_PGP_INITIAL_VALUE, test2, 3), 0x0009DF67);
+	zassert_equal(crc24_pgp_update(0x0009DF67, test2 + 3, 2), 0x00BA353A);
+	zassert_equal(crc24_pgp_update(0x00BA353A, test2 + 5, 4), 0x0021CF02);
 }
 
 ZTEST(crc, test_crc16)

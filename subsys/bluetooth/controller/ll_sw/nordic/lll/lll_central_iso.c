@@ -500,10 +500,10 @@ static void isr_tx(void *param)
 	/* assert if radio packet ptr is not set and radio started rx */
 	LL_ASSERT(!radio_is_ready());
 
-	/* +/- 2us active clock jitter, +1 us hcto compensation */
+	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
 	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
-	       HCTO_START_DELAY_US;
+	       HAL_RADIO_TMR_START_DELAY_US;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_chain_delay_get(cis_lll->rx.phy, PHY_FLAGS_S8);
@@ -764,7 +764,7 @@ static void isr_rx(void *param)
 			/* Enqueue Rx ISO PDU */
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = cis_lll->handle;
-			iso_meta = &node_rx->hdr.rx_iso_meta;
+			iso_meta = &node_rx->rx_iso_meta;
 			iso_meta->payload_number = cis_lll->rx.payload_count +
 						   cis_lll->rx.bn_curr - 1U;
 			iso_meta->timestamp =

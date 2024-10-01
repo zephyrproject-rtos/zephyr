@@ -17,7 +17,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct imxrt_uid dev_id;
 
-#ifdef CONFIG_SOC_SERIES_IMX_RT11XX
+#ifdef CONFIG_SOC_SERIES_IMXRT11XX
 	dev_id.id[0] = sys_cpu_to_be32(OCOTP->FUSEN[17].FUSE);
 	dev_id.id[1] = sys_cpu_to_be32(OCOTP->FUSEN[16].FUSE);
 #else

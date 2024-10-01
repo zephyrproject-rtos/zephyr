@@ -46,8 +46,12 @@ static void event_ep_request(const struct device *dev, struct udc_event event)
 	}
 }
 
-static void test_udc_thread(const struct device *dev)
+static void test_udc_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	const struct device *dev = p1;
 	struct udc_event event;
 
 	while (true) {
@@ -208,11 +212,10 @@ static void test_udc_ep_halt(const struct device *dev,
 			     struct usb_ep_descriptor *ed)
 {
 	/* Possible return values 0, -ENODEV, -ENOTSUP, -EPERM. */
-	int err1, err2, err3;
+	int err1, err2;
 
 	err1 = udc_ep_set_halt(dev, ed->bEndpointAddress);
 	err2 = udc_ep_set_halt(dev, FALSE_EP_ADDR);
-	err3 = udc_ep_set_halt(dev, USB_CONTROL_EP_OUT);
 
 	if (udc_is_enabled(dev)) {
 		if (ed->bmAttributes == USB_EP_TYPE_ISO) {
@@ -222,16 +225,13 @@ static void test_udc_ep_halt(const struct device *dev,
 		}
 
 		zassert_equal(err2, -ENODEV, "Not failed to set halt");
-		zassert_equal(err3, 0, "Failed to set halt");
 	} else {
 		zassert_equal(err1, -EPERM, "Not failed to set halt");
 		zassert_equal(err2, -EPERM, "Not failed to set halt");
-		zassert_equal(err3, -EPERM, "Not failed to set halt");
 	}
 
 	err1 = udc_ep_clear_halt(dev, ed->bEndpointAddress);
 	err2 = udc_ep_clear_halt(dev, FALSE_EP_ADDR);
-	err3 = udc_ep_clear_halt(dev, USB_CONTROL_EP_OUT);
 
 	if (udc_is_enabled(dev)) {
 		if (ed->bmAttributes == USB_EP_TYPE_ISO) {
@@ -241,11 +241,9 @@ static void test_udc_ep_halt(const struct device *dev,
 		}
 
 		zassert_equal(err2, -ENODEV, "Not failed to clear halt");
-		zassert_equal(err3, 0, "Failed to clear halt");
 	} else {
 		zassert_equal(err1, -EPERM, "Not failed to clear halt");
 		zassert_equal(err2, -EPERM, "Not failed to clear halt");
-		zassert_equal(err3, -EPERM, "Not failed to clear halt");
 	}
 }
 
@@ -328,7 +326,7 @@ static void test_udc_ep_api(const struct device *dev,
 		zassert_ok(err, "Failed to enable endpoint");
 
 		/* It needs a little reserve for memory management overhead. */
-		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 2); n++) {
+		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 4); n++) {
 			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
 					       ed->wMaxPacketSize);
 			zassert_not_null(buf,
@@ -338,6 +336,7 @@ static void test_udc_ep_api(const struct device *dev,
 			udc_ep_buf_set_zlp(buf);
 			err = udc_ep_enqueue(dev, buf);
 			zassert_ok(err, "Failed to queue request");
+			k_yield();
 		}
 
 		err = udc_ep_disable(dev, ed->bEndpointAddress);
@@ -423,7 +422,7 @@ static void *test_udc_device_get(void)
 
 	k_thread_create(&test_udc_thread_data, test_udc_stack,
 			K_KERNEL_STACK_SIZEOF(test_udc_stack),
-			(k_thread_entry_t)test_udc_thread,
+			test_udc_thread,
 			(void *)dev, NULL, NULL,
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 

@@ -8,8 +8,11 @@ menuconfig STM32_LTDC
 	default y
 	depends on DT_HAS_ST_STM32_LTDC_ENABLED
 	select USE_STM32_HAL_LTDC
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	help
 	  Enable driver for STM32 LCT-TFT display controller periheral.
+
+if STM32_LTDC
 
 choice STM32_LTDC_PIXEL_FORMAT
 	prompt "Color pixel format"
@@ -37,3 +40,23 @@ config STM32_LTDC_RGB565
 	  (2 bytes per pixel)
 
 endchoice
+
+config STM32_LTDC_FB_NUM
+	int "Frame buffer number"
+	default 1
+	range 0 2
+	help
+	  STM32 LTDC frame buffer number config:
+	    - 0 frame buffer maintained by application, must write with full screen pixels.
+	    - 1 single frame buffer in stm32 ltdc driver.
+	    - 2 double frame buffer in stm32 ltdc driver.
+
+config STM32_LTDC_DISABLE_FMC_BANK1
+	bool "Disable FMC bank1 for STM32F7/H7 series"
+	depends on SOC_SERIES_STM32H7X || SOC_SERIES_STM32F7X
+	default y
+	help
+	  Disable FMC bank1 if not used to prevent speculative read accesses.
+	  Refer to AN4861 "4.6 Special recommendations for Cortex-M7 (STM32F7/H7)".
+
+endif # STM32_LTDC

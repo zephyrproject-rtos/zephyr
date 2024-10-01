@@ -7,10 +7,10 @@ Demonstrates basic file and dir operations using the Zephyr file system.
 
 Building and Running Project:
 
-The demo will run on native_posix and will use the on-board SPI flash.
+The demo will run on native_sim using the flash simulator.
 
        mkdir build; cd build
-       cmake -DBOARD=native_posix ..
+       cmake -DBOARD=native_sim ..
        make run
 
 To test fatfs on MMC, add this cmake option to your build command:

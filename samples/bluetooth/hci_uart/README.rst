@@ -50,15 +50,15 @@ For example, to build for the nRF52832 Development Kit:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/hci_uart
-   :board: nrf52dk_nrf52832
+   :board: nrf52dk/nrf52832
    :goals: build flash
 
 .. _bluetooth-hci-uart-qemu-posix:
 
-Using the controller with QEMU and Native POSIX
-===============================================
+Using the controller with QEMU or native_sim
+============================================
 
-In order to use the HCI UART controller with QEMU or Native POSIX you will need
+In order to use the HCI UART controller with QEMU or :ref:`native_sim <native_sim>` you will need
 to attach it to the Linux Host first. To do so simply build the sample and
 connect the UART to the Linux machine, and then attach it with this command:
 
@@ -84,7 +84,7 @@ If you are running :file:`btmon` you should see a brief log showing how the
 Linux kernel identifies the attached controller.
 
 Once the controller is attached follow the instructions in the
-:ref:`bluetooth_qemu_posix` section to use QEMU with it.
+:ref:`bluetooth_qemu_native` section to use QEMU with it.
 
 .. _bluetooth-hci-uart-bluez:
 
@@ -135,12 +135,12 @@ required hardware configuration for the Radio.
 
 .. code-block:: console
 
-   west build samples/bluetooth/hci_uart -b nrf52833dk_nrf52833@df -- -DCONFIG_BT_CTLR_DF=y
+   west build samples/bluetooth/hci_uart -b nrf52833dk/nrf52833@df -- -DCONFIG_BT_CTLR_DF=y
 
 You can use following targets:
 
-* ``nrf5340dk_nrf5340_cpunet@df``
-* ``nrf52833dk_nrf52833@df``
+* ``nrf5340dk/nrf5340/cpunet@df``
+* ``nrf52833dk/nrf52833@df``
 
 Check the :ref:`bluetooth_direction_finding_connectionless_rx` and the :ref:`bluetooth_direction_finding_connectionless_tx` for more details.
 
@@ -173,13 +173,13 @@ so:
 On the host application, some config options need to be used to select the H4
 driver instead of the built-in controller:
 
-.. code-block:: kconfig
+.. code-block:: cfg
 
    CONFIG_BT_HCI=y
    CONFIG_BT_CTLR=n
-   CONFIG_BT_H4=y
 
-Similarly, the `zephyr,bt-uart` DTS property selects which uart to use:
+Similarly, the `zephyr,bt-hci` DTS property selects which HCI instance to use.
+The UART needs to have as its child node a HCI UART node:
 
 .. code-block:: dts
 
@@ -187,6 +187,14 @@ Similarly, the `zephyr,bt-uart` DTS property selects which uart to use:
       chosen {
          zephyr,console = &uart0;
          zephyr,shell-uart = &uart0;
-         zephyr,bt-uart = &uart1;
+         zephyr,bt-hci = &bt_hci_uart;
+      };
+   };
+
+   &uart1 {
+      status = "okay";
+      bt_hci_uart: bt_hci_uart {
+         compatible = "zephyr,bt-hci-uart";
+         status = "okay";
       };
    };

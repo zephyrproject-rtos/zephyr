@@ -3,13 +3,14 @@
 AutoPTS on Windows 10 with nRF52 board
 #######################################
 
-Overview
-========
-
 This tutorial shows how to setup AutoPTS client and server to run both on
 Windows 10. We use WSL1 with Ubuntu only to build a Zephyr project to
 an elf file, because Zephyr SDK is not available on Windows yet.
 Tutorial covers only nrf52840dk.
+
+.. contents::
+    :local:
+    :depth: 2
 
 Update Windows and drivers
 ===========================
@@ -116,7 +117,7 @@ Build the auto-pts tester app
 
 .. code-block::
 
-    west build -p auto -b nrf52840dk_nrf52840 zephyr/tests/bluetooth/tester/
+    west build -p auto -b nrf52840dk/nrf52840 zephyr/tests/bluetooth/tester/
 
 You can display flashing options with:
 

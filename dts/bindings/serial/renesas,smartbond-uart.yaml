@@ -38,3 +38,24 @@ properties:
   hw-flow-control-supported:
     type: boolean
     description: Set to indicate RTS/CTS flow control is supported.
+
+  rx-wake-gpios:
+    type: phandle-array
+    description: GPIO configured as wake source
+
+  rx-wake-timeout:
+    type: int
+    description: |
+      Time to prevent UART entering sleep mode after receiving data (ms)
+
+  dtr-gpios:
+    type: phandle-array
+    description: |
+      DTR pin specification. DTR pin when active tells that the driver that there
+      is active client on the other side of serial line.
+      The device driver does not use DTR for hardware flow control.
+      When device is connected to computer serial converter usually asserts DTR
+      line when serial port is opened and ready for communication.
+      This line can be used in Smartbond(tm) driver to detect remote client presence.
+      If client is not present the device can disable UART, allowing for
+      power system management to enter more efficient power levels.

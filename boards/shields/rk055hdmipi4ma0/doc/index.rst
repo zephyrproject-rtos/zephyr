@@ -50,7 +50,7 @@ for the 40 pin FPC interface
 Programming
 ***********
 
-Set ``-DSHIELD=rk055hdmipi4ma0`` when you invoke ``west build``. For
+Set ``--shield rk055hdmipi4ma0`` when you invoke ``west build``. For
 example:
 
 .. zephyr-app-commands::

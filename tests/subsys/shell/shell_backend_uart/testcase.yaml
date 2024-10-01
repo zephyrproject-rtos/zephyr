@@ -1,0 +1,12 @@
+tests:
+  shell.backend.uart:
+    min_flash: 64
+    min_ram: 32
+    tags:
+      - shell
+      - backend
+      - uart
+    filter: ( CONFIG_SHELL )
+    platform_allow:
+      - qemu_x86
+      - qemu_riscv32

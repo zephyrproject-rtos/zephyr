@@ -23,11 +23,6 @@
 
 .global __start
 .type	z_cstart, @function
-.type	z_mp_entry, @function
-
-#ifdef CONFIG_XTENSA_MMU
-.type	z_xtensa_mmu_init, @function
-#endif
 
 
 /* Macros to abstract away ABI differences */
@@ -192,10 +187,6 @@ _start:
 .L3zte:
 
 #endif /* !XCHAL_HAVE_BOOTLOADER */
-
-#ifdef CONFIG_XTENSA_MMU
-	CALL	z_xtensa_mmu_init
-#endif
 
 	/* Enter C domain, never returns from here */
 	CALL	z_cstart

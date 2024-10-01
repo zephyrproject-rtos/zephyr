@@ -26,8 +26,10 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #define STM32_SERIES_MAX_FLASH	512
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
-/* at this time stm32u5 mcus have 1MB (stm32u575) or 2MB (stm32u585) */
-#define STM32_SERIES_MAX_FLASH	2048
+/* It is used to handle the 2 banks discontinuity case, the discontinuity is not happen on STM32U5,
+ *  so define it to flash size to avoid the unexptected check.
+ */
+#define STM32_SERIES_MAX_FLASH	(CONFIG_FLASH_SIZE)
 #endif
 
 #define PAGES_PER_BANK ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
@@ -159,7 +161,7 @@ static int write_nwords(const struct device *dev, off_t offset, const uint32_t *
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	volatile uint32_t *flash = (uint32_t *)(offset
-						+ CONFIG_FLASH_BASE_ADDRESS);
+						+ FLASH_STM32_BASE_ADDRESS);
 	bool full_zero = true;
 	uint32_t tmp;
 	int rc;
@@ -365,10 +367,16 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	}
 
 	if (icache_enabled) {
+		int rc2;
+
 		/* Since i-cache was disabled, this would start the
 		 * invalidation procedure, so wait for completion.
 		 */
-		rc = icache_wait_for_invalidate_complete();
+		rc2 = icache_wait_for_invalidate_complete();
+
+		if (!rc) {
+			rc = rc2;
+		}
 
 		/* I-cache should be enabled only after the
 		 * invalidation is complete.
@@ -397,7 +405,7 @@ void flash_stm32_page_layout(const struct device *dev,
 	if (stm32_flash_has_2_banks(dev) &&
 			(CONFIG_FLASH_SIZE < STM32_SERIES_MAX_FLASH)) {
 		/*
-		 * For stm32l552xx with 256 kB flash or stm32u57x with 1MB flash
+		 * For stm32l552xx with 256 kB flash
 		 * which have space between banks 1 and 2.
 		 */
 
@@ -417,8 +425,8 @@ void flash_stm32_page_layout(const struct device *dev,
 		stm32_flash_layout_size = ARRAY_SIZE(stm32_flash_layout);
 	} else {
 		/*
-		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u58x
-		 * with 2MB flash which has no space between banks 1 and 2.
+		 * For stm32l562xx & stm32l552xx with 512 flash or stm32u5x,
+		 * which has no space between banks 1 and 2.
 		 */
 
 		if (stm32_flash_has_2_banks(dev)) {

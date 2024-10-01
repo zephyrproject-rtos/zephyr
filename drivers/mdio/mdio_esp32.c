@@ -86,16 +86,6 @@ static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
 	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
 
-static void mdio_esp32_bus_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void mdio_esp32_bus_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int mdio_esp32_initialize(const struct device *dev)
 {
 	const struct mdio_esp32_dev_config *const cfg = dev->config;
@@ -114,8 +104,9 @@ static int mdio_esp32_initialize(const struct device *dev)
 	clock_control_subsys_t clock_subsys =
 		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(mdio), offset);
 
+	/* clock is shared, so do not bail out if already enabled */
 	res = clock_control_on(clock_dev, clock_subsys);
-	if (res != 0) {
+	if (res < 0 && res != -EALREADY) {
 		goto err;
 	}
 
@@ -134,8 +125,6 @@ err:
 static const struct mdio_driver_api mdio_esp32_driver_api = {
 	.read = mdio_esp32_read,
 	.write = mdio_esp32_write,
-	.bus_enable = mdio_esp32_bus_enable,
-	.bus_disable = mdio_esp32_bus_disable,
 };
 
 #define MDIO_ESP32_CONFIG(n)						\

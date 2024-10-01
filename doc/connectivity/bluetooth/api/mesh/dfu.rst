@@ -3,16 +3,16 @@
 Device Firmware Update (DFU)
 ############################
 
-Bluetooth mesh supports the distribution of firmware images across a mesh network. The Bluetooth
+Bluetooth Mesh supports the distribution of firmware images across a mesh network. The Bluetooth
 mesh DFU subsystem implements the Bluetooth Mesh Device Firmware Update Model specification version
-1.0. The implementation is in experimental state.
+1.0.
 
-Bluetooth mesh DFU implements a distribution mechanism for firmware images, and does not put any
+Bluetooth Mesh DFU implements a distribution mechanism for firmware images, and does not put any
 restrictions on the size, format or usage of the images. The primary design goal of the subsystem is
-to provide the qualifiable parts of the Bluetooth mesh DFU specification, and leave the usage,
+to provide the qualifiable parts of the Bluetooth Mesh DFU specification, and leave the usage,
 firmware validation and deployment to the application.
 
-The DFU specification is implemented in the Zephyr Bluetooth mesh DFU subsystem as three separate
+The DFU specification is implemented in the Zephyr Bluetooth Mesh DFU subsystem as three separate
 models:
 
 .. toctree::
@@ -28,7 +28,7 @@ Overview
 DFU roles
 =========
 
-The Bluetooth mesh DFU subsystem defines three different roles the mesh nodes have to assume in the
+The Bluetooth Mesh DFU subsystem defines three different roles the mesh nodes have to assume in the
 distribution of firmware images:
 
 Target node
@@ -47,20 +47,20 @@ Distributor
    image to the Target nodes.
 
 Initiator
-   The Initiator role is typically implemented by the same device that implements the Bluetooth mesh
+   The Initiator role is typically implemented by the same device that implements the Bluetooth Mesh
    :ref:`Provisioner <bluetooth_mesh_provisioning>` and :ref:`Configurator
    <bluetooth_mesh_models_cfg_cli>` roles. The Initiator needs a full overview of the potential
    Target nodes and their firmware, and will control (and initiate) all firmware updates. The
-   Initiator role is not implemented in the Zephyr Bluetooth mesh DFU subsystem.
+   Initiator role is not implemented in the Zephyr Bluetooth Mesh DFU subsystem.
 
 .. figure:: images/dfu_roles_mesh.svg
    :align: center
    :alt: Graphic overview of the DFU roles mesh nodes can have during the process of image
          distribution
 
-   DFU roles and the associated Bluetooth mesh models
+   DFU roles and the associated Bluetooth Mesh models
 
-Bluetooth mesh applications may combine the DFU roles in any way they'd like, and even take on
+Bluetooth Mesh applications may combine the DFU roles in any way they'd like, and even take on
 multiple instances of the same role by instantiating the models on separate elements. For instance,
 the Distributor and Initiator role can be combined by instantiating the
 :ref:`bluetooth_mesh_dfu_cli` on the Initiator node and calling its API directly.
@@ -76,7 +76,7 @@ Firmware Update Client model directly, e.g. over a serial protocol.
 Stages
 ======
 
-The Bluetooth mesh DFU process is designed to act in three stages:
+The Bluetooth Mesh DFU process is designed to act in three stages:
 
 Upload stage
    First, the image is uploaded to a Distributor in a mesh network by an external entity, such as a
@@ -131,7 +131,7 @@ Firmware metadata
    Target node. The firmware metadata is optional, and its maximum length is determined by
    :kconfig:option:`CONFIG_BT_MESH_DFU_METADATA_MAXLEN`.
 
-   The Bluetooth mesh DFU subsystem in Zephyr provides its own metadata format
+   The Bluetooth Mesh DFU subsystem in Zephyr provides its own metadata format
    (:c:struct:`bt_mesh_dfu_metadata`) together with a set of related functions that can be used by
    an end product. The support for it is enabled using the
    :kconfig:option:`CONFIG_BT_MESH_DFU_METADATA` option. The format of the metadata is presented in
@@ -164,11 +164,17 @@ Firmware metadata
 |                        |              | in the New firmware core type field.   |
 +------------------------+--------------+----------------------------------------+
 | Application-specific   | <variable>   | Application-specific data to allow     |
-| data for new firmware  | (Optional)   | application to execut some             |
+| data for new firmware  | (Optional)   | application to execute some            |
 |                        |              | vendor-specific behaviors using        |
 |                        |              | this data before it can respond        |
 |                        |              | with a status message.                 |
 +------------------------+--------------+----------------------------------------+
+
+  .. note::
+
+      The AES-CMAC algorithm serves as a hashing function with a fixed key and is not used for
+      encryption in Bluetooth Mesh DFU metadata. The resulting hash is not secure since the key is
+      known.
 
 Firmware URI
    The firmware URI gives the Initiator information about where firmware updates for the image can
@@ -184,6 +190,8 @@ Firmware URI
 
       The out-of-band distribution mechanism is not supported.
 
+.. _bluetooth_mesh_dfu_firmware_effect:
+
 Firmware effect
 ---------------
 
@@ -193,24 +201,29 @@ DFU. Depending on the availability of the Remote Provisioning Server model on th
 the device may either boot up unprovisioned after applying the new firmware or require to be
 re-provisioned. The complete list of available options is defined in :c:enum:`bt_mesh_dfu_effect`:
 
-:c:enum:`BT_MESH_DFU_EFFECT_NONE`
+:c:enumerator:`BT_MESH_DFU_EFFECT_NONE`
    The device stays provisioned after the new firmware is programmed. This effect is chosen if the
    composition data of the new firmware doesn't change.
-:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE_NO_RPR`
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE_NO_RPR`
    This effect is chosen when the composition data changes and the device doesn't support the remote
    provisioning. The new composition data takes place only after re-provisioning.
-:c:enum:`BT_MESH_DFU_EFFECT_COMP_CHANGE`
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE`
    This effect is chosen when the composition data changes and the device supports the remote
    provisioning. In this case, the device stays provisioned and the new composition data takes place
    after re-provisioning using the Remote Provisioning models.
-:c:enum:`BT_MESH_DFU_EFFECT_UNPROV`
+:c:enumerator:`BT_MESH_DFU_EFFECT_UNPROV`
   This effect is chosen if the composition data in the new firmware changes, the device doesn't
   support the remote provisioning, and the new composition data takes effect after applying the
   firmware.
 
 When the Target node receives the Firmware Update Firmware Metadata Check message, the Firmware
 Update Server model calls the :c:member:`bt_mesh_dfu_srv_cb.check` callback, the application can
-then process the metadata and provide the effect value.
+then process the metadata and provide the effect value. If the effect is
+:c:enumerator:`BT_MESH_DFU_EFFECT_COMP_CHANGE`, the application must call functions
+:c:func:`bt_mesh_comp_change_prepare` and :c:func:`bt_mesh_models_metadata_change_prepare` to
+prepare the Composition Data Page and Models Metadata Page contents before applying the new
+firmware image. See :ref:`bluetooth_mesh_dfu_srv_comp_data_and_models_metadata` for more
+information.
 
 
 DFU procedures
@@ -292,7 +305,7 @@ following steps:
    node firmware image index and the firmware image metadata. Each Target node performs a metadata
    check and prepares their BLOB Transfer Server model for the transfer, before sending a status
    response to the Firmware Update Client, indicating if the firmware update will have any effect on
-   the Bluetooth mesh state of the node.
+   the Bluetooth Mesh state of the node.
 #. The Distributor's BLOB Transfer Client model transfers the firmware image to all Target nodes.
 #. Once the BLOB transfer has been received, the Target nodes' applications verify that the firmware
    is valid by performing checks such as signature verification or image checksums against the image

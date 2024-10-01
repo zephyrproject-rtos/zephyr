@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include <S32Z2.h>
+#include <soc.h>
 #include <Netc_Eth_Ip.h>
 #include <Netc_Eth_Ip_Irq.h>
 #include <Netc_EthSwt_Ip.h>
@@ -43,22 +43,9 @@ static void nxp_s32_eth_msix_wrapper(const struct device *dev, uint32_t channel,
 	msix->handler(channel, NULL, 0);
 }
 
-static inline struct net_if *get_iface(struct nxp_s32_eth_data *ctx, uint16_t vlan_tag)
+static inline struct net_if *get_iface(struct nxp_s32_eth_data *ctx)
 {
-#if defined(CONFIG_NET_VLAN)
-	struct net_if *iface;
-
-	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
-	if (!iface) {
-		return ctx->iface;
-	}
-
-	return iface;
-#else
-	ARG_UNUSED(vlan_tag);
-
 	return ctx->iface;
-#endif
 }
 
 int nxp_s32_eth_initialize_common(const struct device *dev)
@@ -81,13 +68,13 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];
-		if (msix->mbox_channel.dev != NULL) {
-			err = mbox_register_callback(&msix->mbox_channel,
-						     nxp_s32_eth_msix_wrapper,
-						     (void *)msix);
+		if (mbox_is_ready_dt(&msix->mbox_spec)) {
+			err = mbox_register_callback_dt(&msix->mbox_spec,
+							nxp_s32_eth_msix_wrapper,
+							(void *)msix);
 			if (err != 0) {
 				LOG_ERR("Failed to register MRU callback on channel %u",
-					msix->mbox_channel.id);
+					msix->mbox_spec.channel_id);
 				return err;
 			}
 		}
@@ -116,32 +103,22 @@ int nxp_s32_eth_initialize_common(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_NET_IPV6)
-void nxp_s32_eth_mcast_cb(struct net_if *iface, const struct net_addr *addr, bool is_joined)
+void nxp_s32_eth_mcast_filter(const struct device *dev, const struct ethernet_filter *filter)
 {
-	const struct device *dev = net_if_get_device(iface);
 	const struct nxp_s32_eth_config *cfg = dev->config;
-	struct net_eth_addr mac_addr;
 	Netc_Eth_Ip_StatusType status;
 
-	if (addr->family != AF_INET6) {
-		return;
-	}
-
-	net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-
-	if (is_joined) {
+	if (filter->set) {
 		status = Netc_Eth_Ip_AddMulticastDstAddrToHashFilter(cfg->si_idx,
-								     mac_addr.addr);
+								     filter->mac_address.addr);
 	} else {
 		status = Netc_Eth_Ip_RemoveMulticastDstAddrFromHashFilter(cfg->si_idx,
-									  mac_addr.addr);
+									  filter->mac_address.addr);
 	}
 	if (status != NETC_ETH_IP_STATUS_SUCCESS) {
 		LOG_ERR("Failed to update multicast hash table: %d", status);
 	}
 }
-#endif /* CONFIG_NET_IPV6 */
 
 int nxp_s32_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
@@ -195,19 +172,11 @@ error:
 }
 
 static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
-					   Netc_Eth_Ip_BufferType *buf,
-					   uint16_t *vlan_tag)
+					   Netc_Eth_Ip_BufferType *buf)
 {
 	struct nxp_s32_eth_data *ctx = dev->data;
 	struct net_pkt *pkt = NULL;
 	int res = 0;
-#if defined(CONFIG_NET_VLAN)
-	struct net_eth_hdr *hdr;
-	struct net_eth_vlan_hdr *hdr_vlan;
-#if CONFIG_NET_TC_RX_COUNT > 1
-	enum net_priority prio;
-#endif
-#endif /* CONFIG_NET_VLAN */
 
 	/* Use root iface, it will be updated later in net_recv_data() */
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, buf->length,
@@ -223,23 +192,9 @@ static struct net_pkt *nxp_s32_eth_get_pkt(const struct device *dev,
 		goto exit;
 	}
 
-#if defined(CONFIG_NET_VLAN)
-	hdr = NET_ETH_HDR(pkt);
-	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
-		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
-		*vlan_tag = net_pkt_vlan_tag(pkt);
-
-#if CONFIG_NET_TC_RX_COUNT > 1
-		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
-		net_pkt_set_priority(pkt, prio);
-#endif
-	}
-#endif /* CONFIG_NET_VLAN */
-
 exit:
 	if (!pkt) {
-		eth_stats_update_errors_rx(get_iface(ctx, *vlan_tag));
+		eth_stats_update_errors_rx(get_iface(ctx));
 	}
 
 	return pkt;
@@ -252,7 +207,6 @@ static int nxp_s32_eth_rx(const struct device *dev)
 	Netc_Eth_Ip_BufferType buf;
 	Netc_Eth_Ip_RxInfoType info;
 	Netc_Eth_Ip_StatusType status;
-	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 	int key;
 	int res = 0;
@@ -265,13 +219,13 @@ static int nxp_s32_eth_rx(const struct device *dev)
 		LOG_ERR("Error on received frame: %d (0x%X)", status, info.rxStatus);
 		res = -EIO;
 	} else {
-		pkt = nxp_s32_eth_get_pkt(dev, &buf, &vlan_tag);
+		pkt = nxp_s32_eth_get_pkt(dev, &buf);
 		Netc_Eth_Ip_ProvideRxBuff(cfg->si_idx, cfg->rx_ring_idx, &buf);
 
 		if (pkt != NULL) {
-			res = net_recv_data(get_iface(ctx, vlan_tag), pkt);
+			res = net_recv_data(get_iface(ctx), pkt);
 			if (res < 0) {
-				eth_stats_update_errors_rx(get_iface(ctx, vlan_tag));
+				eth_stats_update_errors_rx(get_iface(ctx));
 				net_pkt_unref(pkt);
 				LOG_ERR("Failed to enqueue frame into rx queue: %d", res);
 			}
@@ -317,6 +271,7 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 		| ETHERNET_LINK_100BASE_T
 		| ETHERNET_LINK_1000BASE_T
 		| ETHERNET_HW_RX_CHKSUM_OFFLOAD
+		| ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_VLAN)
 		| ETHERNET_HW_VLAN
 #endif
@@ -343,6 +298,9 @@ int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type t
 		LOG_INF("SI%d MAC set to: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx,
 			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
 			ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
+		break;
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		nxp_s32_eth_mcast_filter(dev, &config->filter);
 		break;
 	default:
 		res = -ENOTSUP;

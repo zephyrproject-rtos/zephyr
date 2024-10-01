@@ -380,6 +380,11 @@ static void lpc11u6x_uart0_isr_config(const struct device *dev);
 
 PINCTRL_DT_DEFINE(DT_NODELABEL(uart0));
 
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(uart0), rx_invert) == 0,
+	     "rx-invert not supported for UART0");
+BUILD_ASSERT(DT_PROP(DT_NODELABEL(uart0), tx_invert) == 0,
+	     "tx-invert not supported for UART0");
+
 static const struct lpc11u6x_uart0_config uart0_config = {
 	.uart0 = (struct lpc11u6x_uart0_regs *)
 	DT_REG_ADDR(DT_NODELABEL(uart0)),
@@ -566,6 +571,13 @@ static int lpc11u6x_uartx_configure(const struct device *dev,
 
 	if (cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		return -ENOTSUP;
+	}
+
+	if (dev_cfg->rx_invert) {
+		flags |= LPC11U6X_UARTX_CFG_RXPOL(1);
+	}
+	if (dev_cfg->tx_invert) {
+		flags |= LPC11U6X_UARTX_CFG_TXPOL(1);
 	}
 
 	/* Disable UART */
@@ -786,6 +798,13 @@ static int lpc11u6x_uartx_init(const struct device *dev)
 	data->data_bits = UART_CFG_DATA_BITS_8;
 	data->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 
+	if (cfg->rx_invert) {
+		cfg->base->cfg |= LPC11U6X_UARTX_CFG_RXPOL(1);
+	}
+	if (cfg->tx_invert) {
+		cfg->base->cfg |= LPC11U6X_UARTX_CFG_TXPOL(1);
+	}
+
 	/* Enable UART */
 	cfg->base->cfg = (cfg->base->cfg & LPC11U6X_UARTX_CFG_MASK) |
 		LPC11U6X_UARTX_CFG_ENABLE;
@@ -845,6 +864,8 @@ static const struct lpc11u6x_uartx_config uart_cfg_##idx = {	              \
 	.clkid = DT_PHA_BY_IDX(DT_NODELABEL(uart##idx), clocks, 0, clkid),    \
 	.pincfg = PINCTRL_DT_DEV_CONFIG_GET(DT_NODELABEL(uart##idx)),         \
 	.baudrate = DT_PROP(DT_NODELABEL(uart##idx), current_speed),	      \
+	.rx_invert = DT_PROP(DT_NODELABEL(uart##idx), rx_invert),	      \
+	.tx_invert = DT_PROP(DT_NODELABEL(uart##idx), tx_invert),	      \
 };									      \
 									      \
 static struct lpc11u6x_uartx_data uart_data_##idx;                            \

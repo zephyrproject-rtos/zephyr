@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable pin controller
+CONFIG_PINCTRL=y
+
+# Enable uart driver
+# CONFIG_SERIAL=y
+
+# By default CONSOLE is assigned to m7
+# CONFIG_CONSOLE=y
+# CONFIG_UART_CONSOLE=y

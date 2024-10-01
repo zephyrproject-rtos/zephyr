@@ -113,9 +113,20 @@ void arm_gic_irq_set_priority(
 
 unsigned int arm_gic_get_active(void)
 {
-	int irq;
+	unsigned int irq;
 
-	irq = sys_read32(GICC_IAR) & 0x3ff;
+	/*
+	 * "ARM Generic Interrupt Controller Architecture version 2.0" states that
+	 * [4.4.5 End of Interrupt Register, GICC_EOIR)]:
+	 * """
+	 * For compatibility with possible extensions to the GIC architecture
+	 * specification, ARM recommends that software preserves the entire register
+	 * value read from the GICC_IAR when it acknowledges the interrupt, and uses
+	 * that entire value for its corresponding write to the GICC_EOIR.
+	 * """
+	 * Because of that, we read the entire value here, to be later written back to GICC_EOIR
+	 */
+	irq = sys_read32(GICC_IAR);
 	return irq;
 }
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
- * Copyright (c) 2020-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2020-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@ extern "C" {
 /**
  * @brief File System APIs
  * @defgroup file_system_api File System APIs
+ * @since 1.5
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -158,8 +160,11 @@ struct fs_statvfs {
 #define FS_O_CREATE     0x10
 /** Open/create file for append */
 #define FS_O_APPEND     0x20
+/** Truncate the file while opening */
+#define FS_O_TRUNC      0x40
 /** Bitmask for open/create flags */
-#define FS_O_FLAGS_MASK 0x30
+#define FS_O_FLAGS_MASK 0x70
+
 
 /** Bitmask for open flags */
 #define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
@@ -231,7 +236,9 @@ struct fs_statvfs {
  */
 static inline void fs_file_t_init(struct fs_file_t *zfp)
 {
-	*zfp = (struct fs_file_t){ 0 };
+	zfp->filep = NULL;
+	zfp->mp = NULL;
+	zfp->flags = 0;
 }
 
 /**
@@ -245,13 +252,16 @@ static inline void fs_file_t_init(struct fs_file_t *zfp)
  */
 static inline void fs_dir_t_init(struct fs_dir_t *zdp)
 {
-	*zdp = (struct fs_dir_t){ 0 };
+	zdp->dirp = NULL;
+	zdp->mp = NULL;
 }
 
 /**
  * @brief Open or create file
  *
  * Opens or possibly creates a file and associates a stream with it.
+ * Successfully opened file, when no longer in use, should be closed
+ * with fs_close().
  *
  * @details
  * @p flags can be 0 or a binary combination of one or more of the following
@@ -261,9 +271,10 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  *   - @c FS_O_RDWR open for read/write (<tt>FS_O_READ | FS_O_WRITE</tt>)
  *   - @c FS_O_CREATE create file if it does not exist
  *   - @c FS_O_APPEND move to end of file before each write
+ *   - @c FS_O_TRUNC truncate the file
  *
- * If @p flags are set to 0 the function will attempt to open an existing file
- * with no read/write access; this may be used to e.g. check if the file exists.
+ * @warning If @p flags are set to 0 the function will open file, if it exists
+ *          and is accessible, but you will have no read/write access to it.
  *
  * @param zfp Pointer to a file object
  * @param file_name The name of a file to open
@@ -275,8 +286,9 @@ static inline void fs_dir_t_init(struct fs_dir_t *zdp)
  * @retval -EROFS when opening read-only file for write, or attempting to
  *	   create a file on a system that has been mounted with the
  *	   FS_MOUNT_FLAG_READ_ONLY flag;
- * @retval -ENOENT when the file path is not possible (bad mount point);
+ * @retval -ENOENT when the file does not exist at the path;
  * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval -EACCES when trying to truncate a file without opening it for write.
  * @retval <0 an other negative errno code, depending on a file system back-end.
  */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags);

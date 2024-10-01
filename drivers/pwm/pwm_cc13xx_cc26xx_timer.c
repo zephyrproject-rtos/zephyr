@@ -140,7 +140,7 @@ static int get_timer_inst_number(const struct pwm_cc13xx_cc26xx_config *config)
 	case GPT3_BASE:
 		return 3;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 }
 #else
@@ -156,7 +156,7 @@ static int get_timer_peripheral(const struct pwm_cc13xx_cc26xx_config *config)
 	case GPT3_BASE:
 		return PRCM_PERIPH_TIMER3;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 }
 #endif /* CONFIG_PM */
@@ -176,6 +176,8 @@ static int init_pwm(const struct device *dev)
 
 	/* Enable GPIO peripheral. */
 	PRCMPeripheralRunEnable(get_timer_peripheral(config));
+	PRCMPeripheralSleepEnable(get_timer_peripheral(config));
+	PRCMPeripheralDeepSleepEnable(get_timer_peripheral(config));
 
 	/* Load PRCM settings. */
 	PRCMLoadSet();

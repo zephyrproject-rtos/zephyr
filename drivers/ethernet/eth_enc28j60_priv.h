@@ -178,6 +178,9 @@
  *  - Multicast
  *  - Broadcast
  *  - CRC Check
+ *
+ * Used as default if hw-rx-filter property
+ * absent in DT
  */
 #define ENC28J60_RECEIVE_FILTERS 0xA3
 
@@ -223,6 +226,7 @@ struct eth_enc28j60_config {
 	struct gpio_dt_spec interrupt;
 	uint8_t full_duplex;
 	int32_t timeout;
+	uint8_t hw_rx_filter;
 };
 
 struct eth_enc28j60_runtime {

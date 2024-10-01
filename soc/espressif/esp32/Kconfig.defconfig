@@ -1,0 +1,34 @@
+# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/soc/flash-controller@3ff42000/flash@0,0)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/soc/flash-controller@3ff42000/flash@0)
+
+if SMP
+
+config SCHED_IPI_SUPPORTED
+	default y
+
+config SCHED_CPU_MASK
+	default y if SCHED_DUMB
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+endif # SMP config
+
+if GDBSTUB
+
+# ESP32 GDB expects 420 bytes G-packet.
+# So double for hexadecimal digits.
+config GDBSTUB_BUF_SZ
+	default 840 if GDBSTUB
+
+endif # GDBSTUB config
+
+endif # SOC_SERIES_ESP32 config

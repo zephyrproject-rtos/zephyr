@@ -272,7 +272,7 @@ static int check_blocks(struct dma_xec_channel *chdata, struct dma_block_config 
  * dma_slot - peripheral source/target ID. Not used for Mem2Mem
  * channel_direction - HW supports Mem2Mem, Mem2Periph, and Periph2Mem
  * complete_callback_en - if true invoke callback on completion (no error)
- * error_callback_en - if true invoke callback on error
+ * error_callback_dis - if true disable callback on error
  * source_handshake - 0=HW, 1=SW
  * dest_handshake - 0=HW, 1=SW
  * channel_priority - 4-bit field. HW implements round-robin only.
@@ -384,7 +384,7 @@ static int dma_xec_configure(const struct device *dev, uint32_t channel,
 	if (config->complete_callback_en) {
 		chdata->flags |= BIT(DMA_XEC_CHAN_FLAGS_CB_EOB_POS);
 	}
-	if (config->error_callback_en) { /* disable callback on errors ? */
+	if (config->error_callback_dis) { /* disable callback on errors ? */
 		chdata->flags |= BIT(DMA_XEC_CHAN_FLAGS_CB_ERR_DIS_POS);
 	}
 
@@ -690,7 +690,7 @@ static int dmac_xec_pm_action(const struct device *dev,
  * completion_callback_en
  *	0 = invoke at completion of all blocks
  *	1 = invoke at completin of each block
- * error_callback_en
+ * error_callback_dis
  *	0 = invoke on all errors
  *	1 = disabled, do not invoke on errors
  */

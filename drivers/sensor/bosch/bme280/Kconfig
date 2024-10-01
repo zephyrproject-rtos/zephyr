@@ -1,0 +1,127 @@
+# BMP280 temperature and pressure sensor configuration options
+
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2017 IpTronix S.r.l.
+# Copyright (c) 2024 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BME280
+	bool "BME280/BMP280 sensor"
+	default y
+	depends on DT_HAS_BOSCH_BME280_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BME280),spi)
+	select RTIO_WORKQ if SENSOR_ASYNC_API
+	help
+	  Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
+
+if BME280
+
+choice
+	prompt "BME280 sampling mode"
+	default BME280_MODE_NORMAL
+	help
+	  Select sampling mode. In normal mode continuous measurements are
+	  performed, whereas in forced mode only single measurement is performed.
+config BME280_MODE_NORMAL
+	bool "normal"
+config BME280_MODE_FORCED
+	bool "forced"
+endchoice
+
+choice
+	prompt "BME280 temperature oversampling"
+	default BME280_TEMP_OVER_2X
+	help
+	  Select temperature oversampling for the BME280 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME280_TEMP_OVER_1X
+	bool "x1"
+config BME280_TEMP_OVER_2X
+	bool "x2"
+config BME280_TEMP_OVER_4X
+	bool "x4"
+config BME280_TEMP_OVER_8X
+	bool "x8"
+config BME280_TEMP_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME280 pressure oversampling"
+	default BME280_PRESS_OVER_16X
+	help
+	  Select pressure oversampling for the BME280 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME280_PRESS_OVER_1X
+	bool "x1"
+config BME280_PRESS_OVER_2X
+	bool "x2"
+config BME280_PRESS_OVER_4X
+	bool "x4"
+config BME280_PRESS_OVER_8X
+	bool "x8"
+config BME280_PRESS_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME280 humidity oversampling"
+	default BME280_HUMIDITY_OVER_16X
+	help
+	  Select humidity oversampling for the BME280 sensor.  Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME280_HUMIDITY_OVER_1X
+	bool "x1"
+config BME280_HUMIDITY_OVER_2X
+	bool "x2"
+config BME280_HUMIDITY_OVER_4X
+	bool "x4"
+config BME280_HUMIDITY_OVER_8X
+	bool "x8"
+config BME280_HUMIDITY_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME280 standby time"
+	default BME280_STANDBY_1000MS
+	help
+	  Select standby time between measurements for the BME280 sensor.
+	  Higher values lead to lower power consumption.
+config BME280_STANDBY_05MS
+	bool "0.5ms"
+config BME280_STANDBY_62MS
+	bool "62.5ms"
+config BME280_STANDBY_125MS
+	bool "125ms"
+config BME280_STANDBY_250MS
+	bool "250ms"
+config BME280_STANDBY_500MS
+	bool "500ms"
+config BME280_STANDBY_1000MS
+	bool "1000ms"
+config BME280_STANDBY_2000MS
+	bool "2000ms BMP280 / 10ms BME280"
+config BME280_STANDBY_4000MS
+	bool "4000ms BMP280 / 20ms BME280"
+endchoice
+
+choice
+	prompt "BME280 filter coefficient"
+	default BME280_FILTER_4
+	help
+	  Select the filter coefficient for the BME280 sensor.
+config BME280_FILTER_OFF
+	bool "filter off"
+config BME280_FILTER_2
+	bool "2"
+config BME280_FILTER_4
+	bool "4"
+config BME280_FILTER_8
+	bool "8"
+config BME280_FILTER_16
+	bool "16"
+endchoice
+
+endif # BME280

@@ -100,7 +100,7 @@ endif()
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
 if(CONFIG_BT)
-  if(CONFIG_BT_NO_DRIVER)
+  if(NOT CONFIG_BT_UART)
       set(NO_QEMU_SERIAL_BT_SERVER 1)
   endif()
   if(NOT NO_QEMU_SERIAL_BT_SERVER)
@@ -398,6 +398,13 @@ endif()
 set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
 list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
+
+# Also append QEMU flags from config
+if(NOT CONFIG_QEMU_EXTRA_FLAGS STREQUAL "")
+  set(config_qemu_flags ${CONFIG_QEMU_EXTRA_FLAGS})
+  separate_arguments(config_qemu_flags)
+  list(APPEND QEMU_EXTRA_FLAGS "${config_qemu_flags}")
+endif()
 
 list(APPEND MORE_FLAGS_FOR_debugserver_qemu -S)
 

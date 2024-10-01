@@ -17,9 +17,8 @@
 #endif
 #include LV_MEM_CUSTOM_INCLUDE
 
-#define LOG_LEVEL CONFIG_LV_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(lvgl);
+LOG_MODULE_REGISTER(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 static lv_disp_drv_t disp_drv;
 struct lvgl_disp_data disp_data = {
@@ -61,7 +60,7 @@ static uint8_t buf1[BUFFER_SIZE]
 
 #endif /* CONFIG_LV_Z_BUFFER_ALLOC_STATIC */
 
-#if CONFIG_LV_LOG_LEVEL != 0
+#if CONFIG_LV_Z_LOG_LEVEL != 0
 /*
  * In LVGLv8 the signature of the logging callback has changes and it no longer
  * takes the log level as an integer argument. Instead, the log level is now
@@ -83,13 +82,16 @@ static void lvgl_log(const char *buf)
 		LOG_ERR("%s", buf + strlen("[Error] "));
 		break;
 	case 'W':
-		LOG_WRN("%s", buf + strlen("Warn] "));
+		LOG_WRN("%s", buf + strlen("[Warn] "));
 		break;
 	case 'I':
 		LOG_INF("%s", buf + strlen("[Info] "));
 		break;
 	case 'T':
 		LOG_DBG("%s", buf + strlen("[Trace] "));
+		break;
+	case 'U':
+		LOG_INF("%s", buf + strlen("[User] "));
 		break;
 	}
 }
@@ -207,7 +209,7 @@ static int lvgl_init(void)
 	lvgl_heap_init();
 #endif
 
-#if CONFIG_LV_LOG_LEVEL != 0
+#if CONFIG_LV_Z_LOG_LEVEL != 0
 	lv_log_register_print_cb(lvgl_log);
 #endif
 

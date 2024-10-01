@@ -1,0 +1,11 @@
+# Copyright 2022-2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NXP_S32_NETC
+	bool "NXP S32 NETC External MDIO driver"
+	default y
+	depends on DT_HAS_NXP_S32_NETC_EMDIO_ENABLED
+	depends on ETH_NXP_S32_NETC && DT_HAS_NXP_S32_NETC_PSI_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable NETC External MDIO Controller driver for NXP S32 SoCs.

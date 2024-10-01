@@ -6,10 +6,10 @@
 
 /**
  * @file
- * @defgroup bt_mesh_dfu_metadata Bluetooth mesh Device Firmware Update (DFU) metadata
+ * @defgroup bt_mesh_dfu_metadata Bluetooth Mesh Device Firmware Update (DFU) metadata
  * @ingroup bt_mesh_dfu
  * @{
- * @brief Common types and functions for the Bluetooth mesh DFU metadata.
+ * @brief Common types and functions for the Bluetooth Mesh DFU metadata.
  */
 
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__
@@ -75,7 +75,7 @@ struct bt_mesh_dfu_metadata {
 int bt_mesh_dfu_metadata_decode(struct net_buf_simple *buf,
 				struct bt_mesh_dfu_metadata *metadata);
 
-/** @brief Encode a firmare metadata into a network buffer.
+/** @brief Encode a firmware metadata into a network buffer.
  *
  *  @param metadata Firmware metadata to be encoded.
  *  @param buf Buffer to store the encoded metadata.
@@ -87,7 +87,7 @@ int bt_mesh_dfu_metadata_encode(const struct bt_mesh_dfu_metadata *metadata,
 
 /** @brief Compute hash of the Composition Data state.
  *
- *  The format of the Composition Data is defined in MshPRFv1.0.1, section 4.2.1.1.
+ *  The format of the Composition Data is defined in MshPRTv1.1: 4.2.2.1.
  *
  *  @param buf Pointer to buffer holding Composition Data.
  *  @param key 128-bit key to be used in the hash computation.

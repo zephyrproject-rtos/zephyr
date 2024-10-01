@@ -49,7 +49,8 @@ class DUT(object):
                  post_flash_script=None,
                  runner=None,
                  flash_timeout=60,
-                 flash_with_test=False):
+                 flash_with_test=False,
+                 flash_before=False):
 
         self.serial = serial
         self.baud = serial_baud or 115200
@@ -63,6 +64,7 @@ class DUT(object):
         self.product = product
         self.runner = runner
         self.runner_params = runner_params
+        self.flash_before = flash_before
         self.fixtures = []
         self.post_flash_script = post_flash_script
         self.post_script = post_script
@@ -118,6 +120,7 @@ class HardwareMap:
         'Atmel Corp.',
         'Texas Instruments',
         'Silicon Labs',
+        'NXP',
         'NXP Semiconductors',
         'Microchip Technology Inc.',
         'FTDI',
@@ -177,7 +180,8 @@ class HardwareMap:
                                 False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
-                                flash_with_test=self.options.device_flash_with_test
+                                flash_with_test=self.options.device_flash_with_test,
+                                flash_before=self.options.flash_before,
                                 )
 
             elif self.options.device_serial_pty:
@@ -186,7 +190,8 @@ class HardwareMap:
                                 self.options.pre_script,
                                 True,
                                 flash_timeout=self.options.device_flash_timeout,
-                                flash_with_test=self.options.device_flash_with_test
+                                flash_with_test=self.options.device_flash_with_test,
+                                flash_before=False,
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
@@ -207,9 +212,9 @@ class HardwareMap:
         print(tabulate(table, headers=header, tablefmt="github"))
 
 
-    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False):
+    def add_device(self, serial, platform, pre_script, is_pty, baud=None, flash_timeout=60, flash_with_test=False, flash_before=False):
         device = DUT(platform=platform, connected=True, pre_script=pre_script, serial_baud=baud,
-                     flash_timeout=flash_timeout, flash_with_test=flash_with_test
+                     flash_timeout=flash_timeout, flash_with_test=flash_with_test, flash_before=flash_before
                     )
         if is_pty:
             device.serial_pty = serial
@@ -229,6 +234,9 @@ class HardwareMap:
             flash_with_test = dut.get('flash_with_test')
             if flash_with_test is None:
                 flash_with_test = self.options.device_flash_with_test
+            flash_before = dut.get('flash_before')
+            if flash_before is None:
+                flash_before = self.options.flash_before and (not (flash_with_test or serial_pty))
             platform  = dut.get('platform')
             id = dut.get('id')
             runner = dut.get('runner')
@@ -251,6 +259,7 @@ class HardwareMap:
                           serial_baud=baud,
                           connected=connected,
                           pre_script=pre_script,
+                          flash_before=flash_before,
                           post_script=post_script,
                           post_flash_script=post_flash_script,
                           flash_timeout=flash_timeout,
@@ -279,15 +288,18 @@ class HardwareMap:
             def readlink(link):
                 return str((by_id / link).resolve())
 
-            persistent_map = {readlink(link): str(link)
-                              for link in by_id.iterdir()}
+            if by_id.exists():
+                persistent_map = {readlink(link): str(link)
+                                  for link in by_id.iterdir()}
+            else:
+                persistent_map = {}
         else:
             persistent_map = {}
 
         serial_devices = list_ports.comports()
         logger.info("Scanning connected hardware...")
         for d in serial_devices:
-            if d.manufacturer in self.manufacturer:
+            if d.manufacturer and d.manufacturer.casefold() in [m.casefold() for m in self.manufacturer]:
 
                 # TI XDS110 can have multiple serial devices for a single board
                 # assume endpoint 0 is the serial, skip all others

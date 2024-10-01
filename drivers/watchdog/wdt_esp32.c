@@ -7,7 +7,11 @@
 #define DT_DRV_COMPAT espressif_esp32_watchdog
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+#include <soc/lp_aon_reg.h>
+#else
 #include <soc/rtc_cntl_reg.h>
+#endif
 #include <soc/timer_group_reg.h>
 #include <hal/mwdt_ll.h>
 #include <hal/wdt_hal.h>
@@ -15,17 +19,17 @@
 #include <string.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
-#ifndef CONFIG_SOC_SERIES_ESP32C3
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#else
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/drivers/interrupt_controller/intc_esp32c3.h>
+#else
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #endif
 #include <zephyr/device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(wdt_esp32, CONFIG_WDT_LOG_LEVEL);
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#if defined(CONFIG_SOC_SERIES_ESP32C3) || defined(CONFIG_SOC_SERIES_ESP32C6)
 #define ISR_HANDLER isr_handler_t
 #else
 #define ISR_HANDLER intr_handler_t

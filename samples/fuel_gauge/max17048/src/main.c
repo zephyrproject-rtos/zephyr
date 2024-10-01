@@ -52,13 +52,13 @@ int main(void)
 		if (ret < 0) {
 			printk("Error: cannot get properties\n");
 		} else {
-			printk("Time to empty %d\n", vals[0].runtime_to_empty);
+			printk("Time to empty %d minutes\n", vals[0].runtime_to_empty);
 
-			printk("Time to full %d\n", vals[1].runtime_to_full);
+			printk("Time to full %d minutes\n", vals[1].runtime_to_full);
 
 			printk("Charge %d%%\n", vals[2].relative_state_of_charge);
 
-			printk("Voltage %d\n", vals[3].voltage);
+			printk("Voltage %d\n uV", vals[3].voltage);
 		}
 
 		k_sleep(K_MSEC(5000));

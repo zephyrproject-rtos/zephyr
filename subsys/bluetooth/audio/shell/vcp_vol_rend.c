@@ -7,13 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/shell/shell.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <zephyr/shell/shell_string_conv.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "shell/bt.h"
 
@@ -90,6 +99,7 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 	}
 
 }
+
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
@@ -102,6 +112,7 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 			    inst, description);
 	}
 }
+
 static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
 	if (err) {

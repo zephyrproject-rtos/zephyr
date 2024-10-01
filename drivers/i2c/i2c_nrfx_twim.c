@@ -166,7 +166,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 			 * to make sure everything has been done to restore the
 			 * bus from this error.
 			 */
-			LOG_ERR("Error on I2C line occurred for message %d", i);
 			(void)i2c_nrfx_twim_recover_bus(dev);
 			ret = -EIO;
 			break;
@@ -175,7 +174,6 @@ static int i2c_nrfx_twim_transfer(const struct device *dev,
 		res = dev_data->res;
 
 		if (res != NRFX_SUCCESS) {
-			LOG_ERR("Error 0x%08X occurred for message %d", res, i);
 			ret = -EIO;
 			break;
 		}
@@ -454,4 +452,56 @@ I2C_NRFX_TWIM_DEVICE(2);
 
 #ifdef CONFIG_HAS_HW_NRF_TWIM3
 I2C_NRFX_TWIM_DEVICE(3);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM20
+I2C_NRFX_TWIM_DEVICE(20);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM21
+I2C_NRFX_TWIM_DEVICE(21);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM22
+I2C_NRFX_TWIM_DEVICE(22);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM30
+I2C_NRFX_TWIM_DEVICE(30);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM120
+I2C_NRFX_TWIM_DEVICE(120);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM130
+I2C_NRFX_TWIM_DEVICE(130);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM131
+I2C_NRFX_TWIM_DEVICE(131);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM132
+I2C_NRFX_TWIM_DEVICE(132);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM133
+I2C_NRFX_TWIM_DEVICE(133);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM134
+I2C_NRFX_TWIM_DEVICE(134);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM135
+I2C_NRFX_TWIM_DEVICE(135);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM136
+I2C_NRFX_TWIM_DEVICE(136);
+#endif
+
+#ifdef CONFIG_HAS_HW_NRF_TWIM137
+I2C_NRFX_TWIM_DEVICE(137);
 #endif

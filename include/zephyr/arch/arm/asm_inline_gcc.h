@@ -8,8 +8,8 @@
 
 /* Either public functions or macros or invoked by public functions */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_
 
 /*
  * The file must not be included directly
@@ -18,8 +18,10 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/arch/arm/exc.h>
+#include <zephyr/arch/arm/exception.h>
+#include <cmsis_core.h>
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
@@ -43,40 +45,22 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
-#if CONFIG_MP_MAX_NUM_CPUS == 1
-	__asm__ volatile("mrs %0, PRIMASK;"
-		"cpsid i"
-		: "=r" (key)
-		:
-		: "memory");
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#if CONFIG_MP_MAX_NUM_CPUS == 1 || defined(CONFIG_ARMV8_M_BASELINE)
+	key = __get_PRIMASK();
+	__disable_irq();
 #else
 #error "Cortex-M0 and Cortex-M0+ require SoC specific support for cross core synchronisation."
 #endif
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
-	unsigned int tmp;
-
-	__asm__ volatile(
-		"mov %1, %2;"
-		"mrs %0, BASEPRI;"
-		"msr BASEPRI_MAX, %1;"
-		"isb;"
-		: "=r"(key),
-#if defined(CONFIG_ARMV8_M_BASELINE)
-		/* armv8-m.baseline's mov is limited to registers r0-r7.
-		 * Let the compiler know we have this constraint on tmp.
-		 */
-		"=l"(tmp)
-#else
-		"=r"(tmp)
-#endif
-		: "i"(_EXC_IRQ_DEFAULT_PRIO)
-		: "memory");
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	key = __get_BASEPRI();
+	__set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
+	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
-		"and %0, #" TOSTR(I_BIT) ";"
+		"and %0, #" STRINGIFY(I_BIT) ";"
 		"cpsid i;"
 		: "=r" (key)
 		:
@@ -95,27 +79,21 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key != 0U) {
 		return;
 	}
-	__asm__ volatile(
-		"cpsie i;"
-		"isb"
-		: : : "memory");
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
-	__asm__ volatile(
-		"msr BASEPRI, %0;"
-		"isb;"
-		:  : "r"(key) : "memory");
+	__enable_irq();
+	__ISB();
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__set_BASEPRI(key);
+	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A)
 	if (key != 0U) {
 		return;
 	}
-	__asm__ volatile(
-		"cpsie i;"
-		: : : "memory", "cc");
+	__enable_irq();
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -133,4 +111,4 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ASM_INLINE_GCC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ASM_INLINE_GCC_H_ */

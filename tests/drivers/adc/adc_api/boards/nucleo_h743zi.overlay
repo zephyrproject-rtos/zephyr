@@ -4,6 +4,8 @@
  * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
  */
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
 / {
 	zephyr,user {
 		/* adjust channel number according to pinmux in board.dts */
@@ -11,7 +13,15 @@
 	};
 };
 
+&sram2 {
+	zephyr,memory-attr = < DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) >;
+};
+
 &adc1 {
+	dmas = <&dmamux1 0 9 (STM32_DMA_PERIPH_RX | STM32_DMA_MEM_16BITS |
+		STM32_DMA_PERIPH_16BITS)>;
+	dma-names = "dmamux";
+
 	#address-cells = <1>;
 	#size-cells = <0>;
 
@@ -30,4 +40,16 @@
 		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 		zephyr,resolution = <16>;
 	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
 };

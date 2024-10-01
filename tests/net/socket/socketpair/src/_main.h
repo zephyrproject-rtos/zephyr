@@ -11,12 +11,14 @@
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/posix/fcntl.h>
+#include <zephyr/net/socket.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
 
+#if !defined(_main_defined)
 LOG_MODULE_DECLARE(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
+#endif
 
 struct net_socketpair_fixture {
 	int sv[2];

@@ -13,7 +13,7 @@ tests:
     filter: dt_compat_enabled("test-gpio-basic-api")
 
   drivers.gpio.nrf_sense_edge:
-    platform_allow: nrf52840dk_nrf52840 nrf52_bsim
+    platform_allow: nrf52840dk/nrf52840 nrf52_bsim
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
 

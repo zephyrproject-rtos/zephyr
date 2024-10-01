@@ -198,7 +198,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 
 	(void)k_thread_create(&tid->z_thread,
 			      stack, stack_size,
-			      (k_thread_entry_t)zephyr_thread_wrapper,
+			      zephyr_thread_wrapper,
 			      (void *)arg, tid, threadfunc,
 			      prio, 0, K_NO_WAIT);
 

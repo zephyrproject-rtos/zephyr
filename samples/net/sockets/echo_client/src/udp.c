@@ -40,8 +40,12 @@ static int send_udp_data(struct data *data);
 static void wait_reply(struct k_timer *timer);
 static void wait_transmit(struct k_timer *timer);
 
-static void process_udp_tx(void)
+static void process_udp_tx(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					 K_POLL_MODE_NOTIFY_ONLY,
@@ -143,7 +147,9 @@ static int send_udp_data(struct data *data)
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
-	LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
+	if (PRINT_PROGRESS) {
+		LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
+	}
 
 	k_timer_start(&data->udp.ctrl->rx_timer, UDP_WAIT, K_NO_WAIT);
 
@@ -187,6 +193,7 @@ static void wait_transmit(struct k_timer *timer)
 static int start_udp_proto(struct data *data, struct sockaddr *addr,
 			   socklen_t addrlen)
 {
+	int optval;
 	int ret;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -225,6 +232,14 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	}
 #endif
 
+	/* Prefer IPv6 temporary addresses */
+	if (addr->sa_family == AF_INET6) {
+		optval = IPV6_PREFER_SRC_TMP;
+		(void)setsockopt(data->udp.sock, IPPROTO_IPV6,
+				 IPV6_ADDR_PREFERENCES,
+				 &optval, sizeof(optval));
+	}
+
 	/* Call connect so we can use send and recv. */
 	ret = connect(data->udp.sock, addr, addrlen);
 	if (ret < 0) {
@@ -262,9 +277,11 @@ static int process_udp_proto(struct data *data)
 		return 0;
 	}
 
-	/* Correct response received */
-	LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
-		data->proto, received);
+	if (PRINT_PROGRESS) {
+		/* Correct response received */
+		LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
+			data->proto, received);
+	}
 
 	if (++data->udp.counter % 1000 == 0U) {
 		LOG_INF("%s UDP: Exchanged %u packets", data->proto,
@@ -295,7 +312,8 @@ int start_udp(void)
 		inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &addr6.sin6_addr);
 
-		ret = start_udp_proto(&conf.ipv6, (struct sockaddr *)&addr6,
+		ret = start_udp_proto(&conf.ipv6,
+				      (struct sockaddr *)&addr6,
 				      sizeof(addr6));
 		if (ret < 0) {
 			return ret;
@@ -317,7 +335,7 @@ int start_udp(void)
 
 	k_thread_create(&udp_tx_thread, udp_tx_thread_stack,
 			K_THREAD_STACK_SIZEOF(udp_tx_thread_stack),
-			(k_thread_entry_t)process_udp_tx,
+			process_udp_tx,
 			NULL, NULL, NULL, THREAD_PRIORITY,
 			IS_ENABLED(CONFIG_USERSPACE) ?
 						K_USER | K_INHERIT_PERMS : 0,

@@ -20,7 +20,7 @@
  * Scenario #2
  * Test Thread enters an item into fifo2, starts a Child Thread and
  * extract an item from fifo1 once the item is there.  The Child Thread
- * will extract an item from fifo2 once the item is there and and enter
+ * will extract an item from fifo2 once the item is there and enter
  * an item to fifo1.  The flow of control goes from Test Thread to
  * Child Thread and so forth.
  *
@@ -175,7 +175,7 @@ ZTEST(fifo_usage, test_single_fifo_play)
  * @brief Tests dual fifo get and put operation in thread context
  * @details test Thread enters an item into fifo2, starts a Child Thread and
  * extract an item from fifo1 once the item is there.  The Child Thread
- * will extract an item from fifo2 once the item is there and and enter
+ * will extract an item from fifo2 once the item is there and enter
  * an item to fifo1.  The flow of control goes from Test Thread to
  * Child Thread and so forth.
  * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)

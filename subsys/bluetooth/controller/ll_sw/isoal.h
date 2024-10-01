@@ -242,6 +242,8 @@ typedef isoal_status_t (*isoal_sink_sdu_emit_cb)(
 typedef isoal_status_t (*isoal_sink_sdu_write_cb)(
 	/*!< [in]  Destination buffer */
 	void          *dbuf,
+	/*!< [in]  Number of bytes already written to this SDU */
+	const size_t sdu_written,
 	/*!< [in]  Source data */
 	const uint8_t *pdu_payload,
 	/*!< [in]  Number of bytes to be copied */
@@ -450,6 +452,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 				 const struct isoal_emitted_sdu_frag *sdu_frag,
 				 const struct isoal_emitted_sdu      *sdu);
 isoal_status_t sink_sdu_write_hci(void *dbuf,
+				  const size_t sdu_written,
 				  const uint8_t *pdu_payload,
 				  const size_t consume_len);
 

@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(MAX17048);
 struct max17048_data {
 	/* Charge as percentage */
 	uint8_t charge;
-	/* Voltage as mV */
-	uint16_t voltage;
+	/* Voltage as uV */
+	uint32_t voltage;
 
 	/* Time in minutes */
 	uint16_t time_to_full;
@@ -72,9 +72,10 @@ int max17048_adc(const struct device *i2c_dev, uint16_t *response)
 /**
  * Battery voltage
  */
-int max17048_voltage(const struct device *i2c_dev, uint16_t *response)
+int max17048_voltage(const struct device *i2c_dev, uint32_t *response)
 {
-	int rc = max17048_adc(i2c_dev, response);
+	uint16_t raw_voltage;
+	int rc = max17048_adc(i2c_dev, &raw_voltage);
 
 	if (rc < 0) {
 		return rc;
@@ -85,12 +86,10 @@ int max17048_voltage(const struct device *i2c_dev, uint16_t *response)
 	 * MAX17048-MAX17049.pdf
 	 * Page 10, Table 2. Register Summary: 78.125µV/cell
 	 * Max17048 only supports one cell so we just have to multiply the value by 78.125 to
-	 * obtain µV and then divide the value to obtain V.
-	 * But to avoid floats, instead of using 78.125 we will use 78125 and use this value as
-	 * milli volts instead of volts.
+	 * obtain µV
 	 */
 
-	*response = (uint16_t)((uint32_t)*response * 78125L / 1000000L);
+	*response = (uint32_t)raw_voltage * 78.125;
 	return 0;
 }
 

@@ -53,7 +53,7 @@ def open_out_file(args: argparse.Namespace) -> BinaryIO:
 
 def main() -> None:
     args = parse_args()
-    open_bugs = get_open_bugs()
+    open_bugs = [issue for issue in get_open_bugs() if not issue.pull_request]
 
     with open_out_file(args) as out_file:
         pickle.dump(open_bugs, out_file)

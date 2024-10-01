@@ -39,4 +39,23 @@ config NET_CONNECTION_MANAGER_AUTO_IF_DOWN
 	bool "Automatically call net_if_down on ifaces that have given up on connecting"
 	default y
 
+config NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
+	bool "Generic WiFi management connectivity implementation"
+	depends on NET_L2_WIFI_MGMT
+	help
+	  Enable CONNECTIVITY_WIFI_MGMT connectivity bindings on WiFi drivers.
+	  Which implementation is compiled is controlled via CONNECTIVITY_WIFI_MGMT_IMPL.
+
+choice CONNECTIVITY_WIFI_MGMT_IMPL
+	prompt "Implementation of the generic wifi_mgmt connectivity backend"
+	depends on NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT
+	default CONNECTIVITY_WIFI_MGMT_APPLICATION
+
+config CONNECTIVITY_WIFI_MGMT_APPLICATION
+	bool "Application specific implementation of the connectivity backend"
+	help
+	  The application defines its own implementation of CONNECTIVITY_WIFI_MGMT.
+
+endchoice
+
 endif # NET_CONNECTION_MANAGER

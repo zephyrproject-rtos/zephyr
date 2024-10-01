@@ -251,7 +251,7 @@ struct lwm2m_engine_obj {
 		if (_ri_ptr != NULL && _ri_count > 0) { \
 			for (int _i = 0; _i < _ri_count; _i++) { \
 				_ri_ptr[_ri_idx + _i].data_ptr = \
-						(_data_ptr + _i); \
+						((uint8_t *) _data_ptr + (_i * _data_sz)); \
 				_ri_ptr[_ri_idx + _i].max_data_len = \
 						_data_sz; \
 				_ri_ptr[_ri_idx + _i].data_len = \

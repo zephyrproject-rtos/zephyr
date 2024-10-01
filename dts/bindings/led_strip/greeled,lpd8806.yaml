@@ -5,4 +5,4 @@ description: GreeLed LPD8806 SPI LED strip
 
 compatible: "greeled,lpd8806"
 
-include: spi-device.yaml
+include: [spi-device.yaml, led-strip.yaml]

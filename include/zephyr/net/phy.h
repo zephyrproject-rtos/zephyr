@@ -42,8 +42,31 @@ enum phy_link_speed {
 	LINK_FULL_1000BASE_T		= BIT(5),
 };
 
+/**
+ * @brief Check if phy link is full duplex.
+ *
+ * @param x Link capabilities
+ *
+ * @return True if link is full duplex, false if not.
+ */
 #define PHY_LINK_IS_FULL_DUPLEX(x)	(x & (BIT(1) | BIT(3) | BIT(5)))
+
+/**
+ * @brief Check if phy link speed is 1 Gbit/sec.
+ *
+ * @param x Link capabilities
+ *
+ * @return True if link is 1 Gbit/sec, false if not.
+ */
 #define PHY_LINK_IS_SPEED_1000M(x)	(x & (BIT(4) | BIT(5)))
+
+/**
+ * @brief Check if phy link speed is 100 Mbit/sec.
+ *
+ * @param x Link capabilities
+ *
+ * @return True if link is 1 Mbit/sec, false if not.
+ */
 #define PHY_LINK_IS_SPEED_100M(x)	(x & (BIT(2) | BIT(3)))
 
 /** @brief Link state */
@@ -110,11 +133,8 @@ __subsystem struct ethphy_driver_api {
  * @retval -EIO If communication with PHY failed.
  * @retval -ENOTSUP If not supported.
  */
-__syscall int phy_configure_link(const struct device *dev,
-				 enum phy_link_speed speeds);
-
-static inline int z_impl_phy_configure_link(const struct device *dev,
-					    enum phy_link_speed speeds)
+static inline int phy_configure_link(const struct device *dev,
+				     enum phy_link_speed speeds)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
@@ -135,11 +155,8 @@ static inline int z_impl_phy_configure_link(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-__syscall int phy_get_link_state(const struct device *dev,
-				 struct phy_link_state *state);
-
-static inline int z_impl_phy_get_link_state(const struct device *dev,
-					    struct phy_link_state *state)
+static inline int phy_get_link_state(const struct device *dev,
+				     struct phy_link_state *state)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
@@ -161,13 +178,9 @@ static inline int z_impl_phy_get_link_state(const struct device *dev,
  * @retval 0 If successful.
  * @retval -ENOTSUP If not supported.
  */
-__syscall int phy_link_callback_set(const struct device *dev,
-				    phy_callback_t callback,
-				    void *user_data);
-
-static inline int z_impl_phy_link_callback_set(const struct device *dev,
-					       phy_callback_t callback,
-					       void *user_data)
+static inline int phy_link_callback_set(const struct device *dev,
+					phy_callback_t callback,
+					void *user_data)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
@@ -187,11 +200,8 @@ static inline int z_impl_phy_link_callback_set(const struct device *dev,
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-__syscall int phy_read(const struct device *dev, uint16_t reg_addr,
-		       uint32_t *value);
-
-static inline int z_impl_phy_read(const struct device *dev, uint16_t reg_addr,
-				  uint32_t *value)
+static inline int phy_read(const struct device *dev, uint16_t reg_addr,
+			   uint32_t *value)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
@@ -211,11 +221,8 @@ static inline int z_impl_phy_read(const struct device *dev, uint16_t reg_addr,
  * @retval 0 If successful.
  * @retval -EIO If communication with PHY failed.
  */
-__syscall int phy_write(const struct device *dev, uint16_t reg_addr,
-			uint32_t value);
-
-static inline int z_impl_phy_write(const struct device *dev, uint16_t reg_addr,
-				   uint32_t value)
+static inline int phy_write(const struct device *dev, uint16_t reg_addr,
+			    uint32_t value)
 {
 	const struct ethphy_driver_api *api =
 		(const struct ethphy_driver_api *)dev->api;
@@ -231,7 +238,5 @@ static inline int z_impl_phy_write(const struct device *dev, uint16_t reg_addr,
 /**
  * @}
  */
-
-#include <syscalls/phy.h>
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PHY_H_ */

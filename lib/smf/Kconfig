@@ -13,4 +13,10 @@ config SMF_ANCESTOR_SUPPORT
 	help
 	   If y, then the state machine framework includes ancestor state support
 
+config SMF_INITIAL_TRANSITION
+	depends on SMF_ANCESTOR_SUPPORT
+	bool "Support initial transitions for ancestor states"
+	help
+	   If y, then each state can have an initial transition to a sub-state
+
 endif # SMF

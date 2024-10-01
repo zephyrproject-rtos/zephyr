@@ -50,10 +50,11 @@ static K_SEM_DEFINE(sem1, 0, 1);
 static struct k_sem sem2;
 
 static void thread_entry(void *, void *, void *);
-K_THREAD_DEFINE(thread1, 512, thread_entry, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread1, 512 + CONFIG_TEST_EXTRA_STACK_SIZE,
+		thread_entry, NULL, NULL, NULL,
 		K_HIGHEST_THREAD_PRIO, 0, 0);
 static struct k_thread thread2;
-K_THREAD_STACK_DEFINE(thread2_stack, 512);
+K_THREAD_STACK_DEFINE(thread2_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 struct obj_core_find_data {
 	struct k_obj_core *obj_core;    /* Object core to search for */

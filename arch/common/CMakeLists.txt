@@ -2,13 +2,27 @@
 
 zephyr_library()
 
+zephyr_library_include_directories(include)
+
 # Library may be empty due to kconfigs
 zephyr_library_property(ALLOW_EMPTY TRUE)
 
-zephyr_library_sources_ifdef(
-  CONFIG_GEN_ISR_TABLES
-  sw_isr_common.c
+if(CONFIG_GEN_ISR_TABLES)
+  zephyr_library_sources(
+    sw_isr_common.c
   )
+  zephyr_library_sources_ifdef(
+    CONFIG_DYNAMIC_INTERRUPTS
+    dynamic_isr.c
+  )
+endif()
+
+zephyr_library_sources_ifdef(
+  CONFIG_MULTI_LEVEL_INTERRUPTS
+  multilevel_irq.c
+  )
+
+zephyr_library_sources_ifdef(CONFIG_LEGACY_MULTI_LEVEL_TABLE_GENERATION multilevel_irq_legacy.c)
 
 zephyr_library_sources_ifdef(CONFIG_SHARED_INTERRUPTS shared_irq.c)
 
@@ -25,6 +39,11 @@ zephyr_cc_option(-ffunction-sections -fdata-sections)
 zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
   SECTIONS
   ${ZEPHYR_BASE}/include/zephyr/linker/intlist.ld
+)
+
+zephyr_linker_sources_ifdef(CONFIG_ISR_TABLES_LOCAL_DECLARATION
+  SECTIONS
+  ${ZEPHYR_BASE}/include/zephyr/linker/isr-local-drop-unused.ld
 )
 
 zephyr_linker_sources_ifdef(CONFIG_GEN_IRQ_VECTOR_TABLE
@@ -54,7 +73,7 @@ zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
 
 # Only ARM, X86 and OPENISA_RV32M1_RISCV32 use ROM_START_OFFSET.
 if (DEFINED CONFIG_ARM OR DEFINED CONFIG_X86 OR DEFINED CONFIG_ARM64
-    OR DEFINED CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+    OR DEFINED CONFIG_SOC_OPENISA_RV32M1)
   # Exclamation mark is printable character with lowest number in ASCII table.
   # We are sure that this file will be included as a first.
   zephyr_linker_sources(ROM_START SORT_KEY ! rom_start_address.ld)

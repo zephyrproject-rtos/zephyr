@@ -33,8 +33,10 @@ static const struct bt_data ad[] = {
 #define SHORT_MSG_CHAN_IDX 1
 
 NET_BUF_POOL_FIXED_DEFINE(rx_data_pool, L2CAP_CHANNELS, BT_L2CAP_BUF_SIZE(DATA_BUF_SIZE), 8, NULL);
-NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_0, 1, BT_L2CAP_BUF_SIZE(DATA_MTU), 8, NULL);
-NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_1, 1, BT_L2CAP_BUF_SIZE(DATA_MTU), 8, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_0, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_data_pool_1, 1, BT_L2CAP_SDU_BUF_SIZE(DATA_MTU),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static struct bt_l2cap_server servers[SERVERS];
 void send_sdu_chan_worker(struct k_work *item);
@@ -377,7 +379,7 @@ static void send_sdu(int iteration, int chan_idx, int bytes)
 	}
 
 	channels[chan_idx].buf = buf;
-	net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE);
+	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);
 	net_buf_add_mem(buf, channels[chan_idx].payload, bytes);
 
 	LOG_DBG("bt_l2cap_chan_sending ch: %i bytes: %i iteration: %i", chan_idx, bytes, iteration);
@@ -447,7 +449,7 @@ static void test_peripheral_main(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized.");
 	LOG_DBG("Connectable advertising...");
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		FAIL("Advertising failed to start (err %d)", err);
 		return;
@@ -598,14 +600,14 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "peripheral",
 		.test_descr = "Peripheral L2CAP ECRED",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_peripheral_main
 	},
 	{
 		.test_id = "central",
 		.test_descr = "Central L2CAP ECRED",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_central_main
 	},

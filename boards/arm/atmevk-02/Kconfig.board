@@ -1,6 +1,0 @@
-# Copyright (c) 2021 Atmosic
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ATMx2_EVK23
-	bool "ATMx2xx-x1x Evaluation Kit Board"

@@ -72,18 +72,17 @@ struct log_msg_hdr {
 /* Attempting to keep best alignment. When address is 64 bit and timestamp 32
  * swap the order to have 16 byte header instead of 24 byte.
  */
-#if (INTPTR_MAX > INT32_MAX) && !CONFIG_LOG_TIMESTAMP_64BIT
+#if (INTPTR_MAX > INT32_MAX) && !defined(CONFIG_LOG_TIMESTAMP_64BIT)
 	log_timestamp_t timestamp;
 	const void *source;
 #else
 	const void *source;
 	log_timestamp_t timestamp;
 #endif
-#if CONFIG_LOG_THREAD_ID_PREFIX
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
 	void *tid;
 #endif
 };
-
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
@@ -141,6 +140,9 @@ enum z_log_msg_mode {
 	 * more code size.
 	 */
 	Z_LOG_MSG_MODE_ZERO_COPY,
+
+	/* Mode optimized for simple messages with 0 to 2 32 bit word arguments.*/
+	Z_LOG_MSG_MODE_SIMPLE,
 };
 
 #define Z_LOG_MSG_DESC_INITIALIZER(_domain_id, _level, _plen, _dlen) \
@@ -148,10 +150,10 @@ enum z_log_msg_mode {
 	.valid = 0, \
 	.busy = 0, \
 	.type = Z_LOG_MSG_LOG, \
-	.domain = _domain_id, \
-	.level = _level, \
-	.package_len = _plen, \
-	.data_len = _dlen, \
+	.domain = (_domain_id), \
+	.level = (_level), \
+	.package_len = (_plen), \
+	.data_len = (_dlen), \
 }
 
 #define Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) \
@@ -163,11 +165,11 @@ enum z_log_msg_mode {
 #define Z_LOG_MSG_ON_STACK_ALLOC(ptr, len) \
 	long long _ll_buf[DIV_ROUND_UP(len, sizeof(long long))]; \
 	long double _ld_buf[DIV_ROUND_UP(len, sizeof(long double))]; \
-	ptr = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
+	(ptr) = (sizeof(long double) == Z_LOG_MSG_ALIGNMENT) ? \
 			(struct log_msg *)_ld_buf : (struct log_msg *)_ll_buf; \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
-		memset(ptr, 0, len); \
+		memset((ptr), 0, (len)); \
 	}
 #else /* Z_LOG_MSG_USE_VLA */
 /* When VLA cannot be used we need to trick compiler a bit and create multiple
@@ -201,7 +203,7 @@ enum z_log_msg_mode {
 	} \
 	if (IS_ENABLED(CONFIG_LOG_TEST_CLEAR_MESSAGE_SPACE)) { \
 		/* During test fill with 0's to simplify message comparison */ \
-		memset(ptr, 0, len); \
+		memset((ptr), 0, (len)); \
 	}
 #endif /* Z_LOG_MSG_USE_VLA */
 
@@ -209,7 +211,7 @@ enum z_log_msg_mode {
 	offsetof(struct log_msg, data)
 
 #define Z_LOG_MSG_LEN(pkg_len, data_len) \
-	(offsetof(struct log_msg, data) + pkg_len + (data_len))
+	(offsetof(struct log_msg, data) + (pkg_len) + (data_len))
 
 #define Z_LOG_MSG_ALIGNED_WLEN(pkg_len, data_len) \
 	DIV_ROUND_UP(ROUND_UP(Z_LOG_MSG_LEN(pkg_len, data_len), \
@@ -226,6 +228,102 @@ enum z_log_msg_mode {
  */
 
 #define Z_LOG_ARM64_VLA_PROTECT() compiler_barrier()
+
+#define _LOG_MSG_SIMPLE_XXXX0 1
+#define _LOG_MSG_SIMPLE_XXXX1 1
+#define _LOG_MSG_SIMPLE_XXXX2 1
+
+/* Determine if amount of arguments (less than 3) qualifies to  simple message. */
+#define LOG_MSG_SIMPLE_ARG_CNT_CHECK(...) \
+	COND_CODE_1(UTIL_CAT(_LOG_MSG_SIMPLE_XXXX, NUM_VA_ARGS_LESS_1(__VA_ARGS__)), (1), (0))
+
+/* Set of marcos used to determine if arguments type allows simplified message creation mode. */
+#define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_0(fmt) 1
+#define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_1(fmt, arg) Z_CBPRINTF_IS_WORD_NUM(arg)
+#define LOG_MSG_SIMPLE_ARG_TYPE_CHECK_2(fmt, arg0, arg1) \
+	Z_CBPRINTF_IS_WORD_NUM(arg0) && Z_CBPRINTF_IS_WORD_NUM(arg1)
+
+/** brief Determine if string arguments types allow to use simplified message creation mode.
+ *
+ * @param ... String with arguments.
+ */
+#define LOG_MSG_SIMPLE_ARG_TYPE_CHECK(...) \
+	UTIL_CAT(LOG_MSG_SIMPLE_ARG_TYPE_CHECK_, NUM_VA_ARGS_LESS_1(__VA_ARGS__))(__VA_ARGS__)
+
+/** @brief Check if message can be handled using simplified method.
+ *
+ * Following conditions must be met:
+ * - 32 bit platform
+ * - Number of arguments from 0 to 2
+ * - Type of an argument must be a numeric value that fits in 32 bit word.
+ *
+ * @param ... String with arguments.
+ *
+ * @retval 1 if message qualifies.
+ * @retval 0 if message does not qualify.
+ */
+#define LOG_MSG_SIMPLE_CHECK(...) \
+	COND_CODE_1(CONFIG_64BIT, (0), (\
+		COND_CODE_1(LOG_MSG_SIMPLE_ARG_CNT_CHECK(__VA_ARGS__), ( \
+				LOG_MSG_SIMPLE_ARG_TYPE_CHECK(__VA_ARGS__)), (0))))
+
+/* Helper macro for handing log with one argument. Macro casts the first argument to uint32_t. */
+#define Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, ...) \
+	z_log_msg_simple_create_1(_source, _level, GET_ARG_N(1, __VA_ARGS__), \
+			(uint32_t)(uintptr_t)GET_ARG_N(2, __VA_ARGS__))
+
+/* Helper macro for handing log with two arguments. Macro casts arguments to uint32_t.
+ */
+#define Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, ...) \
+	z_log_msg_simple_create_2(_source, _level, GET_ARG_N(1, __VA_ARGS__), \
+			(uint32_t)(uintptr_t)GET_ARG_N(2, __VA_ARGS__), \
+			(uint32_t)(uintptr_t)GET_ARG_N(3, __VA_ARGS__))
+
+/* Call specific function based on the number of arguments.
+ * Since up 2 to arguments are supported COND_CODE_0 and COND_CODE_1 can be used to
+ * handle all cases (0, 1 and 2 arguments). When tracing is enable then for each
+ * function a macro is create. The difference between function and macro is that
+ * macro is applied to any input arguments so we need to make sure that it is
+ * always called with proper number of arguments. For that it is wrapped around
+ * into another macro and dummy arguments to cover for cases when there is less
+ * arguments in a log call.
+ */
+#define Z_LOG_MSG_SIMPLE_FUNC2(arg_cnt, _source, _level, ...) \
+	COND_CODE_0(arg_cnt, \
+			(z_log_msg_simple_create_0(_source, _level, GET_ARG_N(1, __VA_ARGS__))), \
+			(COND_CODE_1(arg_cnt, ( \
+			    Z_LOG_MSG_SIMPLE_CREATE_1(_source, _level, __VA_ARGS__, dummy) \
+			    ), ( \
+			    Z_LOG_MSG_SIMPLE_CREATE_2(_source, _level, __VA_ARGS__, dummy, dummy) \
+			    ) \
+			)))
+
+/** @brief Call specific function to create a log message.
+ *
+ * Macro picks matching function (based on number of arguments) and calls it.
+ * String arguments are casted to uint32_t.
+ *
+ * @param _source	Source.
+ * @param _level	Severity level.
+ * @param ...		String with arguments.
+ */
+#define LOG_MSG_SIMPLE_FUNC(_source, _level, ...) \
+	Z_LOG_MSG_SIMPLE_FUNC2(NUM_VA_ARGS_LESS_1(__VA_ARGS__), _source, _level, __VA_ARGS__)
+
+/** @brief Create log message using simplified method.
+ *
+ * Macro is gated by the argument count check to run @ref LOG_MSG_SIMPLE_FUNC only
+ * on entries with 2 or less arguments.
+ *
+ * @param _domain_id	Domain ID.
+ * @param _source	Pointer to the source structure.
+ * @param _level	Severity level.
+ * @param ...		String with arguments.
+ */
+#define Z_LOG_MSG_SIMPLE_ARGS_CREATE(_domain_id, _source, _level, ...) \
+	IF_ENABLED(LOG_MSG_SIMPLE_ARG_CNT_CHECK(__VA_ARGS__), (\
+		LOG_MSG_SIMPLE_FUNC(_source, _level, __VA_ARGS__); \
+	))
 
 #define Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, _dlen, ...) \
 do { \
@@ -253,7 +351,7 @@ do { \
 					   (uint32_t)_plen, _dlen); \
 	LOG_MSG_DBG("creating message on stack: package len: %d, data len: %d\n", \
 			_plen, (int)(_dlen)); \
-	z_log_msg_static_create((void *)_source, _desc, _msg->data, _data); \
+	z_log_msg_static_create((void *)(_source), _desc, _msg->data, (_data)); \
 } while (false)
 
 #ifdef CONFIG_LOG_SPEED
@@ -366,7 +464,7 @@ do { \
  *
  * Macro handles creation of log message which includes storing log message
  * description, timestamp, arguments, copying string arguments into message and
- * copying user data into the message space. The are 3 modes of message
+ * copying user data into the message space. There are 3 modes of message
  * creation:
  * - at compile time message size is determined, message is allocated and
  *   content is written directly to the message. It is the fastest but cannot
@@ -401,22 +499,20 @@ do { \
  *
  * @param ...  Optional string with arguments (fmt, ...). It may be empty.
  */
-#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || \
-	(!defined(CONFIG_LOG) && \
-		(!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
+#if defined(CONFIG_LOG_ALWAYS_RUNTIME) || !defined(CONFIG_LOG)
 #define Z_LOG_MSG_CREATE2(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do {\
 	Z_LOG_MSG_STR_VAR(_fmt, ##__VA_ARGS__) \
-	z_log_msg_runtime_create(_domain_id, (void *)_source, \
-				  _level, (uint8_t *)_data, _dlen,\
+	z_log_msg_runtime_create((_domain_id), (void *)(_source), \
+				  (_level), (uint8_t *)(_data), (_dlen),\
 				  Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 				  (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? \
 				   CBPRINTF_PACKAGE_ARGS_ARE_TAGGED : 0), \
 				  Z_LOG_FMT_RUNTIME_ARGS(_fmt, ##__VA_ARGS__));\
-	_mode = Z_LOG_MSG_MODE_RUNTIME; \
+	(_mode) = Z_LOG_MSG_MODE_RUNTIME; \
 } while (false)
-#else /* CONFIG_LOG_ALWAYS_RUNTIME */
+#else /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 #define Z_LOG_MSG_CREATE3(_try_0cpy, _mode,  _cstr_cnt, _domain_id, _source,\
 			  _level, _data, _dlen, ...) \
 do { \
@@ -424,18 +520,31 @@ do { \
 	bool has_rw_str = CBPRINTF_MUST_RUNTIME_PACKAGE( \
 					Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt), \
 					__VA_ARGS__); \
-	if (IS_ENABLED(CONFIG_LOG_SPEED) && _try_0cpy && ((_dlen) == 0) && !has_rw_str) {\
+	if (IS_ENABLED(CONFIG_LOG_SPEED) && (_try_0cpy) && ((_dlen) == 0) && !has_rw_str) {\
 		LOG_MSG_DBG("create zero-copy message\n");\
 		Z_LOG_MSG_SIMPLE_CREATE(_cstr_cnt, _domain_id, _source, \
 					_level, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG_MODE_ZERO_COPY; \
+		(_mode) = Z_LOG_MSG_MODE_ZERO_COPY; \
 	} else { \
+		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_OPTIMIZE), \
+				    UTIL_AND(UTIL_NOT(_domain_id), UTIL_NOT(_cstr_cnt))), \
+			( \
+			bool can_simple = LOG_MSG_SIMPLE_CHECK(__VA_ARGS__); \
+			if (can_simple && ((_dlen) == 0) && !k_is_user_context()) { \
+				LOG_MSG_DBG("create fast message\n");\
+				Z_LOG_MSG_SIMPLE_ARGS_CREATE(_domain_id, _source, _level, \
+						     Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+				_mode = Z_LOG_MSG_MODE_SIMPLE; \
+				break; \
+			} \
+			) \
+		) \
 		LOG_MSG_DBG("create on stack message\n");\
 		Z_LOG_MSG_STACK_CREATE(_cstr_cnt, _domain_id, _source, _level, _data, \
 					_dlen, Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
-		_mode = Z_LOG_MSG_MODE_FROM_STACK; \
+		(_mode) = Z_LOG_MSG_MODE_FROM_STACK; \
 	} \
-	(void)_mode; \
+	(void)(_mode); \
 } while (false)
 
 #if defined(__cplusplus)
@@ -468,9 +577,7 @@ do { \
 			   _level, _data, _dlen, \
 			   FOR_EACH_IDX(Z_LOG_LOCAL_ARG_NAME, (,), __VA_ARGS__)); \
 } while (false)
-#endif /* CONFIG_LOG_ALWAYS_RUNTIME ||
-	* (!LOG && (!TOOLCHAIN_HAS_PRAGMA_DIAG || !TOOLCHAIN_HAS_C_AUTO_TYPE))
-	*/
+#endif /* CONFIG_LOG_ALWAYS_RUNTIME || !CONFIG_LOG */
 
 
 #define Z_LOG_MSG_CREATE(_try_0cpy, _mode,  _domain_id, _source,\
@@ -503,7 +610,37 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen);
 void z_log_msg_finalize(struct log_msg *msg, const void *source,
 			 const struct log_msg_desc desc, const void *data);
 
-/** @brief Create simple message from message details and string package.
+/** @brief Create log message using simplified method for string with no arguments.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ */
+__syscall void z_log_msg_simple_create_0(const void *source, uint32_t level,
+					 const char *fmt);
+
+/** @brief Create log message using simplified method for string with a one argument.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ * @param arg    String argument.
+ */
+__syscall void z_log_msg_simple_create_1(const void *source, uint32_t level,
+					 const char *fmt, uint32_t arg);
+
+/** @brief Create log message using simplified method for string with two arguments.
+ *
+ * @param source Pointer to the source structure.
+ * @param level  Severity level.
+ * @param fmt    String pointer.
+ * @param arg0   String argument.
+ * @param arg1   String argument.
+ */
+__syscall void z_log_msg_simple_create_2(const void *source, uint32_t level,
+					 const char *fmt, uint32_t arg0, uint32_t arg1);
+
+/** @brief Create a logging message from message details and string package.
  *
  * @param source Source.
  *
@@ -511,7 +648,7 @@ void z_log_msg_finalize(struct log_msg *msg, const void *source,
  *
  * @param package Package.
  *
- * @oaram data Data.
+ * @param data Data.
  */
 __syscall void z_log_msg_static_create(const void *source,
 					const struct log_msg_desc desc,
@@ -538,11 +675,11 @@ __syscall void z_log_msg_static_create(const void *source,
  *
  * @param ap Variable list of string arguments.
  */
-__syscall void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
-					  uint8_t level, const void *data,
-					  size_t dlen, uint32_t package_flags,
-					  const char *fmt,
-					  va_list ap);
+void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
+				uint8_t level, const void *data,
+				size_t dlen, uint32_t package_flags,
+				const char *fmt,
+				va_list ap);
 
 /** @brief Create message at runtime.
  *
@@ -647,6 +784,14 @@ static inline const void *log_msg_get_source(struct log_msg *msg)
 	return msg->hdr.source;
 }
 
+/** @brief Get log message source ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Source ID, or -1 if not available.
+ */
+int16_t log_msg_get_source_id(struct log_msg *msg);
+
 /** @brief Get timestamp.
  *
  * @param msg Log message.
@@ -666,7 +811,7 @@ static inline log_timestamp_t log_msg_get_timestamp(struct log_msg *msg)
  */
 static inline void *log_msg_get_tid(struct log_msg *msg)
 {
-#if CONFIG_LOG_THREAD_ID_PREFIX
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
 	return msg->hdr.tid;
 #else
 	ARG_UNUSED(msg);
@@ -708,7 +853,7 @@ static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
  * @}
  */
 
-#include <syscalls/log_msg.h>
+#include <zephyr/syscalls/log_msg.h>
 
 #ifdef __cplusplus
 }

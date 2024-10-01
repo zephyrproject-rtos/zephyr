@@ -18,7 +18,6 @@
 #include <common/bt_str.h>
 
 #include "test.h"
-#include "adv.h"
 #include "prov.h"
 #include "provisioner.h"
 #include "net.h"
@@ -360,6 +359,7 @@ void bt_mesh_reset(void)
 	 */
 	(void)k_work_cancel_delayable(&bt_mesh.ivu_timer);
 
+	bt_mesh_access_reset();
 	bt_mesh_model_reset();
 	bt_mesh_cfg_default_set();
 	bt_mesh_trans_reset();
@@ -401,16 +401,16 @@ void bt_mesh_reset(void)
 
 	bt_mesh_comp_unprovision();
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION)) {
+		bt_mesh_sol_reset();
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_settings_store_pending();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
 		bt_mesh_prov_reset();
-	}
-
-	if (IS_ENABLED(CONFIG_BT_MESH_PROXY_SOLICITATION)) {
-		bt_mesh_sol_reset();
 	}
 }
 
@@ -419,7 +419,7 @@ bool bt_mesh_is_provisioned(void)
 	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
 }
 
-static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+static void model_suspend(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
@@ -460,10 +460,35 @@ int bt_mesh_suspend(void)
 
 	bt_mesh_model_foreach(model_suspend, NULL);
 
+	bt_mesh_access_suspend();
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
+		err = bt_mesh_pb_gatt_srv_disable();
+		if (err && err != -EALREADY) {
+			LOG_WRN("Disabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		err = bt_mesh_proxy_gatt_disable();
+		if (err && err != -EALREADY) {
+			LOG_WRN("Disabling GATT proxy failed (err %d)", err);
+			return err;
+		}
+	}
+
+	err = bt_mesh_adv_disable();
+	if (err) {
+		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		LOG_WRN("Disabling advertisers failed (err %d)", err);
+		return err;
+	}
+
 	return 0;
 }
 
-static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+static void model_resume(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
@@ -488,6 +513,33 @@ int bt_mesh_resume(void)
 		return -EALREADY;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_EXT_ADV)) {
+		bt_mesh_adv_init();
+	}
+
+	err = bt_mesh_adv_enable();
+	if (err) {
+		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		LOG_WRN("Re-enabling advertisers failed (err %d)", err);
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) && bt_mesh_is_provisioned()) {
+		err = bt_mesh_proxy_gatt_enable();
+		if (err) {
+			LOG_WRN("Re-enabling GATT proxy failed (err %d)", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT) && !bt_mesh_is_provisioned()) {
+		err = bt_mesh_pb_gatt_srv_enable();
+		if (err) {
+			LOG_WRN("Re-enabling PB-GATT failed (err %d)", err);
+			return err;
+		}
+	}
+
 	err = bt_mesh_scan_enable();
 	if (err) {
 		LOG_WRN("Re-enabling scanning failed (err %d)", err);
@@ -504,7 +556,13 @@ int bt_mesh_resume(void)
 
 	bt_mesh_model_foreach(model_resume, NULL);
 
-	return err;
+	err = bt_mesh_adv_gatt_send();
+	if (err && (err != -ENOTSUP)) {
+		LOG_WRN("GATT send failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }
 
 int bt_mesh_init(const struct bt_mesh_prov *prov,
@@ -541,6 +599,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	bt_mesh_cfg_default_set();
 	bt_mesh_net_init();
 	bt_mesh_trans_init();
+	bt_mesh_access_init();
 	bt_mesh_hb_init();
 	bt_mesh_beacon_init();
 	bt_mesh_adv_init();
@@ -552,7 +611,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	return 0;
 }
 
-static void model_start(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+static void model_start(const struct bt_mesh_model *mod, const struct bt_mesh_elem *elem,
 			bool vnd, bool primary, void *user_data)
 {
 	if (mod->cb && mod->cb->start) {

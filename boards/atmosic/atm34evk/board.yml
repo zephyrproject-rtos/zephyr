@@ -1,0 +1,67 @@
+boards:
+- name: ATMEVK-3405-PQK-2
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-2
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3405-PQK-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3425-PQK-2
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-2
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3425-PQK-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-5
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3430e-WQN-2
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-2
+      variants:
+      - name: 'ns'
+
+- name: ATMEVK-3430e-WQN-5
+  vendor: atmosic
+  revision:
+    format: custom
+    revisions:
+    - name: mcuboot
+  socs:
+    - name: ATM34xx-5
+      variants:
+      - name: 'ns'
+

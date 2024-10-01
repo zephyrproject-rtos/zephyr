@@ -31,7 +31,7 @@ static inline void z_vrfy_test_helpers_log_setup(void)
 {
 	return z_impl_test_helpers_log_setup();
 }
-#include <syscalls/test_helpers_log_setup_mrsh.c>
+#include <zephyr/syscalls/test_helpers_log_setup_mrsh.c>
 #endif
 
 int z_impl_test_helpers_cycle_get(void)
@@ -44,7 +44,7 @@ static inline int z_vrfy_test_helpers_cycle_get(void)
 {
 	return z_impl_test_helpers_cycle_get();
 }
-#include <syscalls/test_helpers_cycle_get_mrsh.c>
+#include <zephyr/syscalls/test_helpers_cycle_get_mrsh.c>
 #endif
 
 bool z_impl_test_helpers_log_dropped_pending(void)
@@ -57,5 +57,5 @@ static inline bool z_vrfy_test_helpers_log_dropped_pending(void)
 {
 	return z_impl_test_helpers_log_dropped_pending();
 }
-#include <syscalls/test_helpers_log_dropped_pending_mrsh.c>
+#include <zephyr/syscalls/test_helpers_log_dropped_pending_mrsh.c>
 #endif

@@ -1,0 +1,49 @@
+common:
+  tags: llext
+  arch_allow:
+    - arm
+    - xtensa
+  platform_exclude:
+    # platforms with active issues
+    - apollo4p_evb            # See #73443
+    - apollo4p_blue_kxr_evb   # See #73443
+    - numaker_pfm_m487        # See #63167
+    - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
+    - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
+    # platforms that are always skipped by the runtime filter
+    - qemu_arc/qemu_arc_em
+    - qemu_arc/qemu_arc_hs
+    - qemu_arc/qemu_arc_hs/xip
+    - qemu_arc/qemu_arc_hs5x
+    - qemu_arc/qemu_arc_hs6x
+    - qemu_cortex_m0
+    - qemu_xtensa/dc233c/mmu
+  integration_platforms:
+    - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
+    - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
+    - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
+    - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+  harness: console
+
+sample:
+  name: CONFIG_MODULES test
+  description: Call code directly and from extensions
+
+tests:
+  sample.llext.modules.module_build:
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+      - CONFIG_HELLO_WORLD_MODE=m
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello, world, from an llext!"
+  sample.llext.modules.builtin_build:
+    extra_configs:
+      - CONFIG_HELLO_WORLD_MODE=y
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello, world, from the main binary!"

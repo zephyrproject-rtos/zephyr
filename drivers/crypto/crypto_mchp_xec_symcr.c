@@ -514,7 +514,7 @@ static int xec_symcr_init(const struct device *dev)
 	return ret;
 }
 
-static struct crypto_driver_api xec_symcr_api = {
+static const struct crypto_driver_api xec_symcr_api = {
 	.query_hw_caps = xec_symcr_query_hw_caps,
 	.hash_begin_session = xec_symcr_hash_session_begin,
 	.hash_free_session = xec_symcr_hash_session_free,

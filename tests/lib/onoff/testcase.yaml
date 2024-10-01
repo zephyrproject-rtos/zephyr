@@ -4,4 +4,4 @@ tests:
       - onoff
       - timer
     integration_platforms:
-      - native_posix
+      - native_sim

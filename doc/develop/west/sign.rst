@@ -40,7 +40,7 @@ Notes on the above commands:
 
 - ``YOUR_BOARD`` should be changed to match your board
 - The ``CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`` value is the insecure default
-  provided and used by by MCUboot for development and testing
+  provided and used by MCUboot for development and testing
 - You can change the ``hello_world`` application directory to any other
   application that can be loaded by MCUboot, such as the :zephyr:code-sample:`smp-svr` sample.
 
@@ -100,8 +100,23 @@ The signing script used when running ``west flash`` can be extended or replaced
 to change features or introduce different signing mechanisms. By default with
 MCUboot enabled, signing is setup by the :file:`cmake/mcuboot.cmake` file in
 Zephyr which adds extra post build commands for generating the signed images.
-The file used for signing can be replaced by adjusting the ``SIGNING_SCRIPT``
-property on the `zephyr_property_target`, ideally done by a module using:
+The file used for signing can be replaced from a sysbuild scope (if being used)
+or from a zephyr/zephyr module scope, the priority of which is:
+
+* Sysbuild
+* Zephyr property
+* Default MCUboot script (if enabled)
+
+From sysbuild, ``-D<target>_SIGNING_SCRIPT`` can be used to set a signing script
+for a specific image or ``-DSIGNING_SCRIPT`` can be used to set a signing script
+for all images, for example:
+
+.. code-block:: console
+
+   west build -b <board> <application> -DSIGNING_SCRIPT=<file>
+
+The zephyr property method is achieved by adjusting the ``SIGNING_SCRIPT`` property
+on the `zephyr_property_target`, ideally from by a module by using:
 
 .. code-block:: cmake
 

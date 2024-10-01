@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2023 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cpu@0 {
+			clock-frequency = <0>;
+			compatible = "renode,virt", "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa = "rv32imac_zicsr_zifencei";
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "renode,virt-soc", "simple-bus";
+		ranges;
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_M(4)>;
+		};
+
+		sram0: memory@80400000 {
+			compatible = "mmio-sram";
+			reg = <0x80400000 DT_SIZE_M(4)>;
+		};
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
+			reg = <0x2000000 0x10000>;
+		};
+
+		plic0: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0xc000000 0x04000000>;
+			riscv,max-priority = <1>;
+			riscv,ndev = <1023>;
+		};
+
+		plic1: interrupt-controller@8000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 4>;
+			reg = <0x8000000 0x04000000>;
+			riscv,max-priority = <1>;
+			riscv,ndev = <1023>;
+		};
+
+		uart0: uart@10000000 {
+			interrupts = < 0x0a 1 >;
+			interrupt-parent = < &plic0 >;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			reg = < 0x10000000 0x100 >;
+			compatible = "ns16550";
+			reg-shift = < 0 >;
+			status = "disabled";
+		};
+
+		uart1: uart@10000100 {
+			interrupts = < 0x0a 1 >;
+			interrupt-parent = < &plic1 >;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
+			reg = < 0x10000100 0x100 >;
+			compatible = "ns16550";
+			reg-shift = < 0 >;
+			status = "disabled";
+		};
+	};
+};

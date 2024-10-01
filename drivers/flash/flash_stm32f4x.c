@@ -20,6 +20,22 @@
 
 LOG_MODULE_REGISTER(flash_stm32f4x, CONFIG_FLASH_LOG_LEVEL);
 
+#if FLASH_STM32_WRITE_BLOCK_SIZE == 8
+typedef uint64_t flash_prg_t;
+#define FLASH_PROGRAM_SIZE FLASH_PSIZE_DOUBLE_WORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 4
+typedef uint32_t flash_prg_t;
+#define FLASH_PROGRAM_SIZE FLASH_PSIZE_WORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
+typedef uint16_t flash_prg_t;
+#define FLASH_PROGRAM_SIZE FLASH_PSIZE_HALF_WORD
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 1
+typedef uint8_t flash_prg_t;
+#define FLASH_PROGRAM_SIZE FLASH_PSIZE_BYTE
+#else
+#error Write block size must be a power of 2, from 1 to 8
+#endif
+
 bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 			     uint32_t len,
 			     bool write)
@@ -64,7 +80,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 	}
 }
 
-static int write_byte(const struct device *dev, off_t offset, uint8_t val)
+static int write_value(const struct device *dev, off_t offset, flash_prg_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 #if defined(FLASH_OPTCR_DB1M)
@@ -95,13 +111,13 @@ static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 #endif /* FLASH_OPTCR_DB1M */
 
 	regs->CR &= CR_PSIZE_MASK;
-	regs->CR |= FLASH_PSIZE_BYTE;
+	regs->CR |= FLASH_PROGRAM_SIZE;
 	regs->CR |= FLASH_CR_PG;
 
 	/* flush the register write */
 	tmp = regs->CR;
 
-	*((uint8_t *) offset + CONFIG_FLASH_BASE_ADDRESS) = val;
+	*((flash_prg_t *)(offset + FLASH_STM32_BASE_ADDRESS)) = val;
 
 	rc = flash_stm32_wait_flash_idle(dev);
 	regs->CR &= (~FLASH_CR_PG);
@@ -152,6 +168,9 @@ static int erase_sector(const struct device *dev, uint32_t sector)
 	}
 #endif
 
+	regs->CR &= CR_PSIZE_MASK;
+	regs->CR |= FLASH_PROGRAM_SIZE;
+
 	regs->CR &= ~FLASH_CR_SNB;
 	regs->CR |= FLASH_CR_SER | (sector << 3);
 	regs->CR |= FLASH_CR_STRT;
@@ -199,9 +218,11 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
+	flash_prg_t value;
 
-	for (i = 0; i < len; i++, offset++) {
-		rc = write_byte(dev, offset, ((const uint8_t *) data)[i]);
+	for (i = 0; i < len / sizeof(flash_prg_t); i++) {
+		value = UNALIGNED_GET((flash_prg_t *)data + i);
+		rc = write_value(dev, offset + i * sizeof(flash_prg_t), value);
 		if (rc < 0) {
 			return rc;
 		}
@@ -292,8 +313,7 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 	switch (current_level) {
 	case FLASH_STM32_RDP2:
 		if (!enable || !permanent) {
-			__ASSERT(false, "RDP level 2 is permanent and can't be "
-					"changed!");
+			LOG_ERR("RDP level 2 is permanent and can't be changed!");
 			return -ENOTSUP;
 		}
 		break;
@@ -304,9 +324,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
 				target_level = FLASH_STM32_RDP2;
 #else
-				__ASSERT(false,
-					 "Permanent readout protection (RDP "
-					 "level 0 -> 2) not allowed");
+				LOG_ERR("Permanent readout protection (RDP "
+					"level 0 -> 2) not allowed");
 				return -ENOTSUP;
 #endif
 			}
@@ -317,8 +336,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_PERMANENT_ALLOW)
 			target_level = FLASH_STM32_RDP2;
 #else
-			__ASSERT(false, "Permanent readout protection (RDP "
-					"level 1 -> 2) not allowed");
+			LOG_ERR("Permanent readout protection (RDP "
+				"level 1 -> 2) not allowed");
 			return -ENOTSUP;
 #endif
 		}
@@ -326,8 +345,8 @@ int flash_stm32_update_rdp(const struct device *dev, bool enable,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION_DISABLE_ALLOW)
 			target_level = FLASH_STM32_RDP0;
 #else
-			__ASSERT(false, "Disabling readout protection (RDP "
-					"level 1 -> 0) not allowed");
+			LOG_ERR("Disabling readout protection (RDP "
+				"level 1 -> 0) not allowed");
 			return -EACCES;
 #endif
 		}

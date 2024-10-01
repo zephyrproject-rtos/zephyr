@@ -9,5 +9,15 @@
 / {
 	soc {
 		compatible = "st,stm32h563", "st,stm32h5", "simple-bus";
+
+		sdmmc2: sdmmc@46008c00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x46008c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00001000>,
+				 <&rcc STM32_SRC_PLL1_Q SDMMC2_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB4, 12U)>;
+			interrupts = <102 0>;
+			status = "disabled";
+		};
 	};
 };

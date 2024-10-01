@@ -31,7 +31,6 @@
 			    "rx-warning", "wake-up";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
 			clk-source = <1>;
-			sample-point = <875>;
 			status = "disabled";
 		  };
 	};

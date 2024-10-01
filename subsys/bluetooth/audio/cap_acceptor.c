@@ -4,13 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/csip.h>
-#include "cap_internal.h"
-
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util_macro.h>
+
+#include "cap_internal.h"
 
 LOG_MODULE_REGISTER(bt_cap_acceptor, CONFIG_BT_CAP_ACCEPTOR_LOG_LEVEL);
 
@@ -27,6 +36,16 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 	static struct bt_gatt_service cas;
 	int err;
 
+	CHECKIF(param->set_size == 0U) {
+		LOG_DBG("param->set_size shall be non-zero");
+		return -EINVAL;
+	}
+
+	CHECKIF(param->rank == 0U) {
+		LOG_DBG("param->rank shall be non-zero");
+		return -EINVAL;
+	}
+
 	err = bt_csip_set_member_register(param, svc_inst);
 	if (err != 0) {
 		LOG_DBG("Failed to register CSIP");
@@ -40,7 +59,15 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 
 	err = bt_gatt_service_register(&cas);
 	if (err) {
+		const int csip_err = bt_csip_set_member_unregister(*svc_inst);
+
+		if (csip_err) {
+			LOG_ERR("Failed to unregister CSIS: %d", csip_err);
+		}
+
+		cas.attrs[1].user_data = NULL;
 		LOG_DBG("Failed to register CAS");
+
 		return err;
 	}
 

@@ -1,0 +1,19 @@
+description: Intel Lightweight UART
+
+compatible: "intel,lw-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+    description: Base address of the uart controller.
+
+  current-speed:
+    required: true
+    description: Default baudrate of the uart controller.
+
+  fixed-baudrate:
+    type: boolean
+    description: |
+      Baud rate cannot be changed by software (Divisor register is not writable)

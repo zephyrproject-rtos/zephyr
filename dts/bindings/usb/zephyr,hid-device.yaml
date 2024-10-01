@@ -1,0 +1,58 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bindings for HID device
+
+compatible: "zephyr,hid-device"
+
+include: base.yaml
+
+properties:
+  interface-name:
+    type: string
+    description: |
+      HID device name. When this property is present, a USB device will use it
+      as the string descriptor of the interface.
+
+  protocol-code:
+    type: string
+    description: |
+      This property corresponds to the protocol codes defined in Chapter 4.3
+      of the HID specification. Only boot devices are required to set one of
+      the protocols, keyboard or mouse. For non-boot devices, this property is
+      not required or can be set to none.
+      - none:     Device does not support the boot interface
+      - keyboard: Device supports boot interface and keyboard protocol
+      - mouse:    Device supports boot interface and mouse protocol
+    enum:
+      - none
+      - keyboard
+      - mouse
+
+  in-report-size:
+    type: int
+    required: true
+    description: |
+      The size of the longest input report that the HID device can generate.
+      This property is used to determine the buffer length used for transfers.
+
+  in-polling-period-us:
+    type: int
+    required: true
+    description: |
+      Input or output type reports polling period in microseconds. For USB full
+      speed this could be clamped to 1ms or 255ms depending on the value.
+
+  out-report-size:
+    type: int
+    description: |
+      The size of the longest output report that the HID device can generate.
+      When this property is present, a USB device will use out pipe for output
+      reports, otherwise control pipe will be used for output reports.
+
+  out-polling-period-us:
+    type: int
+    description: |
+      Output type reports polling period in microseconds. For USB full
+      speed this could be clamped to 1ms or 255ms depending on the value.
+      This option is only effective if the out-report-size property is defined.

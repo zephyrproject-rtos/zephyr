@@ -421,6 +421,21 @@ static inline bool sys_slist_find_and_remove(sys_slist_t *list,
 					     sys_snode_t *node);
 
 /**
+ * @brief Find if a node is already linked in a singly linked list
+ *
+ * This and other sys_slist_*() functions are not thread safe.
+ *
+ * @param list A pointer to the list to check
+ * @param node A pointer to the node to search in the list
+ * @param[out] prev A pointer to the previous node
+ *
+ * @return true if node was found in the list, false otherwise
+ */
+static inline bool sys_slist_find(sys_slist_t *list, sys_snode_t *node,
+					    sys_snode_t **prev);
+Z_GENLIST_FIND(slist, snode)
+
+/**
  * @brief Compute the size of the given list in O(n) time
  *
  * @param list A pointer on the list

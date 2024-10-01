@@ -5,8 +5,8 @@
  */
 
 int ull_central_reset(void);
-void ull_central_cleanup(struct node_rx_hdr *rx_free);
-void ull_central_setup(struct node_rx_hdr *rx, struct node_rx_ftr *ftr,
+void ull_central_cleanup(struct node_rx_pdu *rx_free);
+void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		      struct lll_conn *lll);
 void ull_central_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 			  uint32_t remainder, uint16_t lazy, uint8_t force,

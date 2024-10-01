@@ -344,7 +344,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -574,7 +574,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (pdu_prev == pdu) {
 					lll_adv_aux_data_enqueue(adv->lll.aux,
@@ -594,7 +594,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (pdu_prev == pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sec_idx);
@@ -1055,7 +1055,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1218,7 +1218,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 				 * the double buffer with the first PDU, and
 				 * returned the latest PDU as the new PDU, we
 				 * need to enqueue back the new PDU which is
-				 * infact the latest PDU.
+				 * in fact the latest PDU.
 				 */
 				if (sr_pdu_prev == sr_pdu) {
 					lll_adv_scan_rsp_enqueue(lll, sr_idx);
@@ -1239,7 +1239,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 			 * the double buffer with the first PDU, and
 			 * returned the latest PDU as the new PDU, we
 			 * need to enqueue back the new PDU which is
-			 * infact the latest PDU.
+			 * in fact the latest PDU.
 			 */
 			if (sr_pdu_prev == sr_pdu) {
 				lll_adv_aux_data_enqueue(adv->lll.aux, sr_idx);
@@ -1344,11 +1344,18 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle)
 	if (lll->sync) {
 		struct ll_adv_sync_set *sync;
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO)
+		if (lll->sync->iso) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_ISO */
+
 		sync = HDR_LLL2ULL(lll->sync);
 
 		if (sync->is_enabled) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
+
 		lll->sync = NULL;
 
 		ull_adv_sync_release(sync);
@@ -2640,7 +2647,7 @@ int ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 
 	err = ull_ticker_stop_with_mark(TICKER_ID_ADV_AUX_BASE + aux_handle,
 					aux, &aux->lll);
-	LL_ASSERT(err == 0 || err == -EALREADY);
+	LL_ASSERT_INFO2(err == 0 || err == -EALREADY, aux_handle, err);
 	if (err) {
 		return err;
 	}
@@ -2768,8 +2775,13 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(struct pdu_adv *pdu,
 		ptr += sizeof(struct pdu_adv_adi);
 	}
 
+	/* Reference to aux ptr structure in the PDU */
 	aux_ptr = (void *)ptr;
+
+	/* Aux offset value in micro seconds */
 	offs = HAL_TICKER_TICKS_TO_US(ticks_offset) + remainder_us - start_us;
+
+	/* Fill aux offset in offset units 30 or 300 us */
 	offs = offs / OFFS_UNIT_30_US;
 	if (!!(offs >> OFFS_UNIT_BITS)) {
 		offs = offs / (OFFS_UNIT_300_US / OFFS_UNIT_30_US);
@@ -2981,7 +2993,7 @@ static uint32_t aux_time_get(const struct ll_adv_aux_set *aux,
 
 	/* NOTE: 16-bit values are sufficient for minimum radio event time
 	 *       reservation, 32-bit are used here so that reservations for
-	 *       whole back-to-back chaining of PDUs can be accomodated where
+	 *       whole back-to-back chaining of PDUs can be accommodated where
 	 *       the required microseconds could overflow 16-bits, example,
 	 *       back-to-back chained Coded PHY PDUs.
 	 */
@@ -3038,7 +3050,7 @@ static uint32_t aux_time_min_get(const struct ll_adv_aux_set *aux)
 	/* Calculate the PDU Tx Time and hence the radio event length,
 	 * Always use maximum length for common extended header format so that
 	 * ACAD could be update when periodic advertising is active and the
-	 * time reservation need not be updated everytime avoiding overlapping
+	 * time reservation need not be updated every time avoiding overlapping
 	 * with other active states/roles.
 	 */
 	pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
@@ -3147,11 +3159,14 @@ static void mfy_aux_offset_get(void *param)
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
 	uint32_t ticks_to_expire;
+	uint32_t ticks_to_start;
 	uint8_t data_chan_count;
 	uint8_t *data_chan_map;
 	uint32_t ticks_current;
+	uint32_t ticks_elapsed;
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
+	uint32_t ticks_now;
 	uint32_t remainder;
 	uint8_t ticker_id;
 	uint8_t retry;
@@ -3164,8 +3179,8 @@ static void mfy_aux_offset_get(void *param)
 
 	id = TICKER_NULL;
 	ticks_to_expire = 0U;
-	ticks_current = 0U;
-	retry = 4U;
+	ticks_current = adv->ticks_at_expire;
+	retry = 1U; /* Assert on first ticks_current change */
 	do {
 		uint32_t volatile ret_cb;
 		uint32_t ticks_previous;
@@ -3191,6 +3206,13 @@ static void mfy_aux_offset_get(void *param)
 		success = (ret_cb == TICKER_STATUS_SUCCESS);
 		LL_ASSERT(success);
 
+		/* FIXME: If the reference ticks change then implement the
+		 *        compensation by adding the difference to the
+		 *        calculated ticks_to_expire.
+		 *        The ticks current can change if there are overlapping
+		 *        ticker expiry that update the ticks_current.
+		 *        For now assert until the fix implementation is added.
+		 */
 		LL_ASSERT((ticks_current == ticks_previous) || retry--);
 
 		LL_ASSERT(id != TICKER_NULL);
@@ -3234,6 +3256,13 @@ static void mfy_aux_offset_get(void *param)
 	aux_ptr->chan_idx = lll_chan_sel_2(lll_aux->data_chan_counter,
 					   aux->data_chan_id,
 					   data_chan_map, data_chan_count);
+
+	ticks_now = ticker_ticks_now_get();
+	ticks_elapsed = ticker_ticks_diff_get(ticks_now, ticks_current);
+	ticks_to_start = MAX(adv->ull.ticks_active_to_start,
+			     adv->ull.ticks_prepare_to_start) -
+			 adv->ull.ticks_preempt_to_start;
+	LL_ASSERT(ticks_elapsed < ticks_to_start);
 }
 
 static void ticker_op_cb(uint32_t status, void *param)

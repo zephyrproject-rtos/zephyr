@@ -2,7 +2,7 @@
  * Copyright (c) 2022, Carlo Caione <ccaione@baylibre.com>
  */
 
- / {
+/ {
 	test {
 		#address-cells = < 0x1 >;
 		#size-cells = < 0x1 >;

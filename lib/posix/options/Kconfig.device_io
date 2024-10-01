@@ -1,0 +1,56 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX device I/O"
+
+config POSIX_DEVICE_IO
+	bool "POSIX device I/O [EXPERIMENTAL]"
+	select FDTABLE
+	select EXPERIMENTAL
+	help
+	  Select 'y' here and Zephyr will provide an implementation of the POSIX_DEVICE_IO Option
+	  Group such as FD_CLR(), FD_ISSET(), FD_SET(), FD_ZERO(), close(), fdopen(), fileno(), open(),
+	  poll(), pread(), pselect(), pwrite(), read(), select(), and write().
+
+	  For more informnation, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_DEVICE_IO
+
+# These options are intended to be used for compatibility with external POSIX
+# implementations such as those in Newlib or Picolibc.
+
+config POSIX_DEVICE_IO_ALIAS_CLOSE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for close() as _close().
+
+config POSIX_DEVICE_IO_ALIAS_OPEN
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for open() as _open().
+
+config POSIX_DEVICE_IO_ALIAS_READ
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for read() as _read().
+
+config POSIX_DEVICE_IO_ALIAS_WRITE
+	bool
+	help
+	  Select 'y' here and Zephyr will provide an alias for write() as _write().
+
+endif # POSIX_DEVICE_IO
+
+config POSIX_OPEN_MAX
+	int
+	default ZVFS_OPEN_MAX
+	help
+	  The maximum number of files that a process can have open at one time. This option is not
+	  directly user-configurable but can be adjusted via CONFIG_ZVFS_OPEN_MAX.
+
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html
+
+endmenu

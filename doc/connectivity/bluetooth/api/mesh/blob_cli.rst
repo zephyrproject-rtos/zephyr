@@ -25,7 +25,7 @@ The BLOB Transfer Client is instantiated on an element with a set of event handl
          .cb = &blob_cb,
    };
 
-   static struct bt_mesh_model models[] = {
+   static const struct bt_mesh_model models[] = {
          BT_MESH_MODEL_BLOB_CLI(&blob_cli),
    };
 
@@ -33,7 +33,7 @@ Transfer context
 ================
 
 Both the transfer capabilities retrieval procedure and the BLOB transfer uses an instance of a
-:c:type:`bt_mesh_blob_cli_inputs` to determine how to perform the transfer. The BLOB Transfer Client
+:c:struct:`bt_mesh_blob_cli_inputs` to determine how to perform the transfer. The BLOB Transfer Client
 Inputs structure must at least be initialized with a list of targets, an application key and a time
 to live (TTL) value before it is used in a procedure:
 
@@ -67,7 +67,7 @@ Target nodes having the BLOB Transfer Server model subscribe to this group addre
 
 Using group addresses for transferring the BLOBs can generally increase the transfer speed, as the
 BLOB Transfer Client sends each message to all Target nodes at the same time. However, sending
-large, segmented messages to group addresses in Bluetooth mesh is generally less reliable than
+large, segmented messages to group addresses in Bluetooth Mesh is generally less reliable than
 sending them to unicast addresses, as there is no transport layer acknowledgment mechanism for
 groups. This can lead to longer recovery periods at the end of each block, and increases the risk of
 losing Target nodes. Using group addresses for BLOB transfers will generally only pay off if the

@@ -569,6 +569,45 @@ Build files located in a ``MODULE_EXT_ROOT`` can be described as:
 This allows control of the build inclusion to be described externally to the
 Zephyr module.
 
+.. _modules-vulnerability-monitoring:
+
+Vulnerability monitoring
+========================
+
+The module description file :file:`zephyr/module.yml` can be used to improve vulnerability monitoring.
+
+If your module needs to track vulnerabilities using an external reference
+(e.g your module is forked from another repository), you can use the ``security`` section.
+It contains the field ``external-references`` that contains a list of references that needs to
+be monitored for your module. The supported formats are:
+
+- CPE (Common Platform Enumeration)
+- PURL (Package URL)
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - <module-related-cpe>
+       - <an-other-module-related-cpe>
+       - <module-related-purl>
+
+A real life example for `mbedTLS` module could look like this:
+
+.. code-block:: yaml
+
+   security:
+     external-references:
+       - cpe:2.3:a:arm:mbed_tls:3.5.2:*:*:*:*:*:*:*
+       - pkg:github/Mbed-TLS/mbedtls@V3.5.2
+
+.. note::
+   CPE field must follow the CPE 2.3 schema provided by `NVD
+   <https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/cpe>`_.
+   PURL field must follow the PURL specification provided by `Github
+   <https://github.com/package-url/purl-spec/blob/master/PURL-SPECIFICATION.rst>`_.
+
+
 Build system integration
 ========================
 
@@ -611,9 +650,10 @@ For example, to include the file :file:`some/Kconfig` in module ``foo``:
 
   source "$(ZEPHYR_FOO_MODULE_DIR)/some/Kconfig"
 
-During CMake processing of each Zephyr module, the following two variables are
+During CMake processing of each Zephyr module, the following variables are
 also available:
 
+- the current module's name: ``${ZEPHYR_CURRENT_MODULE_NAME}``
 - the current module's top level directory: ``${ZEPHYR_CURRENT_MODULE_DIR}``
 - the current module's :file:`CMakeLists.txt` directory: ``${ZEPHYR_CURRENT_CMAKE_DIR}``
 
@@ -745,7 +785,7 @@ module ``bar`` to be present in the build system:
    name: foo
    build:
      depends:
-     - bar
+       - bar
 
 This example will ensure that ``bar`` is present when ``foo`` is included into
 the build system, and it will also ensure that ``bar`` is processed before
@@ -818,7 +858,7 @@ to the path containing the CMake file.
 To include a module's Kconfig file, set the variable ``ZEPHYR_<MODULE_NAME>_KCONFIG``
 to the path to the Kconfig file.
 
-The following is an example on how to add support the the ``FOO`` module.
+The following is an example on how to add support the ``FOO`` module.
 
 Create the following structure
 

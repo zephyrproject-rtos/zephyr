@@ -38,7 +38,7 @@ __syscall void ztest_set_fault_valid(bool valid);
  * By default, it will do nothing before leaving error handler.
  */
 void ztest_post_fatal_error_hook(unsigned int reason,
-		const z_arch_esf_t *pEsf);
+		const struct arch_esf *pEsf);
 
 #endif
 
@@ -76,7 +76,7 @@ void ztest_post_assert_fail_hook(void);
 #endif
 
 #if defined(CONFIG_ZTEST_FATAL_HOOK) || defined(CONFIG_ZTEST_ASSERT_HOOK)
-#include <syscalls/ztest_error_hook.h>
+#include <zephyr/syscalls/ztest_error_hook.h>
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ZTEST_FATAL_HOOK_H_ */

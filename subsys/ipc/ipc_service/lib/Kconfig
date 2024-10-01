@@ -21,8 +21,7 @@ config IPC_SERVICE_STATIC_VRINGS_MEM_ALIGNMENT
 
 menuconfig IPC_SERVICE_ICMSG
 	bool "icmsg IPC library"
-	select SPSC_PBUF
-	select SPSC_PBUF_USE_CACHE
+	select PBUF
 	help
 	  Icmsg library
 
@@ -36,12 +35,3 @@ config IPC_SERVICE_ICMSG_ME
 	select EVENTS
 	help
 	  Multi-endpoint functionality for the icmsg library
-
-config IPC_SERVICE_ICMSG_ME_NOCOPY_RX
-	bool
-	depends on IPC_SERVICE_ICMSG_ME
-	select IPC_SERVICE_ICMSG_NOCOPY_RX
-	help
-	  Enable nocopy feature for receiving path of the multi-endpoint
-	  feature of the icmsg library. This features might be used by backends
-	  based on multi-endpoint icmsg.

@@ -8,8 +8,9 @@
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 
-#include "../../../subsys/net/ip/dhcpv6.c"
+#include "../../../subsys/net/lib/dhcpv6/dhcpv6.c"
 
 static struct in6_addr test_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -18,6 +19,7 @@ static struct in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
 static struct net_dhcpv6_duid_storage test_serverid;
+static struct net_mgmt_event_callback net_mgmt_cb;
 
 typedef void (*test_dhcpv6_pkt_fn_t)(struct net_if *iface,
 				     struct net_pkt *pkt);
@@ -127,6 +129,7 @@ static struct net_pkt *test_dhcpv6_create_message(
 		test_dhcpv6_options_fn_t set_options_fn)
 {
 	struct in6_addr *local_addr;
+	struct in6_addr peer_addr;
 	struct net_pkt *pkt;
 
 	local_addr = net_if_ipv6_get_ll(iface, NET_ADDR_ANY_STATE);
@@ -134,13 +137,20 @@ static struct net_pkt *test_dhcpv6_create_message(
 		return NULL;
 	}
 
+	/* Create a peer address from my address but invert the last byte
+	 * so that the address is not the same. This is needed as we drop
+	 * the packet if source address is our own address.
+	 */
+	memcpy(&peer_addr, local_addr, sizeof(peer_addr));
+	peer_addr.s6_addr[15] = ~peer_addr.s6_addr[15];
+
 	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, AF_INET6,
 					IPPROTO_UDP, K_FOREVER);
 	if (pkt == NULL) {
 		return NULL;
 	}
 
-	if (net_ipv6_create(pkt, local_addr, local_addr) < 0 ||
+	if (net_ipv6_create(pkt, &peer_addr, local_addr) < 0 ||
 	    net_udp_create(pkt, htons(DHCPV6_SERVER_PORT),
 			   htons(DHCPV6_CLIENT_PORT)) < 0) {
 		goto fail;
@@ -168,6 +178,19 @@ fail:
 	return NULL;
 }
 
+static void evt_handler(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+			struct net_if *iface)
+{
+	ARG_UNUSED(cb);
+
+	if (mgmt_event == NET_EVENT_IF_UP) {
+		struct in6_addr lladdr;
+
+		net_ipv6_addr_create_iid(&lladdr, net_if_get_link_addr(test_ctx.iface));
+		(void)net_if_ipv6_addr_add(test_ctx.iface, &lladdr, NET_ADDR_AUTOCONF, 0);
+	}
+}
+
 static void *dhcpv6_tests_setup(void)
 {
 	struct in6_addr lladdr;
@@ -181,6 +204,9 @@ static void *dhcpv6_tests_setup(void)
 	k_sem_init(&test_ctx.exchange_complete_sem, 0, 1);
 
 	generate_fake_server_duid();
+
+	net_mgmt_init_event_callback(&net_mgmt_cb, evt_handler, NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&net_mgmt_cb);
 
 	return NULL;
 }

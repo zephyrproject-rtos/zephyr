@@ -47,6 +47,16 @@ some are optional:
 * **Linker scripts and toolchains**: architecture-specific details will most
   likely be needed in the build system and when linking the image (required).
 
+* **Memory Management and Memory Mapping**: for architecture-specific details
+  on supporting memory management and memory mapping.
+
+* **Stack Objects**: for architecture-specific details on memory protection
+  hardware regarding stack objects.
+
+* **User Mode Threads**: for supporting threads in user mode.
+
+* **GDB Stub**: for supporting GDB stub to enable remote debugging.
+
 Early Boot Sequence
 *******************
 
@@ -61,9 +71,9 @@ Common steps for all architectures:
 * If running an :abbr:`XIP (eXecute-In-Place)` kernel, copy initialized data
   from ROM to RAM.
 * If not using an ELF loader, zero the BSS section.
-* Jump to :code:`_Cstart()`, the early kernel initialization
+* Jump to :code:`z_cstart()`, the early kernel initialization
 
-  * :code:`_Cstart()` is responsible for context switching out of the fake
+  * :code:`z_cstart()` is responsible for context switching out of the fake
     context running at startup into the main thread.
 
 Some examples of architecture-specific steps that have to be taken:
@@ -467,8 +477,8 @@ be derived from the linker scripts of other architectures. Some sections might
 be specific to the new architecture, for example the SCB section on ARM and the
 IDT section on x86.
 
-Memory Management
-*****************
+Memory Management and Memory Mapping
+************************************
 
 If the target platform enables paging and requires drivers to memory-map
 their I/O regions, :kconfig:option:`CONFIG_MMU` needs to be enabled and the
@@ -537,22 +547,21 @@ account storage for TLS and ASLR random offsets.
 
 .. code-block:: none
 
-	+---------------------+ <- thread.stack_obj
-	| Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
-	+---------------------+
-	| Carved-out memory   |
-	|.....................| <- thread.stack_info.start
-	| Unused stack buffer |
-	|                     |
-	|.....................| <- thread's current stack pointer
-	| Used stack buffer   |
-	|                     |
-	|.....................| <- Initial stack pointer. Computable
-	| ASLR Random offset  |      with thread.stack_info.delta
-	+---------------------| <- thread.userspace_local_data
-	| Thread-local data   |
-	+---------------------+ <- thread.stack_info.start +
-	                             thread.stack_info.size
+   +---------------------+ <- thread.stack_obj
+   | Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
+   +---------------------+
+   | Carved-out memory   |
+   |.....................| <- thread.stack_info.start
+   | Unused stack buffer |
+   |                     |
+   |.....................| <- thread's current stack pointer
+   | Used stack buffer   |
+   |                     |
+   |.....................| <- Initial stack pointer. Computable
+   | ASLR Random offset  |      with thread.stack_info.delta
+   +---------------------| <- thread.userspace_local_data
+   | Thread-local data   |
+   +---------------------+ <- thread.stack_info.start + thread.stack_info.size
 
 
 At present, Zephyr does not support stacks that grow upward.

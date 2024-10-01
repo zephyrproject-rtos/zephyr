@@ -82,8 +82,11 @@ static int mcux_wwdt_install_timeout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33)
+#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) \
+	|| defined(CONFIG_SOC_SERIES_MCXNX4X)
 	clock_freq = CLOCK_GetWdtClkFreq(0);
+#elif defined(CONFIG_SOC_SERIES_RW6XX)
+	clock_freq = CLOCK_GetWdtClkFreq();
 #else
 	const struct mcux_wwdt_config *config = dev->config;
 

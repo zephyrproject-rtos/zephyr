@@ -5,7 +5,7 @@ BLOB Transfer models
 
 The Binary Large Object (BLOB) Transfer models implement the Bluetooth Mesh Binary Large Object
 Transfer Model specification version 1.0 and provide functionality for sending large binary objects
-from a single source to many Target nodes over the Bluetooth mesh network. It is the underlying
+from a single source to many Target nodes over the Bluetooth Mesh network. It is the underlying
 transport method for the :ref:`bluetooth_mesh_dfu`, but may be used for other object transfer
 purposes. The implementation is in experimental state.
 
@@ -50,7 +50,7 @@ structure of the BLOB, and applications are free to define any encoding or compr
 on the data itself.
 
 The BLOB transfer protocol does not provide any built-in integrity checks, encryption or
-authentication of the BLOB data. However, the underlying encryption of the Bluetooth mesh protocol
+authentication of the BLOB data. However, the underlying encryption of the Bluetooth Mesh protocol
 provides data integrity checks and protects the contents of the BLOB from third parties using
 network and application level encryption.
 
@@ -68,7 +68,7 @@ Chunks
 ------
 
 Each block is divided into chunks. A chunk is the smallest data unit in the BLOB transfer, and must
-fit inside a single Bluetooth mesh access message excluding the opcode (379 bytes or less). The
+fit inside a single Bluetooth Mesh access message excluding the opcode (379 bytes or less). The
 mechanism for transferring chunks depends on the transfer mode.
 
 When operating in Push BLOB Transfer Mode, the chunks are sent as unacknowledged packets from the

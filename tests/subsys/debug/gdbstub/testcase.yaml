@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2020, 2023 intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+tests:
+  # Connect to Zephyr gdbstub and run a simple GDB script
+  debug.gdbstub.breakpoints:
+    platform_allow: qemu_x86
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_gdbstub.py"
+      pytest_args:
+        - "--gdb_timeout"
+        - "20"
+        - "--gdb_script"
+        - "test_breakpoints.gdbinit"
+        - "--gdb_target_remote"
+        - "tcp::5678"
+    tags:
+      - debug
+      - gdbstub
+    extra_configs:
+      # Make sure the gdbstub port chosen is unique for this test to avoid conflicts
+      # when Twister runs tests in parallel on the same host.
+      - CONFIG_QEMU_EXTRA_FLAGS="-serial tcp::5678,server"
+
+  # Connect to QEMU gdbstub backend and run the same GDB test script
+  # to check it against a reference RDP backend implementation expecting
+  # similar behavior as for Zephyr's gdbstub.
+  # Use non-default QEMU gdbstub port 1235 for this test to avoid conflicts
+  # with some other test on QEMU running in parallel.
+  debug.gdbstub_qemu.breakpoints:
+    platform_allow: qemu_x86
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_gdbstub.py"
+      pytest_args:
+        - "--gdb_timeout"
+        - "20"
+        - "--gdb_script"
+        - "test_breakpoints.gdbinit"
+        - "--gdb_target_remote"
+        - "tcp::1235"
+    tags:
+      - debug
+      - gdbstub
+    extra_configs:
+      # Turn off Zephyr's gdbstub for this test case.
+      - CONFIG_GDBSTUB=n
+      - CONFIG_GDBSTUB_SERIAL_BACKEND=n
+      # Make sure the gdbstub port chosen is unique for this test to avoid conflicts
+      # when Twister runs tests in parallel on the same host.
+      - CONFIG_QEMU_EXTRA_FLAGS="-S -gdb tcp::1235"
+      # Clear QEMU default 'tcp::1234'
+      - CONFIG_QEMU_GDBSERVER_LISTEN_DEV=""

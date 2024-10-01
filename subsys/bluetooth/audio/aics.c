@@ -5,17 +5,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
+#include <errno.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <sys/types.h>
 
-#include <zephyr/device.h>
-#include <zephyr/init.h>
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/aics.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
 
 #include "aics_internal.h"
 #include "audio_internal.h"
@@ -512,10 +524,8 @@ int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param)
 	k_work_init_delayable(&aics->srv.notify_work, notify_work_handler);
 
 	if (param->description) {
-		strncpy(aics->srv.description, param->description,
-			sizeof(aics->srv.description) - 1);
-		/* strncpy may not always null-terminate */
-		aics->srv.description[sizeof(aics->srv.description) - 1] = '\0';
+		(void)utf8_lcpy(aics->srv.description, param->description,
+				sizeof(aics->srv.description));
 		if (IS_ENABLED(CONFIG_BT_AICS_LOG_LEVEL_DBG) &&
 		    strcmp(aics->srv.description, param->description)) {
 			LOG_DBG("Input desc clipped to %s", aics->srv.description);

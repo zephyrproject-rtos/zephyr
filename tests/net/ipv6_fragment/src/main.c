@@ -938,7 +938,7 @@ static uint8_t *net_iface_get_mac(const struct device *dev)
 		data->mac_addr[2] = 0x5E;
 		data->mac_addr[3] = 0x00;
 		data->mac_addr[4] = 0x53;
-		data->mac_addr[5] = sys_rand32_get();
+		data->mac_addr[5] = sys_rand8_get();
 	}
 
 	data->ll_addr.addr = data->mac_addr;
@@ -2015,7 +2015,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;
@@ -2175,7 +2175,7 @@ ZTEST(net_ipv6_fragment, test_send_ipv6_fragment_udp_loopback)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_finalize(pkt);
+	net_udp_finalize(pkt, false);
 
 	test_failed = false;
 	test_complete = false;

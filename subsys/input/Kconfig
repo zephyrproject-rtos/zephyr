@@ -60,7 +60,7 @@ config INPUT_QUEUE_MAX_MSGS
 
 config INPUT_THREAD_STACK_SIZE
 	int "Input thread stack size"
-	default 512
+	default 1024
 	help
 	  Stack size for the thread processing the input events, must have
 	  enough space for executing the registered callbacks.
@@ -85,5 +85,14 @@ config INPUT_LONGPRESS
 	bool "Input longpress"
 	default y
 	depends on DT_HAS_ZEPHYR_INPUT_LONGPRESS_ENABLED
+	help
+	  Enable the input longpress driver.
+
+config INPUT_KEYMAP
+	bool "Input keymap"
+	default y
+	depends on DT_HAS_INPUT_KEYMAP_ENABLED
+	help
+	  Enable the input keymap driver.
 
 endif # INPUT

@@ -8,15 +8,15 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/hal.h>
-#include <xtensa-asm2-context.h>
+#include <xtensa_asm2_context.h>
 
-#include <offsets.h>
+#include <zephyr/offsets.h>
 
 	.section    .iram1, "ax"
 	.align      4
-	.global     z_xtensa_backtrace_get_start
-	.type       z_xtensa_backtrace_get_start, @function
-z_xtensa_backtrace_get_start:
+	.global     xtensa_backtrace_get_start
+	.type       xtensa_backtrace_get_start, @function
+xtensa_backtrace_get_start:
 	entry   a1, 32
 	/* Spill registers onto stack (excluding this function) */
 	call8   xthal_window_spill

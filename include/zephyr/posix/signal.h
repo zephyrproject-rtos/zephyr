@@ -7,12 +7,12 @@
 #define ZEPHYR_INCLUDE_POSIX_SIGNAL_H_
 
 #include "posix_types.h"
+#include "posix_features.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_POSIX_SIGNAL
 #define SIGHUP    1  /**< Hangup */
 #define SIGINT    2  /**< Interrupt */
 #define SIGQUIT   3  /**< Quit */
@@ -46,22 +46,14 @@ extern "C" {
 #define SIGSYS    31 /**< Bad system call */
 
 #define SIGRTMIN 32
-#define SIGRTMAX (SIGRTMIN + CONFIG_POSIX_RTSIG_MAX)
+#define SIGRTMAX (SIGRTMIN + RTSIG_MAX)
 #define _NSIG (SIGRTMAX + 1)
 
-BUILD_ASSERT(CONFIG_POSIX_RTSIG_MAX >= 0);
+BUILD_ASSERT(RTSIG_MAX >= 0);
 
 typedef struct {
 	unsigned long sig[DIV_ROUND_UP(_NSIG, BITS_PER_LONG)];
 } sigset_t;
-
-char *strsignal(int signum);
-int sigemptyset(sigset_t *set);
-int sigfillset(sigset_t *set);
-int sigaddset(sigset_t *set, int signo);
-int sigdelset(sigset_t *set, int signo);
-int sigismember(const sigset_t *set, int signo);
-#endif /* CONFIG_POSIX_SIGNAL */
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1
@@ -75,20 +67,40 @@ int sigismember(const sigset_t *set, int signo);
 #define SIGEV_THREAD 3
 #endif
 
+#ifndef SIG_BLOCK
+#define SIG_BLOCK 0
+#endif
+#ifndef SIG_SETMASK
+#define SIG_SETMASK 1
+#endif
+#ifndef SIG_UNBLOCK
+#define SIG_UNBLOCK 2
+#endif
+
 typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
 
 union sigval {
-	int sival_int;
 	void *sival_ptr;
+	int sival_int;
 };
 
 struct sigevent {
-	int sigev_notify;
-	int sigev_signo;
-	union sigval sigev_value;
 	void (*sigev_notify_function)(union sigval val);
 	pthread_attr_t *sigev_notify_attributes;
+	union sigval sigev_value;
+	int sigev_notify;
+	int sigev_signo;
 };
+
+char *strsignal(int signum);
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+int sigismember(const sigset_t *set, int signo);
+int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
+
+int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 
 #ifdef __cplusplus
 }

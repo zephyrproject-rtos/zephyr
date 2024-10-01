@@ -1,8 +1,0 @@
-# 96Boards NITROGEN board configuration
-
-# Copyright (c) 2016 Linaro Limited.
-# SPDX-License-Identifier: Apache-2.0
-
-if BOARD_96B_NITROGEN
-
-endif # BOARD_96B_NITROGEN

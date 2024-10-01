@@ -272,7 +272,7 @@ ZTEST(cis_create, test_cc_create_periph_rem_host_accept)
 	event_done(&conn);
 
 	/* NODE_CIS_ESTABLISHED carry extra information in header rx footer param field */
-	zassert_equal_ptr(ntf->hdr.rx_ftr.param, &cis_mock);
+	zassert_equal_ptr(ntf->rx_ftr.param, &cis_mock);
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());

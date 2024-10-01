@@ -6,9 +6,9 @@
 #include "mesh_test.h"
 #include "dfu_blob_common.h"
 #include "friendship_common.h"
+#include "mesh/adv.h"
 #include "mesh/blob.h"
 #include "argparse.h"
-#include "mesh/adv.h"
 
 #define LOG_MODULE_NAME test_blob
 
@@ -233,7 +233,7 @@ static struct bt_mesh_sar_cfg_cli sar_cfg_cli;
 
 static const struct bt_mesh_comp srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -247,7 +247,7 @@ static const struct bt_mesh_comp srv_comp = {
 
 static const struct bt_mesh_comp cli_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -261,7 +261,7 @@ static const struct bt_mesh_comp cli_comp = {
 
 static struct k_sem info_get_sem;
 
-static int mock_handle_info_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_handle_info_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	k_sem_give(&info_get_sem);
@@ -275,7 +275,7 @@ static const struct bt_mesh_model_op model_op1[] = {
 
 static const struct bt_mesh_comp none_rsp_srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -924,9 +924,9 @@ static void test_cli_trans_complete(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 
@@ -999,9 +999,9 @@ static void test_cli_trans_resume(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 
@@ -1054,7 +1054,7 @@ static void test_srv_trans_resume(void)
 	bt_mesh_blob_srv_recv(&blob_srv, 1, &blob_io, 0, 10);
 
 	/* Let server receive a couple of chunks from second block before disruption */
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 2; i++) {
 		if (k_sem_take(&first_block_wr_sem, K_SECONDS(180))) {
 			FAIL("Server did not receive the first BLOB block");
 		}
@@ -1220,9 +1220,9 @@ static void cli_common_fail_on_init(void)
 
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode = BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 1;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 2;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
@@ -1310,7 +1310,7 @@ static void test_srv_fail_on_block_get(void)
 	PASS();
 }
 
-static int dummy_xfer_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int dummy_xfer_get(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 				struct net_buf_simple *buf)
 {
 	return 0;
@@ -1328,7 +1328,7 @@ static const struct bt_mesh_model_op model_op2[] = {
  */
 static const struct bt_mesh_comp srv_broken_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -1422,9 +1422,9 @@ static void cli_stop_setup(void)
 	blob_cli_inputs_prepare(BLOB_GROUP_ADDR);
 	blob_cli_xfer.xfer.mode =
 		is_pull_mode ? BT_MESH_BLOB_XFER_MODE_PULL : BT_MESH_BLOB_XFER_MODE_PUSH;
-	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2;
+	blob_cli_xfer.xfer.size = CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4;
 	blob_cli_xfer.xfer.id = 1;
-	blob_cli_xfer.xfer.block_size_log = 12;
+	blob_cli_xfer.xfer.block_size_log = 9;
 	blob_cli_xfer.xfer.chunk_size = 377;
 	blob_cli_xfer.inputs.timeout_base = 10;
 }
@@ -1444,7 +1444,7 @@ static void test_cli_stop(void)
 {
 	int err;
 
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 	k_sem_init(&blob_caps_sem, 0, 1);
 	k_sem_init(&lost_target_sem, 0, 1);
 	k_sem_init(&blob_cli_end_sem, 0, 1);
@@ -1526,8 +1526,8 @@ static void srv_check_reboot_and_continue(void)
 	ASSERT_EQUAL(BLOB_CLI_ADDR, blob_srv.state.cli);
 	ASSERT_EQUAL(1, blob_srv.state.timeout_base);
 	ASSERT_EQUAL(BT_MESH_RX_SDU_MAX - BT_MESH_MIC_SHORT, blob_srv.state.mtu_size);
-	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MAX * 2, blob_srv.state.xfer.size);
-	ASSERT_EQUAL(12, blob_srv.state.xfer.block_size_log);
+	ASSERT_EQUAL(CONFIG_BT_MESH_BLOB_BLOCK_SIZE_MIN * 4, blob_srv.state.xfer.size);
+	ASSERT_EQUAL(9, blob_srv.state.xfer.block_size_log);
 	ASSERT_EQUAL(1, blob_srv.state.xfer.id);
 	ASSERT_TRUE(blob_srv.state.xfer.mode != BT_MESH_BLOB_XFER_MODE_NONE);
 	/* First block should be already received, second one pending */
@@ -1539,7 +1539,7 @@ static void srv_check_reboot_and_continue(void)
 
 static void test_srv_stop(void)
 {
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 	k_sem_init(&blob_srv_end_sem, 0, 1);
 	k_sem_init(&first_block_wr_sem, 0, 1);
 	k_sem_init(&blob_srv_suspend_sem, 0, 1);
@@ -1594,7 +1594,7 @@ static void test_cli_friend_pull(void)
 {
 	int err;
 
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 
 	bt_mesh_test_friendship_init(1);
 
@@ -1629,7 +1629,7 @@ static void test_cli_friend_pull(void)
 
 static void test_srv_lpn_pull(void)
 {
-	bt_mesh_test_cfg_set(NULL, 1000);
+	bt_mesh_test_cfg_set(NULL, 500);
 
 	bt_mesh_test_friendship_init(1);
 
@@ -1715,6 +1715,8 @@ static const struct bst_test_instance test_blob_pst[] = {
 	TEST_CASE(cli, stop,
 		  "Client expecting server to stop after reaching configured phase and continuing"),
 	TEST_CASE(srv, stop, "Server stopping after reaching configured xfer phase"),
+
+	BSTEST_END_MARKER
 };
 
 struct bst_test_list *test_blob_pst_install(struct bst_test_list *tests)

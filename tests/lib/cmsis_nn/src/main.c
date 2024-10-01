@@ -170,6 +170,7 @@ ZTEST(cmsis_nn, test_convolve)
 	input_dims.c = CONV_4_IN_CH;
 	filter_dims.w = CONV_4_FILTER_X;
 	filter_dims.h = CONV_4_FILTER_Y;
+	filter_dims.c = CONV_4_IN_CH;
 	output_dims.w = CONV_4_OUTPUT_W;
 	output_dims.h = CONV_4_OUTPUT_H;
 	output_dims.c = CONV_4_OUT_CH;

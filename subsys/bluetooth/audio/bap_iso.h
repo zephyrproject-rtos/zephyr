@@ -7,9 +7,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/iso.h>
+#include <stdbool.h>
+#include <stdint.h>
+
+#include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/sys/atomic_types.h>
 
 struct bt_bap_iso_dir {
 	struct bt_bap_stream *stream;
@@ -41,6 +46,7 @@ void bt_bap_iso_foreach(bt_bap_iso_func_t func, void *user_data);
 struct bt_bap_iso *bt_bap_iso_find(bt_bap_iso_func_t func, void *user_data);
 void bt_bap_iso_init(struct bt_bap_iso *iso, struct bt_iso_chan_ops *ops);
 void bt_bap_iso_bind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep);
+void bt_bap_iso_configure_data_path(struct bt_bap_ep *ep, struct bt_audio_codec_cfg *codec_cfg);
 void bt_bap_iso_unbind_ep(struct bt_bap_iso *iso, struct bt_bap_ep *ep);
 struct bt_bap_ep *bt_bap_iso_get_ep(bool unicast_client, struct bt_bap_iso *iso,
 				    enum bt_audio_dir dir);

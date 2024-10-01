@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NPCX Deterministic Random Bit Generator
+
+compatible: "nuvoton,npcx-drbg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  context-buffer-size:
+    type: int
+    required: true
+    description: |
+      Size of the pre-allocated buffer for the DRBG ROM API to store the
+      intermediate/final computation result.

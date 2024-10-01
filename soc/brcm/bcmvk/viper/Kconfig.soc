@@ -1,0 +1,26 @@
+# Copyright 2020 Broadcom
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_VIPER
+	bool
+	select SOC_FAMILY_BCMVK
+	help
+	  Enable support for Broadcom Viper Series.
+
+config SOC_BCM58402_M7
+	bool
+	select SOC_SERIES_VIPER
+	help
+	  Broadcom BCM58402 M7
+
+config SOC_BCM58402_A72
+	bool
+	select SOC_SERIES_VIPER
+	help
+	  Broadcom BCM58402 A72
+
+config SOC_SERIES
+	default "viper" if SOC_SERIES_VIPER
+
+config SOC
+	default "bcm58402" if SOC_BCM58402_M7 || SOC_BCM58402_A72

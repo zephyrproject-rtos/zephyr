@@ -2,7 +2,7 @@ description: ESP32 UART
 
 compatible: "espressif,esp32-uart"
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, uart-controller-pin-inversion.yaml, pinctrl-device.yaml]
 
 properties:
   reg:

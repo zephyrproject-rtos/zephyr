@@ -11,7 +11,7 @@
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_mailbox.h>
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_smc.h>
 #include <zephyr/drivers/sip_svc/sip_svc_driver.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #include <zephyr/logging/log.h>
 

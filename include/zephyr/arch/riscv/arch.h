@@ -16,7 +16,7 @@
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
 #include <zephyr/arch/riscv/thread.h>
-#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/exception.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/arch/riscv/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
@@ -26,10 +26,9 @@
 #endif /* CONFIG_USERSPACE */
 #include <zephyr/irq.h>
 #include <zephyr/sw_isr_table.h>
-#include <soc.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
-#include <zephyr/arch/riscv/exp.h>
+#include <zephyr/arch/riscv/exception.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
 #define ARCH_STACK_PTR_ALIGN  16
@@ -49,12 +48,12 @@
  */
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
 #define Z_RISCV_STACK_GUARD_SIZE \
-	Z_POW2_CEIL(MAX(sizeof(z_arch_esf_t) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
+	Z_POW2_CEIL(MAX(sizeof(struct arch_esf) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
 			Z_RISCV_STACK_PMP_ALIGN))
 #define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_GUARD_SIZE
 #else
 #define Z_RISCV_STACK_GUARD_SIZE \
-	ROUND_UP(sizeof(z_arch_esf_t) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
+	ROUND_UP(sizeof(struct arch_esf) + CONFIG_PMP_STACK_GUARD_MIN_SIZE, \
 		 Z_RISCV_STACK_PMP_ALIGN)
 #define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_RISCV_STACK_PMP_ALIGN
 #endif
@@ -300,7 +299,7 @@ static inline uint64_t arch_k_cycle_get_64(void)
 
 #endif /*_ASMLANGUAGE */
 
-#if defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGED)
+#if defined(CONFIG_RISCV_PRIVILEGED)
 #include <zephyr/arch/riscv/riscv-privileged/asm_inline.h>
 #endif
 

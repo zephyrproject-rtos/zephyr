@@ -1,6 +1,0 @@
-# Copyright (C) 2023, Intel Corporation
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_NIOSV_G
-	bool "Intel FPGA Nios V/g General Purpose Processor"
-	depends on SOC_NIOSV_G

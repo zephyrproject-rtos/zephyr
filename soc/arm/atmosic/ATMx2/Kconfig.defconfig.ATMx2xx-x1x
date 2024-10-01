@@ -1,7 +1,0 @@
-if SOC_ATMx2xx_x1x
-
-config SOC
-	string
-	default "ATMx2xx-x1x"
-
-endif # SOC_ATMx2xx_x1x

@@ -37,6 +37,13 @@
 			status = "okay";
 		};
 
+		supc: supc@400e1a10 {
+			compatible = "atmel,sam-supc";
+			reg = <0x400e1a10 0x20>;
+			#wakeup-source-id-cells = <1>;
+			status = "okay";
+		};
+
 		sram0: memory@20070000 {
 			compatible = "mmio-sram";
 			reg = <0x20070000 0x18000>;
@@ -46,6 +53,7 @@
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			reg = <0x400e0a00 0x200>;
+			interrupts = <6 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
 
 			#address-cells = <1>;
@@ -245,6 +253,15 @@
 			reg = <0x400e1a00 0x10>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			user-nrst;
+		};
+
+		rtc: rtc@400e1a60 {
+			compatible = "atmel,sam-rtc";
+			reg = <0x400e1a60 0x100>;
+			interrupts = <2 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
+			alarms-count = <1>;
+			status = "disabled";
 		};
 	};
 };

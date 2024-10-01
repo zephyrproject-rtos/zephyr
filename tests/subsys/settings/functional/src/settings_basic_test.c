@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
 #define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #endif
-#elif IS_ENABLED(CONFIG_SETTINGS_FILE)
+#elif defined(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/littlefs.h>
 #else
@@ -38,14 +38,14 @@ LOG_MODULE_REGISTER(settings_basic_test);
  */
 ZTEST(settings_functional, test_clear_settings)
 {
-#if !IS_ENABLED(CONFIG_SETTINGS_FILE)
+#if !defined(CONFIG_SETTINGS_FILE)
 	const struct flash_area *fap;
 	int rc;
 
 	rc = flash_area_open(TEST_FLASH_AREA_ID, &fap);
 
 	if (rc == 0) {
-		rc = flash_area_erase(fap, 0, fap->fa_size);
+		rc = flash_area_flatten(fap, 0, fap->fa_size);
 		flash_area_close(fap);
 	}
 	zassert_true(rc == 0, "clear settings failed");

@@ -68,6 +68,11 @@ static int dac_stm32_write_value(const struct device *dev,
 		return -EINVAL;
 	}
 
+	if (value >= BIT(data->resolution)) {
+		LOG_ERR("Value %d is out of range", value);
+		return -EINVAL;
+	}
+
 	if (data->resolution == 8) {
 		LL_DAC_ConvertData8RightAligned(cfg->base,
 			table_channels[channel - STM32_FIRST_CHANNEL], value);

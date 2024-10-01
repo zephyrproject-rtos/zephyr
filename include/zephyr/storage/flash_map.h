@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2024 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  * Copyright (c) 2023 Sensorfy B.V.
  * Copyright (c) 2024 Atmosic
@@ -19,6 +19,8 @@
  * @brief Abstraction over flash partitions/areas and their drivers
  *
  * @defgroup flash_area_api flash area Interface
+ * @since 1.11
+ * @version 1.0.0
  * @ingroup storage_apis
  * @{
  */
@@ -204,6 +206,29 @@ int flash_area_cond_erase(const struct flash_area *fa, off_t off, uint32_t len, 
 #endif
 
 /**
+ * @brief Erase flash area or fill with erase-value
+ *
+ * On program-erase devices this function behaves exactly like flash_area_erase.
+ * On RAM non-volatile device it will call erase, if driver provides such
+ * callback, or will fill given range with erase-value defined by driver.
+ * This function should be only used by code that has not been written
+ * to directly support devices that do not require erase and rely on
+ * device being erased prior to some operations.
+ * Note that emulated erase, on devices that do not require, is done
+ * via write, which affects endurance of device.
+ *
+ * @see flash_area_erase()
+ * @see flash_flatten()
+ *
+ * @param[in] fa  Flash area
+ * @param[in] off Offset relative from beginning of flash area.
+ * @param[in] len Number of bytes to be erase
+ *
+ * @return  0 on success, negative errno code on fail.
+ */
+int flash_area_flatten(const struct flash_area *fa, off_t off, size_t len);
+
+/**
  * @brief Get write block size of the flash area
  *
  * Currently write block size might be treated as read block size, although
@@ -289,21 +314,6 @@ const char *flash_area_label(const struct flash_area *fa);
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
-#define FLASH_AREA_LABEL_EXISTS(label) __DEPRECATED_MACRO \
-	DT_HAS_FIXED_PARTITION_LABEL(label)
-
-#define FLASH_AREA_LABEL_STR(lbl) __DEPRECATED_MACRO \
-	DT_PROP(DT_NODE_BY_FIXED_PARTITION_LABEL(lbl), label)
-
-#define FLASH_AREA_ID(label) __DEPRECATED_MACRO \
-	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
-
-#define FLASH_AREA_OFFSET(label) __DEPRECATED_MACRO \
-	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
-
-#define FLASH_AREA_SIZE(label) __DEPRECATED_MACRO \
-	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
-
 /**
  * Returns non-0 value if fixed-partition of given DTS node label exists.
  *
@@ -333,6 +343,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define FIXED_PARTITION_OFFSET(label) DT_REG_ADDR(DT_NODELABEL(label))
 
 /**
+ * Get fixed-partition offset from DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition offset, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_OFFSET(node) DT_REG_ADDR(node)
+
+/**
  * Get fixed-partition size for DTS node label
  *
  * @param label DTS node label
@@ -340,6 +359,15 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  * @return fixed-partition offset, as defined for the partition in DTS.
  */
 #define FIXED_PARTITION_SIZE(label) DT_REG_SIZE(DT_NODELABEL(label))
+
+/**
+ * Get fixed-partition size for DTS node
+ *
+ * @param node DTS node of a partition
+ *
+ * @return fixed-partition size, as defined for the partition in DTS.
+ */
+#define FIXED_PARTITION_NODE_SIZE(node) DT_REG_SIZE(node)
 
 /**
  * Get device pointer for device the area/partition resides on
@@ -360,6 +388,16 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
+
+/**
+ * Get device pointer for device the area/partition resides on
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_NODE_DEVICE(node) \
+	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(node))
 
 #ifdef __cplusplus
 }

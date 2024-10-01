@@ -26,7 +26,7 @@
 /** Position of the function field. */
 #define GECKO_FUN_POS 24U
 /** Mask for the function field. */
-#define GECKO_FUN_MSK 0xFFFU
+#define GECKO_FUN_MSK 0xFFU
 
 /** Position of the pin field. */
 #define GECKO_PIN_POS 0U
@@ -84,6 +84,11 @@
 #define GECKO_FUN_SPI_MOSI_LOC 19U
 #define GECKO_FUN_SPI_CS_LOC  20U
 #define GECKO_FUN_SPI_SCK_LOC  21U
+
+#define GECKO_FUN_I2C_SDA 22U
+#define GECKO_FUN_I2C_SCL 23U
+#define GECKO_FUN_I2C_SDA_LOC 24U
+#define GECKO_FUN_I2C_SCL_LOC 25U
 
 
 /** @} */

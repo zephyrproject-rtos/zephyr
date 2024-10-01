@@ -13,3 +13,13 @@ properties:
 
   interrupts:
     required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Counter clock frequency
+
+  clk-source:
+    type: int
+    required: true
+    description: Counter clock source

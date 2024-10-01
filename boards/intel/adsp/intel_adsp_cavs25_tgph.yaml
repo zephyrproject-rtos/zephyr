@@ -1,0 +1,14 @@
+identifier: intel_adsp/cavs25/tgph
+name: cAVS 2.5 Audio DSP for Tiger Lake H PCH (Converged Audio Voice and Speech)
+type: mcu
+arch: xtensa
+toolchain:
+  - xcc
+  - zephyr
+supported:
+  - dma
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

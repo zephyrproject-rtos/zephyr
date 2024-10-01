@@ -1,0 +1,31 @@
+# Copyright (c) 2024, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq MSPI controller
+
+compatible: "ambiq,mspi-controller"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml, ambiq-pwrcfg.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ambiq,pwrcfg:
+    required: true
+
+  ce-gpios:
+    required: true
+
+  cmdq-buffer-location:
+    type: string
+    description: |
+      Define the DMA command queue buffer location section
+
+  cmdq-buffer-size:
+    type: int
+    description: |
+      Define the DMA command queue buffer size in (4-byte) words

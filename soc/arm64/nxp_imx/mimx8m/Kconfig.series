@@ -1,9 +1,0 @@
-# Copyright 2020-2022 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-config SOC_SERIES_MIMX8M_A53
-	bool "NXP i.MX8M A53 Core Series"
-	select ARM64
-	select SOC_FAMILY_IMX
-	help
-	  Enable support for i.MX8M A53 Series.

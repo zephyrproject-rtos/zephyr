@@ -22,8 +22,8 @@ stacked on a board with an Arduino connector. The board's I2C must be
 configured for the I2C Arduino connector in the devicetree. See for
 example the :ref:`nucleo_f401re_board` board source code:
 
-- :zephyr_file:`boards/arm/nucleo_f401re/nucleo_f401re.dts`
-- :zephyr_file:`boards/arm/nucleo_f401re/arduino_r3_connector.dtsi`
+- :zephyr_file:`boards/st/nucleo_f401re/nucleo_f401re.dts`
+- :zephyr_file:`boards/st/nucleo_f401re/arduino_r3_connector.dtsi`
 
 Please note that this sample can't be used with boards already supporting
 one of the sensors available on the shield (such as disco_l475_iot1) as zephyr

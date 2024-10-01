@@ -3,7 +3,7 @@
 
 # Native Simulator (NSI) Makefile.
 # It builds the simulator runner itself, and produces the final
-# Linux executable by linking it to the the embedded cpu library
+# Linux executable by linking it to the embedded cpu library
 
 # By default all the build output is placed under the _build folder, but the user can override it
 # setting the NSI_BUILD_PATH
@@ -60,7 +60,7 @@ NSI_OPT?=-O0
 #  Warnings switches (for the runner itself)
 NSI_WARNINGS?=-Wall -Wpedantic
 #  Preprocessor flags
-NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809 -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
+NSI_CPPFLAGS?=-D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=600 -D_XOPEN_SOURCE_EXTENDED
 
 NO_PIE_CO:=-fno-pie -fno-pic
 DEPENDFLAGS:=-MMD -MP

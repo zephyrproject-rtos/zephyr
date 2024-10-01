@@ -1,9 +1,0 @@
-# Copyright 2022 NXP
-# SPDX-License-Identifier: Apache-2.0
-
-if SOC_S32Z27_R52
-
-config SOC
-	default "s32z27"
-
-endif # SOC_S32Z27_R52

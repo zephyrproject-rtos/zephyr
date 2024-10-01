@@ -70,6 +70,7 @@ struct socket_op_vtable {
 	int (*setsockopt)(void *obj, int level, int optname,
 			  const void *optval, socklen_t optlen);
 	ssize_t (*sendmsg)(void *obj, const struct msghdr *msg, int flags);
+	ssize_t (*recvmsg)(void *obj, struct msghdr *msg, int flags);
 	int (*getpeername)(void *obj, struct sockaddr *addr,
 			   socklen_t *addrlen);
 	int (*getsockname)(void *obj, struct sockaddr *addr,
@@ -77,5 +78,55 @@ struct socket_op_vtable {
 };
 
 size_t msghdr_non_empty_iov_count(const struct msghdr *msg);
+
+#if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
+int sock_obj_core_alloc(int sock, struct net_socket_register *reg,
+			int family, int type, int proto);
+int sock_obj_core_alloc_find(int sock, int new_sock, int type);
+int sock_obj_core_dealloc(int sock);
+void sock_obj_core_update_send_stats(int sock, int bytes);
+void sock_obj_core_update_recv_stats(int sock, int bytes);
+#else
+static inline int sock_obj_core_alloc(int sock,
+				      struct net_socket_register *reg,
+				      int family, int type, int proto)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(reg);
+	ARG_UNUSED(family);
+	ARG_UNUSED(type);
+	ARG_UNUSED(proto);
+
+	return -ENOTSUP;
+}
+
+static inline int sock_obj_core_alloc_find(int sock, int new_sock, int type)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(new_sock);
+	ARG_UNUSED(type);
+
+	return -ENOTSUP;
+}
+
+static inline int sock_obj_core_dealloc(int sock)
+{
+	ARG_UNUSED(sock);
+
+	return -ENOTSUP;
+}
+
+static inline void sock_obj_core_update_send_stats(int sock, int bytes)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(bytes);
+}
+
+static inline void sock_obj_core_update_recv_stats(int sock, int bytes)
+{
+	ARG_UNUSED(sock);
+	ARG_UNUSED(bytes);
+}
+#endif /* CONFIG_NET_SOCKETS_OBJ_CORE */
 
 #endif /* _SOCKETS_INTERNAL_H_ */

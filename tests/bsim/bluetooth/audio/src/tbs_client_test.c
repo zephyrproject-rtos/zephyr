@@ -4,13 +4,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-#ifdef CONFIG_BT_TBS_CLIENT
-
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/tbs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/sys/printk.h>
 
+#include "bstests.h"
 #include "common.h"
 
+#ifdef CONFIG_BT_TBS_CLIENT
 static struct bt_conn_cb conn_callbacks;
 extern enum bst_result_t bst_result;
 
@@ -46,7 +54,7 @@ static void tbs_client_call_states_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("Index %u\n", __func__, index);
+	printk("Index %u\n", index);
 	if (err != 0) {
 		FAIL("Call could not read call states (%d)\n", err);
 		return;
@@ -152,8 +160,7 @@ static void tbs_client_technology_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Technology: %u\n", __func__, inst_index,
-						  technology);
+	printk("%s Instance: %u Technology: %u\n", __func__, inst_index, value);
 
 	SET_FLAG(technology);
 }
@@ -167,8 +174,7 @@ static void tbs_client_signal_strength_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u, Strength: %u\n", __func__, inst_index,
-						 signal_strength);
+	printk("%s Instance: %u, Strength: %u\n", __func__, inst_index, value);
 
 	SET_FLAG(signal_strength);
 }
@@ -196,8 +202,7 @@ static void tbs_client_status_flags_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Flags: %u\n", __func__, inst_index,
-					     status_flags);
+	printk("%s Instance: %u Flags: %u\n", __func__, inst_index, value);
 
 	SET_FLAG(status_flags);
 }
@@ -239,7 +244,7 @@ static void tbs_client_bearer_uci_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u UCI: %u\n", __func__, inst_index, value);
+	printk("%s Instance: %u UCI: %s\n", __func__, inst_index, value);
 
 	SET_FLAG(bearer_uci);
 }
@@ -252,8 +257,7 @@ static void tbs_client_uri_list_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u URI list: %u\n", __func__, inst_index,
-						uri_list);
+	printk("%s Instance: %u URI list: %s\n", __func__, inst_index, value);
 
 	SET_FLAG(uri_list);
 }
@@ -284,7 +288,7 @@ static void tbs_client_call_uri_cb(struct bt_conn *conn, int err,
 	}
 
 	printk("Incoming URI callback\n");
-	printk("%s Instance: %u URI: %u\n", __func__, inst_index, value);
+	printk("%s Instance: %u URI: %s\n", __func__, inst_index, value);
 
 	SET_FLAG(uri_inc);
 }
@@ -460,11 +464,25 @@ static void test_signal_interval(uint8_t index)
 	printk("Client signal interval test success\n");
 }
 
+static void discover_tbs(void)
+{
+	int err;
+
+	discovery_complete = false;
+
+	err = bt_tbs_client_discover(default_conn);
+	if (err) {
+		FAIL("Failed to discover TBS: %d", err);
+		return;
+	}
+
+	WAIT_FOR_COND(discovery_complete);
+}
+
 static void test_main(void)
 {
 	int err;
 	int index = 0;
-	int tbs_client_err;
 
 	err = bt_enable(bt_ready);
 
@@ -480,7 +498,7 @@ static void test_main(void)
 
 	printk("Audio Server: Bluetooth discovered\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, AD_SIZE, NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, AD_SIZE, NULL, 0);
 	if (err != 0) {
 		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
@@ -490,12 +508,8 @@ static void test_main(void)
 
 	WAIT_FOR_COND(is_connected);
 
-	tbs_client_err = bt_tbs_client_discover(default_conn);
-	if (tbs_client_err) {
-		FAIL("Failed to discover TBS_CLIENT for connection %d", tbs_client_err);
-	}
-
-	WAIT_FOR_COND(discovery_complete);
+	discover_tbs();
+	discover_tbs(); /* test that we can discover twice */
 
 	printk("GTBS %sfound\n", is_gtbs_found ? "" : "not ");
 
@@ -555,7 +569,7 @@ static void test_main(void)
 static const struct bst_test_instance test_tbs_client[] = {
 	{
 		.test_id = "tbs_client",
-		.test_post_init_f = test_init,
+		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main
 	},

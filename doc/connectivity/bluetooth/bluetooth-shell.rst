@@ -1,7 +1,7 @@
 .. _bluetooth_shell:
 
-Bluetooth Shell
-###############
+Shell
+#####
 
 The Bluetooth Shell is an application based on the :ref:`shell_api` module. It offer a collection of
 commands made to easily interact with the Bluetooth stack.
@@ -166,19 +166,20 @@ For example, if you want to create a connectable and scannable advertiser and st
         Advertiser[0] 0x200022f0 set started
 
 You may notice that with this, the custom advertiser does not advertise the device name; you need to
-enable it. Continuing from the previous example:
+add it. Continuing from the previous example:
 
 .. code-block:: console
 
         uart:~$ bt adv-stop
         Advertiser set stopped
-        uart:~$ bt adv-param conn-scan name
+        uart:~$ bt adv-data dev-name
         uart:~$ bt adv-start
         Advertiser[0] 0x200022f0 set started
 
-You should now see the name of the device in the advertising data. You can also set the advertising
-data manually by using the :code:`bt adv-data` command. The following example shows how to set the
-advertiser name with it:
+You should now see the name of the device in the advertising data. You can also set a custom name by
+using :code:`name <custom name>` instead of :code:`dev-name`. It is also possible to set the
+advertising data manually with the :code:`bt adv-data` command. The following example shows how
+to set the advertiser name with it using raw advertising data:
 
 .. code-block:: console
 
@@ -227,6 +228,90 @@ Let's now have a look at some extended advertising features. To enable extended 
         Advertiser[0] 0x200022f0 set started
 
 This will create an extended advertiser, that is connectable and non-scannable.
+
+Encrypted Advertising Data
+==========================
+
+Zephyr has support for the Encrypted Advertising Data feature. The :code:`bt encrypted-ad`
+sub-commands allow managing the advertising data of a given advertiser.
+
+To encrypt the advertising data, key materials need to be provided, that can be done with :code:`bt
+encrypted-ad set-keys <session key> <init vector>`. The session key is 16 bytes long and the
+initialisation vector is 8 bytes long.
+
+You can add advertising data by using :code:`bt encrypted-ad add-ad` and :code:`bt encrypted-ad
+add-ead`. The former will take add one advertising data structure (as defined in the Core
+Specification), when the later will read the given data, encrypt them and then add the generated
+encrypted advertising data structure. It's possible to mix encrypted and non-encrypted data, when
+done adding advertising data, :code:`bt encrypted-ad commit-ad` can be used to apply the change to
+the data to the selected advertiser. After that the advertiser can be started as described
+previously. It's possible to clear the advertising data by using :code:`bt encrypted-ad clear-ad`.
+
+On the Central side, it's possible to decrypt the received encrypted advertising data by setting the
+correct keys material as described earlier and then enabling the decrypting of the data with
+:code:`bt encrypted-ad decrypt-scan on`.
+
+.. note::
+
+        To see the advertising data in the scan report :code:`bt scan-verbose-output` need to be
+        enabled.
+
+.. note::
+
+        It's possible to increase the length of the advertising data by increasing the value of
+        :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_LEN_MAX` and
+        :kconfig:option:`CONFIG_BT_CTLR_SCAN_DATA_LEN_MAX`.
+
+Here is a simple example demonstrating the usage of EAD:
+
+.. tabs::
+
+        .. group-tab:: Peripheral
+
+                .. code-block:: console
+
+                        uart:~$ bt init
+                        ...
+                        uart:~$ bt adv-create conn-nscan ext-adv
+                        Created adv id: 0, adv: 0x81769a0
+                        uart:~$ bt encrypted-ad set-keys 9ba22d3824efc70feb800c80294cba38 2e83f3d4d47695b6
+                        session key set to:
+                        00000000: 9b a2 2d 38 24 ef c7 0f  eb 80 0c 80 29 4c ba 38 |..-8$... ....)L.8|
+                        initialisation vector set to:
+                        00000000: 2e 83 f3 d4 d4 76 95 b6                          |.....v..         |
+                        uart:~$ bt encrypted-ad add-ad 06097368656C6C
+                        uart:~$ bt encrypted-ad add-ead 03ffdead03ffbeef
+                        uart:~$ bt encrypted-ad commit-ad
+                        Advertising data for Advertiser[0] 0x81769a0 updated.
+                        uart:~$ bt adv-start
+                        Advertiser[0] 0x81769a0 set started
+
+        .. group-tab:: Central
+
+                .. code-block:: console
+
+                        uart:~$ bt init
+                        ...
+                        uart:~$ bt scan-verbose-output on
+                        uart:~$ bt encrypted-ad set-keys 9ba22d3824efc70feb800c80294cba38 2e83f3d4d47695b6
+                        session key set to:
+                        00000000: 9b a2 2d 38 24 ef c7 0f  eb 80 0c 80 29 4c ba 38 |..-8$... ....)L.8|
+                        initialisation vector set to:
+                        00000000: 2e 83 f3 d4 d4 76 95 b6                          |.....v..         |
+                        uart:~$ bt encrypted-ad decrypt-scan on
+                        Received encrypted advertising data will now be decrypted using provided key materials.
+                        uart:~$ bt scan on
+                        Bluetooth active scan enabled
+                        [DEVICE]: 68:49:30:68:49:30 (random), AD evt type 5, RSSI -59   shell C:1 S:0 D:0 SR:0 E:1 Prim: LE 1M, Secn: LE 2M, Interval: 0x0000 (0 us), SID: 0x0
+                                [SCAN DATA START - EXT_ADV]
+                                Type 0x09:    shell
+                                Type 0x31: Encrypted Advertising Data: 0xe2, 0x17, 0xed, 0x04, 0xe7, 0x02, 0x1d, 0xc9, 0x40, 0x07, uart:~0x18, 0x90, 0x6c, 0x4b, 0xfe, 0x34, 0xad
+                                [START DECRYPTED DATA]
+                                Type 0xff: 0xde, 0xad
+                                Type 0xff: 0xbe, 0xef
+                                [END DECRYPTED DATA]
+                                [SCAN DATA END]
+                        ...
 
 Filter Accept List
 ******************
@@ -359,6 +444,95 @@ On device A, you should have received the data:
         Channel 0x20000210 requires buffer
         Incoming data channel 0x20000210 len 14
         00000000: ff ff ff ff ff ff ff ff  ff ff ff ff ff ff       |........ ......  |
+
+A2DP
+*****
+The :code:`a2dp` command exposes parts of the A2DP API.
+
+The following examples assume that you have two devices already connected.
+
+Here is a example connecting two devices:
+ * Source and Sink sides register a2dp callbacks. using :code:`a2dp register_cb`.
+ * Source and Sink sides register stream endpoints. using :code:`a2dp register_ep source sbc` and :code:`a2dp register_ep sink sbc`.
+ * Source establish A2dp connection. It will create the AVDTP Signaling and Media L2CAP channels. using :code:`a2dp connect`.
+ * Source and Sink side can discover remote device's stream endpoints. using :code:`a2dp discover_peer_eps`
+ * Source or Sink configure the stream to create the stream after discover remote's endpoints. using :code:`a2dp configure`.
+ * Source or Sink establish the stream. using :code:`a2dp establish`.
+ * Source or Sink start the media. using :code:`a2dp start`.
+ * Source test the media sending. using :code:`a2dp send_media` to send one test packet data.
+
+.. tabs::
+
+        .. group-tab:: Device A (Audio Source Side)
+
+                .. code-block:: console
+
+                        uart:~$ a2dp register_cb
+                        success
+                        uart:~$ a2dp register_ep source sbc
+                        SBC source endpoint is registered
+                        uart:~$ a2dp connect
+                        Bonded with XX:XX:XX:XX:XX:XX
+                        Security changed: XX:XX:XX:XX:XX:XX level 2
+                        a2dp connected
+                        uart:~$ a2dp discover_peer_eps
+                        endpoint id: 1, (sink), (idle):
+                          codec type: SBC
+                          sample frequency:
+                                  44100
+                                  48000
+                          channel mode:
+                                  Mono
+                                  Stereo
+                                  Joint-Stereo
+                          Block Length:
+                                  16
+                          Subbands:
+                                  8
+                          Allocation Method:
+                                  Loudness
+                          Bitpool Range: 18 - 35
+                        uart:~$ a2dp configure
+                        success to configure
+                        stream configured
+                        uart:~$ a2dp establish
+                        success to establish
+                        stream established
+                        uart:~$ a2dp start
+                        success to start
+                        stream started
+                        uart:~$ a2dp send_media
+                        frames num: 1, data length: 160
+                        data: 1, 2, 3, 4, 5, 6 ......
+
+        .. group-tab:: Device B (Audio Sink Side)
+
+                .. code-block:: console
+
+                        uart:~$ a2dp register_cb
+                        success
+                        uart:~$ a2dp register_ep sink sbc
+                        SBC sink endpoint is registered
+                        <after a2dp connect>
+                        Connected: XX:XX:XX:XX:XX:XX
+                        Bonded with XX:XX:XX:XX:XX:XX
+                        Security changed: XX:XX:XX:XX:XX:XX level 2
+                        a2dp connected
+                        <after a2dp configure of source side>
+                        receive requesting config and accept
+                        SBC configure success
+                        sample rate 44100Hz
+                        stream configured
+                        <after a2dp establish of source side>
+                        receive requesting establishment and accept
+                        stream established
+                        <after a2dp start of source side>
+                        receive requesting start and accept
+                        stream started
+                        <after a2dp send_media of source side>
+                        received, num of frames: 1, data length: 160
+                        data: 1, 2, 3, 4, 5, 6 ......
+                        ...
 
 Logging
 *******

@@ -7,6 +7,7 @@ menuconfig ETH_NXP_S32_GMAC
 	depends on DT_HAS_NXP_S32_GMAC_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
+	imply MDIO
 	help
 	  Enable GMAC/EMAC Ethernet driver for NXP S32 SoCs.
 

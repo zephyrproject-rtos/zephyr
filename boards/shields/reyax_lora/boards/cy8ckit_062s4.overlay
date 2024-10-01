@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 David Ullmann
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+&p0_2_scb0_uart_rx {
+	input-enable;
+};
+
+&p0_3_scb0_uart_tx {
+	drive-push-pull;
+};
+
+&arduino_serial {
+	pinctrl-0 = <&p0_2_scb0_uart_rx &p0_3_scb0_uart_tx>;
+	pinctrl-names = "default";
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};

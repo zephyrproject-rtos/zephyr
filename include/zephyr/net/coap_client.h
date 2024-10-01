@@ -20,8 +20,9 @@
  */
 
 #include <zephyr/net/coap.h>
+#include <zephyr/kernel.h>
 
-
+/** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
 
@@ -66,12 +67,17 @@ struct coap_client_request {
  * @brief Representation of extra options for the CoAP client request
  */
 struct coap_client_option {
+	/** Option code */
 	uint16_t code;
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
+	/** Option len */
 	uint16_t len;
+	/** Buffer for the length */
 	uint8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
 #else
+	/** Option len */
 	uint8_t len;
+	/** Buffer for the length */
 	uint8_t value[12];
 #endif
 };
@@ -82,13 +88,18 @@ struct coap_client_internal_request {
 	uint32_t offset;
 	uint32_t last_id;
 	uint8_t request_tkl;
-	uint8_t retry_count;
 	bool request_ongoing;
+	atomic_t in_callback;
 	struct coap_block_context recv_blk_ctx;
 	struct coap_block_context send_blk_ctx;
 	struct coap_pending pending;
 	struct coap_client_request coap_request;
 	struct coap_packet request;
+	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
+
+	/* For GETs with observe option set */
+	bool is_observe;
+	int last_response_id;
 };
 
 struct coap_client {
@@ -100,6 +111,8 @@ struct coap_client {
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
+	struct coap_option echo_option;
+	bool send_echo;
 };
 /** @endcond */
 
@@ -127,12 +140,22 @@ int coap_client_init(struct coap_client *client, const char *info);
  * @param sock Open socket file descriptor.
  * @param addr the destination address of the request, NULL if socket is already connected.
  * @param req CoAP request structure
- * @param retries How many times to retry or -1 to use default.
+ * @param params Pointer to transmission parameters structure or NULL to use default values.
  * @return zero when operation started successfully or negative error code otherwise.
  */
 
 int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
-		    struct coap_client_request *req, int retries);
+		    struct coap_client_request *req, struct coap_transmission_parameters *params);
+
+/**
+ * @brief Cancel all current requests.
+ *
+ * This is intended for canceling long-running requests (e.g. GETs with the OBSERVE option set)
+ * which has gone stale for some reason.
+ *
+ * @param client Client instance.
+ */
+void coap_client_cancel_requests(struct coap_client *client);
 
 /**
  * @}

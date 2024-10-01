@@ -1,0 +1,77 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NRF53_SYNC_RTC
+	bool "RTC clock synchronization"
+	default y if LOG && !LOG_MODE_MINIMAL
+	depends on NRF_RTC_TIMER
+	select NRFX_DPPI
+	select MBOX if !IPM
+
+if NRF53_SYNC_RTC
+
+module = SYNC_RTC
+module-str = Synchronized RTC
+source "subsys/logging/Kconfig.template.log_config"
+
+config NRF53_SYNC_RTC_INIT_PRIORITY
+	int "nRF53 Synchronized RTC init priority"
+	default APPLICATION_INIT_PRIORITY
+	help
+	  nRF53 Synchronized RTC initialization priority.
+
+config NRF_RTC_TIMER_USER_CHAN_COUNT
+	default 2 if NRF_802154_RADIO_DRIVER && SOC_COMPATIBLE_NRF5340_CPUNET
+	default 3 if NRF_802154_RADIO_DRIVER
+	default 1
+
+config NRF53_SYNC_RTC_LOG_TIMESTAMP
+	bool "Use Synchronized RTC for logging timestamp"
+	default y
+
+config NRF53_SYNC_RTC_IPM_OUT
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 7 if SOC_COMPATIBLE_NRF5340_CPUAPP
+	default 8
+
+config NRF53_SYNC_RTC_IPM_IN
+	int "IPM channel from APP to NET"
+	range 0 15
+	default 8 if SOC_COMPATIBLE_NRF5340_CPUAPP
+	default 7
+
+ipm_num = 0
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 1
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 2
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 3
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 4
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 5
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 6
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 7
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 8
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 9
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 10
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 11
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 12
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 13
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 14
+rsource "Kconfig.sync_rtc_ipm"
+ipm_num = 15
+rsource "Kconfig.sync_rtc_ipm"
+
+endif # NRF53_SYNC_RTC

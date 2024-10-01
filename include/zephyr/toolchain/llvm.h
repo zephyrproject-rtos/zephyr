@@ -30,84 +30,103 @@
 
 #include <zephyr/toolchain/gcc.h>
 
-#ifndef __INT8_C
-#define __INT8_C(x)	x
-#endif
+/*
+ * Provide these definitions only when minimal libc is used.
+ * Avoid collision with defines from include/zephyr/toolchain/zephyr_stdint.h
+ */
+#ifdef CONFIG_MINIMAL_LIBC
 
-#ifndef INT8_C
-#define INT8_C(x)	__INT8_C(x)
-#endif
+#define __int_c(v, suffix) v ## suffix
+#define int_c(v, suffix) __int_c(v, suffix)
+#define uint_c(v, suffix) __int_c(v ## U, suffix)
 
-#ifndef __UINT8_C
-#define __UINT8_C(x)	x ## U
-#endif
+#ifndef CONFIG_ENFORCE_ZEPHYR_STDINT
 
-#ifndef UINT8_C
-#define UINT8_C(x)	__UINT8_C(x)
-#endif
+#ifdef __INT64_TYPE__
+#undef __int_least64_c_suffix__
+#undef __int_least32_c_suffix__
+#undef __int_least16_c_suffix__
+#undef __int_least8_c_suffix__
+#ifdef __INT64_C_SUFFIX__
+#define __int_least64_c_suffix__ __INT64_C_SUFFIX__
+#define __int_least32_c_suffix__ __INT64_C_SUFFIX__
+#define __int_least16_c_suffix__ __INT64_C_SUFFIX__
+#define __int_least8_c_suffix__ __INT64_C_SUFFIX__
+#endif /* __INT64_C_SUFFIX__ */
+#endif /* __INT64_TYPE__ */
 
-#ifndef __INT16_C
-#define __INT16_C(x)	x
-#endif
-
-#ifndef INT16_C
-#define INT16_C(x)	__INT16_C(x)
-#endif
-
-#ifndef __UINT16_C
-#define __UINT16_C(x)	x ## U
-#endif
-
-#ifndef UINT16_C
-#define UINT16_C(x)	__UINT16_C(x)
-#endif
-
-#ifndef __INT32_C
-#define __INT32_C(x)	x
-#endif
-
-#ifndef INT32_C
-#define INT32_C(x)	__INT32_C(x)
-#endif
-
-#ifndef __UINT32_C
-#define __UINT32_C(x)	x ## U
-#endif
-
-#ifndef UINT32_C
-#define UINT32_C(x)	__UINT32_C(x)
-#endif
-
-#ifndef __INT64_C
+#ifdef __INT_LEAST64_TYPE__
+#ifdef __int_least64_c_suffix__
+#define __INT64_C(x)	int_c(x, __int_least64_c_suffix__)
+#define __UINT64_C(x)	uint_c(x, __int_least64_c_suffix__)
+#else
 #define __INT64_C(x)	x
-#endif
+#define __UINT64_C(x)	x ## U
+#endif /* __int_least64_c_suffix__ */
+#endif /* __INT_LEAST64_TYPE__ */
 
-#ifndef INT64_C
-#define INT64_C(x)	__INT64_C(x)
-#endif
+#ifdef __INT32_TYPE__
+#undef __int_least32_c_suffix__
+#undef __int_least16_c_suffix__
+#undef __int_least8_c_suffix__
+#ifdef __INT32_C_SUFFIX__
+#define __int_least32_c_suffix__ __INT32_C_SUFFIX__
+#define __int_least16_c_suffix__ __INT32_C_SUFFIX__
+#define __int_least8_c_suffix__ __INT32_C_SUFFIX__
+#endif /* __INT32_C_SUFFIX__ */
+#endif /* __INT32_TYPE__ */
 
-#ifndef __UINT64_C
-#define __UINT64_C(x)	x ## ULL
-#endif
+#ifdef __INT_LEAST32_TYPE__
+#ifdef __int_least32_c_suffix__
+#define __INT32_C(x)	int_c(x, __int_least32_c_suffix__)
+#define __UINT32_C(x)	uint_c(x, __int_least32_c_suffix__)
+#else
+#define __INT32_C(x)	x
+#define __UINT32_C(x)	x ## U
+#endif /* __int_least32_c_suffix__ */
+#endif /* __INT_LEAST32_TYPE__ */
 
-#ifndef UINT64_C
-#define UINT64_C(x)	__UINT64_C(x)
-#endif
+#endif /* !CONFIG_ENFORCE_ZEPHYR_STDINT */
 
-#ifndef __INTMAX_C
-#define __INTMAX_C(x)	x
-#endif
+#ifdef __INT16_TYPE__
+#undef __int_least16_c_suffix__
+#undef __int_least8_c_suffix__
+#ifdef __INT16_C_SUFFIX__
+#define __int_least16_c_suffix__ __INT16_C_SUFFIX__
+#define __int_least8_c_suffix__ __INT16_C_SUFFIX__
+#endif /* __INT16_C_SUFFIX__ */
+#endif /* __INT16_TYPE__ */
 
-#ifndef INTMAX_C
-#define INTMAX_C(x)	__INTMAX_C(x)
-#endif
+#ifdef __INT_LEAST16_TYPE__
+#ifdef __int_least16_c_suffix__
+#define __INT16_C(x)	int_c(x, __int_least16_c_suffix__)
+#define __UINT16_C(x)	uint_c(x, __int_least16_c_suffix__)
+#else
+#define __INT16_C(x)	x
+#define __UINT16_C(x)	x ## U
+#endif /* __int_least16_c_suffix__ */
+#endif /* __INT_LEAST16_TYPE__ */
 
-#ifndef __UINTMAX_C
-#define __UINTMAX_C(x)	x ## ULL
-#endif
+#ifdef __INT8_TYPE__
+#undef __int_least8_c_suffix__
+#ifdef __INT8_C_SUFFIX__
+#define __int_least8_c_suffix__ __INT8_C_SUFFIX__
+#endif /* __INT8_C_SUFFIX__ */
+#endif /* __INT8_TYPE__ */
 
-#ifndef UINTMAX_C
-#define UINTMAX_C(x)	__UINTMAX_C(x)
-#endif
+#ifdef __INT_LEAST8_TYPE__
+#ifdef __int_least8_c_suffix__
+#define __INT8_C(x)	int_c(x, __int_least8_c_suffix__)
+#define __UINT8_C(x)	uint_c(x, __int_least8_c_suffix__)
+#else
+#define __INT8_C(x)	x
+#define __UINT8_C(x)	x ## U
+#endif /* __int_least8_c_suffix__ */
+#endif /* __INT_LEAST8_TYPE__ */
+
+#define __INTMAX_C(x)	int_c(x, __INTMAX_C_SUFFIX__)
+#define __UINTMAX_C(x)	int_c(x, __UINTMAX_C_SUFFIX__)
+
+#endif /* CONFIG_MINIMAL_LIBC */
 
 #endif /* ZEPHYR_INCLUDE_TOOLCHAIN_LLVM_H_ */

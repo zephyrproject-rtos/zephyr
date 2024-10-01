@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation.
+ * Copyright (c) 2015 - 2023 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,7 +125,7 @@ void shared_irq_isr(const struct device *dev)
 
 	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev) {
-			clients->client[i].isr_func(clients->client[i].isr_dev);
+			clients->client[i].isr_func(clients->client[i].isr_dev, config->irq_num);
 		}
 	}
 }

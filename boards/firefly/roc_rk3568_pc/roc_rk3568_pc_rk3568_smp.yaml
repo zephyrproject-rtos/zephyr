@@ -1,0 +1,14 @@
+identifier: roc_rk3568_pc/rk3568/smp
+name: Rockchip ROC RK3568 PC SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - smp
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

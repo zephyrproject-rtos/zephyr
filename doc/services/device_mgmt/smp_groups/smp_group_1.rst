@@ -3,7 +3,7 @@
 Application/software image management group
 ###########################################
 
-Application/software image management management group defines following commands:
+Application/software image management group defines following commands:
 
 .. table::
     :align: center
@@ -75,7 +75,7 @@ Get state of images request header fields:
     | ``0``  | ``1``        |  ``0``         |
     +--------+--------------+----------------+
 
-The command sends sends empty CBOR map as data.
+The command sends an empty CBOR map as data.
 
 .. _mcumgr_smp_protocol_op_1_grp_1_cmd_0:
 
@@ -204,7 +204,7 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 .. note::
@@ -407,7 +407,7 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 The "off" field is only included in responses to successfully processed requests;
@@ -509,10 +509,10 @@ where:
     |                  | using SMP version 1 or for SMP errors when using SMP version 2.         |
     +------------------+-------------------------------------------------------------------------+
     | "rsn"            | optional string that clarifies reason for an error; specifically useful |
-    |                  | when ``rc`` is :c:enum:`MGMT_ERR_EUNKNOWN`.                             |
+    |                  | when ``rc`` is :c:enumerator:`MGMT_ERR_EUNKNOWN`.                       |
     +------------------+-------------------------------------------------------------------------+
 
 .. note::
     Response from Zephyr running device may have "rc" value of
-    :c:enum:`MGMT_ERR_EBADSTATE`, which means that the secondary
+    :c:enumerator:`MGMT_ERR_EBADSTATE`, which means that the secondary
     image has been marked for next boot already and may not be erased.

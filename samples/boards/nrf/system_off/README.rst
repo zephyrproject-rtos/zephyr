@@ -33,5 +33,5 @@ nRF52 core output
 
    *** Booting Zephyr OS build v2.3.0-rc1-204-g5f2eb85f728d  ***
 
-   nrf52dk_nrf52832 system off demo
+   nrf52dk system off demo
    Entering system off; press sw0 to restart

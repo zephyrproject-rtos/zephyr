@@ -28,7 +28,10 @@ extern "C" {
  * @{
  */
 
+/** Maximum length of the band specification string */
 #define WIFI_UTILS_MAX_BAND_STR_LEN 3
+
+/** Maximum length of the channel specification string */
 #define WIFI_UTILS_MAX_CHAN_STR_LEN 4
 
 /**
@@ -102,6 +105,49 @@ int wifi_utils_parse_scan_ssids(char *scan_ssids_str,
 int wifi_utils_parse_scan_chan(char *scan_chan_str,
 			       struct wifi_band_channel *chan,
 			       uint8_t max_channels);
+
+
+/**
+ * @brief Validate a channel against a band.
+ *
+ * @param band Band to validate the channel against.
+ * @param chan Channel to validate.
+ *
+ * @retval true if the channel is valid for the band.
+ * @retval false if the channel is not valid for the band.
+ */
+bool wifi_utils_validate_chan(uint8_t band,
+			      uint16_t chan);
+
+/**
+ * @brief Validate a channel against the 2.4 GHz band.
+ *
+ * @param chan Channel to validate.
+ *
+ * @retval true if the channel is valid for the band.
+ * @retval false if the channel is not valid for the band.
+ */
+bool wifi_utils_validate_chan_2g(uint16_t chan);
+
+/**
+ * @brief Validate a channel against the 5 GHz band.
+ *
+ * @param chan Channel to validate.
+ *
+ * @retval true if the channel is valid for the band.
+ * @retval false if the channel is not valid for the band.
+ */
+bool wifi_utils_validate_chan_5g(uint16_t chan);
+
+/**
+ * @brief Validate a channel against the 6 GHz band.
+ *
+ * @param chan Channel to validate.
+ *
+ * @retval true if the channel is valid for the band.
+ * @retval false if the channel is not valid for the band.
+ */
+bool wifi_utils_validate_chan_6g(uint16_t chan);
 
 /**
  * @}

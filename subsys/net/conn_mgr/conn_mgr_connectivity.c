@@ -400,7 +400,7 @@ void conn_mgr_conn_init(void)
 	STRUCT_SECTION_FOREACH(conn_mgr_conn_binding, binding) {
 		if (binding->impl->api) {
 			/* We need to fire conn_mgr_conn_handle_iface_admin_up for any
-			 * (connectivity-enabled) ifaces that went admin-up before we registerred
+			 * (connectivity-enabled) ifaces that went admin-up before we registered
 			 * the event callback that typically handles this.
 			 */
 			if (net_if_is_admin_up(binding->iface)) {

@@ -33,6 +33,12 @@ extern "C" {
 #define DNS_SD_FOREACH(it) \
 	STRUCT_SECTION_FOREACH(dns_sd_rec, it)
 
+#define DNS_SD_COUNT(dst) \
+	STRUCT_SECTION_COUNT(dns_sd_rec, dst)
+
+#define DNS_SD_GET(i, dst) \
+	STRUCT_SECTION_GET(dns_sd_rec, i, dst)
+
 /**
  * @brief Extract labels from a DNS-SD PTR query
  *
@@ -61,37 +67,6 @@ extern "C" {
  */
 int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_rec *record,
 			 char **label, size_t *size, size_t *n);
-
-/**
- * @brief Extract the Service, Protocol, and Domain from a DNS-SD PTR query
- *
- * This function zero-initializes @p record and populates the appropriate
- * fields so that @p record may be subsequently passed to @ref dns_sd_rec_match.
- *
- * If a query with a supported format is found, the function returns the
- * length of the initial, variable-length portion of the query.
- *
- * For example, if the query begins with "._foo._tcp.local.", where
- * the '.' character represents a length of the subsequent string value,
- * then this function will return 17.
- *
- * @param query a pointer to the start of the query
- * @param query_size the number of bytes contained in the query
- * @param[out] record the DNS-SD record to initialize and populate
- * @param service buffer to store the null-terminated service
- * @param service_size the size of @p service
- * @param proto buffer to store the null-terminated proto
- * @param proto_size the size of @p proto
- * @param domain buffer to store the null-terminated domain
- * @param domain_size the size of @p domain
- * @return on success, a positive number representing length of the query
- * @return on failure, a negative errno value
- */
-__deprecated
-int dns_sd_extract_service_proto_domain(const uint8_t *query,
-	size_t query_size, struct dns_sd_rec *record, char *service,
-	size_t service_size, char *proto, size_t proto_size,
-	char *domain, size_t domain_size);
 
 /**
  * @brief See if the DNS SD @p filter matches the @p record

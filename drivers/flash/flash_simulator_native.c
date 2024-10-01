@@ -9,6 +9,12 @@
  * native simulator runner/host context, and not in Zephyr/embedded context.
  */
 
+#undef _POSIX_C_SOURCE
+/* Note: This is used only for interaction with the host C library, and is therefore exempt of
+ * coding guidelines rule A.4&5 which applies to the embedded code using embedded libraries
+ */
+#define _POSIX_C_SOURCE 200809L
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -24,7 +30,7 @@
 
 /*
  * Initialize the flash buffer.
- * And, if the content is to be kept on disk map it to the the buffer to the file.
+ * And, if the content is to be kept on disk map it to the buffer to the file.
  *
  * Returns -1 on failure
  *	    0 on success

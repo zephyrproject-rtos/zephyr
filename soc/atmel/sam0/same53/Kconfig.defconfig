@@ -1,0 +1,15 @@
+# Atmel SAME53 MCU series configuration options
+
+# Copyright (c) 2019 ML!PA Consulting GmbH
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAME53
+
+config NUM_IRQS
+	default 137
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+endif # SOC_SERIES_SAME53

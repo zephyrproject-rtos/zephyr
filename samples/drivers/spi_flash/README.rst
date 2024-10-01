@@ -15,12 +15,17 @@ savings is correctly implemented.
 Building and Running
 ********************
 
-The application will build only for a target that has a :ref:`devicetree
-<dt-guide>` entry with ``jedec,spi-nor`` as a compatible.
+The application will build only for a target that has a devicetree node with one of the
+following bindings as a compatible:
+
+* :dtcompatible:`jedec,spi-nor`,
+* :dtcompatible:`st,stm32-qspi-nor`,
+* :dtcompatible:`st,stm32-ospi-nor`,
+* :dtcompatible:`nordic,qspi-nor`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/spi_flash
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :goals: build flash
    :compact:
 

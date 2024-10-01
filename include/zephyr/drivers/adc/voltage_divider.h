@@ -51,7 +51,7 @@ static inline int voltage_divider_scale_dt(const struct voltage_divider_dt_spec 
 	}
 
 	/* voltage scaled by voltage divider values using DT binding */
-	*v_to_v = *v_to_v * spec->full_ohms / spec->output_ohms;
+	*v_to_v = (int64_t)*v_to_v * spec->full_ohms / spec->output_ohms;
 
 	return 0;
 }

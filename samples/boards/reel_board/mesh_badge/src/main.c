@@ -22,6 +22,10 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 };
 
+static const struct bt_data sd[] = {
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
@@ -59,10 +63,10 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-static struct bt_uuid_128 name_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 name_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef0));
 
-static struct bt_uuid_128 name_enc_uuid = BT_UUID_INIT_128(
+static const struct bt_uuid_128 name_enc_uuid = BT_UUID_INIT_128(
 	BT_UUID_128_ENCODE(0x12345678, 0x1234, 0x5678, 0x1234, 0x56789abcdef1));
 
 #define CPF_FORMAT_UTF8 0x19
@@ -176,8 +180,8 @@ static void bt_ready(int err)
 
 	if (!mesh_is_initialized()) {
 		/* Start advertising */
-		err = bt_le_adv_start(BT_LE_ADV_CONN_NAME,
-				      ad, ARRAY_SIZE(ad), NULL, 0);
+		err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, ad, ARRAY_SIZE(ad), sd,
+				      ARRAY_SIZE(sd));
 		if (err) {
 			printk("Advertising failed to start (err %d)\n", err);
 			return;

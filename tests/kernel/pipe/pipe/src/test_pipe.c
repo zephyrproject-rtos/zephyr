@@ -674,14 +674,14 @@ void pipe_put_get_timeout(void)
 
 /******************************************************************************/
 ZTEST_BMEM bool valid_fault;
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
 	if (valid_fault) {
 		valid_fault = false; /* reset back to normal */
 		ztest_test_pass();
 	} else {
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }

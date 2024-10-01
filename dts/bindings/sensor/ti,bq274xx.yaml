@@ -24,12 +24,22 @@ properties:
   taper-current:
     type: int
     required: true
-    description: Battery Taper current in mAh
+    description: |
+      Current in mA slightly higher than the taper current threshold at which
+      point the charger cuts off charging.
 
   terminate-voltage:
     type: int
     required: true
-    description: Battery Terminate Voltage in mV
+    description: |
+      Minimum operating voltage of your system. This is the target where the
+      gauge typically reports 0% capacity. In mV.
+
+  chemistry-id:
+    type: int
+    description: |
+      The value of the Chem ID register. When zero, the driver will not check the register.
+      See the reference manual for the specific BQ274xx variant for values.
 
   int-gpios:
     type: phandle-array

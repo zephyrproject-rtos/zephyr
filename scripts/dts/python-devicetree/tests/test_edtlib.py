@@ -365,6 +365,35 @@ def test_include_filters():
         assert set(child.prop2specs.keys()) == {'child-prop-1', 'child-prop-2',
                                                 'x', 'z'}  # root level 'y' is blocked
 
+def test_include_paths():
+    '''Test "last modified" semantic for included bindings paths.'''
+
+    fname2path = {'base.yaml': 'test-bindings-include/base.yaml',
+                  'modified.yaml': 'test-bindings-include/modified.yaml'}
+
+    with from_here():
+        top = edtlib.Binding('test-bindings-include/top.yaml', fname2path)
+
+        assert 'modified.yaml' == os.path.basename(top.prop2specs["x"].path)
+        assert 'base.yaml' == os.path.basename(top.prop2specs["y"].path)
+        assert 'top.yaml' == os.path.basename(top.prop2specs["p"].path)
+
+def test_include_filters_included_bindings():
+    '''Test filters set by including bindings.'''
+    fname2path = {'base.yaml': 'test-bindings-include/base.yaml',
+                  'inc-base.yaml': 'test-bindings-include/inc-base.yaml'}
+
+    with from_here():
+        top_allows = edtlib.Binding('test-bindings-include/top-allows.yaml', fname2path)
+    assert top_allows.prop2specs.get("x")
+    assert not top_allows.prop2specs.get("y")
+
+    with from_here():
+        top_blocks = edtlib.Binding('test-bindings-include/top-blocks.yaml', fname2path)
+    assert not top_blocks.prop2specs.get("x")
+    assert top_blocks.prop2specs.get("y")
+
+
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
@@ -626,6 +655,20 @@ def test_dependencies():
     assert edt.get_node("/in-dir-1").dep_ordinal == 1
     assert edt.get_node("/") in edt.get_node("/in-dir-1").depends_on
     assert edt.get_node("/in-dir-1") in edt.get_node("/").required_by
+
+def test_child_dependencies():
+    '''Test dependencies relashionship with child nodes propagated to parent'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    dep_node = edt.get_node("/child-binding-dep")
+
+    assert dep_node in edt.get_node("/child-binding").depends_on
+    assert dep_node in edt.get_node("/child-binding/child-1/grandchild").depends_on
+    assert dep_node in edt.get_node("/child-binding/child-2").depends_on
+    assert edt.get_node("/child-binding") in dep_node.required_by
+    assert edt.get_node("/child-binding/child-1/grandchild") in dep_node.required_by
+    assert edt.get_node("/child-binding/child-2") in dep_node.required_by
 
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''

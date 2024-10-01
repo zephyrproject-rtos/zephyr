@@ -1,6 +1,6 @@
 common:
   integration_platforms:
-    - native_posix
+    - native_sim
 
 tests:
   logging.log_custom_header:

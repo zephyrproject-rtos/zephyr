@@ -1,0 +1,14 @@
+# ST STM32H747X MCU configuration options
+
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32H747XX_M7 || SOC_STM32H747XX_M4
+
+config STM32H7_DUAL_CORE
+	default y
+
+config NUM_IRQS
+	default 150
+
+endif # SOC_STM32H747XX_M7 || SOC_STM32H747XX_M7

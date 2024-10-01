@@ -377,13 +377,13 @@ static int rtc_mc146818_alarm_get_time(const struct device *dev, uint16_t id, ui
 	}
 
 	value = rtc_read(RTC_ALARM_MIN);
-	if (value <= MAX_SEC) {
+	if (value <= MAX_MIN) {
 		timeptr->tm_min = value;
 		(*mask) |= RTC_ALARM_TIME_MASK_MINUTE;
 	}
 
 	value = rtc_read(RTC_ALARM_HOUR);
-	if (value <= MAX_SEC) {
+	if (value <= MAX_HOUR) {
 		timeptr->tm_hour = value;
 		(*mask) |= RTC_ALARM_TIME_MASK_HOUR;
 	}
@@ -495,7 +495,7 @@ static void rtc_mc146818_isr(const struct device *dev)
 #endif
 }
 
-struct rtc_driver_api rtc_mc146818_driver_api = {
+static const struct rtc_driver_api rtc_mc146818_driver_api = {
 	.set_time = rtc_mc146818_set_time,
 	.get_time = rtc_mc146818_get_time,
 #if defined(CONFIG_RTC_ALARM)

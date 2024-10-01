@@ -26,16 +26,30 @@
 #endif
 #define RAMABLE_REGION RAM
 
+/* Region of the irq vectors and boot-vector SP/PC */
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+#define ROMSTART_ADDR CONFIG_ROMSTART_REGION_ADDRESS
+#define ROMSTART_SIZE (CONFIG_ROMSTART_REGION_SIZE * 1K)
+#else
+#define ROMSTART_REGION ROMABLE_REGION
+#endif
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
-#define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
+#if defined(CONFIG_ROM_END_OFFSET)
+#define ROM_END_OFFSET CONFIG_ROM_END_OFFSET
 #else
-#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_END_OFFSET 0
+#endif
+
+#if CONFIG_FLASH_LOAD_SIZE > 0
+#define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
+#else
+#define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
 #endif
 
 #if defined(CONFIG_XIP)
@@ -75,13 +89,21 @@ _region_min_align = 4;
     . = ALIGN(_region_min_align)
 #endif
 
+#include <zephyr/linker/linker-devnull.h>
+
 MEMORY
     {
+#if defined(CONFIG_ROMSTART_RELOCATION_ROM)
+    ROMSTART_REGION (rx) : ORIGIN = ROMSTART_ADDR, LENGTH = ROMSTART_SIZE
+#endif
     FLASH (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
     RAM   (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
+#if defined(CONFIG_LINKER_DEVNULL_MEMORY)
+    DEVNULL_ROM (rx) : ORIGIN = DEVNULL_ADDR, LENGTH = DEVNULL_SIZE
+#endif
     LINKER_DT_REGIONS()
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST (wx) : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
+    IDT_LIST (wx) : ORIGIN = 0xFFFF7FFF, LENGTH = 32K
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -90,6 +112,10 @@ SECTIONS
     {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
 
     /*
      * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
@@ -118,7 +144,7 @@ SECTIONS
  */
 #include <snippets-rom-start.ld>
 
-	} GROUP_LINK_IN(ROMABLE_REGION)
+	} GROUP_LINK_IN(ROMSTART_REGION)
 
 #ifdef CONFIG_CODE_DATA_RELOCATION
 
@@ -167,7 +193,7 @@ SECTIONS
 	 * section overlap.
 	 */
 	__exidx_start = .;
-#if defined (__GCC_LINKER_CMD__)
+#if defined (__GCC_LINKER_CMD__) || defined (__LLD_LINKER_CMD__)
 	*(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
 	__exidx_end = .;
@@ -176,6 +202,10 @@ SECTIONS
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -385,6 +415,11 @@ GROUP_START(ITCM)
 		__itcm_start = .;
 		*(.itcm)
 		*(".itcm.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-itcm-section.ld>
+
 		__itcm_end = .;
 	} GROUP_LINK_IN(ITCM AT> ROMABLE_REGION)
 
@@ -419,6 +454,11 @@ GROUP_START(DTCM)
 		__dtcm_data_start = .;
 		*(.dtcm_data)
 		*(".dtcm_data.*")
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function. */
+#include <snippets-dtcm-section.ld>
+
 		__dtcm_data_end = .;
 	} GROUP_LINK_IN(DTCM AT> ROMABLE_REGION)
 
@@ -447,6 +487,15 @@ GROUP_END(DTCM)
 	KEEP(*(.ARM.attributes))
 	KEEP(*(.gnu.attributes))
 	}
+
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
 
     /* Sections generated from 'zephyr,memory-region' nodes */
     LINKER_DT_SECTIONS()

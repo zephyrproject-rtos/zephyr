@@ -13,72 +13,81 @@ BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_UP == NRF_GPIO_PIN_PULLUP)),
 	      "nRF pinctrl pull settings do not match HAL values");
 
-BUILD_ASSERT(((NRF_DRIVE_S0S1 == NRF_GPIO_PIN_S0S1) &&
-	      (NRF_DRIVE_H0S1 == NRF_GPIO_PIN_H0S1) &&
-	      (NRF_DRIVE_S0H1 == NRF_GPIO_PIN_S0H1) &&
-	      (NRF_DRIVE_H0H1 == NRF_GPIO_PIN_H0H1) &&
-	      (NRF_DRIVE_D0S1 == NRF_GPIO_PIN_D0S1) &&
-	      (NRF_DRIVE_D0H1 == NRF_GPIO_PIN_D0H1) &&
-	      (NRF_DRIVE_S0D1 == NRF_GPIO_PIN_S0D1) &&
-	      (NRF_DRIVE_H0D1 == NRF_GPIO_PIN_H0D1) &&
-#if defined(GPIO_PIN_CNF_DRIVE_E0E1)
-	      (NRF_DRIVE_E0E1 == NRF_GPIO_PIN_E0E1) &&
-#endif /* defined(GPIO_PIN_CNF_DRIVE_E0E1) */
-	      (1U)),
-	     "nRF pinctrl drive settings do not match HAL values");
+#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+#define NRF_DRIVE_COUNT (NRF_DRIVE_E0E1 + 1)
+#else
+#define NRF_DRIVE_COUNT (NRF_DRIVE_H0D1 + 1)
+#endif
+static const nrf_gpio_pin_drive_t drive_modes[NRF_DRIVE_COUNT] = {
+	[NRF_DRIVE_S0S1] = NRF_GPIO_PIN_S0S1,
+	[NRF_DRIVE_H0S1] = NRF_GPIO_PIN_H0S1,
+	[NRF_DRIVE_S0H1] = NRF_GPIO_PIN_S0H1,
+	[NRF_DRIVE_H0H1] = NRF_GPIO_PIN_H0H1,
+	[NRF_DRIVE_D0S1] = NRF_GPIO_PIN_D0S1,
+	[NRF_DRIVE_D0H1] = NRF_GPIO_PIN_D0H1,
+	[NRF_DRIVE_S0D1] = NRF_GPIO_PIN_S0D1,
+	[NRF_DRIVE_H0D1] = NRF_GPIO_PIN_H0D1,
+#if defined(GPIO_PIN_CNF_DRIVE_E0E1) || defined(GPIO_PIN_CNF_DRIVE0_E0)
+	[NRF_DRIVE_E0E1] = NRF_GPIO_PIN_E0E1,
+#endif
+};
 
 /* value to indicate pin level doesn't need initialization */
 #define NO_WRITE UINT32_MAX
 
 #define PSEL_DISCONNECTED 0xFFFFFFFFUL
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uart)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uart) || defined(CONFIG_NRFX_UART)
 #define NRF_PSEL_UART(reg, line) ((NRF_UART_Type *)reg)->PSEL##line
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uarte)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_uarte) || defined(CONFIG_NRFX_UARTE)
+#include <hal/nrf_uarte.h>
 #define NRF_PSEL_UART(reg, line) ((NRF_UARTE_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spi) || defined(CONFIG_NRFX_SPI)
 #define NRF_PSEL_SPIM(reg, line) ((NRF_SPI_Type *)reg)->PSEL##line
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spim) || defined(CONFIG_NRFX_SPIM)
+#include <hal/nrf_spim.h>
 #define NRF_PSEL_SPIM(reg, line) ((NRF_SPIM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) || defined(CONFIG_NRFX_SPIS)
+#include <hal/nrf_spis.h>
 #if defined(NRF51)
 #define NRF_PSEL_SPIS(reg, line) ((NRF_SPIS_Type *)reg)->PSEL##line
 #else
 #define NRF_PSEL_SPIS(reg, line) ((NRF_SPIS_Type *)reg)->PSEL.line
 #endif
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_spis) */
+#endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twi) || defined(CONFIG_NRFX_TWI)
 #if !defined(TWI_PSEL_SCL_CONNECT_Pos)
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL##line
 #else
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWI_Type *)reg)->PSEL.line
 #endif
-#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_twim) || defined(CONFIG_NRFX_TWIM)
+#include <hal/nrf_twim.h>
 #define NRF_PSEL_TWIM(reg, line) ((NRF_TWIM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_i2s)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_i2s) || defined(CONFIG_NRFX_I2S)
 #define NRF_PSEL_I2S(reg, line) ((NRF_I2S_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pdm) || defined(CONFIG_NRFX_PDM)
 #define NRF_PSEL_PDM(reg, line) ((NRF_PDM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwm) || defined(CONFIG_NRFX_PWM)
 #define NRF_PSEL_PWM(reg, line) ((NRF_PWM_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qdec)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qdec) || defined(CONFIG_NRFX_QDEC)
 #define NRF_PSEL_QDEC(reg, line) ((NRF_QDEC_Type *)reg)->PSEL.line
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi)
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_qspi) || defined(CONFIG_NRFX_QSPI)
 #define NRF_PSEL_QSPI(reg, line) ((NRF_QSPI_Type *)reg)->PSEL.line
 #endif
 
@@ -86,11 +95,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
 	for (uint8_t i = 0U; i < pin_cnt; i++) {
-		nrf_gpio_pin_drive_t drive = NRF_GET_DRIVE(pins[i]);
+		nrf_gpio_pin_drive_t drive;
+		uint8_t drive_idx = NRF_GET_DRIVE(pins[i]);
 		uint32_t psel = NRF_GET_PIN(pins[i]);
 		uint32_t write = NO_WRITE;
 		nrf_gpio_pin_dir_t dir;
 		nrf_gpio_pin_input_t input;
+#if NRF_GPIO_HAS_CLOCKPIN
+		bool clockpin = false;
+#endif
+
+		if (drive_idx < ARRAY_SIZE(drive_modes)) {
+			drive = drive_modes[drive_idx];
+		} else {
+			return -EINVAL;
+		}
 
 		if (psel == NRF_PIN_DISCONNECTED) {
 			psel = PSEL_DISCONNECTED;
@@ -103,6 +122,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			write = 1U;
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_UARTE_CLOCKPIN_TXD_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_UART_RX:
 			NRF_PSEL_UART(reg, RXD) = psel;
@@ -114,6 +136,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			write = 1U;
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_UARTE_CLOCKPIN_RTS_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_UART_CTS:
 			NRF_PSEL_UART(reg, CTS) = psel;
@@ -127,12 +152,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			write = 0U;
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_SPIM_CLOCKPIN_SCK_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_SPIM_MOSI:
 			NRF_PSEL_SPIM(reg, MOSI) = psel;
 			write = 0U;
 			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_SPIM_CLOCKPIN_MOSI_NEEDED)
+			/* CLOCKPIN setting must not be applied to SPIM12x instances. */
+			if (!NRF_SPIM_IS_320MHZ_SPIM((void *)reg)) {
+				clockpin = true;
+			}
+#endif
 			break;
 		case NRF_FUN_SPIM_MISO:
 			NRF_PSEL_SPIM(reg, MISO) = psel;
@@ -145,6 +179,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			NRF_PSEL_SPIS(reg, SCK) = psel;
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_SPIS_CLOCKPIN_SCK_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_SPIS_MOSI:
 			NRF_PSEL_SPIS(reg, MOSI) = psel;
@@ -155,6 +192,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			NRF_PSEL_SPIS(reg, MISO) = psel;
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_SPIS_CLOCKPIN_MISO_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_SPIS_CSN:
 			NRF_PSEL_SPIS(reg, CSN) = psel;
@@ -165,25 +205,31 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if defined(NRF_PSEL_TWIM)
 		case NRF_FUN_TWIM_SCL:
 			NRF_PSEL_TWIM(reg, SCL) = psel;
-			if (drive == NRF_DRIVE_S0S1) {
+			if (drive == NRF_GPIO_PIN_S0S1) {
 				/* Override the default drive setting with one
 				 * suitable for TWI/TWIM peripherals (S0D1).
 				 * This drive cannot be used always so that
 				 * users are able to select e.g. H0D1 or E0E1
 				 * in devicetree.
 				 */
-				drive = NRF_DRIVE_S0D1;
+				drive = NRF_GPIO_PIN_S0D1;
 			}
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_TWIM_CLOCKPIN_SCL_NEEDED)
+			clockpin = true;
+#endif
 			break;
 		case NRF_FUN_TWIM_SDA:
 			NRF_PSEL_TWIM(reg, SDA) = psel;
-			if (drive == NRF_DRIVE_S0S1) {
-				drive = NRF_DRIVE_S0D1;
+			if (drive == NRF_GPIO_PIN_S0S1) {
+				drive = NRF_GPIO_PIN_S0D1;
 			}
 			dir = NRF_GPIO_PIN_DIR_INPUT;
 			input = NRF_GPIO_PIN_INPUT_CONNECT;
+#if NRF_GPIO_HAS_CLOCKPIN && defined(NRF_TWIM_CLOCKPIN_SDA_NEEDED)
+			clockpin = true;
+#endif
 			break;
 #endif /* defined(NRF_PSEL_TWIM) */
 #if defined(NRF_PSEL_I2S)
@@ -312,10 +358,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			break;
 		case NRF_FUN_QSPI_IO3:
 			NRF_PSEL_QSPI(reg, IO3) = psel;
-			dir = NRF_GPIO_PIN_DIR_INPUT;
+			write = 1U;
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
 			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
 			break;
 #endif /* defined(NRF_PSEL_QSPI) */
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_can)
+		/* Pin routing is controlled by secure domain, via UICR */
+		case NRF_FUN_CAN_TX:
+			dir = NRF_GPIO_PIN_DIR_OUTPUT;
+			input = NRF_GPIO_PIN_INPUT_DISCONNECT;
+			break;
+		case NRF_FUN_CAN_RX:
+			dir = NRF_GPIO_PIN_DIR_INPUT;
+			input = NRF_GPIO_PIN_INPUT_CONNECT;
+			break;
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_can) */
 		default:
 			return -ENOTSUP;
 		}
@@ -336,6 +394,9 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 
 			nrf_gpio_cfg(pin, dir, input, NRF_GET_PULL(pins[i]),
 				     drive, NRF_GPIO_PIN_NOSENSE);
+#if NRF_GPIO_HAS_CLOCKPIN
+			nrf_gpio_pin_clock_set(pin, clockpin);
+#endif
 		}
 	}
 

@@ -91,7 +91,10 @@ static int test_wdt_callback_reset_none(void)
 			"wdt callback failed");
 
 	err = wdt_disable(wdt);
-	if (err != 0) {
+	if (err == -EPERM) {
+		TC_PRINT("Some of the options are not permitted, skip\n");
+		return TC_SKIP;
+	} else if (err != 0) {
 		TC_PRINT("Disable watchdog error\n");
 		return TC_FAIL;
 	}

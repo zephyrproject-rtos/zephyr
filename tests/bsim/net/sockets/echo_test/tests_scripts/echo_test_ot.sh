@@ -17,11 +17,11 @@ EXECUTE_TIMEOUT=100
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf \
   -v=${verbosity_level} -s=${simulation_id} -start_offset=2e6 -d=0 -RealEncryption=1 \
   -testid=echo_client
 
-Execute ./bs_${BOARD}_samples_net_sockets_echo_server_prj_conf_overlay-ot_conf\
+Execute ./bs_${BOARD_TS}_samples_net_sockets_echo_server_prj_conf_overlay-ot_conf\
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 \
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

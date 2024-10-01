@@ -59,10 +59,12 @@ static struct lwm2m_engine_obj_field fields[] = {
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_res res[MAX_INSTANCE_COUNT][GATEWAY_MAX_ID];
 static struct lwm2m_engine_res_inst res_inst[MAX_INSTANCE_COUNT][RESOURCE_INSTANCE_COUNT];
+lwm2m_engine_gateway_msg_cb gateway_msg_cb[MAX_INSTANCE_COUNT];
 
-static int prefix_validation_cb(uint16_t obj_inst_id, uint16_t res_id, uint16_t res_inst_id,
-				uint8_t *data, uint16_t data_len, bool last_block,
-				size_t total_size)
+static int prefix_validation_cb(uint16_t obj_inst_id, uint16_t res_id,
+				uint16_t res_inst_id, uint8_t *data,
+				uint16_t data_len, bool last_block,
+				size_t total_size, size_t offset)
 {
 	int i;
 	int length;
@@ -127,20 +129,74 @@ static struct lwm2m_engine_obj_inst *lwm2m_gw_create(uint16_t obj_inst_id)
 	init_res_instance(res_inst[index], ARRAY_SIZE(res_inst[index]));
 
 	/* initialize instance resource data */
-	INIT_OBJ_RES_DATA(LWM2M_GATEWAY_DEVICE_RID, res[index], i, res_inst[index], j,
-			  device_table[index].device_id,
-			  CONFIG_LWM2M_GATEWAY_DEVICE_ID_MAX_STR_SIZE);
-	INIT_OBJ_RES(LWM2M_GATEWAY_PREFIX_RID, res[index], i, res_inst[index], j, 1, false, true,
-		     device_table[index].prefix, CONFIG_LWM2M_GATEWAY_PREFIX_MAX_STR_SIZE, NULL,
-		     NULL, prefix_validation_cb, NULL, NULL);
-	INIT_OBJ_RES_DATA(LWM2M_GATEWAY_IOT_DEVICE_OBJECTS_RID, res[index], i, res_inst[index], j,
-			  device_table[index].iot_device_objects,
-			  sizeof(device_table[index].iot_device_objects));
+	INIT_OBJ_RES_DATA_LEN(LWM2M_GATEWAY_DEVICE_RID, res[index], i, res_inst[index], j,
+			      device_table[index].device_id,
+			      CONFIG_LWM2M_GATEWAY_DEVICE_ID_MAX_STR_SIZE,
+			      strlen(device_table[index].device_id) + 1);
+	INIT_OBJ_RES_LEN(LWM2M_GATEWAY_PREFIX_RID, res[index], i, res_inst[index], j, 1, false,
+			 true, device_table[index].prefix, CONFIG_LWM2M_GATEWAY_PREFIX_MAX_STR_SIZE,
+			 strlen(device_table[index].prefix) + 1, NULL, NULL, prefix_validation_cb,
+			 NULL, NULL);
+	INIT_OBJ_RES_DATA_LEN(LWM2M_GATEWAY_IOT_DEVICE_OBJECTS_RID, res[index], i, res_inst[index],
+			      j, device_table[index].iot_device_objects,
+			      sizeof(device_table[index].iot_device_objects),
+			      strlen(device_table[index].iot_device_objects) + 1);
 
 	inst[index].resources = res[index];
 	inst[index].resource_count = i;
 	LOG_DBG("Created LWM2M gateway instance: %d", obj_inst_id);
 	return &inst[index];
+}
+
+int lwm2m_gw_handle_req(struct lwm2m_message *msg)
+{
+	struct coap_option options[4];
+	int ret;
+
+	ret = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_PATH, options,
+				ARRAY_SIZE(options));
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (int index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		/* Skip uninitialized objects */
+		if (!inst[index].obj) {
+			continue;
+		}
+
+		char *prefix = device_table[index].prefix;
+		size_t prefix_len = strlen(prefix);
+
+		if (prefix_len != options[0].len) {
+			continue;
+		}
+		if (strncmp(options[0].value, prefix, prefix_len) != 0) {
+			continue;
+		}
+
+		if (gateway_msg_cb[index] == NULL) {
+			return -ENOENT;
+		}
+		/* Delete prefix from path*/
+		ret = coap_options_to_path(&options[1], ret - 1, &msg->path);
+		if (ret < 0) {
+			return ret;
+		}
+		return gateway_msg_cb[index](msg);
+	}
+	return -ENOENT;
+}
+
+int lwm2m_register_gw_callback(uint16_t obj_inst_id, lwm2m_engine_gateway_msg_cb cb)
+{
+	for (int index = 0; index < MAX_INSTANCE_COUNT; index++) {
+		if (inst[index].obj_inst_id == obj_inst_id) {
+			gateway_msg_cb[index] = cb;
+			return 0;
+		}
+	}
+	return -ENOENT;
 }
 
 static int lwm2m_gw_init(void)
@@ -151,7 +207,7 @@ static int lwm2m_gw_init(void)
 	lwm2m_gw.obj_id = LWM2M_OBJECT_GATEWAY_ID;
 	lwm2m_gw.version_major = GATEWAY_VERSION_MAJOR;
 	lwm2m_gw.version_minor = GATEWAY_VERSION_MINOR;
-	lwm2m_gw.is_core = true;
+	lwm2m_gw.is_core = false;
 	lwm2m_gw.fields = fields;
 	lwm2m_gw.field_count = ARRAY_SIZE(fields);
 	lwm2m_gw.max_instance_count = MAX_INSTANCE_COUNT;
@@ -160,4 +216,4 @@ static int lwm2m_gw_init(void)
 	return ret;
 }
 
-SYS_INIT(lwm2m_gw_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+LWM2M_OBJ_INIT(lwm2m_gw_init);

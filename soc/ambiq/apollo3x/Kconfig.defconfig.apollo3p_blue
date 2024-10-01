@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023 Ambiq Micro Inc. <www.ambiq.com>
+
+if SOC_APOLLO3P_BLUE
+
+config NUM_IRQS
+	default 33
+
+config MAIN_STACK_SIZE
+	default 2048 if BT
+
+if BT
+
+config BT_BUF_ACL_TX_COUNT
+	default 4
+
+config BT_BUF_CMD_TX_SIZE
+	default 255
+
+config BT_BUF_EVT_RX_SIZE
+	default 255
+
+config BT_BUF_ACL_TX_SIZE
+	default 251
+
+config BT_BUF_ACL_RX_SIZE
+	default 251
+
+# L2CAP SDU/PDU TX MTU
+# BT_L2CAP_RX_MTU = CONFIG_BT_BUF_ACL_RX_SIZE - BT_L2CAP_HDR_SIZE
+config BT_L2CAP_TX_MTU
+	default 247
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+endif # BT
+
+endif # SOC_APOLLO3P_BLUE

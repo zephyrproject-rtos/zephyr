@@ -30,13 +30,15 @@
 #include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <ksched.h>
+#include <kthread.h>
 #include <wait_q.h>
 #include <errno.h>
 #include <zephyr/init.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/llext/symbol.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization
@@ -48,7 +50,7 @@ static struct k_spinlock lock;
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static struct k_obj_type obj_type_mutex;
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
@@ -57,11 +59,11 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 
 	z_waitq_init(&mutex->wait_q);
 
-	z_object_init(mutex);
+	k_object_init(mutex);
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 	k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */
 
 	SYS_PORT_TRACING_OBJ_INIT(k_mutex, mutex, 0);
 
@@ -71,11 +73,11 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 {
-	Z_OOPS(Z_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_init(mutex);
 }
-#include <syscalls/k_mutex_init_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_mutex_init_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static int32_t new_prio_for_inheritance(int32_t target, int32_t limit)
 {
@@ -95,7 +97,7 @@ static bool adjust_owner_prio(struct k_mutex *mutex, int32_t new_prio)
 			'y' : 'n',
 			new_prio, mutex->owner->base.prio);
 
-		return z_set_prio(mutex->owner, new_prio);
+		return z_thread_prio_set(mutex->owner, new_prio);
 	}
 	return false;
 }
@@ -200,11 +202,11 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 				      k_timeout_t timeout)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_lock(mutex, timeout);
 }
-#include <syscalls/k_mutex_lock_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_mutex_lock_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
@@ -284,11 +286,11 @@ k_mutex_unlock_return:
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 {
-	Z_OOPS(Z_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
 	return z_impl_k_mutex_unlock(mutex);
 }
-#include <syscalls/k_mutex_unlock_mrsh.c>
-#endif
+#include <zephyr/syscalls/k_mutex_unlock_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static int init_mutex_obj_core_list(void)
@@ -298,7 +300,7 @@ static int init_mutex_obj_core_list(void)
 	z_obj_type_init(&obj_type_mutex, K_OBJ_TYPE_MUTEX_ID,
 			offsetof(struct k_mutex, obj_core));
 
-	/* Initialize and link statically defined mutexs */
+	/* Initialize and link statically defined mutexes */
 
 	STRUCT_SECTION_FOREACH(k_mutex, mutex) {
 		k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
@@ -309,4 +311,4 @@ static int init_mutex_obj_core_list(void)
 
 SYS_INIT(init_mutex_obj_core_list, PRE_KERNEL_1,
 	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-#endif
+#endif /* CONFIG_OBJ_CORE_MUTEX */

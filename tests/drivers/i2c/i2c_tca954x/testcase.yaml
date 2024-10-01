@@ -6,4 +6,4 @@ tests:
       - drivers
     depends_on: i2c
     filter: dt_compat_enabled("ti,tca9546a")
-    platform_allow: nrf52840dk_nrf52840
+    platform_allow: nrf52840dk/nrf52840

@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2023-2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 
 #include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
 #include <zephyr/dt-bindings/reset/stm32wba_reset.h>
 #include <zephyr/dt-bindings/adc/stm32u5_adc.h>
@@ -13,6 +14,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 
 #include <freq.h>
 
@@ -20,6 +22,8 @@
 	chosen {
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash;
+		st,lptim-stdby-timer = &rtc;
+		zephyr,bt-hci = &bt_hci_wba;
 	};
 
 	cpus {
@@ -30,6 +34,7 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
 			cpu-power-states = <&stop0 &stop1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -37,7 +42,6 @@
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
-				arm,num-mpu-regions = <8>;
 			};
 		};
 
@@ -54,11 +58,27 @@
 				substate-id = <2>;
 				min-residency-us = <500>;
 			};
+			standby: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				substate-id = <1>;
+				min-residency-us = <1000>;
+				exit-latency-us = <50>;
+			};
 		};
 	};
 
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
+	};
+
+	/* Defining this memory solves unaligned memory access issue */
+	sram6: memory@48028000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x48028000 DT_SIZE_K(16)>;
+		device_type = "memory";
+		zephyr,memory-region = "SRAM6";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE) )>;
 	};
 
 	clocks {
@@ -186,6 +206,15 @@
 				reg = <0x42021c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			};
+		};
+
+		rtc: rtc@46007800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x46007800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB7 0x00200000>;
+			alarms-count = <2>;
+			status = "disabled";
 		};
 
 		iwdg: watchdog@40003000 {
@@ -420,16 +449,59 @@
 			status = "disabled";
 		};
 
-		rng: rng@520c0800 {
+		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
-			reg = <0x520c0800 0x400>;
+			reg = <0x420c0800 0x400>;
 			interrupts = <59 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>,
-				 <&rcc STM32_SRC_PLL1_Q RNG_SEL(3)>;
+				 <&rcc STM32_SRC_HSI16 RNG_SEL(2)>;
 			nist-config = <0xf00d>;
 			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
+
+		gpdma1: dma@40020000 {
+			compatible = "st,stm32u5-dma";
+			#dma-cells = <3>;
+			reg = <0x40020000 0x1000>;
+			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			dma-channels = <8>;
+			dma-requests = <52>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+	};
+
+	bt_hci_wba: bt_hci_wba {
+		compatible = "st,hci-stm32wba";
+		status = "okay";
+	};
+
+	swj_port: swj_port {
+		compatible = "swj-connector";
+		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
+			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
+			     &debug_jtrst_pb4>;
+		pinctrl-1 = <&analog_pa13 &analog_pa14 &analog_pa15
+			     &analog_pb3 &analog_pb4>;
+		pinctrl-names = "default", "sleep";
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
+	};
+
+	smbus3: smbus3 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c3>;
+		status = "disabled";
 	};
 };
 

@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/drivers/i3c.h>
@@ -254,8 +255,7 @@ int i3c_ccc_do_setmwl_all(const struct device *controller,
 	ccc_payload.ccc.data_len = sizeof(data);
 
 	/* The actual data is MSB first. So order the data. */
-	data[0] = (uint8_t)((mwl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mwl->len & 0xFFU);
+	sys_put_be16(mwl->len, data);
 
 	return i3c_do_ccc(controller, &ccc_payload);
 }
@@ -282,8 +282,7 @@ int i3c_ccc_do_setmwl(const struct i3c_device_desc *target,
 	ccc_payload.targets.num_targets = 1;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mwl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mwl->len & 0xFFU);
+	sys_put_be16(mwl->len, data);
 
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
@@ -314,7 +313,7 @@ int i3c_ccc_do_getmwl(const struct i3c_device_desc *target,
 
 	if (ret == 0) {
 		/* The actual length is MSB first. So order the data. */
-		mwl->len = (data[0] << 8) | data[1];
+		mwl->len = sys_get_be16(data);
 	}
 
 	return ret;
@@ -337,8 +336,7 @@ int i3c_ccc_do_setmrl_all(const struct device *controller,
 	ccc_payload.ccc.data_len = has_ibi_size ? 3 : 2;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mrl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mrl->len & 0xFFU);
+	sys_put_be16(mrl->len, data);
 
 	if (has_ibi_size) {
 		data[2] = mrl->ibi_len;
@@ -368,8 +366,7 @@ int i3c_ccc_do_setmrl(const struct i3c_device_desc *target,
 	ccc_payload.targets.num_targets = 1;
 
 	/* The actual length is MSB first. So order the data. */
-	data[0] = (uint8_t)((mrl->len & 0xFF00U) >> 8);
-	data[1] = (uint8_t)(mrl->len & 0xFFU);
+	sys_put_be16(mrl->len, data);
 
 	if ((target->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE)
 	    == I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) {
@@ -413,7 +410,7 @@ int i3c_ccc_do_getmrl(const struct i3c_device_desc *target,
 
 	if (ret == 0) {
 		/* The actual length is MSB first. So order the data. */
-		mrl->len = (data[0] << 8) | data[1];
+		mrl->len = sys_get_be16(data);
 
 		if (has_ibi_sz) {
 			mrl->ibi_len = data[2];
@@ -477,13 +474,113 @@ int i3c_ccc_do_getstatus(const struct i3c_device_desc *target,
 	if (ret == 0) {
 		/* Received data is MSB first. So order the data. */
 		if (fmt == GETSTATUS_FORMAT_1) {
-			status->fmt1.status = (data[0] << 8) | data[1];
+			status->fmt1.status = sys_get_be16(data);
 		} else if (fmt == GETSTATUS_FORMAT_2) {
 			switch (defbyte) {
 			case GETSTATUS_FORMAT_2_TGTSTAT:
 				__fallthrough;
 			case GETSTATUS_FORMAT_2_PRECR:
-				status->fmt2.raw_u16 = (data[0] << 8) | data[1];
+				status->fmt2.raw_u16 = sys_get_be16(data);
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+out:
+	return ret;
+}
+
+int i3c_ccc_do_getcaps(const struct i3c_device_desc *target,
+			 union i3c_ccc_getcaps *caps,
+			 enum i3c_ccc_getcaps_fmt fmt,
+			 enum i3c_ccc_getcaps_defbyte defbyte)
+{
+	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
+	uint8_t defining_byte;
+	uint8_t data[4];
+	uint8_t len;
+	int ret;
+
+	__ASSERT_NO_MSG(target != NULL);
+	__ASSERT_NO_MSG(target->bus != NULL);
+	__ASSERT_NO_MSG(caps != NULL);
+
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.data = &data[0];
+
+	if (fmt == GETCAPS_FORMAT_1) {
+		/* Could be 1-4 Data Bytes Returned */
+		ccc_tgt_payload.data_len = 4;
+	} else if (fmt == GETCAPS_FORMAT_2) {
+		switch (defbyte) {
+		case GETCAPS_FORMAT_2_CRCAPS:
+			__fallthrough;
+		case GETCAPS_FORMAT_2_VTCAPS:
+			/* Could be 1-2 Data Bytes Returned*/
+			ccc_tgt_payload.data_len = 2;
+			break;
+		case GETCAPS_FORMAT_2_TGTCAPS:
+			__fallthrough;
+		case GETCAPS_FORMAT_2_TESTPAT:
+			/* Could be 1-4 Data Bytes Returned */
+			ccc_tgt_payload.data_len = 4;
+			break;
+		default:
+			ret = -EINVAL;
+			goto out;
+		}
+	} else {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	memset(&ccc_payload, 0, sizeof(ccc_payload));
+	ccc_payload.ccc.id = I3C_CCC_GETCAPS;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
+
+	if (fmt == GETCAPS_FORMAT_2) {
+		defining_byte = (uint8_t)defbyte;
+
+		ccc_payload.ccc.data = &defining_byte;
+		ccc_payload.ccc.data_len = 1;
+	}
+
+	ret = i3c_do_ccc(target->bus, &ccc_payload);
+
+	if (ret == 0) {
+		/* GETCAPS will return a variable length */
+		len = ccc_tgt_payload.num_xfer;
+
+		if (fmt == GETCAPS_FORMAT_1) {
+			memcpy(caps->fmt1.getcaps, data, len);
+			/* for values not received, assume default (1'b0) */
+			memset(&caps->fmt1.getcaps[len], 0, sizeof(caps->fmt1.getcaps) - len);
+		} else if (fmt == GETCAPS_FORMAT_2) {
+			switch (defbyte) {
+			case GETCAPS_FORMAT_2_CRCAPS:
+				memcpy(caps->fmt2.crcaps, data, len);
+				/* for values not received, assume default (1'b0) */
+				memset(&caps->fmt2.crcaps[len], 0, sizeof(caps->fmt2.crcaps) - len);
+				break;
+			case GETCAPS_FORMAT_2_VTCAPS:
+				memcpy(caps->fmt2.vtcaps, data, len);
+				/* for values not received, assume default (1'b0) */
+				memset(&caps->fmt2.vtcaps[len], 0, sizeof(caps->fmt2.vtcaps) - len);
+				break;
+			case GETCAPS_FORMAT_2_TGTCAPS:
+				memcpy(caps->fmt2.tgtcaps, data, len);
+				/* for values not received, assume default (1'b0) */
+				memset(&caps->fmt2.tgtcaps[len], 0,
+				       sizeof(caps->fmt2.tgtcaps) - len);
+				break;
+			case GETCAPS_FORMAT_2_TESTPAT:
+				/* should always be 4 data bytes */
+				caps->fmt2.testpat = sys_get_be32(data);
 				break;
 			default:
 				break;

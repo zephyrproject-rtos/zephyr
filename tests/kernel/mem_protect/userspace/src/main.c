@@ -16,9 +16,19 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/debug/stack.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include "test_syscall.h"
 #include <zephyr/sys/libc-hooks.h> /* for z_libc_partition */
+
+#if defined(CONFIG_XTENSA)
+#include <zephyr/arch/xtensa/cache.h>
+#if defined(CONFIG_XTENSA_MMU)
+#include <zephyr/arch/xtensa/xtensa_mmu.h>
+#endif
+#if defined(CONFIG_XTENSA_MPU)
+#include <zephyr/arch/xtensa/mpu.h>
+#endif
+#endif
 
 #if defined(CONFIG_ARC)
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
@@ -66,7 +76,7 @@ static void set_fault(unsigned int reason)
 	compiler_barrier();
 }
 
-void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 
@@ -77,12 +87,12 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 		} else {
 			printk("Wrong fault reason, expecting %d\n",
 			       expected_reason);
-			printk("PROJECT EXECUTION FAILED\n");
+			TC_END_REPORT(TC_FAIL);
 			k_fatal_halt(reason);
 		}
 	} else {
 		printk("Unexpected fault during test\n");
-		printk("PROJECT EXECUTION FAILED\n");
+		TC_END_REPORT(TC_FAIL);
 		k_fatal_halt(reason);
 	}
 }
@@ -178,6 +188,12 @@ ZTEST_USER(userspace, test_write_control)
 	set_fault(K_ERR_CPU_EXCEPTION);
 
 	__asm__ volatile("csrr %0, mstatus" : "=r" (status));
+#elif defined(CONFIG_XTENSA)
+	unsigned int ps;
+
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+	__asm__ volatile("rsr.ps %0" : "=r" (ps));
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault");
@@ -245,6 +261,39 @@ ZTEST_USER(userspace, test_disable_mmu_mpu)
 	 */
 	csr_write(pmpaddr3, LLONG_MAX);
 	csr_write(pmpcfg0, (PMP_R|PMP_W|PMP_X|PMP_NAPOT) << 24);
+#elif defined(CONFIG_XTENSA)
+	set_fault(K_ERR_CPU_EXCEPTION);
+
+#if defined(CONFIG_XTENSA_MMU)
+	/* Reset way 6 to do identity mapping.
+	 * Complier would complain addr going out of range if we
+	 * simply do addr = i * 0x20000000 inside the loop. So
+	 * we do increment instead.
+	 */
+	uint32_t addr = 0U;
+
+	for (int i = 0; i < 8; i++) {
+		uint32_t attr = addr | XTENSA_MMU_PERM_WX;
+
+		__asm__ volatile("wdtlb %0, %1; witlb %0, %1"
+				 :: "r"(attr), "r"(addr));
+
+		addr += 0x20000000;
+	}
+#endif
+
+#if defined(CONFIG_XTENSA_MPU)
+	/* Technically, simply clearing out all foreground MPU entries
+	 * allows the background map to take over, so it is not exactly
+	 * disabling MPU. However, this test is about catching userspace
+	 * trying to manipulate the MPU regions. So as long as there is
+	 * kernel OOPS, we would be fine.
+	 */
+	for (int i = 0; i < XTENSA_MPU_NUM_ENTRIES; i++) {
+		__asm__ volatile("wptlb %0, %1\n\t" : : "a"(i), "a"(0));
+	}
+#endif
+
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -381,7 +430,8 @@ ZTEST_USER(userspace, test_read_priv_stack)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -405,7 +455,8 @@ ZTEST_USER(userspace, test_write_priv_stack)
 
 	s[0] = 0;
 	priv_stack_ptr = (char *)&s[0] - size;
-#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || defined(CONFIG_ARM64)
+#elif defined(CONFIG_ARM) || defined(CONFIG_X86) || defined(CONFIG_RISCV) || \
+	defined(CONFIG_ARM64) || defined(CONFIG_XTENSA)
 	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
@@ -451,8 +502,11 @@ ZTEST_USER(userspace, test_pass_noperms_object)
 }
 
 
-void thread_body(void)
+void thread_body(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 }
 
 /**
@@ -465,7 +519,7 @@ ZTEST_USER(userspace, test_start_kernel_thread)
 	/* Try to start a kernel thread from a usermode thread */
 	set_fault(K_ERR_KERNEL_OOPS);
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
-			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
 			K_NO_WAIT);
 	zassert_unreachable("Create a kernel thread did not fault");
@@ -499,9 +553,16 @@ ZTEST_USER(userspace, test_read_other_stack)
 	/* Try to read from another thread's stack. */
 	unsigned int val;
 
-#ifdef CONFIG_MMU
+#if !defined(CONFIG_MEM_DOMAIN_ISOLATED_STACKS)
+	/* The minimal requirement to support memory domain permits
+	 * threads of the same memory domain to access each others' stacks.
+	 * Some architectures supports further restricting access which
+	 * can be enabled via a kconfig. So if the kconfig is not enabled,
+	 * skip the test.
+	 */
 	ztest_test_skip();
 #endif
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_read_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
@@ -521,9 +582,16 @@ ZTEST_USER(userspace, test_write_other_stack)
 	/* Try to write to another thread's stack. */
 	unsigned int val;
 
-#ifdef CONFIG_MMU
+#if !defined(CONFIG_MEM_DOMAIN_ISOLATED_STACKS)
+	/* The minimal requirement to support memory domain permits
+	 * threads of the same memory domain to access each others' stacks.
+	 * Some architectures supports further restricting access which
+	 * can be enabled via a kconfig. So if the kconfig is not enabled,
+	 * skip the test.
+	 */
 	ztest_test_skip();
 #endif
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE,
 			uthread_write_body, &val, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
@@ -568,8 +636,12 @@ ZTEST_USER(userspace, test_access_after_revoke)
 	zassert_unreachable("Using revoked object did not fault");
 }
 
-static void umode_enter_func(void)
+static void umode_enter_func(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	zassert_true(k_is_user_context(),
 		     "Thread did not enter user mode");
 }
@@ -586,7 +658,7 @@ ZTEST(userspace, test_user_mode_enter)
 {
 	clear_fault();
 
-	k_thread_user_mode_enter((k_thread_entry_t)umode_enter_func,
+	k_thread_user_mode_enter(umode_enter_func,
 				 NULL, NULL, NULL);
 }
 
@@ -854,28 +926,28 @@ static struct k_sem recycle_sem;
  * @details Test recycle valid/invalid kernel object, see if
  * perms_count changes as expected.
  *
- * @see z_object_recycle(), z_object_find()
+ * @see k_object_recycle(), k_object_find()
  *
  * @ingroup kernel_memprotect_tests
  */
 ZTEST(userspace, test_object_recycle)
 {
-	struct z_object *ko;
+	struct k_object *ko;
 	int perms_count = 0;
 	int dummy = 0;
 
 	/* Validate recycle invalid objects, after recycling this invalid
 	 * object, perms_count should finally still be 1.
 	 */
-	ko = z_object_find(&dummy);
+	ko = k_object_find(&dummy);
 	zassert_true(ko == NULL, "not an invalid object");
 
-	z_object_recycle(&dummy);
+	k_object_recycle(&dummy);
 
-	ko = z_object_find(&recycle_sem);
+	ko = k_object_find(&recycle_sem);
 	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
 
-	z_object_recycle(&recycle_sem);
+	k_object_recycle(&recycle_sem);
 	zassert_true(ko != NULL, "kernel object not found");
 	zassert_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
 		     "object wasn't marked as initialized");
@@ -937,7 +1009,7 @@ static inline void z_vrfy_check_syscall_context(void)
 {
 	return z_impl_check_syscall_context();
 }
-#include <syscalls/check_syscall_context_mrsh.c>
+#include <zephyr/syscalls/check_syscall_context_mrsh.c>
 
 ZTEST_USER(userspace, test_syscall_context)
 {
@@ -986,6 +1058,9 @@ void tls_entry(void *p1, void *p2, void *p3)
 ZTEST(userspace, test_tls_pointer)
 {
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	char *stack_obj_ptr;
+	size_t stack_obj_sz;
+
 	k_thread_create(&test_thread, test_stack, STACKSIZE, tls_entry,
 			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
 
@@ -997,15 +1072,23 @@ ZTEST(userspace, test_tls_pointer)
 	       (void *)(test_thread.stack_info.start +
 			test_thread.stack_info.size));
 
+#ifdef CONFIG_THREAD_STACK_MEM_MAPPED
+	stack_obj_ptr = (char *)test_thread.stack_obj_mapped;
+	stack_obj_sz = test_thread.stack_obj_size;
+#else
+	stack_obj_ptr = (char *)test_stack;
+	stack_obj_sz = sizeof(test_stack);
+#endif
+
 	printk("stack object bounds: [%p, %p)\n",
-	       test_stack, test_stack + sizeof(test_stack));
+	       stack_obj_ptr, stack_obj_ptr + stack_obj_sz);
 
 	uintptr_t tls_start = (uintptr_t)test_thread.userspace_local_data;
 	uintptr_t tls_end = tls_start +
 		sizeof(struct _thread_userspace_local_data);
 
-	if ((tls_start < (uintptr_t)test_stack) ||
-	    (tls_end > (uintptr_t)test_stack + sizeof(test_stack))) {
+	if ((tls_start < (uintptr_t)stack_obj_ptr) ||
+	    (tls_end > (uintptr_t)stack_obj_ptr + stack_obj_sz)) {
 		printk("tls area out of bounds\n");
 		ztest_test_fail();
 	}

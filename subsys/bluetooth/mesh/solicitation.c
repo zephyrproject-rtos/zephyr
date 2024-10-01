@@ -12,7 +12,6 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/uuid.h>
 #include "access.h"
-#include "adv.h"
 #include "cfg.h"
 #include "crypto.h"
 #include "mesh.h"
@@ -66,7 +65,7 @@ static int srpl_entry_save(struct bt_mesh_subnet *sub, uint32_t sseq, uint16_t s
 
 	entry = srpl_find_by_addr(ssrc);
 	if (entry) {
-		if (entry->sseq >= sseq && sseq != 0) {
+		if (entry->sseq >= sseq) {
 			LOG_WRN("Higher or equal SSEQ already saved for this SSRC");
 			return -EALREADY;
 		}

@@ -15,6 +15,8 @@
 /**
  * @brief Video Interface
  * @defgroup video_interface Video Interface
+ * @since 2.1
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -247,7 +249,7 @@ typedef int (*video_api_set_signal_t)(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
-struct video_driver_api {
+__subsystem struct video_driver_api {
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
@@ -559,9 +561,19 @@ static inline int video_set_signal(const struct device *dev,
 }
 
 /**
+ * @brief Allocate aligned video buffer.
+ *
+ * @param size Size of the video buffer (in bytes).
+ * @param align Alignment of the requested memory, must be a power of two.
+ *
+ * @retval pointer to allocated video buffer
+ */
+struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align);
+
+/**
  * @brief Allocate video buffer.
  *
- * @param size Size of the video buffer.
+ * @param size Size of the video buffer (in bytes).
  *
  * @retval pointer to allocated video buffer
  */
@@ -611,6 +623,9 @@ void video_buffer_release(struct video_buffer *buf);
 /** RGB565 pixel format */
 #define VIDEO_PIX_FMT_RGB565 video_fourcc('R', 'G', 'B', 'P') /* 16  RGB-5-6-5 */
 
+/** XRGB32 pixel format */
+#define VIDEO_PIX_FMT_XRGB32 video_fourcc('B', 'X', '2', '4') /* 32  XRGB-8-8-8-8 */
+
 /**
  * @}
  */
@@ -622,6 +637,9 @@ void video_buffer_release(struct video_buffer *buf);
 
 /** YUYV pixel format */
 #define VIDEO_PIX_FMT_YUYV video_fourcc('Y', 'U', 'Y', 'V') /* 16  Y0-Cb0 Y1-Cr0 */
+
+/** XYUV32 pixel format */
+#define VIDEO_PIX_FMT_XYUV32 video_fourcc('X', 'Y', 'U', 'V') /* 32  XYUV-8-8-8-8 */
 
 /**
  *

@@ -215,15 +215,10 @@ static int memc_flexspi_aps6408l_init(const struct device *dev)
 	}
 
 	if (memc_flexspi_set_device_config(data->controller, &config->config,
-					   config->port)) {
+	    (const uint32_t *) memc_flexspi_aps6408l_lut,
+	    sizeof(memc_flexspi_aps6408l_lut) / MEMC_FLEXSPI_CMD_SIZE,
+	    config->port)) {
 		LOG_ERR("Could not set device configuration");
-		return -EINVAL;
-	}
-
-	if (memc_flexspi_update_lut(data->controller, 0,
-				    (const uint32_t *) memc_flexspi_aps6408l_lut,
-				    sizeof(memc_flexspi_aps6408l_lut) / 4)) {
-		LOG_ERR("Could not update lut");
 		return -EINVAL;
 	}
 

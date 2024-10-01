@@ -32,6 +32,8 @@ extern void z_arm_reserved(void);
 #define REG_FROM_IRQ(irq) (irq / NUM_IRQS_PER_REG)
 #define BIT_FROM_IRQ(irq) (irq % NUM_IRQS_PER_REG)
 
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+
 void arch_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
@@ -90,7 +92,9 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 
-void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+#endif /* !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) */
+
+void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**
  *
@@ -118,7 +122,7 @@ void _arch_isr_direct_pm(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
 	 * lower than BASEPRI, which is not what we want. See comments in
-	 * arch/arm/core/isr_wrapper.S
+	 * arch/arm/core/cortex_m/isr_wrapper.c
 	 */
 	__asm__ volatile("cpsid i" : : : "memory");
 #else
@@ -127,7 +131,7 @@ void _arch_isr_direct_pm(void)
 
 	if (_kernel.idle) {
 		_kernel.idle = 0;
-		z_pm_save_idle_exit();
+		pm_system_resume();
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

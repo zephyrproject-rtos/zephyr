@@ -33,6 +33,14 @@ enum llcp_proc {
 	PROC_NONE = 0x0,
 };
 
+/* Generic IDLE state to be used across all procedures
+ * This allows a cheap procedure alloc/init handling
+ */
+enum llcp_proc_state_idle {
+	LLCP_STATE_IDLE
+};
+
+
 enum llcp_tx_q_pause_data_mask {
 	LLCP_TX_QUEUE_PAUSE_DATA_ENCRYPTION = 0x01,
 	LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE = 0x02,
@@ -128,6 +136,11 @@ struct proc_ctx {
 	/* llcp_mem_pool owner of this context */
 	struct llcp_mem_pool *owner;
 
+#if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
+	/* Wait list next pointer */
+	sys_snode_t wait_node;
+#endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
+
 	/* PROC_ */
 	enum llcp_proc proc;
 
@@ -145,13 +158,13 @@ struct proc_ctx {
 	/* Last transmitted opcode used for unknown/reject */
 	enum pdu_data_llctrl_type tx_opcode;
 
-	/* Instant collision */
-	int collision;
+	/*
+	 * This flag is set to 1 when we are finished with the control
+	 * procedure and it is safe to release the context ctx
+	 */
+	uint8_t done;
 
 #if defined(LLCP_TX_CTRL_BUF_QUEUE_ENABLE)
-	/* Wait list next pointer */
-	sys_snode_t wait_node;
-
 	/* Procedure wait reason */
 	enum llcp_wait_reason wait_reason;
 #endif /* LLCP_TX_CTRL_BUF_QUEUE_ENABLE */
@@ -166,11 +179,6 @@ struct proc_ctx {
 		/* pre-allocated TX node */
 		struct node_tx *tx;
 	} node_ref;
-	/*
-	 * This flag is set to 1 when we are finished with the control
-	 * procedure and it is safe to release the context ctx
-	 */
-	int done;
 
 	/* Procedure data */
 	union {
@@ -276,7 +284,7 @@ struct proc_ctx {
 #if defined(CONFIG_BT_PERIPHERAL)
 			uint32_t host_request_to;
 #endif /* defined(CONFIG_BT_PERIPHERAL) */
-#if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
 			uint32_t cig_sync_delay;
 			uint32_t cis_sync_delay;
 			uint8_t  c_phy;
@@ -295,7 +303,7 @@ struct proc_ctx {
 			uint8_t  c_ft;
 			uint8_t  p_ft;
 			uint8_t  aa[4];
-#endif /* defined(CONFIG_BT_CENTRAL) */
+#endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) */
 		} cis_create;
 
 		struct {
@@ -413,6 +421,7 @@ void llcp_ntf_set_pending(struct ll_conn *conn);
 void llcp_ntf_clear_pending(struct ll_conn *conn);
 bool llcp_ntf_pending(struct ll_conn *conn);
 void llcp_rx_node_retain(struct proc_ctx *ctx);
+void llcp_rx_node_release(struct proc_ctx *ctx);
 
 /*
  * ULL -> LLL Interface

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "cy8ckit_062_ble_cy8c6347-pinctrl.dtsi"
+
+/ {
+	aliases {
+		uart-6 = &uart6;
+	};
+
+	chosen {
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+	};
+};
+
+&uart6 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&p13_0_scb6_uart_rx &p13_1_scb6_uart_tx>;
+	pinctrl-names = "default";
+};

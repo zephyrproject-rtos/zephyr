@@ -315,6 +315,16 @@ In summary, here are some recommended practices for ``select``:
 - Select simple helper symbols without prompts and dependencies however much
   you like. They're a great tool for simplifying Kconfig files.
 
+- An exemption are buses like I2C and SPI, and following the same thought
+  process things like MFD as well. Drivers on these buses should use
+  ``select`` to allow the automatic activation of the necessary bus drivers
+  when devices on the bus are enabled in the devicetree.
+
+.. code-block:: kconfig
+
+   config ADC_FOO
+      bool "external SPI ADC foo driver"
+      select SPI
 
 (Lack of) conditional includes
 ******************************
@@ -1050,7 +1060,7 @@ This is logically equivalent to the following:
    See the `optional prompts`_ section for the meaning of the conditions on the
    prompts.
 
-When ``HAS_CONFIGURABLE`` is ``n``, we now get the following configuration
+When ``HAS_CONFIGURABLE_FOO`` is ``n``, we now get the following configuration
 output for the symbols, instead of no output:
 
 .. code-block:: cfg

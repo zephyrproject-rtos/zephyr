@@ -1,5 +1,9 @@
 /delete-node/ &qspi;
 
+&gpio0 {
+	gpio-reserved-ranges = <0 2>, <6 1>, <8 3>, <18 6>;
+};
+
 &spi2 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
@@ -21,11 +25,5 @@
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <35000>;
 		mxicy,mx25r-power-mode = "high-performance";
-	};
-};
-
-/ {
-	aliases {
-		spi-flash0 = &mx25r64;
 	};
 };

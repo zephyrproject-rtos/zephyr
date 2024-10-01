@@ -16,4 +16,6 @@ endforeach()
 foreach(i RANGE ${end_of_options} ${CMAKE_ARGC})
   list(APPEND ARGS ${CMAKE_ARGV${i}})
 endforeach()
-execute_process(COMMAND @CMAKE_COMMAND@ -E env REAL_CC=@CMAKE_C_COMPILER@ @SPARSE_COMPILER@ ${ARGS})
+execute_process(COMMAND @CMAKE_COMMAND@ -E env REAL_CC=@CMAKE_C_COMPILER@ @SPARSE_COMPILER@ ${ARGS}
+  COMMAND_ERROR_IS_FATAL ANY
+)

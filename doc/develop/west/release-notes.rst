@@ -3,6 +3,81 @@
 West Release Notes
 ##################
 
+v1.2.0
+******
+
+Major changes:
+
+- New ``west grep`` command for running a "grep tool" in your west workspace's
+  repositories. Currently, ``git grep``, `ripgrep`_, and standard ``grep`` are
+  supported grep tools.
+
+  To run this command to get ``git grep foo`` results from all cloned,
+  active repositories, run:
+
+  .. code-block:: console
+
+     west grep foo
+
+  Here are some other examples for running different grep commands
+  with ``west grep``:
+
+  .. list-table::
+
+     * - ``git grep --untracked``
+       - ``west grep --untracked foo``
+     * - ``ripgrep``
+       - ``west grep --tool ripgrep foo``
+     * - ``grep --recursive``
+       - ``west grep --tool grep foo``
+
+  To switch the default grep tool in your workspace, run the appropriate
+  command in this table:
+
+  .. list-table::
+
+     * - ``ripgrep``
+       - ``west config grep.tool ripgrep``
+     * - ``grep``
+       - ``west config grep.tool grep``
+
+  For more details, run ``west help grep``.
+
+Other changes:
+
+- The manifest file format now supports a ``description`` field in each
+  ``projects:`` element. See :ref:`west-manifests-projects` for examples.
+
+- ``west list --format`` now accepts ``{description}`` in the format
+  string, which prints the project's ``description:`` value.
+
+- ``west compare`` now always prints information about
+  :ref:`west-manifest-rev`.
+
+Bug fixes:
+
+- ``west init`` aborts if the destination directory already exists.
+
+API changes:
+
+- ``west.commands.WestCommand`` methods ``check_call()`` and
+  ``check_output()`` now take any kwargs that can be passed on
+  to the underlying subprocess function.
+
+- ``west.commands.WestCommand.run_subprocess()``: new wrapper
+  around ``subprocess.run()``. This could not be named ``run()``
+  because ``WestCommand`` already had a method by this name.
+
+- ``west.commands.WestCommand`` methods ``dbg()``, ``inf()``,
+  ``wrn()``, and ``err()`` now all take an ``end`` kwarg, which
+  is passed on to the call to ``print()``.
+
+- ``west.manifest.Project`` now has a ``description`` attribute,
+  which contains the parsed value of the ``description:`` field
+  in the manifest data.
+
+.. _ripgrep: https://github.com/BurntSushi/ripgrep#readme
+
 v1.1.0
 ******
 
@@ -594,7 +669,7 @@ The developer-visible changes to the :ref:`west-apis` are:
 
 West now requires Python 3.6 or later. Additionally, some features may rely on
 Python dictionaries being insertion-ordered; this is only an implementation
-detail in CPython 3.6, but is is part of the language specification as of
+detail in CPython 3.6, but it is part of the language specification as of
 Python 3.7.
 
 v0.6.3

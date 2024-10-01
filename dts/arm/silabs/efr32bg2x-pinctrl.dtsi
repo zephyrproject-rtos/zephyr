@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <arm/silabs/gpio_gecko.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 
 &pinctrl {

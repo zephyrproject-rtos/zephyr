@@ -25,7 +25,7 @@ static const uint8_t osdp_scbk_default[16] = {
 static void osdp_memzero(void *mem, size_t size)
 {
 	size_t i;
-	volatile uin8_t *p = mem;
+	volatile uint8_t *p = mem;
 
 	for (i = 0; i < size; i++) {
 		p[i] = 0;
@@ -92,7 +92,7 @@ void osdp_compute_cp_cryptogram(struct osdp_pd *pd)
 /**
  * Like memcmp; but operates at constant time.
  *
- * Returns 0 if memory pointed to by s1 and and s2 are identical; non-zero
+ * Returns 0 if memory pointed to by s1 and s2 are identical; non-zero
  * otherwise.
  */
 static int osdp_ct_compare(const void *s1, const void *s2, size_t len)

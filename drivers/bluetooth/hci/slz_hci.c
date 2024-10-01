@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/drivers/bluetooth/hci_driver.h>
+#include <zephyr/drivers/bluetooth.h>
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
@@ -15,6 +15,12 @@
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_slz);
+
+#define DT_DRV_COMPAT silabs_bt_hci
+
+struct hci_data {
+	bt_hci_recv_t recv;
+};
 
 #define SL_BT_CONFIG_ACCEPT_LIST_SIZE				1
 #define SL_BT_CONFIG_MAX_CONNECTIONS				1
@@ -53,9 +59,10 @@ void rail_isr_installer(void)
  */
 uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 {
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 	uint8_t packet_type = data[0];
-	uint8_t flags;
 	uint8_t event_code;
 
 	LOG_HEXDUMP_DBG(data, len, "host packet data:");
@@ -67,7 +74,6 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	switch (packet_type) {
 	case h4_event:
 		event_code = data[0];
-		flags = bt_hci_evt_get_flags(event_code);
 		buf = bt_buf_get_evt(event_code, false, K_FOREVER);
 		break;
 	case h4_acl:
@@ -79,21 +85,18 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	}
 
 	net_buf_add_mem(buf, data, len);
-	if (IS_ENABLED(CONFIG_BT_RECV_BLOCKING) &&
-	    (packet_type == h4_event) && (flags & BT_HCI_EVT_FLAG_RECV_PRIO)) {
-		bt_recv_prio(buf);
-	} else {
-		bt_recv(buf);
-	}
+	hci->recv(dev, buf);
 
 	sl_btctrl_hci_transmit_complete(0);
 
 	return 0;
 }
 
-static int slz_bt_send(struct net_buf *buf)
+static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 {
 	int rv = 0;
+
+	ARG_UNUSED(dev);
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
@@ -117,14 +120,24 @@ done:
 	return rv;
 }
 
-static int slz_bt_open(void)
+static void slz_thread_func(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	slz_ll_thread_func();
+}
+
+static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
+{
+	struct hci_data *hci = dev->data;
 	int ret;
 
 	/* Start RX thread */
 	k_thread_create(&slz_ll_thread, slz_ll_stack,
 			K_KERNEL_STACK_SIZEOF(slz_ll_stack),
-			(k_thread_entry_t)slz_ll_thread_func, NULL, NULL, NULL,
+			slz_thread_func, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0,
 			K_NO_WAIT);
 
@@ -183,6 +196,8 @@ static int slz_bt_open(void)
 	}
 #endif
 
+	hci->recv = recv;
+
 	LOG_DBG("SiLabs BT HCI started");
 
 	return 0;
@@ -191,24 +206,16 @@ deinit:
 	return ret;
 }
 
-static const struct bt_hci_driver drv = {
-	.name           = "sl:bt",
-	.bus            = BT_HCI_DRIVER_BUS_UART,
+static const struct bt_hci_driver_api drv = {
 	.open           = slz_bt_open,
 	.send           = slz_bt_send,
-	.quirks         = BT_QUIRK_NO_RESET
 };
 
-static int slz_bt_init(void)
-{
-	int ret;
+#define HCI_DEVICE_INIT(inst) \
+	static struct hci_data hci_data_##inst = { \
+	}; \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &hci_data_##inst, NULL, \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
-	ret = bt_hci_driver_register(&drv);
-	if (ret) {
-		LOG_ERR("Failed to register SiLabs BT HCI %d", ret);
-	}
-
-	return ret;
-}
-
-SYS_INIT(slz_bt_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+/* Only one instance supported right now */
+HCI_DEVICE_INIT(0)

@@ -232,8 +232,12 @@ static int mcp320x_read_channel(const struct device *dev, uint8_t channel,
 	return 0;
 }
 
-static void mcp320x_acquisition_thread(struct mcp320x_data *data)
+static void mcp320x_acquisition_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct mcp320x_data *data = p1;
 	uint16_t result = 0;
 	uint8_t channel;
 	int err;
@@ -279,12 +283,14 @@ static int mcp320x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	k_thread_create(&data->thread, data->stack,
-			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_STACK_SIZE,
-			(k_thread_entry_t)mcp320x_acquisition_thread,
+	k_tid_t tid = k_thread_create(&data->thread, data->stack,
+			K_KERNEL_STACK_SIZEOF(data->stack),
+			mcp320x_acquisition_thread,
 			data, NULL, NULL,
 			CONFIG_ADC_MCP320X_ACQUISITION_THREAD_PRIO,
 			0, K_NO_WAIT);
+
+	k_thread_name_set(tid, dev->name);
 
 	adc_context_unlock_unconditionally(&data->ctx);
 

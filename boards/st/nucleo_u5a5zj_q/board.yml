@@ -1,0 +1,5 @@
+board:
+  name: nucleo_u5a5zj_q
+  vendor: st
+  socs:
+    - name: stm32u5a5xx

@@ -1,4 +1,4 @@
-# Copyright 2023 NXP
+# Copyright 2023-2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP VREF SOC peripheral
@@ -20,12 +20,6 @@ properties:
   reg:
     required: true
 
-  nxp,ground-select:
-    type: string
-    enum:
-      - "VREFL3V" # 0
-      - "VSSA" # 1
-
   nxp,buffer-startup-delay-us:
     type: int
     required: true
@@ -39,3 +33,11 @@ properties:
     description: |
       Maximum bandgap startup time as specified in the
       appropriate device data sheet, in microseconds.
+
+  "#nxp,reference-cells":
+    type: int
+    const: 1
+    description: Number of items to expect in a vref specifier.
+
+nxp,reference-cells:
+  - vref_mv

@@ -78,6 +78,32 @@
 
 /* the unsigned long cast limits divisions to native CPU register width */
 #define cycle_diff_t unsigned long
+#define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
+
+/*
+ * We have two constraints on the maximum number of cycles we can wait for.
+ *
+ * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
+ *
+ * 2) The number of cycles between two reports must fit in a cycle_diff_t
+ *    variable before converting it to ticks.
+ *
+ * Then:
+ *
+ * 3) Pick the smallest between (1) and (2).
+ *
+ * 4) Take into account some room for the unavoidable IRQ servicing latency.
+ *    Let's use 3/4 of the max range.
+ *
+ * Finally let's add the LSB value to the result so to clear out a bunch of
+ * consecutive set bits coming from the original max values to produce a
+ * nicer literal for assembly generation.
+ */
+#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
+#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
+#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
+#define CYCLES_MAX	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -170,27 +196,19 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER) {
-		set_mtimecmp(UINT64_MAX);
-		return;
-	}
-
-	/*
-	 * Clamp the max period length to a number of cycles that can fit
-	 * in half the range of a cycle_diff_t for native width divisions
-	 * to be usable elsewhere. Also clamp it to half the range of an
-	 * int32_t as this is the type used for elapsed tick announcements.
-	 * The half range gives us extra room to cope with the unavoidable IRQ
-	 * servicing latency. The compiler should optimize away the least
-	 * restrictive of those tests automatically.
-	 */
-	ticks = CLAMP(ticks, 0, (cycle_diff_t)-1 / 2 / CYC_PER_TICK);
-	ticks = CLAMP(ticks, 0, INT32_MAX / 2);
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
+	uint64_t cyc;
 
+	if (ticks == K_TICKS_FOREVER) {
+		cyc = last_count + CYCLES_MAX;
+	} else {
+		cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
+		if ((cyc - last_count) > CYCLES_MAX) {
+			cyc = last_count + CYCLES_MAX;
+		}
+	}
 	set_mtimecmp(cyc);
+
 	k_spin_unlock(&lock, key);
 }
 

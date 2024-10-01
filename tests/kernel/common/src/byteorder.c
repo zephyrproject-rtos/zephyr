@@ -107,6 +107,40 @@ ZTEST(byteorder, test_sys_put_be64)
 }
 
 /**
+ * @brief Test sys_get_be40() functionality
+ *
+ * @details Test if sys_get_be40() correctly handles endianness.
+ *
+ * @see sys_get_be40()
+ */
+ZTEST(byteorder, test_sys_get_be40)
+{
+	uint64_t val = 0xf0e1d2c3b4, tmp;
+	uint8_t buf[] = {0xf0, 0xe1, 0xd2, 0xc3, 0xb4};
+
+	tmp = sys_get_be40(buf);
+
+	zassert_equal(tmp, val, "sys_get_be64() failed");
+}
+
+/**
+ * @brief Test sys_put_be40() functionality
+ *
+ * @details Test if sys_put_be40() correctly handles endianness.
+ *
+ * @see sys_put_be40()
+ */
+ZTEST(byteorder, test_sys_put_be40)
+{
+	uint64_t val = 0xf0e1d2c3b4;
+	uint8_t buf[] = {0xf0, 0xe1, 0xd2, 0xc3, 0xb4};
+	uint8_t tmp[sizeof(buf)];
+
+	sys_put_be40(val, tmp);
+	zassert_mem_equal(tmp, buf, sizeof(buf), "sys_put_be40() failed");
+}
+
+/**
  * @brief Test sys_get_be48() functionality
  *
  * @details Test if sys_get_be48() correctly handles endianness.
@@ -376,6 +410,41 @@ ZTEST(byteorder, test_sys_put_le32)
 	sys_put_le32(val, tmp);
 
 	zassert_mem_equal(tmp, buf, sizeof(uint32_t), "sys_put_le32() failed");
+}
+
+/**
+ * @brief Test sys_get_le40() functionality
+ *
+ * @details Test if sys_get_le40() correctly handles endianness.
+ *
+ * @see sys_get_le40()
+ */
+ZTEST(byteorder, test_sys_get_le40)
+{
+	uint64_t val = 0xf0e1d2c3b4, tmp;
+	uint8_t buf[] = {0xb4, 0xc3, 0xd2, 0xe1, 0xf0};
+
+	tmp = sys_get_le40(buf);
+
+	zassert_equal(tmp, val, "sys_get_le40() failed");
+}
+
+/**
+ * @brief Test sys_put_le40() functionality
+ *
+ * @details Test if sys_put_le40() correctly handles endianness.
+ *
+ * @see sys_put_le40()
+ */
+ZTEST(byteorder, test_sys_put_le40)
+{
+	uint64_t val = 0xf0e1d2c3b4;
+	uint8_t buf[] = {0xb4, 0xc3, 0xd2, 0xe1, 0xf0};
+	uint8_t tmp[sizeof(uint64_t)];
+
+	sys_put_le40(val, tmp);
+
+	zassert_mem_equal(tmp, buf, sizeof(buf), "sys_put_le40() failed");
 }
 
 /**

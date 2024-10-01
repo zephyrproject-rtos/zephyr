@@ -120,22 +120,22 @@ static int mcux_flexcomm_err_check(const struct device *dev)
 	uint32_t flags = USART_GetStatusFlags(config->base);
 	int err = 0;
 
-	if (flags & kStatus_USART_RxRingBufferOverrun) {
+	if (flags & kUSART_RxError) {
 		err |= UART_ERROR_OVERRUN;
 	}
 
-	if (flags & kStatus_USART_ParityError) {
+	if (flags & kUSART_ParityErrorFlag) {
 		err |= UART_ERROR_PARITY;
 	}
 
-	if (flags & kStatus_USART_FramingError) {
+	if (flags & kUSART_FramingErrorFlag) {
 		err |= UART_ERROR_FRAMING;
 	}
 
 	USART_ClearStatusFlags(config->base,
-			       kStatus_USART_RxRingBufferOverrun |
-			       kStatus_USART_ParityError |
-			       kStatus_USART_FramingError);
+			       kUSART_RxError |
+			       kUSART_ParityErrorFlag |
+			       kUSART_FramingErrorFlag);
 
 	return err;
 }
@@ -243,9 +243,9 @@ static int mcux_flexcomm_irq_rx_pending(const struct device *dev)
 static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kStatus_USART_NoiseError |
-			kStatus_USART_FramingError |
-			kStatus_USART_ParityError;
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
+			kUSART_FramingErrorInterruptEnable |
+			kUSART_ParityErrorInterruptEnable;
 
 	USART_EnableInterrupts(config->base, mask);
 }
@@ -253,9 +253,9 @@ static void mcux_flexcomm_irq_err_enable(const struct device *dev)
 static void mcux_flexcomm_irq_err_disable(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
-	uint32_t mask = kStatus_USART_NoiseError |
-			kStatus_USART_FramingError |
-			kStatus_USART_ParityError;
+	uint32_t mask = kUSART_NoiseErrorInterruptEnable |
+			kUSART_FramingErrorInterruptEnable |
+			kUSART_ParityErrorInterruptEnable;
 
 	USART_DisableInterrupts(config->base, mask);
 }
@@ -813,7 +813,7 @@ static void mcux_flexcomm_uart_dma_rx_callback(const struct device *dma_device, 
 	data->rx_data.offset = 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 /*
  * This functions calculates the inputmux connection value
  * needed by INPUTMUX_EnableSignal to allow the UART's DMA
@@ -825,7 +825,7 @@ static uint32_t fc_uart_calc_inmux_connection(uint8_t channel, DMA_Type *base)
 	uint32_t chmux_sel = 0;
 	uint32_t chmux_val = 0;
 
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX)
 	uint32_t chmux_sel_id = 0;
 
 	if (base == (DMA_Type *)DMA0_BASE) {
@@ -902,7 +902,7 @@ static int flexcomm_uart_async_init(const struct device *dev)
 	USART_EnableRxDMA(config->base, false);
 
 	/* Route DMA requests */
-#if defined(CONFIG_SOC_SERIES_IMX_RT5XX) || defined(CONFIG_SOC_SERIES_IMX_RT6XX)
+#if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	/* RT 3 digit uses input mux to route DMA requests from
 	 * the UART peripheral to a hardware designated DMA channel
 	 */
@@ -1144,12 +1144,11 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 1,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.tx_data.active_block,	\
 			.channel_direction = MEMORY_TO_PERIPHERAL,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_tx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n),		\
 		},								\
@@ -1165,12 +1164,11 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 			.source_data_size = 1,					\
 			.dest_data_size = 1,					\
 			.complete_callback_en = 1,				\
-			.error_callback_en = 1,					\
+			.error_callback_dis = 1,				\
 			.block_count = 1,					\
 			.head_block =						\
 				&mcux_flexcomm_##n##_data.rx_data.active_block,	\
 			.channel_direction = PERIPHERAL_TO_MEMORY,		\
-			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, rx, channel),	\
 			.dma_callback = mcux_flexcomm_uart_dma_rx_callback,	\
 			.user_data = (void *)DEVICE_DT_INST_GET(n)		\
 		},								\

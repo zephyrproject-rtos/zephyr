@@ -1,0 +1,171 @@
+/*
+ * Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32/esp32_wrover_e_n4r2.dtsi>
+#include "olimex_esp32_evb-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Olimex ESP32-EVB";
+	compatible = "olimex,esp32-evb", "espressif,esp32-wroom-32e", "espressif,esp32";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	aliases {
+		sw0 = &button1;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		button1: button1 {
+			gpios = <&gpio 34 GPIO_ACTIVE_LOW>;
+			label = "BUT1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	relay1: relay1 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpio 32 GPIO_ACTIVE_HIGH>;
+		regulator-name = "REL1";
+		startup-delay-us = <10000>;
+		off-on-delay-us = <5000>;
+	};
+
+	relay2: relay2 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		regulator-name = "REL2";
+		startup-delay-us = <10000>;
+		off-on-delay-us = <5000>;
+	};
+};
+
+uext_serial: &uart1 {};
+uext_i2c: &i2c0 {};
+uext_spi: &spi2 {};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	sda-gpios = <&gpio0 16 GPIO_OPEN_DRAIN>;
+	scl-gpios = <&gpio0 13 GPIO_OPEN_DRAIN>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&twai {
+	status = "okay";
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+
+	can-transceiver {
+		max-bitrate = <1000000>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&timer2 {
+	status = "okay";
+};
+
+&timer3 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 60kB for the bootloader */
+		boot_partition: partition@1000 {
+			label = "mcuboot";
+			reg = <0x00001000 DT_SIZE_K(60)>;
+			read-only;
+		};
+
+		/* Reserve 1024kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(1024)>;
+		};
+
+		/* Reserve 1024kB for the application in slot 1 */
+		slot1_partition: partition@110000 {
+			label = "image-1";
+			reg = <0x00110000 DT_SIZE_K(1024)>;
+		};
+
+		/* Reserve 256kB for the scratch partition */
+		scratch_partition: partition@210000 {
+			   label = "image-scratch";
+			   reg = <0x00210000 DT_SIZE_K(256)>;
+		};
+
+		storage_partition: partition@250000 {
+			label = "storage";
+			reg = <0x00250000 DT_SIZE_K(24)>;
+		};
+	};
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

@@ -11,7 +11,7 @@
  */
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
 #include "footprint.h"
@@ -32,7 +32,7 @@ static inline int z_vrfy_dummy_syscall(void)
 {
 	return 0;
 }
-#include <syscalls/dummy_syscall_mrsh.c>
+#include <zephyr/syscalls/dummy_syscall_mrsh.c>
 
 int z_impl_validation_overhead_syscall(void)
 {
@@ -41,13 +41,13 @@ int z_impl_validation_overhead_syscall(void)
 
 static inline int z_vrfy_validation_overhead_syscall(void)
 {
-	bool status_0 = Z_SYSCALL_OBJ_INIT(&test_sema, K_OBJ_SEM);
+	bool status_0 = K_SYSCALL_OBJ_INIT(&test_sema, K_OBJ_SEM);
 
-	bool status_1 = Z_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
+	bool status_1 = K_SYSCALL_OBJ(&test_sema, K_OBJ_SEM);
 
 	return status_0 || status_1;
 }
-#include <syscalls/validation_overhead_syscall_mrsh.c>
+#include <zephyr/syscalls/validation_overhead_syscall_mrsh.c>
 
 
 void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)

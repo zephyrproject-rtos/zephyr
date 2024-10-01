@@ -79,7 +79,7 @@ static void schedule_next_timeout(int64_t current_ticks)
 	k_timer_start(&timer, K_TIMEOUT_ABS_TICKS(next_timeout), K_FOREVER);
 
 #ifdef CONFIG_TASK_WDT_HW_FALLBACK
-	if (hw_wdt_dev) {
+	if (hw_wdt_started) {
 		wdt_feed(hw_wdt_dev, hw_wdt_channel);
 	}
 #endif
@@ -147,6 +147,7 @@ int task_wdt_init(const struct device *hw_wdt)
 	}
 
 	k_timer_init(&timer, task_wdt_trigger, NULL);
+	schedule_next_timeout(sys_clock_tick_get());
 
 	return 0;
 }

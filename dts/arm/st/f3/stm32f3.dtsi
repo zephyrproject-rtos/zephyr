@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 I-SENSE group of ICCS
  * Copyright (c) 2019 Centaur Analytics, Inc
+ * Copyright (c) 2024 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +26,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
@@ -410,6 +411,8 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>;
 			interrupts = <41 0>;
 			prescaler = <32768>;
+			alarms-count = <2>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 
@@ -420,7 +423,6 @@
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
 			status = "disabled";
-			sample-point = <875>;
 		};
 
 		dma1: dma@40020000 {
@@ -462,6 +464,14 @@
 	usb_fs_phy: usbphy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	smbus1: smbus1 {
+		compatible = "st,stm32-smbus";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		i2c = <&i2c1>;
+		status = "disabled";
 	};
 };
 

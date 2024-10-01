@@ -5,6 +5,9 @@ common:
   depends_on: netif
   min_ram: 16
   timeout: 600
+  platform_exclude:
+    - native_posix
+    - native_posix/native/64
 tests:
   net.dns.addremove:
     min_ram: 21

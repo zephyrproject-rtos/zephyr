@@ -215,3 +215,40 @@ ZTEST(bt_id_create, test_create_id_valid_input_address)
 	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_STATIC_RANDOM_LE_ADDR_1, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 }
+
+/*
+ *  Test creating a new public identity.
+ *
+ *  Constraints:
+ *   - A valid address of type public is used
+ *   - Input IRK is NULL
+ *   - 'BT_DEV_ENABLE' flag is set in bt_dev.flags
+ *
+ *  Expected behaviour:
+ *   - The public address is loaded to bt_dev.id_addr[BT_ID_DEFAULT]
+ *   - bt_dev.id_count is incremented
+ */
+ZTEST(bt_id_create, test_public_address)
+{
+	int id_count, new_id;
+	bt_addr_le_t addr = *BT_LE_ADDR;
+
+	if (!IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		ztest_test_skip();
+	}
+
+	id_count = bt_dev.id_count;
+	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+	/* Calling bt_addr_le_create_static() isn't expected */
+	bt_addr_le_create_static_fake.return_val = -1;
+
+	new_id = bt_id_create(&addr, NULL);
+
+	expect_not_called_bt_addr_le_create_static();
+
+	zassert_true(new_id == BT_ID_DEFAULT, "Unexpected error code '%d' was returned", new_id);
+	zassert_true(bt_dev.id_count == (id_count + 1), "Incorrect ID count %d was set",
+		     bt_dev.id_count);
+	zassert_mem_equal(&bt_dev.id_addr[new_id], BT_LE_ADDR, sizeof(bt_addr_le_t),
+			  "Incorrect address was set");
+}

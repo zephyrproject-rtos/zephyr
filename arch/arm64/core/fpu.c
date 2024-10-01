@@ -64,7 +64,7 @@ static inline void DBG(char *msg, struct k_thread *t) { }
  * Flush FPU content and disable access.
  * This is called locally and also from flush_fpu_ipi_handler().
  */
-void z_arm64_flush_local_fpu(void)
+void arch_flush_local_fpu(void)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
@@ -107,10 +107,10 @@ static void flush_owned_fpu(struct k_thread *thread)
 		}
 		/* we found it live on CPU i */
 		if (i == _current_cpu->id) {
-			z_arm64_flush_local_fpu();
+			arch_flush_local_fpu();
 		} else {
 			/* the FPU context is live on another CPU */
-			z_arm64_flush_fpu_ipi(i);
+			arch_flush_fpu_ipi(i);
 
 			/*
 			 * Wait for it only if this is about the thread
@@ -126,7 +126,7 @@ static void flush_owned_fpu(struct k_thread *thread)
 			 * two CPUs want to pull each other's FPU context.
 			 */
 			if (thread == _current) {
-				z_arm64_flush_local_fpu();
+				arch_flush_local_fpu();
 				while (atomic_ptr_get(&_kernel.cpus[i].arch.fpu_owner) == thread) {
 					barrier_dsync_fence_full();
 				}
@@ -159,7 +159,7 @@ void z_arm64_fpu_enter_exc(void)
  * simulate them and leave the FPU access disabled. This also avoids the
  * need for disabling interrupts in syscalls and IRQ handlers as well.
  */
-static bool simulate_str_q_insn(z_arch_esf_t *esf)
+static bool simulate_str_q_insn(struct arch_esf *esf)
 {
 	/*
 	 * Support only the "FP in exception" cases for now.
@@ -221,7 +221,7 @@ static bool simulate_str_q_insn(z_arch_esf_t *esf)
  * don't get interrupted that is. To ensure that we mask interrupts to
  * the triggering exception context.
  */
-void z_arm64_fpu_trap(z_arch_esf_t *esf)
+void z_arm64_fpu_trap(struct arch_esf *esf)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
@@ -334,7 +334,7 @@ int arch_float_disable(struct k_thread *thread)
 		flush_owned_fpu(thread);
 #else
 		if (thread == atomic_ptr_get(&_current_cpu->arch.fpu_owner)) {
-			z_arm64_flush_local_fpu();
+			arch_flush_local_fpu();
 		}
 #endif
 

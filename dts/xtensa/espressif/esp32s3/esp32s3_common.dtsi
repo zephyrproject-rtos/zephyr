@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <mem.h>
+#include <freq.h>
 #include <xtensa/xtensa.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -13,6 +14,11 @@
 #include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
 
 / {
+
+	aliases {
+		die-temp0 = &coretemp;
+	};
+
 	chosen {
 		zephyr,canbus = &twai;
 		zephyr,entropy = &trng0;
@@ -25,20 +31,47 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
+			compatible = "espressif,xtensa-lx7";
 			reg = <0>;
+			cpu-power-states = <&light_sleep &deep_sleep>;
+			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
+			clock-frequency = <DT_FREQ_M(240)>;
+			xtal-freq = <DT_FREQ_M(40)>;
 		};
 
 		cpu1: cpu@1 {
 			device_type = "cpu";
-			compatible = "cdns,tensilica-xtensa-lx7";
+			compatible = "espressif,xtensa-lx7";
 			reg = <1>;
+			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
+			clock-frequency = <DT_FREQ_M(240)>;
+			xtal-freq = <DT_FREQ_M(40)>;
 		};
 
+		power-states {
+			light_sleep: light_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				min-residency-us = <200>;
+				exit-latency-us = <133>;
+			};
+
+			deep_sleep: deep_sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "soft-off";
+				min-residency-us = <2000>;
+				exit-latency-us = <382>;
+			};
+		};
 	};
 
 	wifi: wifi {
 		compatible = "espressif,esp32-wifi";
+		status = "disabled";
+	};
+
+	esp32_bt_hci: esp32_bt_hci {
+		compatible = "espressif,esp32-bt-hci";
 		status = "disabled";
 	};
 
@@ -79,17 +112,28 @@
 		rtc: rtc@60021000 {
 			compatible = "espressif,esp32-rtc";
 			reg = <0x60021000 0x2000>;
-			xtal-freq = <ESP32_CLK_XTAL_40M>;
+			fast-clk-src = <ESP32_RTC_FAST_CLK_SRC_RC_FAST>;
+			slow-clk-src = <ESP32_RTC_SLOW_CLK_SRC_RC_SLOW>;
 			#clock-cells = <1>;
 			status = "okay";
+		};
 
-			rtc_timer: rtc_timer {
-				compatible = "espressif,esp32-rtc-timer";
-				slow-clk-freq = <ESP32_RTC_SLOW_CLK_FREQ_150K>;
-				interrupts = <RTC_CORE_INTR_SOURCE>;
-				interrupt-parent = <&intc>;
-				status = "okay";
-			};
+		xt_wdt: xt_wdt@60021004 {
+			compatible = "espressif,esp32-xt-wdt";
+			reg = <0x60021004 0x4>;
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		rtc_timer: rtc_timer@60008004 {
+			reg = <0x60008004 0xC>;
+			compatible = "espressif,esp32-rtc-timer";
+			clocks = <&rtc ESP32_MODULE_MAX>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
 		};
 
 		flash: flash-controller@60002000 {
@@ -193,6 +237,14 @@
 			};
 		};
 
+		touch: touch@6000885c {
+			compatible = "espressif,esp32-touch";
+			reg = <0x6000885c 0x88 0x60008908 0x18>;
+			interrupts = <RTC_CORE_INTR_SOURCE>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@60013000 {
 			compatible = "espressif,esp32-i2c";
 			#address-cells = <1>;
@@ -237,6 +289,13 @@
 			status = "disabled";
 		};
 
+		coretemp: coretemp@60008800 {
+			compatible = "espressif,esp32-temp";
+			friendly-name = "coretemp";
+			reg = <0x60008800 0x4>;
+			status = "disabled";
+		};
+
 		adc0: adc@60040000 {
 			compatible = "espressif,esp32-adc";
 			reg = <0x60040000 4>;
@@ -261,7 +320,6 @@
 			interrupts = <TWAI_INTR_SOURCE>;
 			interrupt-parent = <&intc>;
 			clocks = <&rtc ESP32_TWAI_MODULE>;
-			sample-point = <875>;
 			status = "disabled";
 		};
 

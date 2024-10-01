@@ -28,7 +28,6 @@
 #define LOG_MODULE_NAME mesh_prov
 
 #include <zephyr/logging/log.h>
-#include "mesh/adv.h"
 #include "mesh/rpr.h"
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -53,11 +52,9 @@ enum test_flags {
 static uint8_t static_key1[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F,
 		0x65, 0x78, 0x61, 0x6D, 0x70, 0x6C, 0x65, 0x5F, 0x31};
 static uint8_t static_key2[] = {0x6E, 0x6F, 0x72, 0x64, 0x69, 0x63, 0x5F};
-#if IS_ENABLED(CONFIG_BT_MESH_V1d1)
 static uint8_t static_key3[] = {0x45, 0x6E, 0x68, 0x61, 0x6E, 0x63, 0x65, 0x64, 0x20, 0x70, 0x72,
 				0x6F, 0x76, 0x69, 0x73, 0x69, 0x6F, 0x6E, 0x69, 0x6E, 0x67, 0x20,
 				0x73, 0x74, 0x61, 0x74, 0x69, 0x63, 0x20, 0x4F, 0x4F, 0x42};
-#endif
 
 static uint8_t private_key_be[32];
 static uint8_t public_key_be[64];
@@ -73,9 +70,7 @@ static struct oob_auth_test_vector_s {
 	{NULL, 0, 0, 0, 0, 0},
 	{static_key1, sizeof(static_key1), 0, 0, 0, 0},
 	{static_key2, sizeof(static_key2), 0, 0, 0, 0},
-#if IS_ENABLED(CONFIG_BT_MESH_V1d1)
 	{static_key3, sizeof(static_key3), 0, 0, 0, 0},
-#endif
 	{NULL, 0, 3, BT_MESH_BLINK, 0, 0},
 	{NULL, 0, 5, BT_MESH_BEEP, 0, 0},
 	{NULL, 0, 6, BT_MESH_VIBRATE, 0, 0},
@@ -118,7 +113,7 @@ static struct bt_mesh_rpr_cli rpr_cli = {
 
 static const struct bt_mesh_comp rpr_cli_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&(struct bt_mesh_cfg_cli){}),
@@ -130,7 +125,7 @@ static const struct bt_mesh_comp rpr_cli_comp = {
 
 static const struct bt_mesh_comp rpr_srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_RPR_SRV),
@@ -141,7 +136,7 @@ static const struct bt_mesh_comp rpr_srv_comp = {
 
 static const struct bt_mesh_comp rpr_cli_srv_comp = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CFG_CLI(&(struct bt_mesh_cfg_cli){}),
@@ -152,10 +147,11 @@ static const struct bt_mesh_comp rpr_cli_srv_comp = {
 	.elem_count = 1,
 };
 
-static int mock_pdu_send(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
+static int mock_pdu_send(const struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
 	/* Device becomes unresponsive and doesn't communicate with other nodes anymore */
+	k_sleep(K_MSEC(10));
 	bt_mesh_suspend();
 
 	k_sem_give(&pdu_send_sem);
@@ -168,10 +164,10 @@ static const struct bt_mesh_model_op model_rpr_op1[] = {
 	BT_MESH_MODEL_OP_END
 };
 
-static int mock_model_init(struct bt_mesh_model *mod)
+static int mock_model_init(const struct bt_mesh_model *mod)
 {
 	mod->keys[0] = BT_MESH_KEY_DEV_LOCAL;
-	mod->flags |= BT_MESH_MOD_DEVKEY_ONLY;
+	mod->rt->flags |= BT_MESH_MOD_DEVKEY_ONLY;
 
 	return 0;
 }
@@ -182,7 +178,7 @@ const struct bt_mesh_model_cb mock_model_cb = {
 
 static const struct bt_mesh_comp rpr_srv_comp_unresponsive = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_CB(IMPOSTER_MODEL_ID,
@@ -221,7 +217,7 @@ static const struct bt_mesh_comp2 comp_p2_2 = {.record_cnt = 2, .record = comp_r
 
 static const struct bt_mesh_comp rpr_srv_comp_2_elem = {
 	.elem =
-		(struct bt_mesh_elem[]){
+		(const struct bt_mesh_elem[]){
 			BT_MESH_ELEM(1,
 				     MODEL_LIST(BT_MESH_MODEL_CFG_SRV,
 						BT_MESH_MODEL_RPR_SRV),
@@ -1008,11 +1004,11 @@ static void test_provisioner_pb_remote_client_parallel(void)
 	/* scanning device with dev index 3 */
 	uuid[6] = '0' + 3;
 	uuid_to_provision_remote = uuid;
-	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, 5, 1, &scan_status));
+	ASSERT_OK(bt_mesh_rpr_scan_start(&rpr_cli, &srv, uuid, 15, 1, &scan_status));
 	ASSERT_EQUAL(BT_MESH_RPR_SUCCESS, scan_status.status);
 	ASSERT_EQUAL(BT_MESH_RPR_SCAN_SINGLE, scan_status.scan);
 	ASSERT_EQUAL(1, scan_status.max_devs);
-	ASSERT_EQUAL(5, scan_status.timeout);
+	ASSERT_EQUAL(15, scan_status.timeout);
 
 	ASSERT_OK(k_sem_take(&scan_sem, K_SECONDS(20)));
 	ASSERT_OK(k_sem_take(&prov_sem, K_SECONDS(20)));
@@ -1571,6 +1567,9 @@ static void test_device_pb_remote_server_same_dev(void)
 static void comp_data_get(uint16_t server_addr, uint8_t page, struct net_buf_simple *comp)
 {
 	uint8_t page_rsp;
+
+	/* Let complete advertising of the transaction to prevent collisions. */
+	k_sleep(K_SECONDS(3));
 
 	net_buf_simple_reset(comp);
 	ASSERT_OK(bt_mesh_cfg_cli_comp_data_get(0, server_addr, page, &page_rsp, comp));

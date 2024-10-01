@@ -1,0 +1,36 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX32 UART
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+compatible: "adi,max32-uart"
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl:
+    type: phandles
+
+  clock-source:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5]
+    description: |
+      Clock source to be used by the UART peripheral. The following options
+      are available:
+      - 0: "ADI_MAX32_PRPH_CLK_SRC_PCLK" Peripheral clock
+      - 1: "ADI_MAX32_PRPH_CLK_SRC_EXTCLK" External Clock
+      - 2: "ADI_MAX32_PRPH_CLK_SRC_IBRO" Internal Baud Rate Oscillator
+      - 3: "ADI_MAX32_PRPH_CLK_SRC_ERFO" External Radio Frequency Oscillator
+      - 4: "ADI_MAX32_PRPH_CLK_SRC_ERTCO" External Real-Time Clock Oscillator
+      - 5: "ADI_MAX32_PRPH_CLK_SRC_INRO" Internal Ring Oscillator
+      The target device might not support all option please take a look on
+      target device user guide

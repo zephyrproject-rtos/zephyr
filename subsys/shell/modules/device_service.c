@@ -12,7 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/sys/arch_interface.h>
+#include <zephyr/arch/arch_interface.h>
 
 static const char *get_device_name(const struct device *dev,
 				   char *buf,
@@ -64,6 +64,7 @@ static int cmd_device_list(const struct shell *sh,
 		char buf[20];
 		const char *name = get_device_name(dev, buf, sizeof(buf));
 		const char *state = "READY";
+		int usage;
 
 		shell_fprintf(sh, SHELL_NORMAL, "- %s", name);
 		if (!device_is_ready(dev)) {
@@ -79,7 +80,13 @@ static int cmd_device_list(const struct shell *sh,
 #endif /* CONFIG_PM_DEVICE */
 		}
 
-		shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
+		usage = pm_device_runtime_usage(dev);
+		if (usage >= 0) {
+			shell_fprintf(sh, SHELL_NORMAL, " (%s, usage=%d)\n", state, usage);
+		} else {
+			shell_fprintf(sh, SHELL_NORMAL, " (%s)\n", state);
+		}
+
 #ifdef CONFIG_DEVICE_DEPS
 		if (!k_is_user_context()) {
 			struct cmd_device_list_visitor_context ctx = {
@@ -91,6 +98,20 @@ static int cmd_device_list(const struct shell *sh,
 			(void)device_required_foreach(dev, cmd_device_list_visitor, &ctx);
 		}
 #endif /* CONFIG_DEVICE_DEPS */
+
+#ifdef CONFIG_DEVICE_DT_METADATA
+		const struct device_dt_nodelabels *nl = device_get_dt_nodelabels(dev);
+
+		if (nl->num_nodelabels > 0) {
+			shell_fprintf(sh, SHELL_NORMAL, "  DT node labels:");
+			for (size_t j = 0; j < nl->num_nodelabels; j++) {
+				const char *nodelabel = nl->nodelabels[j];
+
+				shell_fprintf(sh, SHELL_NORMAL, " %s", nodelabel);
+			}
+			shell_fprintf(sh, SHELL_NORMAL, "\n");
+		}
+#endif /* CONFIG_DEVICE_DT_METADATAa */
 	}
 
 	return 0;

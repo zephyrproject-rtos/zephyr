@@ -11,8 +11,8 @@
  * ARM AArch32-specific kernel miscellaneous interface. Included by arm/arch.h.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_MISC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_MISC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,4 +66,4 @@ void z_arm_on_enter_cpu_idle_prepare(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_MISC_H_ */

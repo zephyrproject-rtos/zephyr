@@ -1,0 +1,32 @@
+# Copyright (c) 2024 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_ENABLED_SYSTEMS_0
+	int "Enabled systems configuration 0"
+	range 0 255
+	default 0
+
+config TEST_ENABLED_SYSTEMS_1
+	int "Enabled systems configuration 1"
+	range 0 255
+	default 0
+
+config TEST_ENABLED_SYSTEMS_2
+	int "Enabled systems configuration 2"
+	range 0 255
+	default 0
+
+config TEST_ENABLED_SYSTEMS_3
+	int "Enabled systems configuration 3"
+	range 0 255
+	default 0
+
+config TEST_SEARCH_PERIOD
+	int "Search period for satellites in seconds"
+	default 60
+
+config TEST_FIX_TIMEOUT
+	int "Timeout waiting for a fix in seconds"
+	default 60

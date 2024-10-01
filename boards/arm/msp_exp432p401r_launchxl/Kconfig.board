@@ -1,7 +1,0 @@
-# TI SimpleLink MSP-EXP432P401R LaunchXL Development Board
-
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_MSP_EXP432P401R_LAUNCHXL
-	bool "TI MSP-EXP432P401R LAUNCHXL"
-	depends on SOC_MSP432P401R

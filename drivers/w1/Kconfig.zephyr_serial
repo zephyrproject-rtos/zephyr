@@ -8,6 +8,7 @@ config W1_ZEPHYR_SERIAL
 	select SERIAL
 	default y
 	depends on DT_HAS_ZEPHYR_W1_SERIAL_ENABLED
+	select UART_USE_RUNTIME_CONFIGURE
 	help
 	  This option enables the Zephyr serial 1-Wire master driver.
 

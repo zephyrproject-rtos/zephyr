@@ -17,6 +17,8 @@
 
 #if defined(CONFIG_RISCV)
 #define IDLE_EVENT_STATS_PRECISION 7
+#elif defined(CONFIG_QEMU_TARGET)
+#define IDLE_EVENT_STATS_PRECISION 3
 #else
 #define IDLE_EVENT_STATS_PRECISION 1
 #endif

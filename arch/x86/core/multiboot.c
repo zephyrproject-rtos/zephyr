@@ -41,8 +41,8 @@ void z_multiboot_init(struct multiboot_info *info_pa)
 	 */
 	info = info_pa;
 #else
-	z_phys_map((uint8_t **)&info, POINTER_TO_UINT(info_pa),
-		   sizeof(*info_pa), K_MEM_CACHE_NONE);
+	k_mem_map_phys_bare((uint8_t **)&info, POINTER_TO_UINT(info_pa),
+			    sizeof(*info_pa), K_MEM_CACHE_NONE);
 #endif /* CONFIG_ARCH_MAPS_ALL_RAM */
 
 	if (info == NULL) {
@@ -70,8 +70,8 @@ void z_multiboot_init(struct multiboot_info *info_pa)
 #else
 		uint8_t *address_va;
 
-		z_phys_map(&address_va, info->mmap_addr, info->mmap_length,
-			   K_MEM_CACHE_NONE);
+		k_mem_map_phys_bare(&address_va, info->mmap_addr, info->mmap_length,
+				    K_MEM_CACHE_NONE);
 
 		address = POINTER_TO_UINT(address_va);
 #endif /* CONFIG_ARCH_MAPS_ALL_RAM */

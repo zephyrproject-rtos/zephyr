@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/version.h>
+
 #include <zephyr/sys/printk.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/init.h>
@@ -16,12 +18,13 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <stdlib.h>
-#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 #include <zephyr/sys/sys_heap.h>
 #endif
 #if defined(CONFIG_LOG_RUNTIME_FILTERING)
 #include <zephyr/logging/log_ctrl.h>
 #endif
+#include <zephyr/debug/symtab.h>
 
 #if defined(CONFIG_THREAD_MAX_NAME_LEN)
 #define THREAD_MAX_NAM_LEN CONFIG_THREAD_MAX_NAME_LEN
@@ -32,15 +35,10 @@
 static int cmd_kernel_version(const struct shell *sh,
 			      size_t argc, char **argv)
 {
-	uint32_t version = sys_kernel_version_get();
-
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "Zephyr version %d.%d.%d",
-		      SYS_KERNEL_VER_MAJOR(version),
-		      SYS_KERNEL_VER_MINOR(version),
-		      SYS_KERNEL_VER_PATCHLEVEL(version));
+	shell_print(sh, "Zephyr version %s", KERNEL_VERSION_STRING);
 	return 0;
 }
 
@@ -197,13 +195,74 @@ static int cmd_kernel_threads(const struct shell *sh,
 	shell_print(sh, "Scheduler: %u since last call", sys_clock_elapsed());
 	shell_print(sh, "Threads:");
 
-#ifdef CONFIG_SMP
+	/*
+	 * Use the unlocked version as the callback itself might call
+	 * arch_irq_unlock.
+	 */
 	k_thread_foreach_unlocked(shell_tdata_dump, (void *)sh);
-#else
-	k_thread_foreach(shell_tdata_dump, (void *)sh);
-#endif
+
 	return 0;
 }
+
+#if defined(CONFIG_ARCH_HAS_STACKWALK)
+
+static bool print_trace_address(void *arg, unsigned long ra)
+{
+	const struct shell *sh = arg;
+#ifdef CONFIG_SYMTAB
+	uint32_t offset = 0;
+	const char *name = symtab_find_symbol_name(ra, &offset);
+
+	shell_print(sh, "ra: %p [%s+0x%x]", (void *)ra, name, offset);
+#else
+	shell_print(sh, "ra: %p", (void *)ra);
+#endif
+
+	return true;
+}
+
+struct unwind_entry {
+	const struct k_thread *const thread;
+	bool valid;
+};
+
+static void is_valid_thread(const struct k_thread *cthread, void *user_data)
+{
+	struct unwind_entry *entry = user_data;
+
+	if (cthread == entry->thread) {
+		entry->valid = true;
+	}
+}
+
+static int cmd_kernel_unwind(const struct shell *sh, size_t argc, char **argv)
+{
+	struct k_thread *thread;
+
+	if (argc == 1) {
+		thread = _current;
+	} else {
+		thread = UINT_TO_POINTER(strtoll(argv[1], NULL, 16));
+		struct unwind_entry entry = {
+			.thread = thread,
+			.valid = false,
+		};
+
+		k_thread_foreach_unlocked(is_valid_thread, &entry);
+
+		if (!entry.valid) {
+			shell_error(sh, "Invalid thread id %p", (void *)thread);
+			return -EINVAL;
+		}
+	}
+	shell_print(sh, "Unwinding %p %s", (void *)thread, thread->name);
+
+	arch_stack_walk(print_trace_address, (void *)sh, thread, NULL);
+
+	return 0;
+}
+
+#endif /* CONFIG_ARCH_HAS_STACKWALK */
 
 static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 {
@@ -245,11 +304,11 @@ static int cmd_kernel_stacks(const struct shell *sh,
 
 	memset(pad, ' ', MAX((THREAD_MAX_NAM_LEN - strlen("IRQ 00")), 1));
 
-#ifdef CONFIG_SMP
+	/*
+	 * Use the unlocked version as the callback itself might call
+	 * arch_irq_unlock.
+	 */
 	k_thread_foreach_unlocked(shell_stack_dump, (void *)sh);
-#else
-	k_thread_foreach(shell_stack_dump, (void *)sh);
-#endif
 
 	/* Placeholder logic for interrupt stack until we have better
 	 * kernel support, including dumping arch-specific exception-related
@@ -259,7 +318,7 @@ static int cmd_kernel_stacks(const struct shell *sh,
 
 	for (int i = 0; i < num_cpus; i++) {
 		size_t unused;
-		const uint8_t *buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
 		size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
 		int err = z_stack_space_get(buf, size, &unused);
 
@@ -276,7 +335,7 @@ static int cmd_kernel_stacks(const struct shell *sh,
 }
 #endif
 
-#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 extern struct sys_heap _system_heap;
 
 static int cmd_kernel_heap(const struct shell *sh,
@@ -399,8 +458,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_kernel,
 		defined(CONFIG_THREAD_MONITOR)
 	SHELL_CMD(stacks, NULL, "List threads stack usage.", cmd_kernel_stacks),
 	SHELL_CMD(threads, NULL, "List kernel threads.", cmd_kernel_threads),
+#if defined(CONFIG_ARCH_HAS_STACKWALK)
+	SHELL_CMD_ARG(unwind, NULL, "Unwind a thread.", cmd_kernel_unwind, 1, 1),
+#endif /* CONFIG_ARCH_HAS_STACKWALK */
 #endif
-#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && (K_HEAP_MEM_POOL_SIZE > 0)
 	SHELL_CMD(heap, NULL, "System heap usage statistics.", cmd_kernel_heap),
 #endif
 	SHELL_CMD_ARG(uptime, NULL, "Kernel uptime. Can be called with the -p or --pretty options",

@@ -45,7 +45,7 @@ struct icmsg_me_data_t {
 /** @brief Initialize an icmsg_me instance
  *
  *  This function is intended to be called during system initialization.
- *  It initializes the underlying icmsg instace as one of the initialization
+ *  It initializes the underlying icmsg instance as one of the initialization
  *  steps.
  *
  *  @param[in] conf Structure containing configuration parameters for the
@@ -246,118 +246,6 @@ void icmsg_me_reset_ept_cfg(struct icmsg_me_data_t *data, icmsg_me_ept_id_t id);
 int icmsg_me_send(const struct icmsg_config_t *conf,
 		  struct icmsg_me_data_t *data, icmsg_me_ept_id_t id,
 		  const void *msg, size_t len);
-
-/** @brief Get an empty TX buffer to be sent using @ref icmsg_me_send_nocopy
- *
- *  This function is a wrapper around @ref icmsg_get_tx_buffer aligning buffer
- *  size and pointers to fit header required by the multi-endpoint feature.
- *  It shares all properites and usage scenarios with @ref icmsg_get_tx_buffer.
- *
- *  @param[in] conf Structure containing configuration parameters for the
- &                  underlying icmsg instance.
- *  @param[inout] data Structure containing run-time data used by the icmsg_me
- *                     instance. The structure is initialized with
- *                     @ref icmsg_me_init and its content must be preserved
- *                     while the icmsg_me instance is active.
- *  @param[out] buffer Pointer to the empty TX buffer.
- *  @param[inout] size Pointer to store the requested TX buffer size. If the
- *		       function returns -ENOMEM, this parameter returns the
- *		       maximum allowed size.
- *  @param[in] wait Timeout value to wait for a free buffer acceptable by
- *                  the function caller. Only K_NO_WAIT is supported by icmsg.
- *
- *  @retval 0 on success.
- *  @retval -ENOTSUP when requested unsupported @p wait timeout.
- *  @retval -ENOBUFS when there are no TX buffers available.
- *  @retval -ENOMEM when the requested size is too big (and the size parameter
- *		    contains the maximum allowed size).
- *  @retval other errno codes from dependent modules.
- */
-int icmsg_me_get_tx_buffer(const struct icmsg_config_t *conf,
-			   struct icmsg_me_data_t *data,
-			   void **buffer, uint32_t *size, k_timeout_t wait);
-
-/** @brief Drop and release a TX buffer
- *
- *  This function is a wrapper around @ref icmsg_drop_tx_buffer aligning buffer
- *  pointer to fit header required by the multi-endpoint feature. This function
- *  shares all properties and usage scenarios with @ref icmsg_drop_tx_buffer.
- *
- *  @param[in] conf Structure containing configuration parameters for the
- *                  underlying icmsg instance.
- *  @param[inout] data Structure containing run-time data used by the icmsg_me
- *                     instance. The structure is initialized with
- *                     @ref icmsg_me_init and its content must be preserved
- *                     while the icmsg_me instance is active.
- *  @param[in] buffer Pointer to the TX buffer obtained with
- *                    @ref icmsg_me_get_tx_buffer.
- *
- *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
- */
-int icmsg_me_drop_tx_buffer(const struct icmsg_config_t *conf,
-			    struct icmsg_me_data_t *data,
-			    const void *buffer);
-
-/** @brief Send a message from a buffer obtained by @ref icmsg_me_get_tx_buffer
- *         to the remote icmsg_me instance.
- *
- *  This function is a wrapper around @ref icmsg_send_nocopy aligning buffer
- *  size and pointer to fit header required by the multi-endpoint feature. This
- *  function shares all properties and usage scenarios with
- *  @ref icmsg_send_nocopy.
- *
- *  @param[in] conf Structure containing configuration parameters for the
- *                  underlying icmsg instance.
- *  @param[inout] data Structure containing run-time data used by the icmsg_me
- *                     instance. The structure is initialized with
- *                     @ref icmsg_me_init and its content must be preserved
- *                     while the icmsg_me instance is active.
- *  @param[in] id Id of the endpoint to use.
- *  @param[in] msg Pointer to a buffer containing data to send.
- *  @param[in] len Size of data in the @p msg buffer.
- *
- *
- *  @return Size of sent data on success.
- *  @retval other errno codes from dependent modules.
- */
-int icmsg_me_send_nocopy(const struct icmsg_config_t *conf,
-			 struct icmsg_me_data_t *data, icmsg_me_ept_id_t id,
-			 const void *msg, size_t len);
-
-#ifdef CONFIG_IPC_SERVICE_ICMSG_ME_NOCOPY_RX
-/** @brief Hold RX buffer to be used outside of the received callback.
- *
- *  @param[in] conf Structure containing configuration parameters for the
- *                  underlying icmsg instance.
- *  @param[inout] data Structure containing run-time data used by the icmsg_me
- *                     instance. The structure is initialized with
- *                     @ref icmsg_me_init and its content must be preserved
- *                     while the icmsg_me instance is active.
- *  @param[in] buffer Pointer to the buffer to be held.
- *
- *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
- */
-int icmsg_me_hold_rx_buffer(const struct icmsg_config_t *conf,
-			    struct icmsg_me_data_t *data, void *buffer);
-
-/** @brief Release RX buffer for future use.
- *
- *  @param[in] conf Structure containing configuration parameters for the
- *                  underlying icmsg instance.
- *  @param[inout] data Structure containing run-time data used by the icmsg_me
- *                     instance. The structure is initialized with
- *                     @ref icmsg_me_init and its content must be preserved
- *                     while the icmsg_me instance is active.
- *  @param[in] buffer Pointer to the buffer to be released.
- *
- *  @retval 0 on success.
- *  @retval other errno codes from dependent modules.
- */
-int icmsg_me_release_rx_buffer(const struct icmsg_config_t *conf,
-			       struct icmsg_me_data_t *data, void *buffer);
-#endif /* CONFIG_IPC_SERVICE_ICMSG_ME_NOCOPY_RX */
 
 /**
  * @}

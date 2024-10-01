@@ -7,5 +7,6 @@ config ZEPHYR_LIBLC3_MODULE
 config LIBLC3
 	bool "liblc3 Support"
 	depends on FPU
+	select REQUIRES_FULL_LIBC
 	help
 	  This option enables the Android liblc3 library for Bluetooth LE Audio

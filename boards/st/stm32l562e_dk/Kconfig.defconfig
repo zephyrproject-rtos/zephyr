@@ -1,0 +1,28 @@
+# STM32L562E-DK Discovery board configuration
+
+# Copyright (c) 2020 Yestin Sun
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32L562E_DK
+
+if BT
+
+config SPI
+	default y
+
+config BT_SPI
+	default y
+
+config BT_BLUENRG_ACI
+	default y
+
+# Disable Flow control
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+config BT_HCI_VS
+	default n
+
+endif # BT
+
+endif # BOARD_STM32L562E_DK

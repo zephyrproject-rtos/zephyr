@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2024 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &mspi0;
+	};
+};
+
+&mspi0 {
+
+	ce-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>,
+		   <&gpio0 18 GPIO_ACTIVE_LOW>;
+	dqs-support;
+	software-multiperipheral;
+
+	flash_dummy0: flash_dummy0@0 {
+		status = "okay";
+		compatible = "zephyr,mspi-emul-flash";
+		reg = <0x0>;
+		size = <DT_SIZE_K(8*8)>;
+		mspi-max-frequency = <48000000>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x0B>;
+		write-command = <0x02>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_4_BYTE";
+		rx-dummy = <8>;
+		tx-dummy = <0>;
+	};
+
+	flash_dummy1: flash_dummy1@1 {
+		status = "okay";
+		compatible = "zephyr,mspi-emul-flash";
+		reg = <0x1>;
+		size = <DT_SIZE_K(8*8)>;
+		mspi-max-frequency = <96000000>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <1>;
+		mspi-dqs-enable;
+		read-command = <0x20>;
+		write-command = <0xAA>;
+		command-length = "INSTR_2_BYTE";
+		address-length = "ADDR_3_BYTE";
+		rx-dummy = <6>;
+		tx-dummy = <5>;
+		xip-config = <1 0 0 0>;
+		ce-break-config = <1024 4>;
+	};
+
+};

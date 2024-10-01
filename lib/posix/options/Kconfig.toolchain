@@ -1,0 +1,240 @@
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The following list of Kconfig options are based on standard POSIX Subprofiling Option Groups
+# and may be used to override Zephyr's internal POSIX implementations. This facility is mainly
+# for toolchain integrators, C library maintainers, etc, and is not intended for general users.
+#
+# Use these features with caution as doing so might introduce unwanted, unexpected, or undefined
+# behavior.
+#
+# POSIX Subprofiling Option Groups are defined at the link below:
+#
+# https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+config TC_PROVIDES_POSIX_ASYNCHRONOUS_IO
+	bool
+
+config TC_PROVIDES_POSIX_BARRIERS
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_JUMP
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_MATH
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_SUPPORT
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_SUPPORT_R
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_WIDE_CHAR
+	bool
+
+config TC_PROVIDES_POSIX_C_LANG_WIDE_CHAR_EXT
+	bool
+
+config TC_PROVIDES_POSIX_C_LIB_EXT
+	bool
+
+config TC_PROVIDES_POSIX_CLOCK_SELECTION
+	bool
+
+config TC_PROVIDES_POSIX_DEVICE_IO
+	bool
+
+config TC_PROVIDES_POSIX_DEVICE_IO_EXT
+	bool
+
+config TC_PROVIDES_POSIX_DEVICE_SPECIFIC
+	bool
+
+config TC_PROVIDES_POSIX_DEVICE_SPECIFIC_R
+	bool
+
+config TC_PROVIDES_POSIX_DYNAMIC_LINKING
+	bool
+
+config TC_PROVIDES_POSIX_FD_MGMT
+	bool
+
+config TC_PROVIDES_POSIX_FIFO
+	bool
+
+config TC_PROVIDES_POSIX_FIFO_FD
+	bool
+
+config TC_PROVIDES_POSIX_FILE_ATTRIBUTES
+	bool
+
+config TC_PROVIDES_POSIX_FILE_ATTRIBUTES_FD
+	bool
+
+config TC_PROVIDES_POSIX_FILE_LOCKING
+	bool
+
+config TC_PROVIDES_POSIX_FILE_SYSTEM
+	bool
+
+config TC_PROVIDES_POSIX_FILE_SYSTEM_EXT
+	bool
+
+config TC_PROVIDES_POSIX_FILE_SYSTEM_FD
+	bool
+
+config TC_PROVIDES_POSIX_FILE_SYSTEM_GLOB
+	bool
+
+config TC_PROVIDES_POSIX_FILE_SYSTEM_R
+	bool
+
+config TC_PROVIDES_POSIX_I18N
+	bool
+
+config TC_PROVIDES_POSIX_JOB_CONTROL
+	bool
+
+config TC_PROVIDES_POSIX_MAPPED_FILES
+	bool
+
+config TC_PROVIDES_POSIX_MEMORY_PROTECTION
+	bool
+
+config TC_PROVIDES_POSIX_MULTI_CONCURRENT_LOCALES
+	bool
+
+config TC_PROVIDES_POSIX_MULTI_PROCESS
+	bool
+
+config TC_PROVIDES_POSIX_MULTI_PROCESS_FD
+	bool
+
+config TC_PROVIDES_POSIX_NETWORKING
+	bool
+
+config TC_PROVIDES_POSIX_PIPE
+	bool
+
+config TC_PROVIDES_POSIX_ROBUST_MUTEXES
+	bool
+
+config TC_PROVIDES_POSIX_REALTIME_SIGNALS
+	bool
+
+config TC_PROVIDES_POSIX_REGEXP
+	bool
+
+# Note: the Option is _POSIX_READER_WRITER_LOCKS, while the Option Group is POSIX_RW_LOCKS
+# We have opted to use POSIX_READER_WRITER_LOCKS here to match the Option name.
+config TC_PROVIDES_POSIX_READER_WRITER_LOCKS
+	bool
+
+config TC_PROVIDES_POSIX_SEMAPHORES
+	bool
+
+config TC_PROVIDES_POSIX_SHARED_MEMORY_OBJECTS
+	bool
+
+config TC_PROVIDES_POSIX_SHELL_FUNC
+	bool
+
+config TC_PROVIDES_POSIX_SIGNAL_JUMP
+	bool
+
+config TC_PROVIDES_POSIX_SIGNALS
+	bool
+
+config TC_PROVIDES_POSIX_SIGNALS_EXT
+	bool
+
+config TC_PROVIDES_POSIX_SINGLE_PROCESS
+	bool
+
+config TC_PROVIDES_POSIX_SPIN_LOCKS
+	bool
+
+config TC_PROVIDES_POSIX_SYMBOLIC_LINKS
+	bool
+
+config TC_PROVIDES_POSIX_SYMBOLIC_LINKS_FD
+	bool
+
+config TC_PROVIDES_POSIX_SYSTEM_DATABASE
+	bool
+
+config TC_PROVIDES_POSIX_SYSTEM_DATABASE_R
+	bool
+
+# Note: the Option is _POSIX_THREADS, while the Option Group is POSIX_THREADS_BASE.
+# We have opted to use POSIX_THREADS here to match the Option name.
+config TC_PROVIDES_POSIX_THREADS
+	bool
+
+config TC_PROVIDES_POSIX_THREADS_EXT
+	bool
+
+config TC_PROVIDES_POSIX_TIMERS
+	bool
+
+config TC_PROVIDES_POSIX_USER_GROUPS
+	bool
+
+config TC_PROVIDES_POSIX_USER_GROUPS_R
+	bool
+
+config TC_PROVIDES_POSIX_WIDE_CHAR_DEVICE_IO
+	bool
+
+config TC_PROVIDES_XSI_C_LANG_SUPPORT
+	bool
+
+config TC_PROVIDES_XSI_DBM
+	bool
+
+config TC_PROVIDES_XSI_DEVICE_IO
+	bool
+
+config TC_PROVIDES_XSI_DEVICE_SPECIFIC
+	bool
+
+config TC_PROVIDES_XSI_FILE_SYSTEM
+	bool
+
+config TC_PROVIDES_XSI_IPC
+	bool
+
+config TC_PROVIDES_XSI_JUMP
+	bool
+
+config TC_PROVIDES_XSI_MATH
+	bool
+
+config TC_PROVIDES_XSI_MULTI_PROCESS
+	bool
+
+config TC_PROVIDES_XSI_SIGNALS
+	bool
+
+config TC_PROVIDES_XSI_SINGLE_PROCESS
+	bool
+
+config TC_PROVIDES_XSI_SYSTEM_DATABASE
+	bool
+
+config TC_PROVIDES_XSI_SYSTEM_LOGGING
+	bool
+
+config TC_PROVIDES_XSI_THREADS_EXT
+	bool
+
+config TC_PROVIDES_XSI_TIMERS
+	bool
+
+config TC_PROVIDES_XSI_USER_GROUPS
+	bool
+
+config TC_PROVIDES_XSI_WIDE_CHAR
+	bool

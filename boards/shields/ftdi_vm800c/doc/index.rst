@@ -75,12 +75,12 @@ See :zephyr:code-sample:`ft800` sample for details.
 Build and Programming
 *********************
 
-Set ``-DSHIELD=<shield designator>`` when you invoke ``west build``.
+Set ``--shield <shield designator>`` when you invoke ``west build``.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/misc/ft800
    :host-os: unix
-   :board: nrf52840dk_nrf52840
+   :board: nrf52840dk/nrf52840
    :shield: ftdi_vm800c
    :goals: build flash
    :compact:

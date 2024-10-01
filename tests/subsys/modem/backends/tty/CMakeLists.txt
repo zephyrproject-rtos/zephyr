@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(modem_backend_tty_test)
 
 target_sources(app PRIVATE src/main.c)
+target_compile_definitions(app PRIVATE _XOPEN_SOURCE=600)

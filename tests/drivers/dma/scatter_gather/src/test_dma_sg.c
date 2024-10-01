@@ -22,17 +22,16 @@
 #include <zephyr/ztest.h>
 
 #define XFERS 4
-#define XFER_SIZE 8192
 
 #if CONFIG_NOCACHE_MEMORY
-static __aligned(32) uint8_t tx_data[XFER_SIZE] __used
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used
 	__attribute__((__section__(".nocache")));
-static __aligned(32) uint8_t rx_data[XFERS][XFER_SIZE] __used
+static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] __used
 	__attribute__((__section__(".nocache.dma")));
 #else
-/* this src memory shall be in RAM to support usingas a DMA source pointer.*/
-static __aligned(32) uint8_t tx_data[XFER_SIZE];
-static __aligned(32) uint8_t rx_data[XFERS][XFER_SIZE] = { { 0 } };
+/* this src memory shall be in RAM to support using as a DMA source pointer.*/
+static __aligned(32) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE];
+static __aligned(32) uint8_t rx_data[XFERS][CONFIG_DMA_SG_XFER_SIZE] = { { 0 } };
 #endif
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
@@ -61,7 +60,7 @@ static int test_sg(void)
 
 	memset(tx_data, 0, sizeof(tx_data));
 
-	for (int i = 0; i < XFER_SIZE; i++) {
+	for (int i = 0; i < CONFIG_DMA_SG_XFER_SIZE; i++) {
 		tx_data[i] = i;
 	}
 
@@ -102,18 +101,18 @@ static int test_sg(void)
 	memset(dma_block_cfgs, 0, sizeof(dma_block_cfgs));
 	for (int i = 0; i < XFERS; i++) {
 		dma_block_cfgs[i].source_gather_en = 1U;
-		dma_block_cfgs[i].block_size = XFER_SIZE;
+		dma_block_cfgs[i].block_size = CONFIG_DMA_SG_XFER_SIZE;
 #ifdef CONFIG_DMA_64BIT
 		dma_block_cfgs[i].source_address = (uint64_t)(tx_data);
 		dma_block_cfgs[i].dest_address = (uint64_t)(rx_data[i]);
 		TC_PRINT("dma block %d block_size %d, source addr %" PRIx64 ", dest addr %"
-		     PRIx64 "\n", i, XFER_SIZE, dma_block_cfgs[i].source_address,
+		     PRIx64 "\n", i, CONFIG_DMA_SG_XFER_SIZE, dma_block_cfgs[i].source_address,
 			 dma_block_cfgs[i].dest_address);
 #else
 		dma_block_cfgs[i].source_address = (uint32_t)(tx_data);
 		dma_block_cfgs[i].dest_address = (uint32_t)(rx_data[i]);
 		TC_PRINT("dma block %d block_size %d, source addr %x, dest addr %x\n",
-			 i, XFER_SIZE, dma_block_cfgs[i].source_address,
+			 i, CONFIG_DMA_SG_XFER_SIZE, dma_block_cfgs[i].source_address,
 			 dma_block_cfgs[i].dest_address);
 #endif
 		if (i < XFERS - 1) {
@@ -145,7 +144,7 @@ static int test_sg(void)
 
 	for (int i = 0; i < XFERS; i++) {
 		TC_PRINT("rx_data[%d]\n", i);
-		if (memcmp(tx_data, rx_data[i], XFER_SIZE)) {
+		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_SG_XFER_SIZE)) {
 			return TC_FAIL;
 		}
 	}

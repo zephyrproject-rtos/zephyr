@@ -15,39 +15,33 @@ extern "C" {
 #endif
 
 /**
- * @brief Loader context for llext
- * @defgroup llext_loader Loader context for llext
- * @ingroup llext
+ * @file
+ * @brief LLEXT ELF loader context types.
+ *
+ * The following types are used to define the context of the ELF loader
+ * used by the \ref llext subsystem.
+ *
+ * @defgroup llext_loader_apis ELF loader context
+ * @ingroup llext_apis
  * @{
  */
 
-/**
- * @brief Enum of sections for lookup tables
- */
-enum llext_section {
-	LLEXT_SECT_TEXT,
-	LLEXT_SECT_DATA,
-	LLEXT_SECT_RODATA,
-	LLEXT_SECT_BSS,
+#include <zephyr/llext/llext.h>
 
-	LLEXT_SECT_REL_TEXT,
-	LLEXT_SECT_REL_DATA,
-	LLEXT_SECT_REL_RODATA,
-	LLEXT_SECT_REL_BSS,
-
-	LLEXT_SECT_SYMTAB,
-	LLEXT_SECT_STRTAB,
-	LLEXT_SECT_SHSTRTAB,
-
-	LLEXT_SECT_COUNT,
-};
+/** @cond ignore */
+struct llext_elf_sect_map; /* defined in llext_priv.h */
+/** @endcond */
 
 /**
  * @brief Linkable loadable extension loader context
+ *
+ * This object is used to access the ELF file data and cache its contents
+ * while an extension is being loaded by the LLEXT subsystem. Once the
+ * extension is loaded, this object is no longer needed.
  */
 struct llext_loader {
 	/**
-	 * @brief Read (copy) from the loader
+	 * @brief Function to read (copy) from the loader
 	 *
 	 * Copies len bytes into buf from the current position of the
 	 * loader.
@@ -56,13 +50,12 @@ struct llext_loader {
 	 * @param[in] out Output location
 	 * @param[in] len Length to copy into the output location
 	 *
-	 * @retval 0 Success
-	 * @retval -errno Error reading (any errno)
+	 * @returns 0 on success, or a negative error code.
 	 */
 	int (*read)(struct llext_loader *ldr, void *out, size_t len);
 
 	/**
-	 * @brief Seek to a new absolute location
+	 * @brief Function to seek to a new absolute location in the stream.
 	 *
 	 * Changes the location of the loader position to a new absolute
 	 * given position.
@@ -70,19 +63,52 @@ struct llext_loader {
 	 * @param[in] ldr Loader
 	 * @param[in] pos Position in stream to move loader
 	 *
-	 * @retval 0 Success
-	 * @retval -errno Error reading (any errno)
+	 * @returns 0 on success, or a negative error code.
 	 */
-	int (*seek)(struct llext_loader *s, size_t pos);
+	int (*seek)(struct llext_loader *ldr, size_t pos);
+
+	/**
+	 * @brief Optional function to peek at an absolute location in the ELF.
+	 *
+	 * Return a pointer to the buffer at specified offset.
+	 *
+	 * @param[in] ldr Loader
+	 * @param[in] pos Position to obtain a pointer to
+	 *
+	 * @returns a pointer into the buffer or `NULL` if not supported
+	 */
+	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
 	/** @cond ignore */
 	elf_ehdr_t hdr;
-	elf_shdr_t sects[LLEXT_SECT_COUNT];
-	uint32_t *sect_map;
+	elf_shdr_t sects[LLEXT_MEM_COUNT];
+	elf_shdr_t *sect_hdrs;
+	bool sect_hdrs_on_heap;
+	struct llext_elf_sect_map *sect_map;
 	uint32_t sect_cnt;
-	uint32_t sym_cnt;
 	/** @endcond */
 };
+
+/** @cond ignore */
+static inline int llext_read(struct llext_loader *l, void *buf, size_t len)
+{
+	return l->read(l, buf, len);
+}
+
+static inline int llext_seek(struct llext_loader *l, size_t pos)
+{
+	return l->seek(l, pos);
+}
+
+static inline void *llext_peek(struct llext_loader *l, size_t pos)
+{
+	if (l->peek) {
+		return l->peek(l, pos);
+	}
+
+	return NULL;
+}
+/* @endcond */
 
 /**
  * @}

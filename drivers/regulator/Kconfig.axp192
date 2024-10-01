@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Martin Kiepfer
-# SPDX -License-Identifier: Apache-2.0
+# SPDX-License-Identifier: Apache-2.0
 
 config REGULATOR_AXP192
 	bool "X-Power AXP192 PMIC regulator driver"
@@ -15,7 +15,7 @@ if REGULATOR_AXP192
 
 config REGULATOR_AXP192_INIT_PRIORITY
 	int "AXP192 regulator driver init priority"
-	default 76
+	default 86
 	help
 	  Init priority for the axp192 regulator driver. It must be
 	  greater than MFD_INIT_PRIORITY.

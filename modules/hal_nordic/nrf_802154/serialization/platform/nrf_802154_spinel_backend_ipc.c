@@ -9,10 +9,15 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 
+#include "nrf_802154.h"
 #include "nrf_802154_spinel_backend_callouts.h"
 #include "nrf_802154_serialization_error.h"
 #include "../../spinel_base/spinel.h"
 #include "../../src/include/nrf_802154_spinel.h"
+
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+#include <nrf53_cpunet_mgmt.h>
+#endif
 
 #define LOG_LEVEL LOG_LEVEL_INFO
 #define LOG_MODULE_NAME spinel_ipc_backend
@@ -49,6 +54,10 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 		DEVICE_DT_GET(DT_CHOSEN(nordic_802154_spinel_ipc));
 	int err;
 
+#if defined(CONFIG_SOC_NRF5340_CPUAPP)
+	nrf53_cpunet_enable(true);
+#endif
+
 	err = ipc_service_open_instance(ipc_instance);
 	if (err < 0 && err != -EALREADY) {
 		LOG_ERR("Failed to open IPC instance: %d", err);
@@ -71,8 +80,10 @@ nrf_802154_ser_err_t nrf_802154_backend_init(void)
 }
 
 /* Send packet thread details */
-#define RING_BUFFER_LEN 16
 #define SEND_THREAD_STACK_SIZE 1024
+
+/* Make the ring buffer long enough to hold all notifications that the driver can produce */
+#define RING_BUFFER_LEN (NRF_802154_MAX_PENDING_NOTIFICATIONS + 1)
 
 static K_SEM_DEFINE(send_sem, 0, RING_BUFFER_LEN);
 K_THREAD_STACK_DEFINE(send_thread_stack, SEND_THREAD_STACK_SIZE);

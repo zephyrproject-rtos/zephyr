@@ -38,13 +38,14 @@ extern "C" {
 #define WEBSOCKET_FLAG_PING   0x00000010 /**< Ping message       */
 #define WEBSOCKET_FLAG_PONG   0x00000020 /**< Pong message       */
 
+/** @brief Websocket option codes */
 enum websocket_opcode  {
-	WEBSOCKET_OPCODE_CONTINUE     = 0x00,
-	WEBSOCKET_OPCODE_DATA_TEXT    = 0x01,
-	WEBSOCKET_OPCODE_DATA_BINARY  = 0x02,
-	WEBSOCKET_OPCODE_CLOSE        = 0x08,
-	WEBSOCKET_OPCODE_PING         = 0x09,
-	WEBSOCKET_OPCODE_PONG         = 0x0A,
+	WEBSOCKET_OPCODE_CONTINUE     = 0x00, /**< Message continues */
+	WEBSOCKET_OPCODE_DATA_TEXT    = 0x01, /**< Textual data */
+	WEBSOCKET_OPCODE_DATA_BINARY  = 0x02, /**< Binary data */
+	WEBSOCKET_OPCODE_CLOSE        = 0x08, /**< Closing connection */
+	WEBSOCKET_OPCODE_PING         = 0x09, /**< Ping message */
+	WEBSOCKET_OPCODE_PONG         = 0x0A, /**< Pong message */
 };
 
 /**
@@ -182,8 +183,37 @@ int websocket_recv_msg(int ws_sock, uint8_t *buf, size_t buf_len,
  * the connection.
  *
  * @param ws_sock Websocket id returned by websocket_connect().
+ *
+ * @return <0 if error, 0 the connection was closed successfully
  */
 int websocket_disconnect(int ws_sock);
+
+/**
+ * @brief Register a socket as websocket. This is called by HTTP server
+ *        when a connection is upgraded to a websocket connection.
+ *
+ * @param http_sock Underlying socket connection socket.
+ * @param recv_buf Temporary receive buffer for websocket parsing. This must
+ *        point to a memory area that is valid for the duration of the whole
+ *        websocket session.
+ * @param recv_buf_len Length of the temporary receive buffer.
+ *
+ * @return <0 if error, >=0 the actual websocket to be used by application
+ */
+int websocket_register(int http_sock, uint8_t *recv_buf, size_t recv_buf_len);
+
+/**
+ * @brief Unregister a websocket. This is called when we no longer need
+ *        the underlying "real" socket. This will close first the websocket
+ *        and then the original socket.
+ *
+ * @param ws_sock Websocket connection socket.
+ *
+ * @return <0 if error, 0 the websocket connection is now fully closed
+ */
+int websocket_unregister(int ws_sock);
+
+/** @cond INTERNAL_HIDDEN */
 
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 void websocket_init(void);
@@ -192,6 +222,8 @@ static inline void websocket_init(void)
 {
 }
 #endif
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

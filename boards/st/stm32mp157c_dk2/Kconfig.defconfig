@@ -1,0 +1,15 @@
+# STM32MP157 discovery board configuration
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32MP157C_DK2
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+config CLOCK_STM32_HSE_CLOCK
+	default 24000000
+
+endif # BOARD_STM32MP157_Dk2

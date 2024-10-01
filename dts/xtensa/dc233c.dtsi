@@ -22,7 +22,7 @@
 	 * Although RAM is of size 128MB (0x08000000), limit this to 16MB so
 	 * fewer L2 page table entries are needed when MMU is enabled.
 	 */
-	sram0: memory@00000000 {
+	sram0: memory@0 {
 		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 0x01000000>;

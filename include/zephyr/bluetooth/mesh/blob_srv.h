@@ -108,7 +108,7 @@ struct bt_mesh_blob_srv_cb {
 
 	/** @brief Transfer recovery callback.
 	 *
-	 *  Called when the Bluetooth mesh subsystem is started if the device is rebooted
+	 *  Called when the Bluetooth Mesh subsystem is started if the device is rebooted
 	 *  in the middle of a transfer.
 	 *
 	 *  Transfers will not be resumed after a reboot if this callback is not
@@ -136,7 +136,7 @@ struct bt_mesh_blob_srv {
 	const struct bt_mesh_blob_io *io;
 	struct k_work_delayable rx_timeout;
 	struct bt_mesh_blob_block block;
-	struct bt_mesh_model *mod;
+	const struct bt_mesh_model *mod;
 	enum bt_mesh_blob_xfer_phase phase;
 
 	struct bt_mesh_blob_srv_state {

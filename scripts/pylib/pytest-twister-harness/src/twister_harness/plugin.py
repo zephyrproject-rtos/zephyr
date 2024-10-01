@@ -51,7 +51,7 @@ def pytest_addoption(parser: pytest.Parser):
     )
     twister_harness_group.addoption(
         '--platform',
-        help='Name of used platform (qemu_x86, nrf52840dk_nrf52840, etc.).'
+        help='Name of used platform (qemu_x86, nrf52840dk/nrf52840, etc.).'
     )
     twister_harness_group.addoption(
         '--device-serial',
@@ -68,6 +68,11 @@ def pytest_addoption(parser: pytest.Parser):
         help='Use the specified west runner (pyocd, nrfjprog, etc.).'
     )
     twister_harness_group.addoption(
+        '--runner-params',
+        action='append',
+        help='Use the specified west runner params.'
+    )
+    twister_harness_group.addoption(
         '--device-id',
         help='ID of connected hardware device (for example 000682459367).'
     )
@@ -78,6 +83,13 @@ def pytest_addoption(parser: pytest.Parser):
     twister_harness_group.addoption(
         '--device-serial-pty',
         help='Script for controlling pseudoterminal.'
+    )
+    twister_harness_group.addoption(
+        '--flash-before',
+        type=bool,
+        help='Flash device before attaching to serial port'
+             'This is useful for devices that share the same port for programming'
+             'and serial console, or use soft-USB, where flash must come first.'
     )
     twister_harness_group.addoption(
         '--west-flash-extra-args',
@@ -99,6 +111,15 @@ def pytest_addoption(parser: pytest.Parser):
         '--post-script',
         metavar='PATH',
         help='Script executed after closing serial connection.'
+    )
+    twister_harness_group.addoption(
+        '--dut-scope',
+        choices=('function', 'class', 'module', 'package', 'session'),
+        help='The scope for which `dut` and `shell` fixtures are shared.'
+    )
+    twister_harness_group.addoption(
+        '--twister-fixture', action='append', dest='fixtures', metavar='FIXTURE', default=[],
+        help='Twister fixture supported by this platform. May be given multiple times.'
     )
 
 

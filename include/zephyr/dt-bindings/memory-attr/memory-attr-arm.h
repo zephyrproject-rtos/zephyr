@@ -12,7 +12,7 @@
 /*
  * Architecture specific ARM MPU related attributes.
  *
- * This list is to seamlessy support the MPU regions configuration using DT and
+ * This list is to seamlessly support the MPU regions configuration using DT and
  * the `zephyr,memory-attr` property.
  *
  * This is legacy and it should NOT be extended further. If new MPU region

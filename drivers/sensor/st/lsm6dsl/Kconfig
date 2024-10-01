@@ -1,0 +1,152 @@
+# LSM6DSL accelerometer and gyroscope sensor configuration
+# options
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM6DSL
+	bool "LSM6DSL I2C/SPI accelerometer and gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_LSM6DSL_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSL),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSL),spi)
+	help
+	  Enable driver for LSM6DSL accelerometer and gyroscope
+	  sensor.
+
+if LSM6DSL
+
+choice LSM6DSL_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LSM6DSL_TRIGGER_NONE
+	bool "No trigger"
+
+config LSM6DSL_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select LSM6DSL_TRIGGER
+
+config LSM6DSL_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select LSM6DSL_TRIGGER
+
+endchoice
+
+config LSM6DSL_TRIGGER
+	bool
+
+config LSM6DSL_THREAD_PRIORITY
+	int "Thread priority"
+	depends on LSM6DSL_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LSM6DSL_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on LSM6DSL_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config LSM6DSL_ENABLE_TEMP
+	bool "Temperature"
+	help
+	  Enable/disable temperature
+
+config LSM6DSL_SENSORHUB
+	bool "I2C sensorhub feature"
+	help
+	  Enable/disable internal sensorhub
+
+choice LSM6DSL_EXTERNAL_SENSOR_0
+	prompt "External sensor 0"
+	depends on LSM6DSL_SENSORHUB
+	help
+	  Choose the external sensor 0 connected to LSM6DS3.
+
+config LSM6DSL_EXT0_LIS2MDL
+	bool "LIS2MDL"
+
+config LSM6DSL_EXT0_LIS3MDL
+	bool "LIS3MDL"
+
+config LSM6DSL_EXT0_LPS22HB
+	bool "LPS22HB"
+
+endchoice
+
+menu "Attributes"
+
+config LSM6DSL_GYRO_FS
+	int "Gyroscope full-scale range"
+	default 0
+	help
+	  Specify the default gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degree per
+	  second. Valid values are:
+	  0:  Full Scale selected at runtime
+	  125:   +/- 125dps
+	  250:   +/- 250dps
+	  500:   +/- 500dps
+	  1000:  +/- 1000dps
+	  2000:  +/- 2000dps
+
+config LSM6DSL_GYRO_ODR
+	int "Gyroscope Output data rate frequency"
+	range 0 10
+	default 0
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 12.5Hz
+	  2: 26Hz
+	  3: 52Hz
+	  4: 104Hz
+	  5: 208Hz
+	  6: 416Hz
+	  7: 833Hz
+	  8: 1660Hz
+	  9: 3330Hz
+	  10: 6660Hz
+
+config LSM6DSL_ACCEL_FS
+	int "Accelerometer full-scale range"
+	default 0
+	help
+	  Specify the default accelerometer full-scale range.
+	  An X value for the config represents a range of +/- X G. Valid values
+	  are:
+	  0:  Full Scale selected at runtime
+	  2:  +/- 2g
+	  4:  +/- 4g
+	  8:  +/- 8g
+	  16: +/- 16g
+
+config LSM6DSL_ACCEL_ODR
+	int "Accelerometer Output data rate frequency"
+	range 0 11
+	default 0
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  0: ODR selected at runtime
+	  1: 12.5Hz
+	  2: 26Hz
+	  3: 52Hz
+	  4: 104Hz
+	  5: 208Hz
+	  6: 416Hz
+	  7: 833Hz
+	  8: 1666Hz
+	  9: 3332Hz
+	  10: 6664Hz
+	  11: 1.6Hz
+endmenu
+
+endif # LSM6DSL

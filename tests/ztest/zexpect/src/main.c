@@ -59,6 +59,17 @@ ZTEST(expect, test_fail_expect_ok)
 	zexpect_ok(5);
 }
 
+ZTEST(expect, test_expect_not_ok)
+{
+	zexpect_not_ok(-EIO);
+}
+
+ZTEST_EXPECT_FAIL(expect, test_fail_expect_not_ok);
+ZTEST(expect, test_fail_expect_not_ok)
+{
+	zexpect_not_ok(0);
+}
+
 ZTEST(expect, test_expect_is_null)
 {
 	void *ptr = NULL;
@@ -160,4 +171,21 @@ ZTEST(expect, test_fail_expect_between_inclusive)
 	zexpect_between_inclusive(5, 0, 4);
 	zexpect_between_inclusive(5, 0, 4);
 	zexpect_between_inclusive(5, 6, 10);
+}
+
+ZTEST(expect, test_expect_str_equal)
+{
+	const char *s1 = "asdf";
+	const char s2[] = {'a', 's', 'd', 'f', '\0'};
+
+	zexpect_str_equal(s1, s2);
+}
+
+ZTEST_EXPECT_FAIL(expect, test_expect_str_equal_fail);
+ZTEST(expect, test_expect_str_equal_fail)
+{
+	const char *s1 = "asdf";
+	const char s2[] = {'a', 's', 'd', 'f', 'q', '\0'};
+
+	zexpect_str_equal(s1, s2);
 }

@@ -80,7 +80,7 @@ config ISOTP_RX_BUF_SIZE
 	help
 	  This value defines the size of a single block in the pool. The number of
 	  blocks is given by ISOTP_RX_BUF_COUNT. To be efficient use a multiple of
-	  CAN_MAX_DLEN - 1 (for classic CAN : 8 - 1 = 7, for CAN-FD : 64 - 1 = 63).
+	  CAN_MAX_DLEN - 1 (for classic CAN : 8 - 1 = 7, for CAN FD : 64 - 1 = 63).
 
 config ISOTP_RX_SF_FF_BUF_COUNT
 	int "Number of SF and FF data buffers for receiving data"

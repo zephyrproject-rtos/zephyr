@@ -4,16 +4,16 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="l2cap_send_on_connect"
+simulation_id="iso_cis"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_iso_cis_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_iso_cis_prj_conf \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central
 
-Execute ./bs_${BOARD}_tests_bsim_bluetooth_host_iso_cis_prj_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_host_iso_cis_prj_conf \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \

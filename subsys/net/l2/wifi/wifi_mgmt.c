@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
 
-const char * const wifi_security_txt(enum wifi_security_type security)
+const char *wifi_security_txt(enum wifi_security_type security)
 {
 	switch (security) {
 	case WIFI_SECURITY_TYPE_NONE:
@@ -42,7 +42,7 @@ const char * const wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
-const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
+const char *wifi_mfp_txt(enum wifi_mfp_options mfp)
 {
 	switch (mfp) {
 	case WIFI_MFP_DISABLE:
@@ -57,7 +57,7 @@ const char * const wifi_mfp_txt(enum wifi_mfp_options mfp)
 	}
 }
 
-const char * const wifi_band_txt(enum wifi_frequency_bands band)
+const char *wifi_band_txt(enum wifi_frequency_bands band)
 {
 	switch (band) {
 	case WIFI_FREQ_BAND_2_4_GHZ:
@@ -72,7 +72,7 @@ const char * const wifi_band_txt(enum wifi_frequency_bands band)
 	}
 }
 
-const char * const wifi_state_txt(enum wifi_iface_state state)
+const char *wifi_state_txt(enum wifi_iface_state state)
 {
 	switch (state) {
 	case WIFI_STATE_DISCONNECTED:
@@ -101,7 +101,7 @@ const char * const wifi_state_txt(enum wifi_iface_state state)
 	}
 }
 
-const char * const wifi_mode_txt(enum wifi_iface_mode mode)
+const char *wifi_mode_txt(enum wifi_iface_mode mode)
 {
 	switch (mode) {
 	case WIFI_MODE_INFRA:
@@ -122,7 +122,7 @@ const char * const wifi_mode_txt(enum wifi_iface_mode mode)
 	}
 }
 
-const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
+const char *wifi_link_mode_txt(enum wifi_link_mode link_mode)
 {
 	switch (link_mode) {
 	case WIFI_0:
@@ -149,7 +149,7 @@ const char * const wifi_link_mode_txt(enum wifi_link_mode link_mode)
 	}
 }
 
-const char * const wifi_ps_txt(enum wifi_ps ps_name)
+const char *wifi_ps_txt(enum wifi_ps ps_name)
 {
 	switch (ps_name) {
 	case WIFI_PS_DISABLED:
@@ -161,7 +161,7 @@ const char * const wifi_ps_txt(enum wifi_ps ps_name)
 	}
 }
 
-const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
+const char *wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
 {
 	switch (ps_mode) {
 	case WIFI_PS_MODE_LEGACY:
@@ -173,7 +173,7 @@ const char * const wifi_ps_mode_txt(enum wifi_ps_mode ps_mode)
 	}
 }
 
-const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
+const char *wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
 {
 	switch (twt_operation) {
 	case WIFI_TWT_SETUP:
@@ -185,7 +185,7 @@ const char * const wifi_twt_operation_txt(enum wifi_twt_operation twt_operation)
 	}
 }
 
-const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
+const char *wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type twt_negotiation)
 {
 	switch (twt_negotiation) {
 	case WIFI_TWT_INDIVIDUAL:
@@ -199,7 +199,7 @@ const char * const wifi_twt_negotiation_type_txt(enum wifi_twt_negotiation_type 
 	}
 }
 
-const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
+const char *wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
 {
 	switch (twt_setup) {
 	case WIFI_TWT_SETUP_CMD_REQUEST:
@@ -223,7 +223,7 @@ const char * const wifi_twt_setup_cmd_txt(enum wifi_twt_setup_cmd twt_setup)
 	}
 }
 
-const char * const wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
+const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 {
 	switch (ps_wakeup_mode) {
 	case WIFI_PS_WAKEUP_MODE_DTIM:
@@ -274,7 +274,9 @@ static int wifi_connect(uint32_t mgmt_request, struct net_if *iface,
 	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
 	    (params->ssid_length == 0U) ||
 	    ((params->security == WIFI_SECURITY_TYPE_PSK ||
-		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256) &&
+		  params->security == WIFI_SECURITY_TYPE_WPA_PSK ||
+		  params->security == WIFI_SECURITY_TYPE_PSK_SHA256 ||
+		  params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) &&
 	     ((params->psk_length < 8) || (params->psk_length > 64) ||
 	      (params->psk_length == 0U) || !params->psk)) ||
 	    ((params->security == WIFI_SECURITY_TYPE_SAE) &&
@@ -409,6 +411,64 @@ static int wifi_ap_disable(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE, wifi_ap_disable);
 
+static int wifi_ap_sta_disconnect(uint32_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	uint8_t *mac = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ap_sta_disconnect == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(uint8_t) * WIFI_MAC_ADDR_LEN) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ap_sta_disconnect(dev, mac);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT, wifi_ap_sta_disconnect);
+
+static int wifi_ap_config_params(uint32_t mgmt_request, struct net_if *iface,
+				 void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_ap_config_params *params = data;
+
+	if (dev == NULL) {
+		return -ENODEV;
+	}
+
+	if (wifi_mgmt_api == NULL ||
+	    wifi_mgmt_api->ap_config_params == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		if (params->max_num_sta > CONFIG_WIFI_MGMT_AP_MAX_NUM_STA) {
+			LOG_INF("Maximum number of stations(%d) "
+				"exceeded default configured value = %d.",
+				params->max_num_sta, CONFIG_WIFI_MGMT_AP_MAX_NUM_STA);
+			return -EINVAL;
+		}
+	}
+
+	return wifi_mgmt_api->ap_config_params(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM, wifi_ap_config_params);
+
 static int wifi_iface_status(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
 {
@@ -479,7 +539,7 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 			return -EIO;
 		}
 
-		if (info.state == WIFI_STATE_COMPLETED) {
+		if (info.state >= WIFI_STATE_ASSOCIATED) {
 			ps_params->fail_reason =
 				WIFI_PS_PARAM_FAIL_DEVICE_CONNECTED;
 			return -ENOTSUP;
@@ -678,6 +738,42 @@ static int wifi_channel(uint32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL, wifi_channel);
 
+static int wifi_get_version(uint32_t mgmt_request, struct net_if *iface,
+			   void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_version *ver_params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->get_version == NULL) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->get_version(dev, ver_params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION, wifi_get_version);
+
+static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	unsigned int *rts_threshold = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->set_rts_threshold == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*rts_threshold)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->set_rts_threshold(dev, *rts_threshold);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD, wifi_set_rts_threshold);
+
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
 					   struct wifi_raw_scan_result *raw_scan_result)
@@ -705,4 +801,44 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface,
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_COMPLETE,
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
+}
+
+void wifi_mgmt_raise_ap_enable_result_event(struct net_if *iface,
+					    enum wifi_ap_status status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_ENABLE_RESULT,
+					iface, &cnx_status,
+					sizeof(enum wifi_ap_status));
+}
+
+void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
+					     enum wifi_ap_status status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_DISABLE_RESULT,
+					iface, &cnx_status,
+					sizeof(enum wifi_ap_status));
+}
+
+void wifi_mgmt_raise_ap_sta_connected_event(struct net_if *iface,
+					    struct wifi_ap_sta_info *sta_info)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_STA_CONNECTED,
+					iface, sta_info,
+					sizeof(struct wifi_ap_sta_info));
+}
+
+void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
+					       struct wifi_ap_sta_info *sta_info)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_STA_DISCONNECTED,
+					iface, sta_info,
+					sizeof(struct wifi_ap_sta_info));
 }

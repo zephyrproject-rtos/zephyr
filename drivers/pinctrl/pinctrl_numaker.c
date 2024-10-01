@@ -16,7 +16,9 @@
 #define GPIO_SIZE   DT_REG_SIZE(DT_NODELABEL(gpioa))
 
 #define SLEWCTL_PIN_SHIFT(pin_idx)	((pin_idx) * 2)
-#define SLEWCTL_MASK(pin_idx)	(3 << SLEWCTL_PIN_SHIFT(pin_idx))
+#define SLEWCTL_MASK(pin_idx)		(3 << SLEWCTL_PIN_SHIFT(pin_idx))
+#define DINOFF_PIN_SHIFT(pin_idx)	(pin_idx + GPIO_DINOFF_DINOFF0_Pos)
+#define DINOFF_MASK(pin_idx)		(1 << DINOFF_PIN_SHIFT(pin_idx))
 
 static void gpio_configure(const pinctrl_soc_pin_t *pin, uint8_t port_idx, uint8_t pin_idx)
 {
@@ -28,7 +30,8 @@ static void gpio_configure(const pinctrl_soc_pin_t *pin, uint8_t port_idx, uint8
 		      ((pin->schmitt_enable ? 1 : 0) << pin_idx);
 	port->SLEWCTL = (port->SLEWCTL & ~SLEWCTL_MASK(pin_idx)) |
 			(pin->slew_rate << SLEWCTL_PIN_SHIFT(pin_idx));
-
+	port->DINOFF = (port->DINOFF & ~DINOFF_MASK(pin_idx)) |
+		       ((pin->digital_disable ? 1 : 0) << DINOFF_PIN_SHIFT(pin_idx));
 }
 /**
  * Configure pin multi-function

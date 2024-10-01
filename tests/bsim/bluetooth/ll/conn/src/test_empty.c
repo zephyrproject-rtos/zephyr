@@ -59,7 +59,7 @@ static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "empty",
 		.test_descr = "demo empty test (it just fails after 500ms)",
-		.test_post_init_f = test_empty_init,
+		.test_pre_init_f = test_empty_init,
 		.test_tick_f = test_empty_tick,
 		.test_main_f = test_main
 	},

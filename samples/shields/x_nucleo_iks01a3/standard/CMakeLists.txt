@@ -7,10 +7,6 @@ cmake_minimum_required(VERSION 3.20.0)
 # This sample is specific to x_nucleo_iks01a3 shield. Enforce -DSHIELD option
 set(SHIELD x_nucleo_iks01a3)
 
-if(BOARD STREQUAL stm32mp157c_dk2)
-  set(CONF_FILE stm32mp157c_dk2.conf)
-endif()
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(x_nucleo_iks01a3)
 

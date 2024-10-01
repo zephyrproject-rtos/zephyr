@@ -14,15 +14,15 @@
  */
 
 #if defined(CONFIG_SOC_MPS2_AN521) && defined(CONFIG_QEMU_TARGET)
-/* mps2_an521 blows up if allowed to link into large area, even though
+/* mps2/an521 blows up if allowed to link into large area, even though
  * the link is successful and it claims the memory is there.  We get
  * hard faults on boot in qemu before entry to cstart() once MEMSZ is
  * allowed to get near 256kb.
  */
 # define MEMSZ (192 * 1024)
 #elif defined(CONFIG_ARCH_POSIX)
-/* native_posix doesn't support CONFIG_SRAM_SIZE at all (because
- * it can link anything big enough to fit on the host), so just use a
+/* POSIX arch based targets don't support CONFIG_SRAM_SIZE at all (because
+ * they can link anything big enough to fit on the host), so just use a
  * reasonable value.
  */
 # define MEMSZ (2 * 1024 * 1024)

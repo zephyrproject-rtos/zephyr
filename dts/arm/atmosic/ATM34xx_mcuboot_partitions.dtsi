@@ -6,7 +6,18 @@
 
 /delete-node/ &spe_partition;
 /delete-node/ &nspe_partition;
+
+#include <arm/atmosic/ATM34xx_mcuboot_partition_defs.h>
+
+#if ATM_FACTORY_SIZE
+/delete-node/ &factory_partition;
+#endif
+#if ATM_STORAGE_SIZE
 /delete-node/ &storage_partition;
+#endif
+#if ATM_FAST_CODE_SIZE
+/delete-node/ &fast_code_partition;
+#endif
 
 &rram0 {
 	partitions {
@@ -14,82 +25,89 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
+		boot_partition: partition@ATM_MCUBOOT_NODE_ID {
 			label = "mcuboot";
 			secure;
-			reg = <0x00000 0xc000>;
+			reg = <ATM_MCUBOOT_OFFSET ATM_MCUBOOT_SIZE>;
 		};
-#ifdef DFU_IN_FLASH
-		storage_partition: partition@c000 {
-			label = "storage";
-			reg = <0x0c000 0x4000>;
-		};
-		slot0_partition: partition@10000 {
+
+		// image 0 primary
+		slot0_partition: partition@ATM_SLOT0_NODE_ID {
 			label = "image-0";
-			reg = <0x10000 0x6f800>;
+			reg = <ATM_SLOT0_OFFSET ATM_SLOT0_SIZE>;
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
-				spe_partition: partition@10000 {
+				spe_partition: partition@ATM_SPE_NODE_ID {
 					label = "spe_partition";
 					secure;
-					reg = <0x10000 0x5800>;
+					reg = <ATM_SPE_OFFSET ATM_SPE_SIZE>;
 				};
-				nspe_partition: partition@15800 {
+#ifndef RUN_IN_FLASH
+				nspe_partition: partition@ATM_NSPE_NODE_ID {
 					label = "nspe_partition";
-					reg = <0x15800 0x6a000>;
+					reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
 				};
+#elif ATM_FAST_CODE_SIZE
+				fast_code_partition: partition@ATM_FAST_CODE_NODE_ID {
+					label = "fast_code_partition";
+					reg = <ATM_FAST_CODE_OFFSET ATM_FAST_CODE_SIZE>;
+				};
+#endif
 			};
 		};
-#else
-		scratch_partition: partition@c000 {
-			label = "image-scratch";
-			reg = <0x0c000 0x2000>;
+#if ATM_FACTORY_SIZE
+		factory_partition: partition@ATM_FACTORY_NODE_ID {
+			label = "factory";
+			reg = <ATM_FACTORY_OFFSET ATM_FACTORY_SIZE>;
 		};
-		storage_partition: partition@e000 {
+#endif
+#if ATM_STORAGE_SIZE
+		storage_partition: partition@ATM_STORAGE_NODE_ID {
 			label = "storage";
-			reg = <0x0e000 0x2000>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x10000 0x37c00>;
-			partitions {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				spe_partition: partition@10000 {
-					label = "spe_partition";
-					secure;
-					reg = <0x10000 0x5800>;
-				};
-				nspe_partition: partition@15800 {
-					label = "nspe_partition";
-					reg = <0x15800 0x32400>;
-				};
-			};
-		};
-		slot1_partition: partition@47c00 {
-			label = "image-1";
-			reg = <0x47c00 0x37c00>;
+			reg = <ATM_STORAGE_OFFSET ATM_STORAGE_SIZE>;
 		};
 #endif
 	};
 };
 
-#ifdef DFU_IN_FLASH
 &flash0 {
 	partitions {
 		compatible = "atmosic,tz-fixed-partitions", "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		slot1_partition: partition@0 {
-			label = "image-1";
-			reg = <0x00000 0x6f800>;
+#ifdef RUN_IN_FLASH
+		// image 1 primary
+		slot2_partition: partition@ATM_SLOT2_NODE_ID {
+			label = "image-2";
+			reg = <ATM_SLOT2_OFFSET ATM_SLOT2_SIZE>;
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				nspe_partition: partition@ATM_NSPE_NODE_ID {
+					label = "nspe_partition";
+					reg = <ATM_NSPE_OFFSET ATM_NSPE_SIZE>;
+				};
+			};
 		};
-		scratch_partition: partition@6f800 {
+#endif
+#if ATM_MCUBOOT_SCRATCH_SIZE
+		scratch_partition: partition@ATM_MCUBOOT_SCRATCH_NODE_ID {
 			label = "image-scratch";
-			reg = <0x6f800 0x10800>;
+			reg = <ATM_MCUBOOT_SCRATCH_OFFSET ATM_MCUBOOT_SCRATCH_SIZE>;
 		};
+#endif
+		// image 0 OTA staging area, size must equal slot0_partition
+		slot1_partition: partition@ATM_SLOT1_NODE_ID {
+			label = "image-1";
+			reg = <ATM_SLOT1_OFFSET ATM_SLOT1_SIZE>;
+		};
+#ifdef RUN_IN_FLASH
+		// image 1 OTA staging area, size must equal slot2_partition
+		slot3_partition: partition@ATM_SLOT3_NODE_ID {
+			label = "image-3";
+			reg = <ATM_SLOT3_OFFSET ATM_SLOT3_SIZE>;
+		};
+#endif
 	};
 };
-#endif

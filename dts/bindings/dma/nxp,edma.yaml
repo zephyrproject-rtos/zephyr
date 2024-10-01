@@ -1,0 +1,51 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP enhanced Direct Memory Access (eDMA) node
+
+compatible: "nxp,edma"
+
+include: [dma-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+  valid-channels:
+    type: array
+    description: |
+      Use this property to specify which channel indexes are
+      to be considered valid. The difference between this
+      property and "dma-channels" is the fact that this
+      property allows you to have "gaps" between the channel
+      indexes. This is useful in cases where you know you're
+      not going to be using all of the possible channels, thus
+      leading to a more readable DTS. Of course, this property
+      and "dma-channels" are mutually exclusive, meaning you
+      can't specify both properties as this will lead to a
+      BUILD_ASSERT() failure.
+  hal-cfg-index:
+    type: int
+    description: |
+      Use this property to specify which HAL configuration
+      should be used. In the case of some SoCs (e.g: i.MX93),
+      there can be multiple eDMA variants, each of them having
+      different configurations (e.g: i.MX93 eDMA3 has 31 channels,
+      i.MX93 eDMA4 has 64 channels and both of them have slightly
+      different register layouts). To overcome this issue, the HAL
+      exposes an array of configurations called "edma_hal_configs".
+      To perform various operations, the HAL uses an eDMA configuration
+      which will tell it what register layout the IP has, the number of
+      channels, various flags and offsets. As such, if there's multiple
+      configurations available, the user will have to specify which
+      configuration to use through this property. If missing, the
+      configuration found at index 0 will be used.
+  "#dma-cells":
+    const: 2
+
+# IMPORTANT: if your EDMA version doesn't support channel MUX-ing please
+# leave the MUX cell as 0. This is not mandatory for the driver as the
+# MUX value will be ignored in this case but all entities using EDMA should
+# be consistent in this regard.
+dma-cells:
+  - channel
+  - mux

@@ -36,9 +36,9 @@ struct log_source_dynamic_data {
 	 */
 	uint32_t dummy[2];
 #endif
-#if defined(CONFIG_RISCV) && defined(CONFIG_64BIT)
-	/* Workaround: RV64 needs to ensure that structure is just 8 bytes. */
-	uint32_t dummy;
+#if defined(CONFIG_64BIT)
+	/* Workaround: Ensure that structure size is a multiple of 8 bytes. */
+	uint32_t dummy_64;
 #endif
 };
 

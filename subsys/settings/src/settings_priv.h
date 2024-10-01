@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2023 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,20 +16,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-int settings_cli_register(void);
-int settings_nmgr_register(void);
-
-struct mgmt_cbuf;
-int settings_cbor_line(struct mgmt_cbuf *cb, char *name, int nlen, char *value,
-		       int vlen);
-
-void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
-					  size_t *len),
-			   int (*write_cb)(void *ctx, off_t off,
-					   char const *buf, size_t len),
-			   size_t (*get_len_cb)(void *ctx),
-			   uint8_t io_rwbs);
 
 int settings_line_write(const char *name, const char *value, size_t val_len,
 			off_t w_loc, void *cb_arg);

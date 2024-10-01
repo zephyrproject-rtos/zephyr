@@ -4,4 +4,4 @@ tests:
       - kernel
     integration_platforms:
       - qemu_x86
-      - native_posix
+      - native_sim

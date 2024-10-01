@@ -37,7 +37,7 @@ FUNC_NORETURN void z_sys_poweroff(void);
  * @brief Perform a system power off.
  *
  * This function will perform an immediate power off of the system. It is the
- * responsability of the caller to ensure that the system is in a safe state to
+ * responsibility of the caller to ensure that the system is in a safe state to
  * be powered off. Any required wake up sources must be enabled before calling
  * this function.
  *
