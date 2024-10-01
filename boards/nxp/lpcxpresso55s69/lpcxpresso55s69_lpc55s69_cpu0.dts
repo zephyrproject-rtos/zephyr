@@ -10,6 +10,7 @@
 #include "lpcxpresso55s69.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <freq.h>
 
 / {
 	model = "NXP LPCXpresso55S69 board";
@@ -109,6 +110,50 @@
 
 &flexcomm0 {
 	status = "okay";
+	clock-state-0 = <&fxcom0_96mhz>;
+	clock-state-names = "default";
+};
+
+&cpu0 {
+	clock-state-0 = <&sys_clk_144mhz>;
+	clock-state-names = "default";
+};
+
+&fxcom0_clock {
+	/* 96 MHz setpoint for Flexcomm0 clock using FROHF */
+	fxcom0_96mhz: fxcom0_96mhz {
+		compatible = "clock-state";
+		clocks = <&fcclksel0 3 &frohfdiv 1>;
+		clock-frequency = <DT_FREQ_M(96)>;
+	};
+};
+
+&system_clock {
+	/* 144 MHz setpoint for CPU core clock */
+	sys_clk_144mhz: sys_clk_144mhz {
+		compatible = "clock-state";
+		clocks = <&ahbclkdiv 1 &fro_12m 1 &mainclkselb 0 &mainclksela 0
+			&xtal32m 1 &clk_in_en 1 &pll1clksel 1
+			&pll1_pdec 2 &pll1 288000000 8 144 0 53 31
+			&pll1_directo 0 &pll1_bypass 0
+			&mainclkselb 2>;
+		clock-frequency = <DT_FREQ_M(144)>;
+		locking-state;
+	};
+};
+
+&fxcom2_clock {
+	/* 96 MHz setpoint for Flexcomm2 clock using FROHF */
+	fxcom2_96mhz: fxcom2_96mhz {
+		compatible = "clock-state";
+		clocks = <&fcclksel2 3 &frohfdiv 1>;
+		clock-frequency = <DT_FREQ_M(96)>;
+	};
+};
+
+&flexcomm2 {
+	clock-state-0 = <&fxcom2_96mhz>;
+	clock-state-names = "default";
 };
 
 &flexcomm4 {
