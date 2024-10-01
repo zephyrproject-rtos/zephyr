@@ -125,7 +125,7 @@ static int crypto_pufs_otp_set_lock(
                                     const struct device *dev,
                                     uint16_t otp_slot,
                                     uint16_t len,
-                                    enum crypto_otp_set_lock lock
+                                    enum crypto_otp_lock lock
                                   )
 {
   enum pufcc_status lvStatus = PUFCC_SUCCESS;
@@ -143,7 +143,7 @@ static int crypto_pufs_otp_set_lock(
 static int crypto_pufs_otp_get_lock(
                                     const struct device *dev,
                                     uint16_t otp_slot,
-                                    enum crypto_otp_set_lock *lock
+                                    enum crypto_otp_lock *lock
                                    )
 {
   enum pufcc_status lvStatus = PUFCC_SUCCESS;

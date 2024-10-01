@@ -59,7 +59,7 @@
 /* More flags to be added as necessary */
 
 // OTP lock types
-enum crypto_otp_set_lock {
+enum crypto_otp_lock {
   CRYPTO_OTP_RW = 0x0,  // Read-Write
   CRYPTO_OTP_RO = 0x3,  // Read-Only
   CRYPTO_OTP_NA = 0xF,  // No-Access
@@ -116,14 +116,14 @@ __subsystem struct otp_driver_api {
 
 	/**
 	 * otp_set_lock API locks the selected OTP slot as per
-	 * the crypto_otp_set_lock. Use otp_info to get total 
+	 * the crypto_otp_lock. Use otp_info to get total 
 	 * number of slots and bytes per slot.
 	 */
 	int (*otp_set_lock)(
 					const struct device *dev, 
 					uint16_t otp_slot,
                     uint16_t len,
-					enum crypto_otp_set_lock lock
+					enum crypto_otp_lock lock
 				   );
 
 	/**
@@ -133,7 +133,7 @@ __subsystem struct otp_driver_api {
 	int (*otp_get_lock)(
 					const struct device *dev, 
 					uint16_t otp_slot,
-					enum crypto_otp_set_lock *lock
+					enum crypto_otp_lock *lock
 				   );
 };
 
@@ -292,7 +292,7 @@ static inline int otp_zeoirze(
 
 /**
  * @brief Set the crypto otp slot a particular lock value. The lock
- * value can be referenced from crypto_otp_set_lock enumeration.
+ * value can be referenced from crypto_otp_lock enumeration.
  *
  * This API is used to set a lock value to an otp slot.
  *
@@ -306,7 +306,7 @@ static inline int otp_set_lock(
 								const struct device *dev,
 								uint16_t otp_slot,
                                 uint16_t len,
-								enum crypto_otp_set_lock lock
+								enum crypto_otp_lock lock
 							 )
 {
 	struct otp_driver_api *api;
@@ -322,7 +322,7 @@ static inline int otp_set_lock(
 
 /**
  * @brief Get the lock value of a particular crypto otp slot. The lock
- * value can be referenced from crypto_otp_set_lock enumeration.
+ * value can be referenced from crypto_otp_lock enumeration.
  *
  * This API is used to get a lock value of an otp slot.
  *
@@ -335,7 +335,7 @@ static inline int otp_set_lock(
 static inline int otp_get_lock(
 								const struct device *dev,
 								uint16_t otp_slot,
-								enum crypto_otp_set_lock *lock
+								enum crypto_otp_lock *lock
 							  )
 {
 	struct otp_driver_api *api;

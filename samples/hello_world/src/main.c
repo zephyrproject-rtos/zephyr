@@ -9,6 +9,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/crypto/crypto_otp_mem.h>
 #include <scu.h>
 
 #define ATTR_INF	"\x1b[32;1m" // ANSI_COLOR_GREEN
@@ -260,6 +261,63 @@ void CounterTest(const struct device *pit)
 	}
 }
 
+void pufs_otp_test(const struct device *pufs_otp)
+{
+	uint8_t slot_data[32] = {0};
+
+	uint16_t totalSlots = 0, bytesPerSlot = 0;
+	if(otp_info(pufs_otp, &totalSlots, &bytesPerSlot) != 0) {
+		printf("%s%s(%d) OTP_Info Failed%s\n", \
+		ATTR_ERR,__func__,__LINE__,ATTR_RST);
+	} else {
+		printf("%s%s(%d) OTP_Info... Slots:%d Bytes Per Slot:%d%s\n", \
+		ATTR_INF,__func__,__LINE__, totalSlots, bytesPerSlot, ATTR_RST);
+	}
+
+	for(uint8_t i = 0; i < bytesPerSlot; i++) {
+		slot_data[i] = (i+i)*2;
+	}
+	if(otp_write(pufs_otp, 12, slot_data, 18) != 0) {
+		printf("%s%s(%d) otp_write Failed%s\n", \
+		ATTR_ERR,__func__,__LINE__,ATTR_RST);
+	} else {
+		memset(slot_data, 0, bytesPerSlot);
+		if(otp_read(pufs_otp, 12, slot_data, 18) != 0) {
+			printf("%s%s(%d) otp_read Failed%s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s",ATTR_INF);
+			for(uint8_t i = 0; i < bytesPerSlot; i++) {
+				printf("%d ", slot_data[i]);
+			} printf("\n");
+			printf("%s",ATTR_RST);
+		}
+	}
+	if(otp_set_lock(pufs_otp, 12, 18, CRYPTO_OTP_RO) != 0) {
+		printf("%s%s(%d) otp_set_lock Failed%s\n", \
+		ATTR_ERR,__func__,__LINE__,ATTR_RST);
+	} else {
+		enum crypto_otp_lock lvLock = CRYPTO_OTP_RW; 
+		if(otp_get_lock(pufs_otp, 12, &lvLock) != 0) {
+			printf("%s%s(%d) otp_get_lock Failed%s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s%s(%d) otp_lock: %d %s\n", \
+			ATTR_INF,__func__,__LINE__,lvLock,ATTR_RST);
+		}
+		for(uint8_t i = 0; i < bytesPerSlot; i++) {
+		slot_data[i] = (i+i)*2;
+		}
+		if(otp_write(pufs_otp, 12, slot_data, 18) != 0) {
+			printf("%s%s(%d) otp_write Failed as Expected %s\n", \
+			ATTR_RST,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s%s(%d) otp_write Passed UnExpectedly %s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		}
+	}
+}
+
 int main(void)
 {
 	int Cnt = 0;
@@ -293,6 +351,7 @@ int main(void)
 		printf("%s pufs_otp has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pufs_otp Object is Created %s\n", ATTR_INF, ATTR_RST);
+		pufs_otp_test(pufs_otp);
 	}
 
 	if((pvt == NULL) || (!device_is_ready(pvt))) {
