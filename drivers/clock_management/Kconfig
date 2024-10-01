@@ -1,0 +1,50 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# Clock controller drivers
+#
+menuconfig CLOCK_MANAGEMENT
+	bool "Clock management drivers"
+	help
+	  Enable support for clock management drivers. These drivers provide
+	  clock configuration to the system via a series of setpoints, which
+	  allow drivers to configure clocks based on their desired power
+	  state
+
+if CLOCK_MANAGEMENT
+
+module = CLOCK_MANAGEMENT
+module-str = clock management
+source "subsys/logging/Kconfig.template.log_config"
+
+config CLOCK_MANAGEMENT_SET_RATE
+	bool "Support runtime rate setting"
+	select CLOCK_MANAGEMENT_RUNTIME
+	help
+	  Allow clock consumers to request a given clock frequency via the
+	  clock management framework. The framework will then configure the
+	  clock tree so that the consumer is supplied with the closest
+	  possible frequency to its request. Note that enabling this feature
+	  will result in increased flash utilization
+
+config CLOCK_MANAGEMENT_RUNTIME
+	bool "Support runtime clock rate requests"
+	help
+	  Support runtime clock rate requests. When enabled, clock producers
+	  will track the clock requests from each consumer, and reject
+	  conflicting requests. This Kconfig also enables registering
+	  for clock rate change notifications
+
+config CLOCK_MANAGEMENT_CLK_NAME
+	bool "Store names of each clock"
+	help
+	  Store names of each clock node. Uses additional ROM space. If
+	  clock framework debug logging is enabled, traces will be printed
+	  as the clock tree is reconfigured.
+
+module = CLOCK_MANAGEMENT
+module-str = clock-management
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CLOCK_MANAGEMENT
