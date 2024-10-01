@@ -496,17 +496,16 @@ ZTEST(llext, test_printk_exported)
 }
 
 /*
- * Ensure ext_syscall_fail is exported - as it is picked up by the syscall
- * build machinery - but points to NULL as it is not implemented.
+ * The syscalls test above verifies that custom syscalls defined by extensions
+ * are properly exported. Since `ext_syscalls.h` declares ext_syscall_fail, we
+ * know it is picked up by the syscall build machinery, but the implementation
+ * for it is missing. Make sure the exported symbol for it is NULL.
  */
 ZTEST(llext, test_ext_syscall_fail)
 {
 	const void * const esf_fn = LLEXT_FIND_BUILTIN_SYM(z_impl_ext_syscall_fail);
 
-	zassert_not_null(esf_fn, "est_fn should not be NULL");
-
-	zassert_is_null(*(uintptr_t **)esf_fn, NULL,
-			"ext_syscall_fail should be NULL");
+	zassert_is_null(esf_fn, "est_fn should be NULL");
 }
 
 ZTEST_SUITE(llext, NULL, NULL, NULL, NULL, NULL);
