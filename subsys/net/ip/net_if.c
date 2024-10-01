@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <string.h>
 #include <zephyr/net/igmp.h>
 #include <zephyr/net/ipv4_autoconf.h>
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/net_pkt.h>

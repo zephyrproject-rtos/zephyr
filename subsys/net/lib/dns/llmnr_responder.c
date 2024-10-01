@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/dns_resolve.h>
