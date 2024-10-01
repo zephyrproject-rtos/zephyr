@@ -136,10 +136,10 @@ and a ST morpho connector. Board is configured as follows:
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - USER_PB : PC13
 - LD1 : PB0
-- LD2 : PB7
+- LD2 : PE1
 - LD3 : PB14
 - I2C : PB8, PB9
-- SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
+- SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PB5 (Arduino SPI)
 - FDCAN1 RX/TX : PD0, PD1
 
 System Clock
