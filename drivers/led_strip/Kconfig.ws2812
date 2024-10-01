@@ -19,6 +19,7 @@ config WS2812_STRIP_SPI
 
 config WS2812_STRIP_SPI_PREAMBLE_SUPPORT
 	bool "WS2812 LED strip SPI preamble support"
+	default y if SOC_FAMILY_NXP_IMXRT
 	default n
 	depends on WS2812_STRIP_SPI
 	help
@@ -27,6 +28,7 @@ config WS2812_STRIP_SPI_PREAMBLE_SUPPORT
 
 config WS2812_STRIP_SPI_POSTAMBLE_SUPPORT
 	bool "WS2812 LED strip SPI postamble support"
+	default y if SOC_FAMILY_NXP_IMXRT
 	default n
 	depends on WS2812_STRIP_SPI
 	help
