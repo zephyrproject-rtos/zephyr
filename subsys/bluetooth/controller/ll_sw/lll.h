@@ -611,7 +611,7 @@ struct lll_event *ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 				      lll_prepare_cb_t prepare_cb,
 				      uint8_t is_resume);
 void *ull_prepare_dequeue_get(void);
-void *ull_prepare_dequeue_iter(uint8_t *idx);
+void *ull_prepare_dequeue_iter(void **idx);
 void ull_prepare_dequeue(uint8_t caller_id);
 void *ull_pdu_rx_alloc_peek(uint8_t count);
 void *ull_pdu_rx_alloc_peek_iter(uint8_t *idx);
