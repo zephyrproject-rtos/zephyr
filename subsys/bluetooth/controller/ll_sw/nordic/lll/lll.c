@@ -71,7 +71,7 @@ static int init_reset(void);
 static inline void done_inc(void);
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 static inline bool is_done_sync(void);
-static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx);
+static inline struct lll_event *prepare_dequeue_iter_ready_get(void **idx);
 static inline struct lll_event *resume_enqueue(lll_is_abort_cb_t is_abort_cb,
 					       lll_abort_cb_t abort_cb, lll_prepare_cb_t resume_cb,
 					       void *param, uint32_t ticks_at_expire);
@@ -464,9 +464,9 @@ void lll_disable(void *param)
 	}
 	{
 		struct lll_event *next;
-		uint8_t idx;
+		void *idx;
 
-		idx = UINT8_MAX;
+		idx = NULL;
 		next = ull_prepare_dequeue_iter(&idx);
 		while (next) {
 			if (!next->is_aborted &&
@@ -480,8 +480,10 @@ void lll_disable(void *param)
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				idx = UINT8_MAX;
+				idx = NULL;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+			} else if (!idx) {
+				break;
 			}
 
 			next = ull_prepare_dequeue_iter(&idx);
@@ -830,18 +832,17 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	struct lll_event *ready_short = NULL;
 	struct lll_event *ready;
 	struct lll_event *next;
-	uint8_t idx;
+	void *idx;
 	int err;
 
 	/* Find the ready prepare in the pipeline */
-	idx = UINT8_MAX;
+	idx = NULL;
 	ready = prepare_dequeue_iter_ready_get(&idx);
 
 	/* Find any short prepare */
 	if (ready) {
 		uint32_t ticks_at_preempt_min = prepare_param->ticks_at_expire;
 		uint32_t ticks_at_preempt_next;
-		uint8_t idx_backup = idx;
 		uint32_t diff;
 
 		ticks_at_preempt_next = ready->prepare_param.ticks_at_expire;
@@ -854,11 +855,14 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			}
 		} else {
 			ready = NULL;
-			idx_backup = UINT8_MAX;
 		}
 
 		do {
 			struct lll_event *ready_next;
+
+			if (!idx) {
+				break;
+			}
 
 			ready_next = prepare_dequeue_iter_ready_get(&idx);
 			if (!ready_next) {
@@ -875,8 +879,6 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			ready_short = ready_next;
 			ticks_at_preempt_min = ticks_at_preempt_next;
 		} while (true);
-
-		idx = idx_backup;
 	}
 
 	/* Current event active or another prepare is ready in the pipeline */
@@ -927,6 +929,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				} else {
 					next = ready;
 				}
+			} else if (!idx) {
+				break;
 			}
 
 			ready = ull_prepare_dequeue_iter(&idx);
@@ -986,6 +990,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	 */
 
 	/* Find next prepare needing preempt timeout to be setup */
+	idx = NULL;
 	next = prepare_dequeue_iter_ready_get(&idx);
 	if (!next) {
 		return err;
@@ -1022,14 +1027,20 @@ static inline bool is_done_sync(void)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
 }
 
-static inline struct lll_event *prepare_dequeue_iter_ready_get(uint8_t *idx)
+static inline struct lll_event *prepare_dequeue_iter_ready_get(void **idx)
 {
 	struct lll_event *ready;
 
-	do {
+	ready = ull_prepare_dequeue_iter(idx);
+	while ((ready != NULL) && ((ready->is_aborted != 0U) || (ready->is_resume != 0U) ||
+				   (ready->prepare_param.defer != 0U))) {
+		if (!*idx) {
+			ready = NULL;
+			break;
+		}
+
 		ready = ull_prepare_dequeue_iter(idx);
-	} while ((ready != NULL) && ((ready->is_aborted != 0U) || (ready->is_resume != 0U) ||
-				     (ready->prepare_param.defer != 0U)));
+	}
 
 	return ready;
 }
@@ -1222,7 +1233,7 @@ static void preempt(void *param)
 {
 	lll_prepare_cb_t resume_cb;
 	struct lll_event *ready;
-	uint8_t idx;
+	void *idx;
 	int err;
 
 	/* No event to abort */
@@ -1230,9 +1241,8 @@ static void preempt(void *param)
 		return;
 	}
 
-preempt_find_preemptor:
 	/* Find a prepare that is ready and not a resume */
-	idx = UINT8_MAX;
+	idx = NULL;
 	ready = prepare_dequeue_iter_ready_get(&idx);
 	if (!ready) {
 		/* No ready prepare */
@@ -1250,6 +1260,11 @@ preempt_find_preemptor:
 		do {
 			uint32_t ticks_at_preempt_next;
 			uint32_t diff;
+
+			if (!idx) {
+				preemptor = NULL;
+				break;
+			}
 
 			preemptor = prepare_dequeue_iter_ready_get(&idx);
 			if (!preemptor) {
@@ -1292,36 +1307,7 @@ preempt_find_preemptor:
 			return;
 		}
 
-		/* FIXME: Prepare pipeline is not a ordered list implementation,
-		 *        and for short prepare being enqueued, ideally the
-		 *        pipeline has to be implemented as ordered list.
-		 *        Until then a workaround to abort a prepare present
-		 *        before the short prepare being enqueued is implemented
-		 *        below.
-		 *        A proper solution will be to re-design the pipeline
-		 *        as a ordered list, instead of the current FIFO.
-		 */
-
-		/* Abort the prepare that is present before the short prepare */
-		ready->is_aborted = 1;
-		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
-
-		/* Abort all events in pipeline before the short prepare */
-		if (preemptor != ready_next) {
-			goto preempt_find_preemptor;
-		}
-
-		/* As the prepare queue has been refreshed due to the call of
-		 * abort_cb which invokes the lll_done, find the latest prepare
-		 */
-		idx = UINT8_MAX;
-		ready = prepare_dequeue_iter_ready_get(&idx);
-		if (!ready) {
-			/* No ready prepare */
-			return;
-		}
-
-		LL_ASSERT(ready->prepare_param.param == param);
+		ready = preemptor;
 	}
 
 	/* Check if current event want to continue */
@@ -1414,8 +1400,8 @@ preempt_cancel_curr:
 		lll_abort_cb_t abort_cb;
 		uint8_t is_resume_abort;
 		struct lll_event *iter;
-		uint8_t iter_idx;
 		void *curr_param;
+		void *iter_idx;
 
 		/* Remove parameter assignment from currently active radio event so that done event
 		 * is not generated.
@@ -1434,8 +1420,8 @@ preempt_cancel_curr:
 		is_resume_abort = 0U;
 
 preempt_abort_resume:
-		/* Abort any duplicate non-resume, that they get dequeued */
-		iter_idx = UINT8_MAX;
+		/* Abort any duplicates so that they get dequeued */
+		iter_idx = NULL;
 		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
 			if (!iter->is_aborted &&
@@ -1450,8 +1436,10 @@ preempt_abort_resume:
 				 *       the prepare pipeline hence re-iterate
 				 *       through the prepare pipeline.
 				 */
-				iter_idx = UINT8_MAX;
+				iter_idx = NULL;
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL_DONE */
+			} else if (!iter_idx) {
+				break;
 			}
 
 			iter = ull_prepare_dequeue_iter(&iter_idx);
