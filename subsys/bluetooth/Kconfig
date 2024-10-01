@@ -190,7 +190,7 @@ config BT_SUBRATING
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
 
 config BT_CHANNEL_SOUNDING
-	bool "Channel Sounding support"
+	bool "Channel Sounding [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	depends on !BT_CTLR || BT_CTLR_CHANNEL_SOUNDING_SUPPORT
 	help
