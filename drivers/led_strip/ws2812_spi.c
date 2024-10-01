@@ -95,19 +95,19 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	};
 	size_t i;
 	int rc;
-#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
-    buf.len += cfg->empty_padding_frames;
-#endif
 #if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT)
-    buf.len += cfg->empty_padding_frames;
 	uint8_t *px_buf = &cfg->px_buf[cfg->empty_padding_frames];
+	buf.len += cfg->empty_padding_frames;
 #else
 	uint8_t *px_buf = cfg->px_buf;
 #endif
+#if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
+    buf.len += cfg->empty_padding_frames;
+#endif
 #if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) || \
 	IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
-	/* If zero values are padded on either end we need to ensure the buffer is
-	 * all zeros before filling */
+	/* If zero values are padded on either end we need to 
+	 * ensure the buffer is all zeros before filling */
 	memset(cfg->px_buf, 0, buf.len);
 #endif
 	/*
@@ -200,13 +200,15 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 #if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_PREAMBLE_SUPPORT) || \
 	IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
 #define WS2812_PADDING_FRAMES(idx) \
-	((DT_INST_PROP(idx, spi_max_frequency) * WS2812_RESET_DELAY(idx))/8000000)
+	((DT_INST_PROP(idx, spi_max_frequency) * \
+	WS2812_RESET_DELAY(idx)) / 8000000)
 #else
 #define WS2812_PADDING_FRAMES(idx) (0)
 #endif
 #if IS_ENABLED(CONFIG_WS2812_STRIP_SPI_POSTAMBLE_SUPPORT)
 #define WS2812_POSTAMBLE_FRAMES(idx) \
-	((DT_INST_PROP(idx, spi_max_frequency) * WS2812_RESET_DELAY(idx))/8000000)
+	((DT_INST_PROP(idx, spi_max_frequency) * \
+	WS2812_RESET_DELAY(idx)) / 8000000)
 #else
 #define WS2812_POSTAMBLE_FRAMES(idx) (0)
 #endif
