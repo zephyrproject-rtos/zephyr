@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>

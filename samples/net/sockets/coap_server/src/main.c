@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 
 #include <zephyr/net/coap_service.h>
+#include <zephyr/net/mld.h>
 
 #ifdef CONFIG_NET_IPV6
 #include "net_private.h"
