@@ -13,6 +13,8 @@
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/icmp.h>
 
+#include "icmpv4.h"
+
 LOG_MODULE_REGISTER(wifi_test, LOG_LEVEL_INF);
 
 #include "net_private.h"
@@ -51,9 +53,9 @@ static void wifi_scan_result(struct net_mgmt_event_callback *cb)
 	strncpy(ssid_print, entry->ssid, sizeof(ssid_print) - 1);
 	ssid_print[sizeof(ssid_print) - 1] = '\0';
 
-	printk("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n", wifi_ctx.scan_result,
-	       ssid_print, entry->ssid_length, entry->channel, wifi_band_txt(entry->band),
-	       entry->rssi, wifi_security_txt(entry->security),
+	printk("%-4d | %-32s %-5u | %-4u (%-6s) | %-4d | %-15s | %-17s | %-8s\n",
+	       wifi_ctx.scan_result, ssid_print, entry->ssid_length, entry->channel,
+	       wifi_band_txt(entry->band), entry->rssi, wifi_security_txt(entry->security),
 	       ((entry->mac_length) ? net_sprint_ll_addr_buf(entry->mac, WIFI_MAC_ADDR_LEN,
 							     mac_string_buf, sizeof(mac_string_buf))
 				    : ""),
@@ -118,9 +120,28 @@ static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_
 		      struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
+	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
+			    sizeof(struct net_icmp_hdr) + sizeof(struct net_icmpv4_echo_req);
+	size_t data_len = net_pkt_get_len(pkt) - hdr_offset;
+	char buf[50];
+
+	if (net_calc_chksum_icmpv4(pkt)) {
+		/* checksum error */
+		wifi_ctx.result = -EIO;
+		goto sem_give;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, hdr_offset);
+	net_pkt_read(pkt, buf, MIN(data_len, sizeof(buf)));
 
 	LOG_INF("Received ICMP reply from %s", net_sprint_ipv4_addr(&ip_hdr->src));
+	LOG_INF("Payload: '%s'", buf);
 
+	/* payload check */
+	wifi_ctx.result = strcmp(buf, TEST_DATA);
+
+sem_give:
 	k_sem_give(&wifi_event);
 
 	return 0;
@@ -255,6 +276,7 @@ ZTEST(wifi, test_2_icmp)
 	struct net_icmp_ctx icmp_ctx;
 	struct in_addr gw_addr_4;
 	struct sockaddr_in dst4 = {0};
+	int retry = CONFIG_WIFI_PING_ATTEMPTS;
 	int ret;
 
 	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
@@ -275,11 +297,23 @@ ZTEST(wifi, test_2_icmp)
 
 	LOG_INF("Pinging the gateway...");
 
-	ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface, (struct sockaddr *)&dst4, &params, NULL);
-	zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
+	do {
+		ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface,
+						 (struct sockaddr *)&dst4, &params, NULL);
+		zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
 
-	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT)), 0,
-		      "Gateway ping (ICMP) timed out");
+		int timeout = k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT));
+
+		if (timeout) {
+			zassert(--retry, "Gateway ping (ICMP) timed out on all attempts");
+			LOG_INF("No reply, retry %d", CONFIG_WIFI_PING_ATTEMPTS - retry);
+		} else {
+			break;
+		}
+	} while (retry);
+
+	/* check result */
+	zassert_equal(wifi_ctx.result, 0, "ICMP data error");
 
 	net_icmp_cleanup_ctx(&icmp_ctx);
 }
@@ -301,7 +335,8 @@ static void *wifi_setup(void)
 {
 	wifi_ctx.iface = net_if_get_wifi_sta();
 
-	net_mgmt_init_event_callback(&wifi_ctx.wifi_mgmt_cb, wifi_mgmt_event_handler, WIFI_MGMT_EVENTS);
+	net_mgmt_init_event_callback(&wifi_ctx.wifi_mgmt_cb, wifi_mgmt_event_handler,
+				     WIFI_MGMT_EVENTS);
 	net_mgmt_add_event_callback(&wifi_ctx.wifi_mgmt_cb);
 
 	/* reset semaphore that tracks wifi events */
