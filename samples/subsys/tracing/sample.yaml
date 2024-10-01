@@ -62,13 +62,11 @@ tests:
     extra_args: CONF_FILE="prj_usb_ctf.conf"
   sample.tracing.transport.native:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim
   sample.tracing.transport.native.ctf:
     platform_allow:
-      - native_posix
       - native_sim
     integration_platforms:
       - native_sim

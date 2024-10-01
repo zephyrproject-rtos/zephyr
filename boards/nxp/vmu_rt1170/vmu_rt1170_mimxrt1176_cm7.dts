@@ -35,6 +35,7 @@
 		zephyr,flash-controller = &mx25um51345g;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &lpuart1;
 	};
 
 	/* This is the Arming Button on the included GPS module for 10 pin JST-GH */

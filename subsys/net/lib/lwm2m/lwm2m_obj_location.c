@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Foundries.io
+ * Copyright (c) 2024 FTP Technologies
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,9 +40,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* resource state */
 static double latitude;
 static double longitude;
-static double altitude;
-static double radius;
-static double speed;
 static time_t timestamp;
 
 static struct lwm2m_engine_obj location;
@@ -75,15 +73,12 @@ static struct lwm2m_engine_obj_inst *location_create(uint16_t obj_inst_id)
 			  &latitude, sizeof(latitude));
 	INIT_OBJ_RES_DATA(LOCATION_LONGITUDE_ID, res, i, res_inst, j,
 			  &longitude, sizeof(longitude));
-	INIT_OBJ_RES_DATA(LOCATION_ALTITUDE_ID, res, i, res_inst, j,
-			  &altitude, sizeof(altitude));
-	INIT_OBJ_RES_DATA(LOCATION_RADIUS_ID, res, i, res_inst, j,
-			  &radius, sizeof(radius));
+	INIT_OBJ_RES_OPTDATA(LOCATION_ALTITUDE_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_OPTDATA(LOCATION_RADIUS_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(LOCATION_VELOCITY_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_DATA(LOCATION_TIMESTAMP_ID, res, i, res_inst, j,
 			  &timestamp, sizeof(timestamp));
-	INIT_OBJ_RES_DATA(LOCATION_SPEED_ID, res, i, res_inst, j,
-			  &speed, sizeof(speed));
+	INIT_OBJ_RES_OPTDATA(LOCATION_SPEED_ID, res, i, res_inst, j);
 
 	inst.resources = res;
 	inst.resource_count = i;

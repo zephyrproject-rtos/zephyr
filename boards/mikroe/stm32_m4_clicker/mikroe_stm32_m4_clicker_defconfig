@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Ian Morris
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Console
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Enable Clocks
+CONFIG_CLOCK_CONTROL=y
+
+# Enable USB
+CONFIG_USB_DEVICE_STACK=y

@@ -439,7 +439,7 @@
 			miwus = <&miwu2 2 0>; /* SLP_LAN_L */
 		};
 		wui_vw_slp_wlan: wui2-3-1 {
-			miwus = <&miwu2 2 1>; /* SLP_WLAN_L) */
+			miwus = <&miwu2 2 1>; /* SLP_WLAN_L */
 		};
 		wui_vw_fl_ack: wui2-3-4 {
 			miwus = <&miwu2 2 4>; /* FL_ACK */
@@ -460,6 +460,9 @@
 		};
 		wui_vw_pch_to_ec_gen_5: wui2-4-1 {
 			miwus = <&miwu2 3 1>; /* PCH_TO_EC_GENERIC_5 */
+		};
+		wui_vw_dnx_warn: wui2-4-1-alter {
+			miwus = <&miwu2 3 1>; /* DnX_WARN */
 		};
 		wui_vw_pch_to_ec_gen_6: wui2-4-2 {
 			miwus = <&miwu2 3 2>; /* PCH_TO_EC_GENERIC_6 */

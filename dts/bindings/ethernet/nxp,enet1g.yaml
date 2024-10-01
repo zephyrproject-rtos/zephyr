@@ -5,7 +5,7 @@ description: NXP ENET1G IP Module
 
 compatible: "nxp,enet1g"
 
-include: ["base.yaml"]
+include: ["base.yaml", "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
@@ -13,7 +13,3 @@ properties:
 
   clocks:
     required: true
-
-  rdc:
-    type: int
-    description: Set the RDC(Resource Domain Controller) domain permission for this peripheral

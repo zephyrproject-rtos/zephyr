@@ -3,7 +3,8 @@
 
 config MBOX_NRFX_IPC
 	bool "MBOX NRF IPC driver"
-	depends on HAS_HW_NRF_IPC
+	depends on DT_HAS_NORDIC_MBOX_NRF_IPC_ENABLED
+	default y
 	select NRFX_IPC
 	help
 	  Driver for Nordic nRF messaging unit, based

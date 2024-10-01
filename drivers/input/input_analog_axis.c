@@ -25,7 +25,8 @@ struct analog_axis_channel_config {
 	int16_t out_min;
 	int16_t out_max;
 	uint16_t axis;
-	bool invert;
+	bool invert_input;
+	bool invert_output;
 };
 
 struct analog_axis_channel_data {
@@ -187,7 +188,7 @@ static void analog_axis_loop(const struct device *dev)
 		struct analog_axis_calibration *cal = &cfg->calibration[i];
 		int32_t raw_val = bufs[i];
 
-		if (axis_cfg->invert) {
+		if (axis_cfg->invert_input) {
 			raw_val *= -1;
 		}
 
@@ -204,6 +205,10 @@ static void analog_axis_loop(const struct device *dev)
 		}
 
 		out = CLAMP(out, axis_cfg->out_min, axis_cfg->out_max);
+
+		if (axis_cfg->invert_output) {
+			out = axis_cfg->out_max - out;
+		}
 
 		if (axis_data->last_out != out) {
 			input_report_abs(dev, axis_cfg->axis, out, true, K_FOREVER);
@@ -327,7 +332,8 @@ static int analog_axis_pm_action(const struct device *dev,
 		.out_min = (int16_t)DT_PROP(node_id, out_min), \
 		.out_max = (int16_t)DT_PROP(node_id, out_max), \
 		.axis = DT_PROP(node_id, zephyr_axis), \
-		.invert = DT_PROP(node_id, invert), \
+		.invert_input = DT_PROP(node_id, invert_input), \
+		.invert_output = DT_PROP(node_id, invert_output), \
 	}
 
 #define ANALOG_AXIS_CHANNEL_CAL_DEF(node_id) \

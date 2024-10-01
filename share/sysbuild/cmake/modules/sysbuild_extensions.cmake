@@ -332,7 +332,7 @@ function(ExternalZephyrProject_Add)
       menuconfig
       hardenconfig
       guiconfig
-      ${EXTRA_KCONFIG_TARGETS}
+      $CACHE{EXTRA_KCONFIG_TARGETS}
       )
 
     if(NOT ZBUILD_APP_TYPE STREQUAL "MAIN")
@@ -345,6 +345,16 @@ function(ExternalZephyrProject_Add)
       USES_TERMINAL
       )
   endforeach()
+
+  set(list_separator ",")
+  set(image_extra_kconfig_targets "-DEXTRA_KCONFIG_TARGETS=$CACHE{EXTRA_KCONFIG_TARGETS}")
+  string(REPLACE ";" "${list_separator}" image_extra_kconfig_targets "${image_extra_kconfig_targets}")
+  foreach(target $CACHE{EXTRA_KCONFIG_TARGETS})
+    list(APPEND image_extra_kconfig_targets
+         -DEXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}=$CACHE{EXTRA_KCONFIG_TARGET_COMMAND_FOR_${target}}
+    )
+  endforeach()
+
   include(ExternalProject)
   set(application_binary_dir ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION})
   ExternalProject_Add(
@@ -352,9 +362,11 @@ function(ExternalZephyrProject_Add)
     SOURCE_DIR ${ZBUILD_SOURCE_DIR}
     BINARY_DIR ${application_binary_dir}
     CONFIGURE_COMMAND ""
+    LIST_SEPARATOR "${list_separator}"
     CMAKE_ARGS -DSYSBUILD:BOOL=True
                -DSYSBUILD_CACHE:FILEPATH=${sysbuild_cache_file}
                ${shared_cmake_vars_argument}
+               ${image_extra_kconfig_targets}
     BUILD_COMMAND ${CMAKE_COMMAND} --build .
     INSTALL_COMMAND ""
     BUILD_ALWAYS True
@@ -453,7 +465,7 @@ function(ExternalZephyrProject_Cmake)
                  "   ${image_banner_header}\n"
   )
 
-  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS)
+  ExternalProject_Get_Property(${ZCMAKE_APPLICATION} SOURCE_DIR BINARY_DIR CMAKE_ARGS LIST_SEPARATOR)
   get_target_property(${ZCMAKE_APPLICATION}_BOARD      ${ZCMAKE_APPLICATION} BOARD)
 
   get_property(${ZCMAKE_APPLICATION}_CONF_SCRIPT TARGET ${ZCMAKE_APPLICATION}
@@ -471,6 +483,7 @@ function(ExternalZephyrProject_Cmake)
   string(CONFIGURE "${config_content}" config_content)
   file(WRITE ${dotconfigsysbuild} ${config_content})
 
+  string(REPLACE "${LIST_SEPARATOR}" "\\;" CMAKE_ARGS "${CMAKE_ARGS}")
   execute_process(
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}

@@ -1,0 +1,10 @@
+board:
+  name: adafruit_feather_nrf52840
+  vendor: adafruit
+  socs:
+    - name: nrf52840
+      variants:
+        - name: uf2
+        - name: sense
+          variants:
+            - name: uf2

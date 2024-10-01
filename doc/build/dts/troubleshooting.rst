@@ -261,7 +261,7 @@ Look at the preprocessor output
 
 To save preprocessor output files, enable the
 :kconfig:option:`CONFIG_COMPILER_SAVE_TEMPS` option. For example, to build
-:ref:`hello_world` with west with this option set, use:
+:zephyr:code-sample:`hello_world` with west with this option set, use:
 
 .. code-block:: sh
 
@@ -300,7 +300,7 @@ To prevent the compiler from doing this, you can disable the
 :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option. This typically
 reduces the output to one message per error.
 
-For example, to build :ref:`hello_world` with west and this option disabled,
+For example, to build :zephyr:code-sample:`hello_world` with west and this option disabled,
 use:
 
 .. code-block:: sh

@@ -1,0 +1,30 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXA
+	bool
+	select SOC_FAMILY_NXP_MCX
+
+config SOC_SERIES
+	default "mcxa" if SOC_SERIES_MCXA
+
+config SOC_MCXA156
+	bool
+	select SOC_SERIES_MCXA
+
+config SOC
+	default "mcxa156" if SOC_MCXA156
+
+config SOC_PART_NUMBER_MCXA156VPJ
+	bool
+
+config SOC_PART_NUMBER_MCXA156VLL
+	bool
+
+config SOC_PART_NUMBER_MCXA156VMP
+	bool
+
+config SOC_PART_NUMBER
+	default "MCXA156VPJ" if SOC_PART_NUMBER_MCXA156VPJ
+	default "MCXA156VLL" if SOC_PART_NUMBER_MCXA156VLL
+	default "MCXA156VMP" if SOC_PART_NUMBER_MCXA156VMP

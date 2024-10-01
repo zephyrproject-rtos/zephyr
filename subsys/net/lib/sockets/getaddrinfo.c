@@ -472,7 +472,8 @@ int zsock_getaddrinfo(const char *host, const char *service,
 void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 {
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_OFFLOAD)) {
-		return socket_offload_freeaddrinfo(ai);
+		socket_offload_freeaddrinfo(ai);
+		return;
 	}
 
 	free(ai);
@@ -487,9 +488,18 @@ const char *zsock_gai_strerror(int errcode)
 	ERR(EAI_AGAIN);
 	ERR(EAI_FAIL);
 	ERR(EAI_NODATA);
+	ERR(EAI_FAMILY);
+	ERR(EAI_SOCKTYPE);
+	ERR(EAI_SERVICE);
+	ERR(EAI_ADDRFAMILY);
 	ERR(EAI_MEMORY);
 	ERR(EAI_SYSTEM);
-	ERR(EAI_SERVICE);
+	ERR(EAI_OVERFLOW);
+	ERR(EAI_INPROGRESS);
+	ERR(EAI_CANCELED);
+	ERR(EAI_NOTCANCELED);
+	ERR(EAI_ALLDONE);
+	ERR(EAI_IDN_ENCODE);
 
 	default:
 		return "EAI_UNKNOWN";

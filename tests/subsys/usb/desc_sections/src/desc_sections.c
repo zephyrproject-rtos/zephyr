@@ -35,7 +35,11 @@ struct usb_test_config {
 #define TEST_BULK_EP_MPS		64
 #endif
 
+#if defined(CONFIG_USB_CONFIGURATION_STRING_DESC_ENABLE)
+#define TEST_DESCRIPTOR_TABLE_SPAN	201
+#else
 #define TEST_DESCRIPTOR_TABLE_SPAN	157
+#endif
 
 #define INITIALIZER_IF							\
 	{								\

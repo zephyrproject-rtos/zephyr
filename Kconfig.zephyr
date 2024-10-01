@@ -5,6 +5,8 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source "Kconfig.constants"
+
 osource "${APPLICATION_SOURCE_DIR}/VERSION"
 
 # Include Kconfig.defconfig files first so that they can override defaults and
@@ -258,6 +260,20 @@ config LINKER_USE_PINNED_SECTION
 	  Requires that pinned sections exist in the architecture, SoC,
 	  board or custom linker script.
 
+config LINKER_USE_ONDEMAND_SECTION
+	bool "Use Evictable Linker Section"
+	depends on DEMAND_MAPPING
+	depends on !LINKER_USE_PINNED_SECTION
+	depends on !ARCH_MAPS_ALL_RAM
+	help
+	  If enabled, the symbols which may be evicted from memory
+	  will be put into a linker section reserved for on-demand symbols.
+	  During boot, the corresponding memory will be mapped as paged out.
+	  This is conceptually the opposite of CONFIG_LINKER_USE_PINNED_SECTION.
+
+	  Requires that on-demand sections exist in the architecture, SoC,
+	  board or custom linker script.
+
 config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 	bool "Generic sections are present at boot" if DEMAND_PAGING && LINKER_USE_PINNED_SECTION
 	default y
@@ -273,7 +289,7 @@ config LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
 
 config LINKER_LAST_SECTION_ID
 	bool "Last section identifier"
-	default y
+	default y if !ARM64
 	depends on ARM || ARM64 || RISCV
 	help
 	  If enabled, the last section will contain an identifier.
@@ -820,6 +836,23 @@ config BUILD_OUTPUT_ADJUST_LMA
 	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
 	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
 
+config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	def_string "*"
+	depends on BUILD_OUTPUT_ADJUST_LMA!=""
+	help
+	  This determines the output sections to which the above LMA adjustment
+	  will be applied.
+	  The value can be the name of a section in the final ELF, like "text".
+	  It can also be a pattern with wildcards, such as "*bss", which could
+	  match more than one section name. Multiple such patterns can be given
+	  as a ";"-separated list. It's possible to supply a 'negative' pattern
+	  starting with "!", to exclude sections matched by a preceding pattern.
+
+	  By default, all sections will have their LMA adjusted. The following
+	  example excludes one section produced by the code relocation feature:
+	  config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
+	    default "*;!.extflash_text_reloc"
+
 config BUILD_OUTPUT_INFO_HEADER
 	bool "Create a image information header"
 	help
@@ -930,6 +963,8 @@ config DEPRECATED
 	help
 	  Symbol that must be selected by a feature or module if it is
 	  considered to be deprecated.
+	  When adding this to an option, remember to follow the instructions in
+	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config WARN_DEPRECATED
 	bool

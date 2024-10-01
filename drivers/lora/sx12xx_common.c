@@ -169,6 +169,27 @@ static void sx12xx_ev_tx_timed_out(void)
 	modem_release(&dev_data);
 }
 
+static void sx12xx_ev_rx_error(void)
+{
+	struct k_poll_signal *sig = dev_data.operation_done;
+
+	/* Receiving in asynchronous mode */
+	if (dev_data.async_rx_cb) {
+		/* Start receiving again */
+		Radio.Rx(0);
+		/* Don't run the synchronous code */
+		return;
+	}
+
+	/* Finish synchronous receive with error */
+	if (modem_release(&dev_data)) {
+		/* Raise signal if provided */
+		if (sig) {
+			k_poll_signal_raise(sig, -EIO);
+		}
+	}
+}
+
 int sx12xx_lora_send(const struct device *dev, uint8_t *data,
 		     uint32_t data_len)
 {
@@ -276,6 +297,11 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 		return ret;
 	}
 
+	if (done.result < 0) {
+		LOG_ERR("Receive error");
+		return done.result;
+	}
+
 	return size;
 }
 
@@ -357,6 +383,7 @@ int sx12xx_init(const struct device *dev)
 	dev_data.dev = dev;
 	dev_data.events.TxDone = sx12xx_ev_tx_done;
 	dev_data.events.RxDone = sx12xx_ev_rx_done;
+	dev_data.events.RxError = sx12xx_ev_rx_error;
 	/* TX timeout event raises at the end of the test CW transmission */
 	dev_data.events.TxTimeout = sx12xx_ev_tx_timed_out;
 	Radio.Init(&dev_data.events);

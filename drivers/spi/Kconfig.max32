@@ -5,6 +5,7 @@ config SPI_MAX32
 	bool "MAX32 MCU SPI controller driver"
 	default y
 	depends on DT_HAS_ADI_MAX32_SPI_ENABLED
+	select PINCTRL
 	help
 	  Enable SPI support on the MAX32 family of processors.
 
@@ -14,5 +15,12 @@ config SPI_MAX32_INTERRUPT
 	bool "MAX32 MCU SPI Interrupt Support"
 	help
 	  Enable interrupt support for MAX32 MCU SPI driver.
+
+config SPI_MAX32_DMA
+	bool "MAX32 MCU SPI DMA Support"
+	select DMA
+	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
+	help
+	  Enable DMA support for MAX32 MCU SPI driver.
 
 endif # SPI_MAX32

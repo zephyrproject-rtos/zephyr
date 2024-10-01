@@ -1,7 +1,7 @@
-.. _code_relocation_nocopy:
+.. zephyr:code-sample:: code_relocation_nocopy
+   :name: Code relocation nocopy
 
-Code relocation nocopy
-######################
+   Relocate code, data, or bss sections using a custom linker script.
 
 Overview
 ********

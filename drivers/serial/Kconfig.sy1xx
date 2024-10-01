@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+config UART_SY1XX
+	bool "Sensry SY1xx driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Driver for Sensry Sy1xx series uart.

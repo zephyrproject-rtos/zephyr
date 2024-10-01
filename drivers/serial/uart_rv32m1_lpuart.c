@@ -345,7 +345,7 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 	static const struct rv32m1_lpuart_config rv32m1_lpuart_##n##_cfg;\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
-			    &rv32m1_lpuart_init,			\
+			    rv32m1_lpuart_init,				\
 			    NULL,					\
 			    &rv32m1_lpuart_##n##_data,			\
 			    &rv32m1_lpuart_##n##_cfg,			\

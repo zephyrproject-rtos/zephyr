@@ -12,14 +12,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/mesh.h>
 
 #include "common/bt_str.h"
-
-#include "host/testing.h"
 
 #include "crypto.h"
 #include "mesh.h"
@@ -33,6 +31,7 @@
 #include "sar_cfg_internal.h"
 #include "settings.h"
 #include "heartbeat.h"
+#include "testing.h"
 #include "transport.h"
 #include "va.h"
 
@@ -1036,7 +1035,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 		return -EBADMSG;
 	}
 
-	if (bt_mesh_rpl_check(rx, &rpl)) {
+	if (bt_mesh_rpl_check(rx, &rpl, false)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", rx->ctx.addr, rx->ctx.recv_dst,
 			rx->seq);
 		return -EINVAL;
@@ -1193,7 +1192,7 @@ static void seg_discard(struct k_work *work)
 	rx->block = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_mesh_trans_incomp_timer_exp();
+		bt_mesh_test_trans_incomp_timer_exp();
 	}
 }
 
@@ -1220,7 +1219,7 @@ static void seg_ack(struct k_work *work)
 	rx->last_ack = k_uptime_get_32();
 
 	if (rx->attempts_left == 0) {
-		LOG_DBG("Ran out of retransmit attempts");
+		LOG_DBG("Ran out of ack retransmit attempts");
 		return;
 	}
 
@@ -1350,7 +1349,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EBADMSG;
 	}
 
-	if (bt_mesh_rpl_check(net_rx, &rpl)) {
+	if (bt_mesh_rpl_check(net_rx, &rpl, false)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", net_rx->ctx.addr,
 			net_rx->ctx.recv_dst, net_rx->seq);
 		return -EINVAL;
@@ -1636,8 +1635,8 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	LOG_DBG("Payload %s", bt_hex(buf->data, buf->len));
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
-		bt_test_mesh_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr,
-				      rx->ctx.recv_dst, buf->data, buf->len);
+		bt_mesh_test_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr, rx->ctx.recv_dst,
+				      buf->data, buf->len);
 	}
 
 	/* If LPN mode is enabled messages are only accepted when we've
@@ -1667,6 +1666,14 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		err = trans_seg(buf, rx, &pdu_type, &seq_auth, &seg_count);
 	} else {
 		seg_count = 1;
+
+		/* Avoid further processing of unsegmented messages that are not a
+		 * local match nor a Friend match, with the exception of ctl messages.
+		 */
+		if (!rx->ctl && !rx->local_match && !rx->friend_match) {
+			return 0;
+		}
+
 		err = trans_unseg(buf, rx, &seq_auth);
 	}
 

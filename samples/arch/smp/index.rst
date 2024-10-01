@@ -1,10 +1,5 @@
-.. _smp-samples:
+.. zephyr:code-sample-category:: smp
+   :name: Symmetric Multiprocessing (SMP)
+   :show-listing:
 
-Various SMP Samples
-###################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the use of :ref:`Symmetric Multiprocessing <smp_arch>`.

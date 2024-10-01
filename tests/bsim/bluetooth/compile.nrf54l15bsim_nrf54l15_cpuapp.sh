@@ -15,4 +15,6 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
 app=tests/bsim/bluetooth/ll/multiple_id compile
 
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
+
 wait_for_background_jobs

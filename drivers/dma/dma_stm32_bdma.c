@@ -328,9 +328,6 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 	callback_arg = id;
 #endif /* CONFIG_DMAMUX_STM32 */
 
-	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-		channel->busy = false;
-	}
 
 	/* the dma channel id is in range from 0..<dma-requests> */
 	if (stm32_bdma_is_ht_irq_active(dma, id)) {
@@ -340,9 +337,10 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
 	} else if (stm32_bdma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
-		channel->busy = false;
-#endif
+		/* Circular buffer never stops receiving as long as peripheral is enabled */
+		if (!channel->cyclic) {
+			channel->busy = false;
+		}
 		/* Let HAL DMA handle flags on its own */
 		if (!channel->hal_override) {
 			bdma_stm32_clear_tc(dma, id);
@@ -350,6 +348,7 @@ static void bdma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		channel->bdma_callback(dev, channel->user_data, callback_arg, 0);
 	} else {
 		LOG_ERR("Transfer Error.");
+		channel->busy = false;
 		bdma_stm32_dump_channel_irq(dev, id);
 		bdma_stm32_clear_channel_irq(dev, id);
 		channel->bdma_callback(dev, channel->user_data,
@@ -553,6 +552,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	channel->user_data	= config->user_data;
 	channel->src_size	= config->source_data_size;
 	channel->dst_size	= config->dest_data_size;
+	channel->cyclic		= config->head_block->source_reload_en;
 
 	/* check dest or source memory address, warn if 0 */
 	if (config->head_block->source_address == 0) {
@@ -633,7 +633,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 		return ret;
 	}
 
-	if (config->head_block->source_reload_en) {
+	if (channel->cyclic) {
 		BDMA_InitStruct.Mode = LL_BDMA_MODE_CIRCULAR;
 	} else {
 		BDMA_InitStruct.Mode = LL_BDMA_MODE_NORMAL;
@@ -667,7 +667,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	LL_BDMA_EnableIT_TC(bdma, bdma_stm32_id_to_channel(id));
 
 	/* Enable Half-Transfer irq if circular mode is enabled */
-	if (config->head_block->source_reload_en) {
+	if (channel->cyclic) {
 		LL_BDMA_EnableIT_HT(bdma, bdma_stm32_id_to_channel(id));
 	}
 
@@ -758,6 +758,11 @@ BDMA_STM32_EXPORT_API int bdma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
+	}
+
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_bdma_is_enabled_channel(bdma, id)) {
 		return 0;
@@ -806,20 +811,20 @@ static int bdma_stm32_init(const struct device *dev)
 	((struct bdma_stm32_data *)dev->data)->dma_ctx.dma_channels = 0;
 	((struct bdma_stm32_data *)dev->data)->dma_ctx.atomic = 0;
 
-	/* The BDMA can only access SRAM4 and assumes it's nocachable
-	 * This check verifies that the non-cachable flag is set in the DTS.
+	/* The BDMA can only access SRAM4 and assumes it's uncached
+	 * This check verifies that the nocache memory attribute is set in the devicetree.
 	 * For example:
 	 *	&sram4 {
-	 *		zephyr,memory-attr = "RAM_NOCACHE";
+	 *		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
 	 *	};
 	 */
 #if DT_NODE_HAS_PROP(DT_NODELABEL(sram4), zephyr_memory_attr)
 	if ((DT_PROP(DT_NODELABEL(sram4), zephyr_memory_attr) & DT_MEM_ARM_MPU_RAM_NOCACHE) == 0) {
-		LOG_ERR("SRAM4 is not set as non-cachable.");
+		LOG_ERR("SRAM4 is not set as uncached.");
 		return -EIO;
 	}
 #else
-#error "BDMA driver expects SRAM4 to be set as RAM_NOCACHE in DTS"
+#error "BDMA driver expects SRAM4 to be set as uncached in devicetree"
 #endif
 
 	return 0;

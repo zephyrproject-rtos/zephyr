@@ -59,7 +59,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a9
-      - native_posix
       - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -125,7 +124,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a9
-      - native_posix
       - native_sim
     extra_configs:
       - CONFIG_LOG_FRONTEND=y
@@ -138,7 +136,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a9
-      - native_posix
       - native_sim
     extra_configs:
       - CONFIG_LOG_MODE_DEFERRED=y
@@ -345,7 +342,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a9
-      - native_posix
       - native_sim
     toolchain_exclude: xcc
     extra_configs:
@@ -359,7 +355,6 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a9
-      - native_posix
       - native_sim
     toolchain_exclude: xcc
     extra_configs:

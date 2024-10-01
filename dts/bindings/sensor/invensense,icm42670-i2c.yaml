@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42670 motion tracking device
+
+compatible: "invensense,icm42670"
+
+include: [i2c-device.yaml, "invensense,icm42670.yaml"]

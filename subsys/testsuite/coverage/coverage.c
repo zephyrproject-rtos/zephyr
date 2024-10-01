@@ -263,7 +263,9 @@ void gcov_reset_all_counts(void)
 {
 	struct gcov_info *gcov_list = NULL;
 
+#ifdef CONFIG_MULTITHREADING
 	k_sched_lock();
+#endif
 
 	gcov_list = gcov_get_list_head();
 
@@ -272,7 +274,9 @@ void gcov_reset_all_counts(void)
 		gcov_list = gcov_list->next;
 	}
 
+#ifdef CONFIG_MULTITHREADING
 	k_sched_unlock();
+#endif
 }
 
 void dump_on_console_start(const char *filename)
@@ -305,7 +309,9 @@ void gcov_coverage_dump(void)
 	struct gcov_info *gcov_list = gcov_info_head;
 
 	if (!k_is_in_isr()) {
+#ifdef CONFIG_MULTITHREADING
 		k_sched_lock();
+#endif
 	}
 	printk("\nGCOV_COVERAGE_DUMP_START");
 	while (gcov_list) {
@@ -336,7 +342,9 @@ void gcov_coverage_dump(void)
 coverage_dump_end:
 	printk("\nGCOV_COVERAGE_DUMP_END\n");
 	if (!k_is_in_isr()) {
+#ifdef CONFIG_MULTITHREADING
 		k_sched_unlock();
+#endif
 	}
 	return;
 }

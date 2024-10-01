@@ -1,5 +1,4 @@
 common:
-  harness: net
   depends_on: netif
   min_ram: 60
   tags:

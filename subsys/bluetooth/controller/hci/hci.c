@@ -7864,7 +7864,7 @@ static void le_big_sync_established(struct pdu_data *pdu,
 	sync_iso = node_rx->rx_ftr.param;
 	lll = &sync_iso->lll;
 
-	evt_size = sizeof(*sep) + (lll->num_bis * sizeof(uint16_t));
+	evt_size = sizeof(*sep) + (lll->stream_count * sizeof(uint16_t));
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_BIG_SYNC_ESTABLISHED, evt_size);
 	sep->big_handle = (uint8_t)node_rx->hdr.handle;
@@ -8603,11 +8603,13 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
-		LOG_INF("l: %u, %u, %u; t: %u, %u, %u; cpu: %u, %u, %u, %u.",
+		LOG_INF("l: %u, %u, %u; t: %u, %u, %u; cpu: %u (%u), %u (%u), %u (%u), %u (%u).",
 			pdu_data->profile.lcur, pdu_data->profile.lmin, pdu_data->profile.lmax,
 			pdu_data->profile.cur, pdu_data->profile.min, pdu_data->profile.max,
-			pdu_data->profile.radio, pdu_data->profile.lll, pdu_data->profile.ull_high,
-			pdu_data->profile.ull_low);
+			pdu_data->profile.radio, pdu_data->profile.radio_ticks,
+			pdu_data->profile.lll, pdu_data->profile.lll_ticks,
+			pdu_data->profile.ull_high, pdu_data->profile.ull_high_ticks,
+			pdu_data->profile.ull_low, pdu_data->profile.ull_low_ticks);
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 

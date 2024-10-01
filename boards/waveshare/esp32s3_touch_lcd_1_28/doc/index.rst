@@ -52,9 +52,10 @@ Asymmetric Multiprocessing (AMP)
 
 ESP32-S3 allows 2 different applications to be executed in ESP32-S3 SoC. Due to its dual-core
 architecture, each core can be enabled to execute customized tasks in stand-alone mode
-and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
 
-For more information, check the datasheet at `ESP32-S3 Datasheet`_.
+For more information, check the datasheet at `ESP32-S3 Datasheet`_ or the technical reference
+manual at `ESP32-S3 Technical Reference Manual`_.
 
 Supported Features
 ==================
@@ -108,16 +109,19 @@ below to retrieve those files.
 Building & Flashing
 *******************
 
-ESP-IDF bootloader
-==================
+Simple boot
+===========
 
-The board is using the ESP-IDF bootloader as the default 2nd stage bootloader.
-It is build as a subproject at each application build. No further attention
-is expected from the user.
+The board could be loaded using the single binary image, without 2nd stage bootloader.
+It is the default option when building the application without additional configuration.
+
+.. note::
+
+   Simple boot does not provide any security features nor OTA updates.
 
 References
 **********
 
 .. _ESP32-S3-Touch-LCD-1.28 Waveshare Wiki: https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-1.28
 .. _ESP32-S3 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf
-.. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf
+.. _ESP32-S3 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf

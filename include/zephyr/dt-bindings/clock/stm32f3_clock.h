@@ -69,6 +69,8 @@
 /** @brief Device domain clocks selection helpers) */
 /** CFGR devices */
 #define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
+#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR_REG)
+#define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 28, CFGR_REG)
 /** CFGR3 devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CFGR3_REG)
 #define I2C1_SEL(val)		STM32_CLOCK(val, 1, 4, CFGR3_REG)

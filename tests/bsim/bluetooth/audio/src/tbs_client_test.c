@@ -303,7 +303,7 @@ static void tbs_client_term_reason_cb(struct bt_conn *conn,
 	SET_FLAG(term_reason);
 }
 
-static const struct bt_tbs_client_cb tbs_client_cbs = {
+static struct bt_tbs_client_cb tbs_client_cbs = {
 	.discover = tbs_client_discover_cb,
 	.originate_call = tbs_client_originate_call_cb,
 	.terminate_call = tbs_client_terminate_call_cb,
@@ -492,7 +492,12 @@ static void test_main(void)
 	}
 
 	bt_conn_cb_register(&conn_callbacks);
-	bt_tbs_client_register_cb(&tbs_client_cbs);
+
+	err = bt_tbs_client_register_cb(&tbs_client_cbs);
+	if (err != 0) {
+		FAIL("Failed to register TBS client cbs (err %d)\n", err);
+		return;
+	}
 
 	WAIT_FOR_COND(bt_init);
 

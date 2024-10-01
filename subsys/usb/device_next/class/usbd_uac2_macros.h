@@ -378,10 +378,6 @@
 	IF_ENABLED(IS_EQ(AUDIO_STREAMING_FORMAT_TYPE(node), FORMAT_TYPE_IV), (	\
 		AUDIO_STREAMING_FORMAT_IV_TYPE_DESCRIPTOR(node)))
 
-#define AUDIO_STREAMING_INTERFACE_DESCRIPTORS(node)				\
-	AUDIO_STREAMING_GENERAL_DESCRIPTOR(node)				\
-	AUDIO_STREAMING_FORMAT_TYPE_DESCRIPTOR(node)
-
 #define AUDIO_STREAMING_INTERFACE_DESCRIPTORS_ARRAYS(node)			\
 	static uint8_t DESCRIPTOR_NAME(as_general_desc, node)[] = {		\
 		AUDIO_STREAMING_GENERAL_DESCRIPTOR(node)			\
@@ -390,6 +386,7 @@
 		AUDIO_STREAMING_FORMAT_TYPE_DESCRIPTOR(node)			\
 	};
 
+/* Full and High speed share common class-specific interface descriptors */
 #define AUDIO_STREAMING_INTERFACE_DESCRIPTORS_PTRS(node)			\
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_general_desc, node),	\
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_format_desc, node),
@@ -419,6 +416,12 @@
 	1 /* AudioControl interface */ +					\
 	DT_FOREACH_CHILD_SEP(node, IS_AUDIOSTREAMING_INTERFACE, (+))
 
+#define UAC2_ALLOWED_AT_FULL_SPEED(node)					\
+	DT_PROP(node, full_speed)
+
+#define UAC2_ALLOWED_AT_HIGH_SPEED(node)					\
+	DT_PROP(node, high_speed)
+
 /* 4.6 Interface Association Descriptor */
 #define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)				\
 	0x08,						/* bLength */		\
@@ -431,12 +434,22 @@
 	0x00,						/* iFunction */
 
 #define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_ARRAY(node)			\
-	static uint8_t DESCRIPTOR_NAME(iad, node)[] = {				\
-		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)					\
-	};
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(node), (				\
+		static uint8_t DESCRIPTOR_NAME(fs_iad, node)[] = {		\
+			UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)		\
+		};								\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(node), (				\
+		static uint8_t DESCRIPTOR_NAME(hs_iad, node)[] = {		\
+			UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)		\
+		};								\
+	))
 
-#define UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(node)				\
-	(struct usb_desc_header *) &DESCRIPTOR_NAME(iad, node),
+#define UAC2_INTERFACE_ASSOCIATION_FS_DESCRIPTOR_PTR(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_iad, node),
+
+#define UAC2_INTERFACE_ASSOCIATION_HS_DESCRIPTOR_PTR(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_iad, node),
 
 /* 4.7.1 Standard AC Interface Descriptor */
 #define AC_INTERFACE_DESCRIPTOR(node)						\
@@ -451,12 +464,22 @@
 	0x00,						/* iInterface */
 
 #define AC_INTERFACE_DESCRIPTOR_ARRAY(node)					\
-	static uint8_t DESCRIPTOR_NAME(ac_interface, node)[] = {		\
-		AC_INTERFACE_DESCRIPTOR(node)					\
-	};
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(node), (				\
+		static uint8_t DESCRIPTOR_NAME(fs_ac_interface, node)[] = {	\
+			AC_INTERFACE_DESCRIPTOR(node)				\
+		};								\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(node), (				\
+		static uint8_t DESCRIPTOR_NAME(hs_ac_interface, node)[] = {	\
+			AC_INTERFACE_DESCRIPTOR(node)				\
+		};								\
+	))
 
-#define AC_INTERFACE_DESCRIPTOR_PTR(node)					\
-	(struct usb_desc_header *) &DESCRIPTOR_NAME(ac_interface, node),
+#define AC_INTERFACE_FS_DESCRIPTOR_PTR(node)					\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_ac_interface, node),
+
+#define AC_INTERFACE_HS_DESCRIPTOR_PTR(node)					\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_ac_interface, node),
 
 /* 4.8.2.1 Standard AC Interrupt Endpoint Descriptor */
 #define AC_ENDPOINT_DESCRIPTOR(node)						\
@@ -464,7 +487,7 @@
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
 	FIRST_IN_EP_ADDR,				/* bEndpointAddress */	\
 	USB_EP_TYPE_INTERRUPT,				/* bmAttributes */	\
-	0x06,						/* wMaxPacketSize */	\
+	U16_LE(0x06),					/* wMaxPacketSize */	\
 	0x01,						/* bInterval */		\
 
 #define AC_ENDPOINT_DESCRIPTOR_ARRAY(node)					\
@@ -548,13 +571,29 @@
 	IP_VERSION_02_00,				/* bInterfaceProtocol */\
 	0x00,						/* iInterface */
 
-#define AS_INTERFACE_DESCRIPTOR_ARRAY(node, alternate, numendpoints)		\
-	static uint8_t DESCRIPTOR_NAME(as_if_alt##alternate, node)[] = {	\
+#define AS_INTERFACE_FS_DESCRIPTOR_ARRAY(node, alternate, numendpoints)		\
+	static uint8_t DESCRIPTOR_NAME(fs_as_if_alt##alternate, node)[] = {	\
 		AS_INTERFACE_DESCRIPTOR(node, alternate, numendpoints)		\
 	};
 
-#define AS_INTERFACE_DESCRIPTOR_PTR(node, alternate)				\
-	(struct usb_desc_header *) &DESCRIPTOR_NAME(as_if_alt##alternate, node),
+#define AS_INTERFACE_HS_DESCRIPTOR_ARRAY(node, alternate, numendpoints)		\
+	static uint8_t DESCRIPTOR_NAME(hs_as_if_alt##alternate, node)[] = {	\
+		AS_INTERFACE_DESCRIPTOR(node, alternate, numendpoints)		\
+	};
+
+#define AS_INTERFACE_DESCRIPTOR_ARRAY(node, alternate, numendpoints)		\
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)), (		\
+		AS_INTERFACE_FS_DESCRIPTOR_ARRAY(node, alternate, numendpoints)	\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_PARENT(node)), (		\
+		AS_INTERFACE_HS_DESCRIPTOR_ARRAY(node, alternate, numendpoints)	\
+	))
+
+#define AS_INTERFACE_FS_DESCRIPTOR_PTR(node, altnum)				\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_as_if_alt##altnum, node),
+
+#define AS_INTERFACE_HS_DESCRIPTOR_PTR(node, altnum)				\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_as_if_alt##altnum, node),
 
 #define COUNT_AS_OUT_ENDPOINTS_BEFORE_IDX(node, idx)				\
 	+ AS_IS_USB_ISO_OUT(node) * (DT_NODE_CHILD_IDX(node) < idx)
@@ -591,8 +630,12 @@
 	DT_PROP(node, subslot_size)
 
 /* Asynchronous endpoints needs space for 1 extra sample */
-#define AS_SAMPLES_PER_PACKET(node)						\
+#define AS_SAMPLES_PER_FRAME(node)						\
 	((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 1000) / 1000) +			\
+	  UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
+
+#define AS_SAMPLES_PER_MICROFRAME(node)						\
+	((ROUND_UP(AS_CLK_MAX_FREQUENCY(node), 8000) / 8000) +			\
 	  UTIL_NOT(AS_IS_SOF_SYNCHRONIZED(node)))
 
 #define AS_DATA_EP_SYNC_TYPE(node)						\
@@ -606,18 +649,43 @@
 	USB_EP_TYPE_ISO | AS_DATA_EP_SYNC_TYPE(node) |				\
 	AS_DATA_EP_USAGE_TYPE(node)
 
-#define AS_DATA_EP_MAX_PACKET_SIZE(node)					\
+#define AS_FS_DATA_EP_MAX_PACKET_SIZE(node)					\
 	AUDIO_STREAMING_NUM_SPATIAL_LOCATIONS(node) *				\
-	AS_BYTES_PER_SAMPLE(node) * AS_SAMPLES_PER_PACKET(node)
+	AS_BYTES_PER_SAMPLE(node) * AS_SAMPLES_PER_FRAME(node)
+
+#define AS_HS_DATA_EP_TPL(node)							\
+	USB_TPL_ROUND_UP(AUDIO_STREAMING_NUM_SPATIAL_LOCATIONS(node) *		\
+		AS_BYTES_PER_SAMPLE(node) * AS_SAMPLES_PER_MICROFRAME(node))
+
+#define AS_HS_DATA_EP_MAX_PACKET_SIZE(node)					\
+	USB_TPL_TO_MPS(AS_HS_DATA_EP_TPL(node))
 
 /* 4.10.1.1 Standard AS Isochronous Audio Data Endpoint Descriptor */
-#define STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)			\
+#define STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTOR(node)		\
 	0x07,						/* bLength */		\
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
 	AS_DATA_EP_ADDR(node),				/* bEndpointAddress */	\
 	AS_DATA_EP_ATTR(node),				/* bmAttributes */	\
-	U16_LE(AS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
+	U16_LE(AS_FS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
 	0x01,						/* bInterval */
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_ARRAYS(node)		\
+	static uint8_t DESCRIPTOR_NAME(fs_std_data_ep, node)[] = {		\
+		STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTOR(node)	\
+	};
+
+#define STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTOR(node)		\
+	0x07,						/* bLength */		\
+	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
+	AS_DATA_EP_ADDR(node),				/* bEndpointAddress */	\
+	AS_DATA_EP_ATTR(node),				/* bmAttributes */	\
+	U16_LE(AS_HS_DATA_EP_MAX_PACKET_SIZE(node)),	/* wMaxPacketSize */	\
+	0x01,						/* bInterval */
+
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_ARRAYS(node)		\
+	static uint8_t DESCRIPTOR_NAME(hs_std_data_ep, node)[] = {		\
+		STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTOR(node)	\
+	};
 
 #define LOCK_DELAY_UNITS(node)							\
 	COND_CODE_1(DT_NODE_HAS_PROP(node, lock_delay_units),			\
@@ -634,48 +702,64 @@
 	LOCK_DELAY_UNITS(node),				/* bLockDelayUnits */	\
 	U16_LE(DT_PROP_OR(node, lock_delay, 0)),	/* wLockDelay */
 
-#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)				\
-	STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)			\
-	CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)
-
-#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_ARRAYS(node)			\
-	static uint8_t DESCRIPTOR_NAME(std_data_ep, node)[] = {			\
-		STANDARD_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)		\
-	};									\
+/* Full and High speed share common class-specific descriptor */
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_CS_DESCRIPTORS_ARRAYS(node)		\
 	static uint8_t DESCRIPTOR_NAME(cs_data_ep, node)[] = {			\
 		CLASS_SPECIFIC_AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTOR(node)	\
 	};
 
-#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node)			\
-	(struct usb_desc_header *) &DESCRIPTOR_NAME(std_data_ep, node),		\
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_PTRS(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_std_data_ep, node),	\
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(cs_data_ep, node),
 
-#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)				\
+#define AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_PTRS(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_std_data_ep, node),	\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(cs_data_ep, node),
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR(node)			\
 	0x07,						/* bLength */		\
 	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
 	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
 	0x11,						/* bmAttributes */	\
-	U16_LE(0x03), /* FIXME: 4 on High-Speed*/	/* wMaxPacketSize */	\
+	U16_LE(0x03),					/* wMaxPacketSize */	\
 	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
 
-#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_ARRAY(node)			\
-	static uint8_t DESCRIPTOR_NAME(feedback_ep, node)[] = {			\
-		AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)			\
+#define AS_EXPLICIT_FEEDBACK_FS_DESCRIPTOR_ARRAY(node)				\
+	static uint8_t DESCRIPTOR_NAME(fs_feedback_ep, node)[] = {		\
+		AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR(node)		\
 	};
 
-#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)			\
-	(struct usb_desc_header *) &DESCRIPTOR_NAME(feedback_ep, node),
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR_PTR(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(fs_feedback_ep, node),
 
-#define AS_DESCRIPTORS(node)							\
-	AS_INTERFACE_DESCRIPTOR(node, 0, 0)					\
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR(node)			\
+	0x07,						/* bLength */		\
+	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
+	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
+	0x11,						/* bmAttributes */	\
+	U16_LE(0x04),					/* wMaxPacketSize */	\
+	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+
+#define AS_EXPLICIT_FEEDBACK_HS_DESCRIPTOR_ARRAY(node)				\
+	static uint8_t DESCRIPTOR_NAME(hs_feedback_ep, node)[] = {		\
+		AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR(node)		\
+	};
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR_PTR(node)			\
+	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_feedback_ep, node),
+
+#define AS_FS_DESCRIPTORS_ARRAYS(node)						\
 	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
-		AS_INTERFACE_DESCRIPTOR(node, 1,				\
-			AS_INTERFACE_NUM_ENDPOINTS(node))))			\
-	AUDIO_STREAMING_INTERFACE_DESCRIPTORS(node)				\
-	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
-		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_ARRAYS(node)	\
 		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
-			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)))	\
+			AS_EXPLICIT_FEEDBACK_FS_DESCRIPTOR_ARRAY(node)))	\
+	))
+
+#define AS_HS_DESCRIPTORS_ARRAYS(node)						\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_ARRAYS(node)	\
+		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
+			AS_EXPLICIT_FEEDBACK_HS_DESCRIPTOR_ARRAY(node)))	\
 	))
 
 #define AS_DESCRIPTORS_ARRAYS(node)						\
@@ -684,41 +768,46 @@
 		AS_INTERFACE_DESCRIPTOR_ARRAY(node, 1,				\
 			AS_INTERFACE_NUM_ENDPOINTS(node))))			\
 	AUDIO_STREAMING_INTERFACE_DESCRIPTORS_ARRAYS(node)			\
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)), (		\
+		AS_FS_DESCRIPTORS_ARRAYS(node)))				\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_PARENT(node)), (		\
+		AS_HS_DESCRIPTORS_ARRAYS(node)))				\
 	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
-		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_ARRAYS(node)		\
-		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
-			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_ARRAY(node)))	\
-	))
+		AS_ISOCHRONOUS_DATA_ENDPOINT_CS_DESCRIPTORS_ARRAYS(node)))
 
-#define AS_DESCRIPTORS_PTRS(node)						\
-	AS_INTERFACE_DESCRIPTOR_PTR(node, 0)					\
+#define AS_FS_DESCRIPTORS_PTRS(node)						\
+	AS_INTERFACE_FS_DESCRIPTOR_PTR(node, 0)					\
 	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
-		AS_INTERFACE_DESCRIPTOR_PTR(node, 1)))				\
+		AS_INTERFACE_FS_DESCRIPTOR_PTR(node, 1)))			\
 	AUDIO_STREAMING_INTERFACE_DESCRIPTORS_PTRS(node)			\
 	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
-		AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node)		\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_PTRS(node)		\
 		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
-			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)))	\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR_PTR(node)))	\
 	))
 
-#define AS_DESCRIPTORS_IF_AUDIOSTREAMING(node)					\
-	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
-		AS_DESCRIPTORS(node)))
+#define AS_HS_DESCRIPTORS_PTRS(node)						\
+	AS_INTERFACE_HS_DESCRIPTOR_PTR(node, 0)					\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_INTERFACE_HS_DESCRIPTOR_PTR(node, 1)))			\
+	AUDIO_STREAMING_INTERFACE_DESCRIPTORS_PTRS(node)			\
+	IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (			\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_PTRS(node)		\
+		IF_ENABLED(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (		\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR_PTR(node)))	\
+	))
 
 #define AS_DESCRIPTORS_ARRAYS_IF_AUDIOSTREAMING(node)				\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
 		AS_DESCRIPTORS_ARRAYS(node)))
 
-#define AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node)				\
+#define AS_FS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node)				\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
-		AS_DESCRIPTORS_PTRS(node)))
+		AS_FS_DESCRIPTORS_PTRS(node)))
 
-#define UAC2_AUDIO_CONTROL_DESCRIPTORS(node)					\
-	AC_INTERFACE_DESCRIPTOR(node)						\
-	AC_INTERFACE_HEADER_DESCRIPTOR(node)					\
-	ENTITY_HEADERS(node)							\
-	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
-		AC_ENDPOINT_DESCRIPTOR(node)))
+#define AS_HS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node)				\
+	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_audio_streaming), (	\
+		AS_HS_DESCRIPTORS_PTRS(node)))
 
 #define UAC2_AUDIO_CONTROL_DESCRIPTOR_ARRAYS(node)				\
 	AC_INTERFACE_DESCRIPTOR_ARRAY(node)					\
@@ -727,102 +816,85 @@
 	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
 		AC_ENDPOINT_DESCRIPTOR_ARRAY(node)))
 
-#define UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(node)				\
-	AC_INTERFACE_DESCRIPTOR_PTR(node)					\
+#define UAC2_AUDIO_CONTROL_COMMON_DESCRIPTOR_PTRS(node)				\
 	AC_INTERFACE_HEADER_DESCRIPTOR_PTR(node)				\
 	ENTITY_HEADERS_PTRS(node)						\
 	IF_ENABLED(DT_PROP(node, interrupt_endpoint), (				\
 		AC_ENDPOINT_DESCRIPTOR_PTR(node)))
+
+#define UAC2_AUDIO_CONTROL_FS_DESCRIPTOR_PTRS(node)				\
+	AC_INTERFACE_FS_DESCRIPTOR_PTR(node)					\
+	UAC2_AUDIO_CONTROL_COMMON_DESCRIPTOR_PTRS(node)
+
+#define UAC2_AUDIO_CONTROL_HS_DESCRIPTOR_PTRS(node)				\
+	AC_INTERFACE_HS_DESCRIPTOR_PTR(node)					\
+	UAC2_AUDIO_CONTROL_COMMON_DESCRIPTOR_PTRS(node)
 
 #define UAC2_DESCRIPTOR_ARRAYS(node)						\
 	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_ARRAY(node)			\
 	UAC2_AUDIO_CONTROL_DESCRIPTOR_ARRAYS(node)				\
 	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_ARRAYS_IF_AUDIOSTREAMING)
 
-#define UAC2_DESCRIPTOR_PTRS(node)						\
-	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(node)				\
-	UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(node)				\
-	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING)		\
+#define UAC2_FS_DESCRIPTOR_PTRS(node)						\
+	UAC2_INTERFACE_ASSOCIATION_FS_DESCRIPTOR_PTR(node)			\
+	UAC2_AUDIO_CONTROL_FS_DESCRIPTOR_PTRS(node)				\
+	DT_FOREACH_CHILD(node, AS_FS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING)	\
 	NULL
 
-#define UAC2_DESCRIPTORS(node)							\
-	UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(node)				\
-	UAC2_AUDIO_CONTROL_DESCRIPTORS(node)					\
-	DT_FOREACH_CHILD(node, AS_DESCRIPTORS_IF_AUDIOSTREAMING)
+#define UAC2_HS_DESCRIPTOR_PTRS(node)						\
+	UAC2_INTERFACE_ASSOCIATION_HS_DESCRIPTOR_PTR(node)			\
+	UAC2_AUDIO_CONTROL_HS_DESCRIPTOR_PTRS(node)				\
+	DT_FOREACH_CHILD(node, AS_HS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING)	\
+	NULL
 
+#define UAC2_FS_DESCRIPTOR_PTRS_ARRAY(node)					\
+	COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(node),				\
+		({UAC2_FS_DESCRIPTOR_PTRS(node)}), ({NULL}))
 
-/* Helper macros to determine endpoint offset within complete UAC2 blob */
-#define COUNT_AS_DESCRIPTORS_BYTES_UP_TO_IDX(node, idx)				\
-	(sizeof((uint8_t []){AS_DESCRIPTORS_IF_AUDIOSTREAMING(node)}) *		\
-	(DT_NODE_CHILD_IDX(node) <= idx))
-
-#define UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
-	(sizeof((uint8_t []){							\
-		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR(DT_PARENT(node))		\
-		UAC2_AUDIO_CONTROL_DESCRIPTORS(DT_PARENT(node))			\
-	})) + DT_FOREACH_CHILD_SEP_VARGS(DT_PARENT(node),			\
-		COUNT_AS_DESCRIPTORS_BYTES_UP_TO_IDX, (+),			\
-		DT_NODE_CHILD_IDX(node))
-
-#define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
-	(sizeof((uint8_t []) {AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS(node)}))
-
-#define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
-	COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),			\
-		(sizeof((uint8_t []) {						\
-			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR(node)		\
-		})), (0))
-
-/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to data
- * endpoint address belonging to given AudioStreaming interface node.
- *
- * It is programmer error to call this macro with node other than AudioStreaming
- * or when AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) is 0.
- */
-#define UAC2_DESCRIPTOR_AS_DATA_EP_OFFSET(node)					\
-	UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
-	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
-	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_SIZE(node)			\
-	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
-
-/* Return offset inside UAC2_DESCRIPTORS(DT_PARENT(node)) poiting to feedback
- * endpoint address belonging to given AudioStreaming interface node.
- *
- * It is programmer error to call this macro with node other than AudioStreaming
- * or when AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node) is 0.
- */
-#define UAC2_DESCRIPTOR_AS_FEEDBACK_EP_OFFSET(node)				\
-	UAC2_DESCRIPTOR_AS_DESC_END_OFFSET(node)				\
-	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_SIZE(node)			\
-	+ offsetof(struct usb_ep_descriptor, bEndpointAddress)
+#define UAC2_HS_DESCRIPTOR_PTRS_ARRAY(node)					\
+	COND_CODE_1(UAC2_ALLOWED_AT_HIGH_SPEED(node),				\
+		({UAC2_HS_DESCRIPTOR_PTRS(node)}), ({NULL}))
 
 /* Helper macros to determine endpoint descriptor offset within descriptor set */
 #define COUNT_PTRS(...) sizeof((struct usb_desc_header *[]){__VA_ARGS__})	\
 	/ sizeof(struct usb_desc_header *)
 
 #define COUNT_AS_DESCRIPTORS_UP_TO_IDX(node, idx)				\
-	(COUNT_PTRS(AS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node))) *		\
+	(COUNT_PTRS(COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)),	\
+		(AS_FS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node)),		\
+		(AS_HS_DESCRIPTORS_PTRS_IF_AUDIOSTREAMING(node))))) *		\
 	(DT_NODE_CHILD_IDX(node) <= idx)
 
 #define UAC2_DESCRIPTOR_AS_DESC_END_COUNT(node)					\
-	(COUNT_PTRS(								\
-		UAC2_INTERFACE_ASSOCIATION_DESCRIPTOR_PTR(DT_PARENT(node))	\
-		UAC2_AUDIO_CONTROL_DESCRIPTOR_PTRS(DT_PARENT(node))		\
-	)) + DT_FOREACH_CHILD_SEP_VARGS(DT_PARENT(node),			\
+	(COUNT_PTRS(COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)), (	\
+		UAC2_INTERFACE_ASSOCIATION_FS_DESCRIPTOR_PTR(DT_PARENT(node))	\
+		UAC2_AUDIO_CONTROL_FS_DESCRIPTOR_PTRS(DT_PARENT(node))		\
+	), (									\
+		UAC2_INTERFACE_ASSOCIATION_HS_DESCRIPTOR_PTR(DT_PARENT(node))	\
+		UAC2_AUDIO_CONTROL_HS_DESCRIPTOR_PTRS(DT_PARENT(node))		\
+	)))) + DT_FOREACH_CHILD_SEP_VARGS(DT_PARENT(node),			\
 		COUNT_AS_DESCRIPTORS_UP_TO_IDX, (+),				\
 		DT_NODE_CHILD_IDX(node))
 
 #define AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_COUNT(node)			\
-	COUNT_PTRS(AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_PTRS(node))
+	COUNT_PTRS(COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)), (	\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_FS_DESCRIPTORS_PTRS(node)		\
+	), (									\
+		AS_ISOCHRONOUS_DATA_ENDPOINT_HS_DESCRIPTORS_PTRS(node)		\
+	)))
 
 #define AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)			\
-	COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node),			\
-		(COUNT_PTRS(							\
-			AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_PTR(node)	\
-		)), (0))
+	COND_CODE_1(AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node), (COUNT_PTRS(	\
+		COND_CODE_1(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)), (	\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR_PTR(node)	\
+		), (								\
+			AS_EXPLICIT_FEEDBACK_ENDPOINT_HS_DESCRIPTOR_PTR(node)	\
+		))								\
+	)), (0))
 
-/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to data
- * endpoint descriptor belonging to given AudioStreaming interface node.
+/* Return index inside UAC2_FS_DESCRIPTOR_PTRS(DT_PARENT(node)) and/or
+ * UAC2_HS_DESCRIPTOR_PTRS(DT_PARENT(node)) pointing to data endpoint
+ * descriptor belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming
  * or when AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node) is 0.
@@ -832,8 +904,9 @@
 	- AS_EXPLICIT_FEEDBACK_ENDPOINT_DESCRIPTOR_COUNT(node)			\
 	- AS_ISOCHRONOUS_DATA_ENDPOINT_DESCRIPTORS_COUNT(node)
 
-/* Return index inside UAC2_DESCRIPTOR_PTRS(DT_PARENT(node)) poiting to feedback
- * endpoint descriptor belonging to given AudioStreaming interface node.
+/* Return index inside UAC2_FS_DESCRIPTOR_PTRS(DT_PARENT(node)) and/or
+ * UAC2_HS_DESCRIPTOR_PTRS(DT_PARENT(node)) pointing to feedback endpoint
+ * descriptor belonging to given AudioStreaming interface node.
  *
  * It is programmer error to call this macro with node other than AudioStreaming
  * or when AS_HAS_EXPLICIT_FEEDBACK_ENDPOINT(node) is 0.
@@ -873,6 +946,16 @@
 		DT_NODE_HAS_COMPAT(DT_PROP(node, linked_terminal),		\
 		zephyr_uac2_output_terminal))
 
+#define VALIDATE_AS_BANDWIDTH(node)						\
+	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_PARENT(node)),	(		\
+		BUILD_ASSERT(AS_FS_DATA_EP_MAX_PACKET_SIZE(node) <= 1023,	\
+			"Full-Speed bandwidth exceeded");			\
+	))									\
+	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_PARENT(node)), (		\
+		BUILD_ASSERT(USB_TPL_IS_VALID(AS_HS_DATA_EP_TPL(node)),		\
+			"High-Speed bandwidth exceeded");			\
+	))
+
 #define VALIDATE_NODE(node)							\
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node, zephyr_uac2_clock_source), (	\
 		BUILD_ASSERT(DT_PROP_LEN(node, sampling_frequencies),		\
@@ -903,6 +986,13 @@
 		BUILD_ASSERT(!DT_PROP(node, implicit_feedback) ||		\
 			!AS_IS_SOF_SYNCHRONIZED(node),				\
 			"Implicit feedback on SOF synchronized clock");		\
+		IF_ENABLED(AS_HAS_ISOCHRONOUS_DATA_ENDPOINT(node), (		\
+			VALIDATE_AS_BANDWIDTH(node)))				\
 	))
+
+#define VALIDATE_INSTANCE(uac2)							\
+	BUILD_ASSERT(DT_PROP(uac2, full_speed) || DT_PROP(uac2, high_speed),	\
+		"Instance must be allowed to operate at least at one speed");	\
+	DT_FOREACH_CHILD(uac2, VALIDATE_NODE)
 
 #endif /* ZEPHYR_INCLUDE_USBD_UAC2_MACROS_H_ */

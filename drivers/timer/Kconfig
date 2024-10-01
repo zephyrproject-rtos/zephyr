@@ -96,6 +96,7 @@ source "drivers/timer/Kconfig.ti_dm_timer"
 source "drivers/timer/Kconfig.xlnx_psttc"
 source "drivers/timer/Kconfig.xtensa"
 source "drivers/timer/Kconfig.mtk_adsp"
+source "drivers/timer/Kconfig.sy1xx_sys_timer"
 
 endmenu
 

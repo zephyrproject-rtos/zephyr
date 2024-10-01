@@ -18,3 +18,4 @@ tests:
       - mps2/an385
     platform_exclude:
       - mr_canhubk3
+      - cortex_r8_virtual

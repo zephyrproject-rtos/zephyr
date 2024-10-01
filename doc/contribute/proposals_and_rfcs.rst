@@ -52,4 +52,4 @@ to either label it appropriately or include it in the corresponding GitHub
 project in order for it to be examined during the next meeting.
 
 .. _`RFC template`: https://github.com/zephyrproject-rtos/zephyr/blob/main/.github/ISSUE_TEMPLATE/003_rfc-proposal.md
-.. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+.. _`Zephyr meetings`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups

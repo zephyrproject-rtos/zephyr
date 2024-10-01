@@ -3,7 +3,8 @@
 
 config DISK_DRIVER_MMC
 	bool "MMC card driver"
-	default y if DT_HAS_ZEPHYR_MMC_DISK_ENABLED
+	depends on DT_HAS_ZEPHYR_MMC_DISK_ENABLED
+	default y
 	help
 	  MMC card driver.
 

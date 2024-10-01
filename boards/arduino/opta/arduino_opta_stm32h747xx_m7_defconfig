@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Felipe Neves
+# Copyright (c) 2024 DNDG srl
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Clock configuration
+CONFIG_CLOCK_CONTROL=y
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable HW stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Use zephyr,code-partition as flash offset
+CONFIG_USE_DT_CODE_PARTITION=y
+
+# Enable correct power supply
+CONFIG_POWER_SUPPLY_SMPS_1V8_SUPPLIES_EXT_AND_LDO=y
+
+# Don't start M4 during the M7 boot (this is what the original Opta does)
+CONFIG_STM32H7_BOOT_M4_AT_INIT=n
+
+# Enable console
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_LINE_CTRL=y
+
+# Enable USB Stack (needed for the console to work)
+CONFIG_USB_DEVICE_STACK=y
+
+# Enable regulator (needed to enable eth)
+CONFIG_REGULATOR=y
+CONFIG_REGULATOR_FIXED=y

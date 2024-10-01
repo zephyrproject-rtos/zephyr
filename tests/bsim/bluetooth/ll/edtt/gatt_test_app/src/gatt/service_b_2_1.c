@@ -87,12 +87,15 @@ static ssize_t write_value_v5(struct bt_conn *conn,
 {
 	uint8_t *value = attr->user_data;
 
-	if (offset >= sizeof(value_v5_value))
+	if (offset >= sizeof(value_v5_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-	if (offset + len > sizeof(value_v5_value))
+	}
+	if (offset + len > sizeof(value_v5_value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
-	if (!bAuthorized)
+	}
+	if (!bAuthorized) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
+	}
 
 	memcpy(value + offset, buf, len);
 

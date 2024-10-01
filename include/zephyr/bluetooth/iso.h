@@ -5,7 +5,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,10 +23,17 @@
  * @{
  */
 
-#include <zephyr/sys/atomic.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/slist.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +53,16 @@ extern "C" {
  *  @return Needed buffer size to match the requested ISO SDU MTU.
  */
 #define BT_ISO_SDU_BUF_SIZE(mtu) BT_BUF_ISO_SIZE(mtu)
+
+/**
+ * Convert BIS index to bit
+ *
+ * The BIS indexes start from 0x01, so the lowest allowed bit is
+ * BIT(0) that represents index 0x01. To synchronize to e.g. BIS
+ * indexes 0x01 and 0x02, the bitfield value should be BIT(0) | BIT(1).
+ * As a general notation, to sync to BIS index N use BIT(N - 1).
+ */
+#define BT_ISO_BIS_INDEX_BIT(x) (BIT((x) - 1))
 
 /** Value to set the ISO data path over HCi. */
 #define BT_ISO_DATA_PATH_HCI        0x00
@@ -548,9 +565,10 @@ struct bt_iso_big_sync_param {
 	/**
 	 * @brief Bitfield of the BISes to sync to
 	 *
-	 * The BIS indexes start from 0x01, so the lowest allowed bit is
-	 * BIT(1) that represents index 0x01. To synchronize to e.g. BIS
-	 * indexes 0x01 and 0x02, the bitfield value should be BIT(1) | BIT(2).
+	 * Use @ref BT_ISO_BIS_INDEX_BIT to convert BIS indexes to a bitfield.
+	 *
+	 * To synchronize to e.g. BIS indexes 0x01 and 0x02, this can be set to
+	 * BT_ISO_BIS_INDEX_BIT(0x01) | BT_ISO_BIS_INDEX_BIT(0x02).
 	 */
 	uint32_t bis_bitfield;
 

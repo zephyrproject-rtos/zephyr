@@ -11,11 +11,7 @@
 
 &clk_hse {
 	status = "disabled";
-	/delete-property/ hse-div;
-};
-
-&clk_hsi {
-	status = "disabled";
+	/delete-property/ hse-div2;
 };
 
 &clk_lse {

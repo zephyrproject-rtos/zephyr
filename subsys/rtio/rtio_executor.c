@@ -19,7 +19,7 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe)
 
 	switch (sqe->op) {
 	case RTIO_OP_CALLBACK:
-		sqe->callback(iodev_sqe->r, sqe, sqe->arg0);
+		sqe->callback.callback(iodev_sqe->r, sqe, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		break;
 	default:
@@ -124,13 +124,13 @@ static inline void rtio_executor_handle_multishot(struct rtio *r, struct rtio_io
 	if (curr->sqe.op == RTIO_OP_RX && FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, curr->sqe.flags)) {
 		if (is_canceled) {
 			/* Free the memory first since no CQE will be generated */
-			LOG_DBG("Releasing memory @%p size=%u", (void *)curr->sqe.buf,
-				curr->sqe.buf_len);
-			rtio_release_buffer(r, curr->sqe.buf, curr->sqe.buf_len);
+			LOG_DBG("Releasing memory @%p size=%u", (void *)curr->sqe.rx.buf,
+				curr->sqe.rx.buf_len);
+			rtio_release_buffer(r, curr->sqe.rx.buf, curr->sqe.rx.buf_len);
 		}
 		/* Reset the buffer info so the next request can get a new one */
-		curr->sqe.buf = NULL;
-		curr->sqe.buf_len = 0;
+		curr->sqe.rx.buf = NULL;
+		curr->sqe.rx.buf_len = 0;
 	}
 	if (!is_canceled) {
 		/* Request was not canceled, put the SQE back in the queue */

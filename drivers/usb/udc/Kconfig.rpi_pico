@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_RPI_PICO
+	bool "Driver for an Raspberry PI Pico USB device controller"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_USBD_ENABLED
+	select SYS_MEM_BLOCKS
+	help
+	  Driver for an Raspberry PI Pico USB device controller.
+
+if UDC_RPI_PICO
+
+config UDC_RPI_PICO_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_RPI_PICO_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_RPI_PICO

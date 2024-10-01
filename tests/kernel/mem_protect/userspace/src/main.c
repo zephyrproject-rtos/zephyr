@@ -1007,7 +1007,7 @@ void z_impl_check_syscall_context(void)
 
 static inline void z_vrfy_check_syscall_context(void)
 {
-	return z_impl_check_syscall_context();
+	z_impl_check_syscall_context();
 }
 #include <zephyr/syscalls/check_syscall_context_mrsh.c>
 

@@ -1,0 +1,36 @@
+.tippy-box[data-theme~='doxytooltip'] {
+  /* provide minimal definition of the CSS variables used by Doxygen Awesome so that we have a
+     look and feel that's consistent with the rest of the documentation without necessarily aiming
+     for full fidelity */
+  --font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', Courier, monospace;
+  --primary-color: var(--navbar-heading-color);
+  --param-color: var(--code-literal-color);
+  --border-radius-small: 4px;
+  --border-radius-medium: 6px;
+  --border-radius-large: 8px;
+
+  background-color: var(--content-wrap-background-color);
+  color: var(--body-color);
+}
+
+.tippy-box[data-theme~='doxytooltip'][data-placement^='top']>.tippy-arrow::before {
+  border-top-color: var(--content-wrap-background-color);
+}
+
+.tippy-box[data-theme~='doxytooltip'][data-placement^='bottom']>.tippy-arrow::before {
+  border-bottom-color: var(--content-wrap-background-color);
+}
+
+.tippy-box[data-theme~='doxytooltip'][data-placement^='left']>.tippy-arrow::before {
+  border-left-color: var(--content-wrap-background-color);
+}
+
+.tippy-box[data-theme~='doxytooltip'][data-placement^='right']>.tippy-arrow::before {
+  border-right-color: var(--content-wrap-background-color);
+}
+
+.tippy-box[data-theme~='doxytooltip'] .tippy-content {
+  font-size: 0.9em;
+  max-height: 300px;
+  overflow-y: scroll;
+}

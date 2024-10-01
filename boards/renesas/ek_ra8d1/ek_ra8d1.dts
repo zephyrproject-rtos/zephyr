@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7fa8d1bhecbd.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "ek_ra8d1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA8D1";
+	compatible = "renesas,ra8d1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport6 0 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioport4 14 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&ioport1 7 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(20)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	source = <RA_PLL_SOURCE_MAIN_OSC>;
+	div = <RA_PLL_DIV_2>;
+	mul = <96 0>;
+	divp = <RA_PLL_DIV_2>;
+	freqp = <DT_FREQ_M(480)>;
+	divq = <RA_PLL_DIV_2>;
+	freqq = <DT_FREQ_M(480)>;
+	divr = <RA_PLL_DIV_2>;
+	freqr = <DT_FREQ_M(480)>;
+	status = "okay";
+};
+
+&sciclk {
+	clk-src = <RA_CLOCK_SOURCE_PLL1P>;
+	clk-div = <RA_SCI_CLOCK_DIV_4>;
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&ioport6 {
+	status = "okay";
+};
+
+&sci0 {
+	/* sci0 and spi0 cannot be enabled together */
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(12)>;
+		};
+	};
+};

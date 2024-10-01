@@ -11,6 +11,9 @@
 #include <mem.h>
 
 / {
+	model = "NEORV32";
+	compatible = "neorv32";
+
 	aliases {
 		led0 = &led0;
 		led1 = &led1;

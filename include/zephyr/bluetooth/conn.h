@@ -196,6 +196,57 @@ struct bt_conn_le_data_len_param {
 	BT_CONN_LE_DATA_LEN_PARAM(BT_GAP_DATA_LEN_MAX, \
 				  BT_GAP_DATA_TIME_MAX)
 
+/** Connection subrating parameters for LE connections */
+struct bt_conn_le_subrate_param {
+	/** Minimum subrate factor. */
+	uint16_t subrate_min;
+	/** Maximum subrate factor. */
+	uint16_t subrate_max;
+	/** Maximum Peripheral latency in units of subrated connection intervals. */
+	uint16_t max_latency;
+	/** Minimum number of underlying connection events to remain active
+	 *  after a packet containing a Link Layer PDU with a non-zero Length
+	 *  field is sent or received.
+	 */
+	uint16_t continuation_number;
+	/** Connection Supervision timeout (N * 10 ms).
+	 *  If using @ref bt_conn_le_subrate_set_defaults, this is the
+	 *  maximum supervision timeout allowed in requests by a peripheral.
+	 */
+	uint16_t supervision_timeout;
+};
+
+/** Subrating information for LE connections */
+struct bt_conn_le_subrating_info {
+	/** Connection subrate factor. */
+	uint16_t factor;
+	/** Number of underlying connection events to remain active after
+	 *  a packet containing a Link Layer PDU with a non-zero Length
+	 *  field is sent or received.
+	 */
+	uint16_t continuation_number;
+};
+
+/** Updated subrating connection parameters for LE connections */
+struct bt_conn_le_subrate_changed {
+	/** HCI Status from LE Subrate Changed event.
+	 *  The remaining parameters will be unchanged if status is not
+	 *  BT_HCI_ERR_SUCCESS.
+	 */
+	uint8_t status;
+	/** Connection subrate factor. */
+	uint16_t factor;
+	/** Number of underlying connection events to remain active after
+	 *  a packet containing a Link Layer PDU with a non-zero Length
+	 *  field is sent or received.
+	 */
+	uint16_t continuation_number;
+	/** Peripheral latency in units of subrated connection intervals. */
+	uint16_t peripheral_latency;
+	/** Connection Supervision timeout (N * 10 ms). */
+	uint16_t supervision_timeout;
+};
+
 /** Connection Type */
 enum __packed bt_conn_type {
 	/** LE Connection Type */
@@ -209,6 +260,282 @@ enum __packed bt_conn_type {
 	/** All Connection Type */
 	BT_CONN_TYPE_ALL = BT_CONN_TYPE_LE | BT_CONN_TYPE_BR |
 			   BT_CONN_TYPE_SCO | BT_CONN_TYPE_ISO,
+};
+
+/** Supported AA-Only RTT precision. */
+enum bt_conn_le_cs_capability_rtt_aa_only {
+	/** AA-Only RTT variant is not supported. */
+	BT_CONN_LE_CS_RTT_AA_ONLY_NOT_SUPP = 0,
+	/** 10ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_AA_ONLY_10NS,
+	/** 150ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_AA_ONLY_150NS,
+};
+
+/** Supported Sounding Sequence RTT precision. */
+enum bt_conn_le_cs_capability_rtt_sounding {
+	/** Sounding Sequence RTT variant is not supported. */
+	BT_CONN_LE_CS_RTT_SOUNDING_NOT_SUPP = 0,
+	/** 10ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_SOUNDING_10NS,
+	/** 150ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_SOUNDING_150NS,
+};
+
+/** Supported Random Payload RTT precision. */
+enum bt_conn_le_cs_capability_rtt_random_payload {
+	/** Random Payload RTT variant is not supported. */
+	BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_NOT_SUPP = 0,
+	/** 10ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS,
+	/** 150ns time-of-flight accuracy. */
+	BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_150NS,
+};
+
+/** Remote channel sounding capabilities for LE connections supporting CS */
+struct bt_conn_le_cs_capabilities {
+	/** Number of CS configurations */
+	uint8_t num_config_supported;
+	/** Maximum number of consecutive CS procedures.
+	 *
+	 * When set to zero, indicates support for both fixed and indefinite
+	 * numbers of CS procedures before termination.
+	 */
+	uint16_t max_consecutive_procedures_supported;
+	/** Number of antennas. */
+	uint8_t num_antennas_supported;
+	/** Maximum number of antenna paths. */
+	uint8_t max_antenna_paths_supported;
+	/** Initiator role. */
+	bool initiator_supported;
+	/** Reflector role. */
+	bool reflector_supported;
+	/** Mode-3 */
+	bool mode_3_supported;
+	/** RTT AA-Only */
+	enum bt_conn_le_cs_capability_rtt_aa_only rtt_aa_only_precision;
+	/** RTT Sounding */
+	enum bt_conn_le_cs_capability_rtt_sounding rtt_sounding_precision;
+	/** RTT Random Payload */
+	enum bt_conn_le_cs_capability_rtt_random_payload rtt_random_payload_precision;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT AA Only.
+	 *
+	 * Set to 0 if RTT AA Only isn't supported.
+	 */
+	uint8_t rtt_aa_only_n;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT Sounding.
+	 *
+	 * Set to 0 if RTT Sounding isn't supported
+	 */
+	uint8_t rtt_sounding_n;
+	/** Number of CS steps needed to achieve the
+	 * accuracy requirements for RTT Random Payload.
+	 *
+	 * Set to 0 if RTT Random Payload isn't supported.
+	 */
+	uint8_t rtt_random_payload_n;
+	/** Phase-based normalized attack detector metric
+	 * when a CS_SYNC with sounding sequence is received.
+	 */
+	bool phase_based_nadm_sounding_supported;
+	/** Phase-based normalized attack detector metric
+	 * when a CS_SYNC with random sequence is received.
+	 */
+	bool phase_based_nadm_random_supported;
+	/** CS_SYNC LE 2M PHY. */
+	bool cs_sync_2m_phy_supported;
+	/** CS_SYNC LE 2M 2BT PHY. */
+	bool cs_sync_2m_2bt_phy_supported;
+	/** Subfeature: CS with no Frequency Actuation Error. */
+	bool cs_without_fae_supported;
+	/** Subfeature: Channel Selection Algorithm #3c */
+	bool chsel_alg_3c_supported;
+	/** Subfeature: Phase-based Ranging from RTT sounding sequence. */
+	bool pbr_from_rtt_sounding_seq_supported;
+	/** Optional T_IP1 time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 */
+	uint16_t t_ip1_times_supported;
+	/** Optional T_IP2 time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 */
+	uint16_t t_ip2_times_supported;
+	/** Optional T_FCS time durations during CS steps.
+	 *
+	 *  - Bit 0: 15 us
+	 *  - Bit 1: 20 us
+	 *  - Bit 2: 30 us
+	 *  - Bit 3: 40 us
+	 *  - Bit 4: 50 us
+	 *  - Bit 5: 60 us
+	 *  - Bit 6: 80 us
+	 *  - Bit 7: 100 us
+	 *  - Bit 8: 120 us
+	 */
+	uint16_t t_fcs_times_supported;
+	/** Optional T_PM time durations during CS steps.
+	 *
+	 *  - Bit 0: 10 us
+	 *  - Bit 1: 20 us
+	 */
+	uint16_t t_pm_times_supported;
+	/** Time in microseconds for the antenna switch period of the CS tones. */
+	uint8_t t_sw_time;
+	/** Supported SNR levels used in RTT packets.
+	 *
+	 *  - Bit 0: 18dB
+	 *  - Bit 1: 21dB
+	 *  - Bit 2: 24dB
+	 *  - Bit 3: 27dB
+	 *  - Bit 4: 30dB
+	 */
+	uint8_t tx_snr_capability;
+};
+
+/** Remote FAE Table for LE connections supporting CS */
+struct bt_conn_le_cs_fae_table {
+	uint8_t *remote_fae_table;
+};
+
+/** Channel sounding main mode */
+enum bt_conn_le_cs_main_mode {
+	/** Mode-1 (RTT) */
+	BT_CONN_LE_CS_MAIN_MODE_1 = BT_HCI_OP_LE_CS_MAIN_MODE_1,
+	/** Mode-2 (PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_2 = BT_HCI_OP_LE_CS_MAIN_MODE_2,
+	/** Mode-3 (RTT and PBR) */
+	BT_CONN_LE_CS_MAIN_MODE_3 = BT_HCI_OP_LE_CS_MAIN_MODE_3,
+};
+
+/** Channel sounding sub mode */
+enum bt_conn_le_cs_sub_mode {
+	/** Unused */
+	BT_CONN_LE_CS_SUB_MODE_UNUSED = BT_HCI_OP_LE_CS_SUB_MODE_UNUSED,
+	/** Mode-1 (RTT) */
+	BT_CONN_LE_CS_SUB_MODE_1 = BT_HCI_OP_LE_CS_SUB_MODE_1,
+	/** Mode-2 (PBR) */
+	BT_CONN_LE_CS_SUB_MODE_2 = BT_HCI_OP_LE_CS_SUB_MODE_2,
+	/** Mode-3 (RTT and PBR) */
+	BT_CONN_LE_CS_SUB_MODE_3 = BT_HCI_OP_LE_CS_SUB_MODE_3,
+};
+
+/** Channel sounding role */
+enum bt_conn_le_cs_role {
+	/** CS initiator role */
+	BT_CONN_LE_CS_ROLE_INITIATOR,
+	/** CS reflector role */
+	BT_CONN_LE_CS_ROLE_REFLECTOR,
+};
+
+/** Channel sounding RTT type */
+enum bt_conn_le_cs_rtt_type {
+	/** RTT AA only */
+	BT_CONN_LE_CS_RTT_TYPE_AA_ONLY = BT_HCI_OP_LE_CS_RTT_TYPE_AA_ONLY,
+	/** RTT with 32-bit sounding sequence */
+	BT_CONN_LE_CS_RTT_TYPE_32_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_SOUND,
+	/** RTT with 96-bit sounding sequence */
+	BT_CONN_LE_CS_RTT_TYPE_96_BIT_SOUNDING = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_SOUND,
+	/** RTT with 32-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_32_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_32BIT_RAND,
+	/** RTT with 64-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_64_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_64BIT_RAND,
+	/** RTT with 96-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_96_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_96BIT_RAND,
+	/** RTT with 128-bit random sequence */
+	BT_CONN_LE_CS_RTT_TYPE_128_BIT_RANDOM = BT_HCI_OP_LE_CS_RTT_TYPE_128BIT_RAND,
+};
+
+/** Channel sounding PHY used for CS sync */
+enum bt_conn_le_cs_sync_phy {
+	/** LE 1M PHY */
+	BT_CONN_LE_CS_SYNC_1M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_1M,
+	/** LE 2M PHY */
+	BT_CONN_LE_CS_SYNC_2M_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M,
+	/** LE 2M 2BT PHY */
+	BT_CONN_LE_CS_SYNC_2M_2BT_PHY = BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT,
+};
+
+/** Channel sounding channel selection type */
+enum bt_conn_le_cs_chsel_type {
+	/** Use Channel Selection Algorithm #3b for non-mode-0 CS steps */
+	BT_CONN_LE_CS_CHSEL_TYPE_3B = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3B,
+	/** Use Channel Selection Algorithm #3c for non-mode-0 CS steps */
+	BT_CONN_LE_CS_CHSEL_TYPE_3C = BT_HCI_OP_LE_CS_TEST_CHSEL_TYPE_3C,
+};
+
+/** Channel sounding channel sequence shape */
+enum bt_conn_le_cs_ch3c_shape {
+	/** Use Hat shape for user-specified channel sequence */
+	BT_CONN_LE_CS_CH3C_SHAPE_HAT = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_HAT,
+	/** Use X shape for user-specified channel sequence */
+	BT_CONN_LE_CS_CH3C_SHAPE_X = BT_HCI_OP_LE_CS_TEST_CH3C_SHAPE_X,
+};
+
+/** Channel sounding configuration */
+struct bt_conn_le_cs_config {
+	/** CS configuration ID */
+	uint8_t id;
+	/** Main CS mode type */
+	enum bt_conn_le_cs_main_mode main_mode_type;
+	/** Sub CS mode type */
+	enum bt_conn_le_cs_sub_mode sub_mode_type;
+	/** Minimum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t min_main_mode_steps;
+	/** Maximum number of CS main mode steps to be executed before a submode step is executed */
+	uint8_t max_main_mode_steps;
+	/** Number of main mode steps taken from the end of the last CS subevent to be repeated
+	 *  at the beginning of the current CS subevent directly after the last mode-0 step of that
+	 *  event
+	 */
+	uint8_t main_mode_repetition;
+	/** Number of CS mode-0 steps to be included at the beginning of each CS subevent */
+	uint8_t mode_0_steps;
+	/** CS role */
+	enum bt_conn_le_cs_role role;
+	/** RTT type */
+	enum bt_conn_le_cs_rtt_type rtt_type;
+	/** CS Sync PHY */
+	enum bt_conn_le_cs_sync_phy cs_sync_phy;
+	/** The number of times the Channel_Map field will be cycled through for non-mode-0 steps
+	 *  within a CS procedure
+	 */
+	uint8_t channel_map_repetition;
+	/** Channel selection type */
+	enum bt_conn_le_cs_chsel_type channel_selection_type;
+	/** User-specified channel sequence shape */
+	enum bt_conn_le_cs_ch3c_shape ch3c_shape;
+	/** Number of channels skipped in each rising and falling sequence  */
+	uint8_t ch3c_jump;
+	/** Interlude time in microseconds between the RTT packets */
+	uint8_t t_ip1_time_us;
+	/** Interlude time in microseconds between the CS tones */
+	uint8_t t_ip2_time_us;
+	/** Time in microseconds for frequency changes */
+	uint8_t t_fcs_time_us;
+	/** Time in microseconds for the phase measurement period of the CS tones */
+	uint8_t t_pm_time_us;
+	/** Channel map used for CS procedure
+	 *  Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
+	 *  Channel 79 is reserved for future use and shall be set to zero.
+	 *  At least 15 channels shall be enabled.
+	 */
+	uint8_t channel_map[10];
 };
 
 /** @brief Increment a connection's reference count.
@@ -310,6 +637,11 @@ struct bt_conn_le_info {
 	/* Connection maximum single fragment parameters */
 	const struct bt_conn_le_data_len_info *data_len;
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
+
+#if defined(CONFIG_BT_SUBRATING)
+	/* Connection subrating parameters */
+	const struct bt_conn_le_subrating_info *subrate;
+#endif /* defined(CONFIG_BT_SUBRATING) */
 };
 
 /** @brief Convert connection interval to milliseconds
@@ -676,6 +1008,36 @@ int bt_conn_le_set_path_loss_mon_param(struct bt_conn *conn,
  */
 int bt_conn_le_set_path_loss_mon_enable(struct bt_conn *conn, bool enable);
 
+/** @brief Set Default Connection Subrating Parameters.
+ *
+ *  Change the default subrating parameters for all future
+ *  ACL connections where the local device is the central.
+ *  This command does not affect any existing connection.
+ *  Parameters set for specific connection will always have precedence.
+ *
+ *  @note To use this API @kconfig{CONFIG_BT_SUBRATING} and
+ *        @kconfig{CONFIG_BT_CENTRAL} must be set.
+ *
+ *  @param params Subrating parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_subrate_set_defaults(const struct bt_conn_le_subrate_param *params);
+
+/** @brief Request New Subrating Parameters.
+ *
+ *  Request a change to the subrating parameters of a connection.
+ *
+ *  @note To use this API @kconfig{CONFIG_BT_SUBRATING} must be set.
+ *
+ *  @param conn   Connection object.
+ *  @param params Subrating parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_subrate_request(struct bt_conn *conn,
+			       const struct bt_conn_le_subrate_param *params);
+
 /** @brief Update the connection parameters.
  *
  *  If the local device is in the peripheral role then updating the connection
@@ -761,10 +1123,24 @@ struct bt_conn_le_create_param {
 	/** Bit-field of create connection options. */
 	uint32_t options;
 
-	/** Scan interval (N * 0.625 ms) */
+	/** Scan interval (N * 0.625 ms)
+	 *
+	 * @note When @kconfig{CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL} is enabled
+	 *       and the application wants to scan and connect in parallel,
+	 *       the Bluetooth Controller may require the scan interval used
+	 *       for scanning and connection establishment to be equal to
+	 *       obtain the best performance.
+	 */
 	uint16_t interval;
 
-	/** Scan window (N * 0.625 ms) */
+	/** Scan window (N * 0.625 ms)
+	 *
+	 * @note When @kconfig{CONFIG_BT_SCAN_AND_INITIATE_IN_PARALLEL} is enabled
+	 *       and the application wants to scan and connect in parallel,
+	 *       the Bluetooth Controller may require the scan window used
+	 *       for scanning and connection establishment to be equal to
+	 *       obtain the best performance.
+	 */
 	uint16_t window;
 
 	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
@@ -1243,6 +1619,65 @@ struct bt_conn_cb {
 	void (*path_loss_threshold_report)(struct bt_conn *conn,
 				const struct bt_conn_le_path_loss_threshold_report *report);
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
+
+#if defined(CONFIG_BT_SUBRATING)
+	/** @brief LE Subrate Changed event.
+	 *
+	 *  This callback notifies the application that the subrating parameters
+	 *  of the connection may have changed.
+	 *  The connection subrating parameters will be unchanged
+	 *  if status is not BT_HCI_ERR_SUCCESS.
+	 *
+	 *  @param conn   Connection object.
+	 *  @param params New subrating parameters.
+	 */
+	void (*subrate_changed)(struct bt_conn *conn,
+				const struct bt_conn_le_subrate_changed *params);
+#endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+	/** @brief LE CS Read Remote Supported Capabilities Complete event.
+	 *
+	 *  This callback notifies the application that the remote channel
+	 *  sounding capabilities have been received from the peer.
+	 *
+	 *  @param conn Connection object.
+	 *  @param remote_cs_capabilities Remote Channel Sounding Capabilities.
+	 */
+	void (*le_cs_remote_capabilities_available)(struct bt_conn *conn,
+						    struct bt_conn_le_cs_capabilities *params);
+
+	/** @brief LE CS Read Remote FAE Table Complete event.
+	 *
+	 *  This callback notifies the application that the remote mode-0
+	 *  FAE Table has been received from the peer.
+	 *
+	 *  @param conn Connection object.
+	 *  @param params FAE Table.
+	 */
+	void (*le_cs_remote_fae_table_available)(struct bt_conn *conn,
+						 struct bt_conn_le_cs_fae_table *params);
+
+	/** @brief LE CS Config created.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Configuration procedure has completed and a new CS config is created
+	 *
+	 *  @param conn Connection object.
+	 *  @param config CS configuration.
+	 */
+	void (*le_cs_config_created)(struct bt_conn *conn, struct bt_conn_le_cs_config *config);
+
+	/** @brief LE CS Config removed.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Configuration procedure has completed and a CS config is removed
+	 *
+	 *  @param conn Connection object.
+	 *  @param config_id ID of the CS configuration that was removed.
+	 */
+	void (*le_cs_config_removed)(struct bt_conn *conn, uint8_t config_id);
+#endif
 
 	/** @internal Internally used field for list handling */
 	sys_snode_t _node;

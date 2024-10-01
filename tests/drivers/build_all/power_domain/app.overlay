@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		power_domain_gpio {
+			compatible = "power-domain-gpio";
+			enable-gpios = <&test_gpio 0 0>;
+			zephyr,pm-device-runtime-auto;
+		};
+
+		power_domain_gpio_monitor {
+			compatible = "power-domain-gpio-monitor";
+			status = "okay";
+			gpios = <&test_gpio 0 0>;
+		};
+	};
+};

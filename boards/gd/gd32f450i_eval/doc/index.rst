@@ -112,7 +112,7 @@ The GD32F450I-EVAL includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a JTAG header
 (J1) which can be used with tools like Segger J-Link.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

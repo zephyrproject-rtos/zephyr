@@ -12,7 +12,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
@@ -133,7 +133,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = k_fifo_get(&tx_queue, K_FOREVER);
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
 		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
@@ -188,7 +188,7 @@ static void hci_rx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 		int err;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 
 		err = bt_send(buf);
 		if (err) {
@@ -296,7 +296,7 @@ static void acl_read_cb(uint8_t ep, int size, void *priv)
 	}
 
 	if (buf != NULL && pkt_len == buf->len) {
-		net_buf_put(&rx_queue, buf);
+		k_fifo_put(&rx_queue, buf);
 		LOG_DBG("put");
 		buf = NULL;
 		pkt_len = 0;
@@ -373,7 +373,7 @@ static uint8_t vs_read_usb_transport_mode(struct net_buf *buf)
 	net_buf_add_u8(rsp, BT_HCI_VS_USB_H2_MODE);
 	net_buf_add_u8(rsp, BT_HCI_VS_USB_H4_MODE);
 
-	net_buf_put(&tx_queue, rsp);
+	k_fifo_put(&tx_queue, rsp);
 
 	return BT_HCI_ERR_EXT_HANDLED;
 }
@@ -430,7 +430,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&rx_queue, buf);
+	k_fifo_put(&rx_queue, buf);
 
 	return 0;
 }

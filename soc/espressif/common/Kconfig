@@ -7,6 +7,32 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	hex
 
+config ESP32_USE_UNSUPPORTED_REVISION
+	bool "Use unsupported ESP32 revision (Rev 0/1)"
+	help
+	  ESP32 SoC has multiple revisions, some of which are not supported by the current
+	  implementation, as such as REV0 and REV1. In case those revisions are required,
+	  set this option to enable support for them. Note that this is not recommended and
+	  may lead to unexpected behavior.
+
+config ESP_SIMPLE_BOOT
+	bool "Simple Boot method"
+	default y if !BOOTLOADER_MCUBOOT && !MCUBOOT
+	help
+	  The Simple Boot is a booting method that doesn't need a 2nd stage bootloader.
+	  Output is a single image that should be flashed at a offset defined by used SOC.
+	  Please note that this method brings the system up with all memories set-up, but
+	  all other features, such as secure boot OTA or slots management are not available.
+
+config ESP_RUNTIME_HEAP
+	bool
+	default y
+	help
+	  Enabling this will allocate SRAM area starting by a last linked data at symbolic `_end`,
+	  ending by a last memory location that can be safely accesed (depending on a boot mode).
+	  This is a memory pool used in runtime to create a new heap memory.
+
 rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
+rsource "Kconfig.wifi"

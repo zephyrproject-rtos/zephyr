@@ -171,5 +171,5 @@ void c_boot(void)
 	val = 0xffffffff;
 	__asm__ volatile("wsr %0, INTCLEAR" :: "r"(val));
 
-	z_cstart();
+	z_prep_c();
 }

@@ -47,7 +47,8 @@ disabled.
 It can be built and executed on QEMU as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/zbus/priority_boost -- -DCONFIG_ZBUS_PRIORITY_BOOST=n
+   :zephyr-app: samples/subsys/zbus/priority_boost
+   :gen-args: -DCONFIG_ZBUS_PRIORITY_BOOST=n
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -127,7 +128,8 @@ The developer must enable the priority boost and properly attach all the observe
 To execute the sample with priority boost feature enabled, run the following command:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/zbus/priority_boost -- -DCONFIG_ZBUS_PRIORITY_BOOST=y
+   :zephyr-app: samples/subsys/zbus/priority_boost
+   :gen-args: -DCONFIG_ZBUS_PRIORITY_BOOST=y
    :host-os: unix
    :board: qemu_x86
    :goals: run

@@ -13,12 +13,15 @@ struct test_nested {
 	int nested_int;
 	bool nested_bool;
 	const char *nested_string;
+	int64_t nested_int64;
 };
 
 struct test_struct {
 	const char *some_string;
 	int some_int;
 	bool some_bool;
+	int64_t some_int64;
+	int64_t another_int64;
 	struct test_nested some_nested_struct;
 	int some_array[16];
 	size_t some_array_len;
@@ -45,6 +48,9 @@ struct test_int_limits {
 	int int_max;
 	int int_cero;
 	int int_min;
+	int64_t int64_max;
+	int64_t int64_cero;
+	int64_t int64_min;
 };
 
 static const struct json_obj_descr nested_descr[] = {
@@ -52,12 +58,18 @@ static const struct json_obj_descr nested_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_bool, JSON_TOK_TRUE),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_string,
 			    JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int64,
+			    JSON_TOK_INT64),
 };
 
 static const struct json_obj_descr test_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_string, JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, some_bool, JSON_TOK_TRUE),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_int64,
+			    JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, another_int64,
+			    JSON_TOK_INT64),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
 			      nested_descr),
 	JSON_OBJ_DESCR_ARRAY(struct test_struct, some_array,
@@ -89,6 +101,9 @@ static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_max, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_cero, JSON_TOK_NUMBER),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int_min, JSON_TOK_NUMBER),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_max, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_cero, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_min, JSON_TOK_INT64),
 };
 
 struct array {
@@ -180,11 +195,14 @@ ZTEST(lib_json_test, test_json_encoding)
 	struct test_struct ts = {
 		.some_string = "zephyr 123\uABCD",
 		.some_int = 42,
+		.some_int64 = 1152921504606846977,
+		.another_int64 = -2305843009213693937,
 		.some_bool = true,
 		.some_nested_struct = {
 			.nested_int = -1234,
 			.nested_bool = false,
-			.nested_string = "this should be escaped: \t"
+			.nested_string = "this should be escaped: \t",
+			.nested_int64 = 4503599627370496,
 		},
 		.some_array[0] = 1,
 		.some_array[1] = 4,
@@ -203,6 +221,7 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_int = 1234,
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
+			.nested_int64 = 4503599627370496,
 		},
 		.nested_obj_array = {
 			{1, true, "true"},
@@ -212,19 +231,23 @@ ZTEST(lib_json_test, test_json_encoding)
 	};
 	char encoded[] = "{\"some_string\":\"zephyr 123\uABCD\","
 		"\"some_int\":42,\"some_bool\":true,"
+		"\"some_int64\":1152921504606846977,"
+		"\"another_int64\":-2305843009213693937,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
-		"\"this should be escaped: \\t\"},"
+		"\"this should be escaped: \\t\","
+		"\"nested_int64\":4503599627370496},"
 		"\"some_array\":[1,4,8,16,32],"
 		"\"another_b!@l\":true,"
 		"\"if\":false,"
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"},"
+		"\"nested_string\":\"no escape necessary\","
+		"\"nested_int64\":4503599627370496},"
 		"\"nested_obj_array\":["
-		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\"},"
-		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\"}]"
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_int64\":0},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_int64\":0}]"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -249,10 +272,13 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"some_bool\":true    \t  "
 		"\n"
 		"\r   ,"
+		"\"some_int64\":-4611686018427387904,"
+		"\"another_int64\":-2147483648,"
 		"\"some_nested_struct\":{    "
 		"\"nested_int\":-1234,\n\n"
 		"\"nested_bool\":false,\t"
 		"\"nested_string\":\"this should be escaped: \\t\","
+		"\"nested_int64\":9223372036854775807,"
 		"\"extra_nested_array\":[0,-1]},"
 		"\"extra_struct\":{\"nested_bool\":false},"
 		"\"extra_bool\":true,"
@@ -262,7 +288,8 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\"another-array\":[2,3,5,7],"
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
-		"\"nested_string\":\"no escape necessary\"},"
+		"\"nested_string\":\"no escape necessary\","
+		"\"nested_int64\":-9223372036854775806},"
 		"\"nested_obj_array\":["
 		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\"},"
 		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\"}]"
@@ -281,8 +308,14 @@ ZTEST(lib_json_test, test_json_decoding)
 			  "String not decoded correctly");
 	zassert_equal(ts.some_int, 42, "Positive integer not decoded correctly");
 	zassert_equal(ts.some_bool, true, "Boolean not decoded correctly");
+	zassert_equal(ts.some_int64, -4611686018427387904,
+		      "int64 not decoded correctly");
+	zassert_equal(ts.another_int64, -2147483648,
+		      "int64 not decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_int, -1234,
 		      "Nested negative integer not decoded correctly");
+	zassert_equal(ts.some_nested_struct.nested_int64, 9223372036854775807,
+		      "Nested int64 not decoded correctly");
 	zassert_equal(ts.some_nested_struct.nested_bool, false,
 		      "Nested boolean value not decoded correctly");
 	zassert_str_equal(ts.some_nested_struct.nested_string,
@@ -304,6 +337,8 @@ ZTEST(lib_json_test, test_json_decoding)
 		     "Decoded named array not with expected values");
 	zassert_equal(ts.xnother_nexx.nested_int, 1234,
 		      "Named nested integer not decoded correctly");
+	zassert_equal(ts.xnother_nexx.nested_int64, -9223372036854775806,
+		      "Named nested int64 not decoded correctly");
 	zassert_equal(ts.xnother_nexx.nested_bool, true,
 		      "Named nested boolean not decoded correctly");
 	zassert_str_equal(ts.xnother_nexx.nested_string,
@@ -330,13 +365,19 @@ ZTEST(lib_json_test, test_json_limits)
 	int ret = 0;
 	char encoded[] = "{\"int_max\":2147483647,"
 			 "\"int_cero\":0,"
-			 "\"int_min\":-2147483648"
+			 "\"int_min\":-2147483648,"
+			 "\"int64_max\":9223372036854775807,"
+			 "\"int64_cero\":0,"
+			 "\"int64_min\":-9223372036854775808"
 			 "}";
 
 	struct test_int_limits limits = {
 		.int_max = INT_MAX,
 		.int_cero = 0,
 		.int_min = INT_MIN,
+		.int64_max = INT64_MAX,
+		.int64_cero = 0,
+		.int64_min = INT64_MIN,
 	};
 
 	char buffer[sizeof(encoded)];

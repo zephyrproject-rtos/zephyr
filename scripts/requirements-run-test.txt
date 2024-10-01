@@ -15,8 +15,5 @@ cbor>=1.0.0
 # use for twister
 psutil
 
-# Artifacts package creation
-bz
-
 # used for CAN <=> host testing
 python-can>=4.3.0

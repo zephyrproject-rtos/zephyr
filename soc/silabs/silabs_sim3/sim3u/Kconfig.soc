@@ -1,0 +1,28 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIM3U
+	bool
+	select SOC_FAMILY_SILABS_SIM3
+	help
+	  Enable support for SiM3U MCU series
+
+config SOC_PART_NUMBER_SIM3U167BGM
+	bool
+	select SOC_SERIES_SIM3U
+
+config SOC_PART_NUMBER_SIM3U167AGQ
+	bool
+	select SOC_SERIES_SIM3U
+
+config SOC_SERIES
+	default "sim3u" if SOC_SERIES_SIM3U
+
+config SOC
+	default "sim3u167" if SOC_PART_NUMBER_SIM3U167BGM
+	default "sim3u167" if SOC_PART_NUMBER_SIM3U167AGQ
+
+config SOC_PART_NUMBER
+	default "SiM3U167BGM" if SOC_PART_NUMBER_SIM3U167BGM
+	default "SiM3U167AGQ" if SOC_PART_NUMBER_SIM3U167AGQ

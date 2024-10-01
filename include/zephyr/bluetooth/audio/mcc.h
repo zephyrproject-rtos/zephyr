@@ -17,7 +17,7 @@
  *
  * Updated to the Media Control Profile specification revision 1.0
  *
- * @defgroup bt_gatt_mcc Media Control Client (MCC)
+ * @defgroup bt_mcc Media Control Client (MCC)
  *
  * @since 3.0
  * @version 0.8.0
@@ -30,7 +30,7 @@
 #include <stdbool.h>
 
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 
 #ifdef __cplusplus

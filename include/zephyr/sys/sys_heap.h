@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/mem_stats.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -209,7 +210,15 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem);
  * @param heap Heap to validate
  * @return true, if the heap is valid, otherwise false
  */
+#ifdef CONFIG_SYS_HEAP_VALIDATE
 bool sys_heap_validate(struct sys_heap *heap);
+#else
+static inline bool sys_heap_validate(struct sys_heap *heap)
+{
+	ARG_UNUSED(heap);
+	return true;
+}
+#endif
 
 /** @brief sys_heap stress test rig
  *

@@ -1,0 +1,19 @@
+identifier: esp8684_devkitm
+name: ESP8684
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+  - counter
+  - entropy
+  - pwm
+  - spi
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

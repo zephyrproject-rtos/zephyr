@@ -332,7 +332,7 @@ Flashing an application to the Olimex-STM32-H407
 Connect the ARM-USB-OCD-H debugger to your host computer and to the JTAG port
 of the OLIMEX-STM32-H407 board. Then build and flash an application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -357,7 +357,7 @@ Debugging
 =========
 
 Provided that you have a JTAG probe, you can debug an application in the usual
-way.  Here is an example for the :ref:`hello_world` application.
+way.  Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

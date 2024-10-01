@@ -9,6 +9,7 @@ config VIDEO_STM32_DCMI
 	bool "STM32 Digital camera interface (DCMI) driver"
 	default y
 	depends on DT_HAS_ST_STM32_DCMI_ENABLED
+	select PINCTRL
 	select USE_STM32_HAL_DCMI
 	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
 	select DMA if $(DT_STM32_DCMI_HAS_DMA)
@@ -16,7 +17,3 @@ config VIDEO_STM32_DCMI
 	select USE_STM32_HAL_DMA_EX if $(DT_STM32_DCMI_HAS_DMA)
 	help
 	  Enable driver for STM32 Digital camera interface periheral.
-
-module = STM32_DCMI
-module-str = stm32_dcmi
-source "subsys/logging/Kconfig.template.log_config"

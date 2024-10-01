@@ -189,14 +189,16 @@ static int vcnl4040_pm_action(const struct device *dev,
 	uint16_t ps_conf;
 
 	ret = vcnl4040_read(dev, VCNL4040_REG_PS_CONF, &ps_conf);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 	uint16_t als_conf;
 
 	ret = vcnl4040_read(dev, VCNL4040_REG_ALS_CONF, &als_conf);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 #endif
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -205,16 +207,18 @@ static int vcnl4040_pm_action(const struct device *dev,
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
 					ps_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 		/* Clear als shutdown */
 		als_conf &= ~VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
 					als_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
@@ -223,16 +227,18 @@ static int vcnl4040_pm_action(const struct device *dev,
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_PS_CONF,
 					ps_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #ifdef CONFIG_VCNL4040_ENABLE_ALS
 		/* Clear als shutdown bit 0 */
 		als_conf |= VCNL4040_ALS_SD_MASK;
 
 		ret = vcnl4040_write(dev, VCNL4040_REG_ALS_CONF,
 					als_conf);
-		if (ret < 0)
+		if (ret < 0) {
 			return ret;
+		}
 #endif
 		break;
 	default:

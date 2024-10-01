@@ -45,7 +45,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	}
 }
 
-static int renesas_da1469x_pm_init(void)
+int renesas_da1469x_pm_init(void)
 {
 	static const struct da1469x_sleep_config sleep_cfg = {
 		.enable_xtal_on_wakeup = DT_NODE_HAS_STATUS(DT_NODELABEL(xtal32m), okay),
@@ -55,5 +55,3 @@ static int renesas_da1469x_pm_init(void)
 
 	return 0;
 }
-
-SYS_INIT(renesas_da1469x_pm_init, PRE_KERNEL_2, 2);

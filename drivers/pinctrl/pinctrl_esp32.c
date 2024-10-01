@@ -12,7 +12,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
 
-#ifdef CONFIG_SOC_SERIES_ESP32C3
+#ifdef CONFIG_SOC_SERIES_ESP32C2
+#define out	out.val
+#define in	in.val
+#define out_w1ts out_w1ts.val
+#define out_w1tc out_w1tc.val
+#elif CONFIG_SOC_SERIES_ESP32C3
 /* gpio structs in esp32c3 series are different from xtensa ones */
 #define out out.data
 #define in in.data

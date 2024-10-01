@@ -705,7 +705,7 @@ static int it82xx2_xfer_in_data(const struct device *dev, uint8_t ep, struct net
 		it82xx2_usb_fifo_ctrl(dev, ep);
 	}
 
-	len = MIN(buf->len, ep_cfg->mps);
+	len = MIN(buf->len, udc_mps_ep_size(ep_cfg));
 
 	for (size_t i = 0; i < len; i++) {
 		ff_regs[fifo_idx].ep_tx_fifo_data = buf->data[i];
@@ -874,7 +874,7 @@ static inline int work_handler_in(const struct device *dev, uint8_t ep)
 	}
 	ep_cfg = udc_get_ep_cfg(dev, ep);
 
-	net_buf_pull(buf, MIN(buf->len, ep_cfg->mps));
+	net_buf_pull(buf, MIN(buf->len, udc_mps_ep_size(ep_cfg)));
 
 	it82xx2_usb_set_ep_ctrl(dev, ep, EP_DATA_SEQ_TOGGLE, true);
 
@@ -1016,7 +1016,7 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	if (len > ep_cfg->mps) {
+	if (len > udc_mps_ep_size(ep_cfg)) {
 		LOG_ERR("Failed to handle this packet due to the packet size");
 		return -ENOBUFS;
 	}

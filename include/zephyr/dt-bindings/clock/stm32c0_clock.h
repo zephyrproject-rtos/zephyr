@@ -63,6 +63,9 @@
 /** @brief RCC_CSR1 register offset */
 #define CSR1_REG		0x5C
 
+/** @brief RCC_CFGRx register offset */
+#define CFGR1_REG               0x08
+
 /** @brief Device domain clocks selection helpers */
 /** CCIPR devices */
 #define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR_REG)
@@ -71,5 +74,11 @@
 #define ADC_SEL(val)		STM32_CLOCK(val, 3, 30, CCIPR_REG)
 /** CSR1 devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, CSR1_REG)
+
+/** CFGR1 devices */
+#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR1_REG)
+#define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 28, CFGR1_REG)
+#define MCO2_SEL(val)           STM32_MCO_CFGR(val, 0x7, 16, CFGR1_REG)
+#define MCO2_PRE(val)           STM32_MCO_CFGR(val, 0x7, 20, CFGR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32C0_CLOCK_H_ */

@@ -15,7 +15,7 @@ config ESP_SPIRAM
 	default y if !MCUBOOT
 
 choice SPIRAM_TYPE
-	default SPIRAM_TYPE_ESPPSRAM64
+	default SPIRAM_TYPE_ESPPSRAM32
 endchoice
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD

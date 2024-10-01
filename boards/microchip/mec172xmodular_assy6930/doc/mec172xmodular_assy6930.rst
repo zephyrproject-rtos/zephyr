@@ -241,7 +241,7 @@ Wiring
 Building
 ========
 
-#. Build :ref:`hello_world` application as you would normally do.
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do.
 
 #. The file :file:`spi_image.bin` will be created if the build system
    can find the image generation tool. This binary image can be used

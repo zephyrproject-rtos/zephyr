@@ -20,7 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell_string_conv.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static struct bt_has *inst;
 

@@ -464,6 +464,65 @@ afterwards detach the debug session:
 
    west debug --tool-opt='--batch'
 
+probe-rs Debug Host Tools
+*************************
+
+probe-rs is an open-source embedded toolkit written in Rust. It provides
+out-of-the-box support for a variety of debug probes, including CMSIS-DAP,
+ST-Link, SEGGER J-Link, FTDI and built-in USB-JTAG interface on ESP32 devices.
+
+Check `probe-rs Installation`_ for more setup details.
+
+Check if your SoC is listed in `probe-rs Supported Devices`_.
+
+.. _stm32cubeprog-flash-host-tools:
+
+STM32CubeProgrammer Flash Host Tools
+************************************
+
+STMicroelectronics provides `STM32CubeProgrammer`_ (STM32CubeProg) as an official programming tool
+for STM32 boards on Linux |reg|, macOS |reg|, and Windows |reg| operating systems.
+
+It provides an easy-to-use and efficient environment for reading, writing, and verifying device memory
+through both the debug interface (JTAG and SWD) and the bootloader interface (UART and USB DFU, I2C, SPI, and CAN).
+
+It offers a wide range of features to program STM32 internal memories (such as flash, RAM, and OTP)
+as well as external memories.
+
+It also allows option programming and upload, programming content verification, and programming automation
+through scripting.
+
+It is delivered in GUI (graphical user interface) and CLI (command-line interface) versions.
+
+It is compatible with the following debug probes:
+
+- :ref:`stlink-v21-onboard-debug-probe`
+- :ref:`jlink-external-debug-probe`
+- Standalone `ST-LINK-V2`_, `ST-LINK-V3`_, and `STLINK-V3PWR`_ probes
+
+Install STM32CubeProgrammer
+---------------------------
+
+The easiest way to get `STM32CubeProgrammer`_ is to download it from STMicroelectronics website.
+A valid email address is needed to receive the downloading link.
+
+Alternatively, it can be installed as part of `STM32CubeCLT`_ all-in-one multi-OS command-line toolset
+which also includes GDB debugger client and server.
+
+If you have STM32CubeIDE installed on your system, then STM32CubeProg is already present.
+
+Basic usage
+-----------
+
+`STM32CubeProgrammer`_ is setup as the default west runner for all active STM32 boards supported by Zephyr.
+It can be used through the ``west flash`` command to flash Zephyr applications.
+
+.. code-block:: console
+
+   west flash --runner stm32cubeprogrammer
+
+For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User Manual`_.
+
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack
 
@@ -508,3 +567,27 @@ afterwards detach the debug session:
 
 .. _S32 Design Studio for S32 Platform Installation User Guide:
    https://www.nxp.com/webapp/Download?colCode=S32DSIG
+
+.. _probe-rs Installation:
+   https://probe.rs/docs/getting-started/installation/
+
+.. _probe-rs Supported Devices:
+   https://probe.rs/targets/
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _STM32CubeCLT:
+   https://www.st.com/en/development-tools/stm32cubeclt.html
+
+.. _STM32CubeProgrammer User Manual:
+   https://www.st.com/resource/en/user_manual/um2237-stm32cubeprogrammer-software-description-stmicroelectronics.pdf
+
+.. _ST-LINK-V2:
+   https://www.st.com/en/development-tools/st-link-v2.html
+
+.. _ST-LINK-V3:
+   https://www.st.com/en/development-tools/stlink-v3set.html
+
+.. _STLINK-V3PWR:
+   https://www.st.com/en/development-tools/stlink-v3pwr.html

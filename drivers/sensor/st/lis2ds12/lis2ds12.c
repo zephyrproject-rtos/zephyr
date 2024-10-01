@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <string.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/sensor/lis2ds12.h>
@@ -175,9 +174,9 @@ static int lis2ds12_sample_fetch_accel(const struct device *dev)
 		return -EIO;
 	}
 
-	data->sample_x = sys_le16_to_cpu(buf[0]);
-	data->sample_y = sys_le16_to_cpu(buf[1]);
-	data->sample_z = sys_le16_to_cpu(buf[2]);
+	data->sample_x = buf[0];
+	data->sample_y = buf[1];
+	data->sample_z = buf[2];
 
 	return 0;
 }

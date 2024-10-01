@@ -8,6 +8,7 @@ config SOC_SERIES_IMX7D
 	select CLOCK_CONTROL
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_MCIMX7D_M4
 	select HAS_IMX_HAL

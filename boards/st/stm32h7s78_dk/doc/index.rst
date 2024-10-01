@@ -240,6 +240,8 @@ assigned to USART4. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool interface.
+
 Applications for the ``stm32h7s78_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -247,17 +249,15 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32H7S78-DK Discovery board includes an ST-LINK/V3E embedded debug tool
-interface. Support is available on STM32CubeProgrammer V2.13.0.
-
-Alternatively, this interface will be supported by a next openocd version.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
 
 Flashing an application to STM32H7S78-DK Discovery
 --------------------------------------------------
 
 Connect the STM32H7S78-DK Discovery to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -282,7 +282,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -24,7 +24,7 @@ int usbd_ep_enable(const struct device *dev,
 	int ret;
 
 	ret = udc_ep_enable(dev, ed->bEndpointAddress, ed->bmAttributes,
-			    ed->wMaxPacketSize, ed->bInterval);
+			    sys_le16_to_cpu(ed->wMaxPacketSize), ed->bInterval);
 	if (ret == 0) {
 		usbd_ep_bm_set(ep_bm, ed->bEndpointAddress);
 	}

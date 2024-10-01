@@ -103,7 +103,7 @@ static int modem_backend_tty_close(void *data)
 	return 0;
 }
 
-struct modem_pipe_api modem_backend_tty_api = {
+static const struct modem_pipe_api modem_backend_tty_api = {
 	.open = modem_backend_tty_open,
 	.transmit = modem_backend_tty_transmit,
 	.receive = modem_backend_tty_receive,

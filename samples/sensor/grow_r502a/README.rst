@@ -1,7 +1,8 @@
-.. _grow_r502a:
+.. zephyr:code-sample:: grow_r502a
+   :name: GROW R502-A Fingerprint Sensor
+   :relevant-api: sensor_interface
 
-GROW_R502A Fingerprint Sensor
-#############################
+   Store and match fingerprints using the GROW R502-A fingerprint sensor.
 
 Overview
 ********

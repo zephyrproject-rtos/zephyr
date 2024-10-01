@@ -1,7 +1,8 @@
-.. _max17262:
+.. zephyr:code-sample:: max17262
+   :name: MAX17262 Fuel Gauge Sensor
+   :relevant-api: sensor_interface
 
-MAX17262 Fuel Gauge Sensor
-###################################
+   Get voltage, current and temperature data from a MAX17262 sensor (polling mode).
 
 Overview
 ********

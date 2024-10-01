@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 FMC display controller
+compatible: "st,stm32-fmc-mipi-dbi"
+
+include: ["mipi-dbi-controller.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Set high to reset the display
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Power GPIO pin. Set high to power the display.
+
+  register-select-pin:
+    type: int
+    required: true
+    description: |
+      Address pin used as Register Select for the display controller.

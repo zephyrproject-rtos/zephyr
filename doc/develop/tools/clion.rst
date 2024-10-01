@@ -58,12 +58,10 @@ not happen, go to :menuselection:`Settings --> Build, Execution, Deployment --> 
 #. Click :menuselection:`Add environment --> From file` and select
    ``..\.venv\Scripts\activate.bat``.
 
-   .. only:: html
-
-      .. figure:: img/clion_toolchain_mingw.webp
-         :width: 600px
-         :align: center
-         :alt: MinGW toolchain with environment script
+   .. figure:: img/clion_toolchain_mingw.webp
+      :width: 600px
+      :align: center
+      :alt: MinGW toolchain with environment script
 
    Click :guilabel:`Apply` to save the changes.
 
@@ -74,12 +72,10 @@ not happen, go to :menuselection:`Settings --> Build, Execution, Deployment --> 
 
       -DBOARD=nrf52840dk/nrf52840
 
-   .. only:: html
-
-      .. figure:: img/clion_cmakeprofile.webp
-         :width: 600px
-         :align: center
-         :alt: CMake profile
+   .. figure:: img/clion_cmakeprofile.webp
+      :width: 600px
+      :align: center
+      :alt: CMake profile
 
 #. Click :guilabel:`Apply` to save the changes.
 
@@ -170,21 +166,17 @@ your setup is different, make sure to adjust the configuration settings accordin
         * - :guilabel:`TCP/IP port`
           - Auto
 
-   .. only:: html
-
-      .. figure:: img/clion_gdbserverconfig.webp
-         :width: 500px
-         :align: center
-         :alt: Embedded GDB server configuration
+    .. figure:: img/clion_gdbserverconfig.webp
+       :width: 500px
+       :align: center
+       :alt: Embedded GDB server configuration
 
 #. Click :guilabel:`Next` to set the Segger J-Link parameters.
 
-   .. only:: html
-
-      .. figure:: img/clion_segger_settings.webp
-         :width: 500px
-         :align: center
-         :alt: Segger J-Link parameters
+    .. figure:: img/clion_segger_settings.webp
+       :width: 500px
+       :align: center
+       :alt: Segger J-Link parameters
 
 #. Click :guilabel:`Create` when ready.
 
@@ -201,12 +193,10 @@ Start debugging
    Zephyr tasks are listed in the :guilabel:`Threads & Variables` pane. You can switch between them
    and inspect the variables for each task.
 
-   .. only:: html
-
-      .. figure:: img/clion_debug_threads.webp
-         :width: 800px
-         :align: center
-         :alt: Viewing Zephyr tasks during a debug session
+    .. figure:: img/clion_debug_threads.webp
+       :width: 800px
+       :align: center
+       :alt: Viewing Zephyr tasks during a debug session
 
    Refer to `CLion web help`_ for detailed description of the IDE debug capabilities.
 

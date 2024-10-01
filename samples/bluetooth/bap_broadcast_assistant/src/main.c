@@ -1,20 +1,33 @@
 /*
  * Copyright (c) 2024 Demant A/S
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <strings.h>
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
+#include <strings.h>
 
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/types.h>
 
 #define NAME_LEN 30
 #define PA_SYNC_SKIP         5
@@ -181,7 +194,7 @@ static bool add_pa_sync_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_b
 {
 	struct bt_bap_bass_subgroup *subgroup_param = user_data;
 
-	subgroup_param->bis_sync |= BIT(bis->index);
+	subgroup_param->bis_sync |= BT_ISO_BIS_INDEX_BIT(bis->index);
 
 	return true;
 }
@@ -439,7 +452,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(broadcast_sink_conn);
 		broadcast_sink_conn = NULL;
@@ -466,7 +479,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(broadcast_sink_conn);
 	broadcast_sink_conn = NULL;
@@ -481,7 +494,7 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 		printk("Security level changed: %u\n", level);
 		k_sem_give(&sem_security_updated);
 	} else {
-		printk("Failed to set security level: %u\n", err);
+		printk("Failed to set security level: %s(%u)\n", bt_security_err_to_str(err), err);
 	}
 }
 

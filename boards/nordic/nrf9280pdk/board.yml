@@ -1,0 +1,8 @@
+board:
+  name: nrf9280pdk
+  vendor: nordic
+  socs:
+  - name: nrf9280
+    variants:
+    - name: xip
+      cpucluster: cpuppr

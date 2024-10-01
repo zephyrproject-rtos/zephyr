@@ -78,8 +78,9 @@ static inline int z_impl_hwspinlock_trylock(const struct device *dev, uint32_t i
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
 
-	if (api->trylock == NULL)
+	if (api->trylock == NULL) {
 		return -ENOSYS;
+	}
 
 	return api->trylock(dev, id);
 }
@@ -100,8 +101,9 @@ static inline void z_impl_hwspinlock_lock(const struct device *dev, uint32_t id)
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
 
-	if (api->lock != NULL)
+	if (api->lock != NULL) {
 		api->lock(dev, id);
+	}
 }
 
 /**
@@ -120,8 +122,9 @@ static inline void z_impl_hwspinlock_unlock(const struct device *dev, uint32_t i
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
 
-	if (api->unlock != NULL)
+	if (api->unlock != NULL) {
 		api->unlock(dev, id);
+	}
 }
 
 /**
@@ -142,8 +145,9 @@ static inline uint32_t z_impl_hwspinlock_get_max_id(const struct device *dev)
 	const struct hwspinlock_driver_api *api =
 		(const struct hwspinlock_driver_api *)dev->api;
 
-	if (api->get_max_id == NULL)
+	if (api->get_max_id == NULL) {
 		return 0;
+	}
 
 	return api->get_max_id(dev);
 }

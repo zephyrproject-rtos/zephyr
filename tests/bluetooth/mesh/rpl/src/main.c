@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/mesh.h>
 
 #include "settings.h"
@@ -59,7 +59,7 @@ static void prepare_rpl_and_start_reset(void)
 
 		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 				   BT_MESH_SETTINGS_RPL_PENDING);
-		zassert_false(bt_mesh_rpl_check(&msg, NULL));
+		zassert_false(bt_mesh_rpl_check(&msg, NULL, false));
 	}
 
 	/* settings_save_one() will be triggered for all new entries when
@@ -79,7 +79,7 @@ static void prepare_rpl_and_start_reset(void)
 			.seq = test_vector[i].seq,
 		};
 
-		zassert_true(bt_mesh_rpl_check(&msg, NULL));
+		zassert_true(bt_mesh_rpl_check(&msg, NULL, false));
 	}
 
 	/* Simulate IVI Update. This should only flip flags. The actual storing will happen
@@ -108,9 +108,9 @@ static void check_entries_from_test_vector(void)
 		if (test_vector[i].old_iv) {
 			ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 					   BT_MESH_SETTINGS_RPL_PENDING);
-			zassert_false(bt_mesh_rpl_check(&msg, NULL));
+			zassert_false(bt_mesh_rpl_check(&msg, NULL, false));
 		} else {
-			zassert_true(bt_mesh_rpl_check(&msg, NULL));
+			zassert_true(bt_mesh_rpl_check(&msg, NULL, false));
 		}
 	}
 }
@@ -128,7 +128,7 @@ static void check_empty_entries(int cnt)
 
 		ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 				   BT_MESH_SETTINGS_RPL_PENDING);
-		zassert_false(bt_mesh_rpl_check(&msg, NULL));
+		zassert_false(bt_mesh_rpl_check(&msg, NULL, false));
 	}
 
 	/* Check that there are no more empty entries in RPL. */
@@ -138,7 +138,7 @@ static void check_empty_entries(int cnt)
 		.old_iv = false,
 		.seq = 1024,
 	};
-	zassert_true(bt_mesh_rpl_check(&msg, NULL));
+	zassert_true(bt_mesh_rpl_check(&msg, NULL, false));
 }
 
 static void check_op(int op)
@@ -149,7 +149,7 @@ static void check_op(int op)
 		} else {
 			ztest_expect_value(bt_mesh_settings_store_schedule, flag,
 					   BT_MESH_SETTINGS_RPL_PENDING);
-			zassert_false(bt_mesh_rpl_check(&recv_msg, NULL));
+			zassert_false(bt_mesh_rpl_check(&recv_msg, NULL, false));
 
 			settings_func_cnt--;
 			settings_func = 0;
@@ -466,6 +466,6 @@ ZTEST(bt_mesh_rpl_reset, test_rpl_check_on_save_new_entry)
 		.old_iv = entry.old_iv,
 		.seq = entry.seq
 	};
-	zassert_true(bt_mesh_rpl_check(&msg, NULL));
+	zassert_true(bt_mesh_rpl_check(&msg, NULL, false));
 	check_empty_entries(EMPTY_ENTRIES_CNT - 1);
 }

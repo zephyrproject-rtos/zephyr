@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdmmc1 {
+	dmas = <&dma2 6 4 0x30000 0x00>, <&dma2 3 4 0x30000 0x00>;
+	dma-names = "tx", "rx";
+};
+
+&dma2 {
+	status = "okay";
+};

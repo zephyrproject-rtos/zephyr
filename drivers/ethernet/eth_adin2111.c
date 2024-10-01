@@ -1061,8 +1061,9 @@ static int eth_adin2111_find_filter(const struct device *dev, uint8_t *mac, cons
 		}
 		if ((reg & UINT16_MAX) == sys_get_be16(&mac[0])) {
 			if ((port_idx == 0 && !(reg & ADIN2111_ADDR_APPLY2PORT1)) ||
-			    (port_idx == 1 && !(reg & ADIN2111_ADDR_APPLY2PORT2)))
+			    (port_idx == 1 && !(reg & ADIN2111_ADDR_APPLY2PORT2))) {
 				continue;
+			}
 
 			ret = eth_adin2111_reg_read(dev, ADIN2111_ADDR_FILT_LWR + offset, &reg);
 			if (ret < 0) {

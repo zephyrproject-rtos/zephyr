@@ -185,10 +185,16 @@
 	#define sys_port_trace_pm_is_disabled 1
 #endif
 
-#if defined(CONFIG_TRACING_NETWORKING)
+#if defined(CONFIG_TRACING_NET_SOCKETS)
 	#define sys_port_trace_type_mask_socket(trace_call) trace_call
 #else
 	#define sys_port_trace_type_mask_socket(trace_call)
+#endif
+
+#if defined(CONFIG_TRACING_NET_CORE)
+	#define sys_port_trace_type_mask_net(trace_call) trace_call
+#else
+	#define sys_port_trace_type_mask_net(trace_call)
 #endif
 
 /*

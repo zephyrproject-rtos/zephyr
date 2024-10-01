@@ -23,6 +23,7 @@
 .github/workflows/stale-workflow-queue-cleanup.yml
 .github/workflows/greet_first_time_contributor.yml
 .github/workflows/issues-report-config.json
+.github/workflows/backport_issue_check.yml
 CODEOWNERS
 MAINTAINERS.yml
 LICENSE
@@ -38,6 +39,9 @@ doc/*
 # twister.
 scripts/ci/test_plan.py
 scripts/ci/twister_ignore.txt
+scripts/ci/check_compliance.py
+scripts/ci/errno.py
+scripts/ci/upload_test_results_es.py
 scripts/ci/what_changed.py
 scripts/ci/version_mgr.py
 scripts/ci/stats/*

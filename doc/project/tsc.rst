@@ -239,4 +239,4 @@ once cast, between the time a Motion is brought forth and the time at which
 results are announced.
 
 .. _Zephyr project charter:
-   https://www.zephyrproject.org/wp-content/uploads/sites/38/2023/08/LF-Zephyr-Charter-2023.08.21.pdf
+   https://www.zephyrproject.org/wp-content/uploads/2023/08/LF-Zephyr-Charter-2023.08.21.pdf

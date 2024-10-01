@@ -79,21 +79,17 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 }
 
-static int kl2x_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize system clock to 48 MHz */
 	clock_init();
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(kl2x_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

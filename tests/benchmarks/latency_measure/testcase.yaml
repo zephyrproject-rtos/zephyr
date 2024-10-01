@@ -13,6 +13,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_arc/qemu_arc_em
+      - qemu_riscv64/qemu_virt_riscv64/smp
     harness_config:
       type: one_line
       record:

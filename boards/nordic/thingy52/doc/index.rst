@@ -376,7 +376,7 @@ The green lightwell LED can be tested with the :zephyr:code-sample:`blinky` exam
 
 
 
-Also the temperature and humidity sensor can be tested with the :ref:`hts221`
+Also the temperature and humidity sensor can be tested with the :zephyr:code-sample:`hts221`
 sample.
 
 .. zephyr-app-commands::

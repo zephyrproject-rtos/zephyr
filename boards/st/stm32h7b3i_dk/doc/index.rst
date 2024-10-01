@@ -196,6 +196,8 @@ default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
+
 Applications for the ``stm32h7b3i_dk`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -203,8 +205,16 @@ flashed in the usual way (see :ref:`build_an_application` and
 Flashing
 ========
 
-STM32H7B3I Discovery kit includes an STLINK-V3E embedded debug tool interface.
-This interface is supported by the openocd version included in the Zephyr SDK.
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner,
+so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
 
 Flashing may depend on the SoC option bytes configuration, which can be checked and
 updated using `STM32CubeProgrammer`_.
@@ -215,7 +225,7 @@ Flashing an application to STM32H7B3I
 First, connect the STM32H7B3I Discovery kit to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -238,7 +248,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

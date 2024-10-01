@@ -274,6 +274,9 @@ static int spi_sifive_release(const struct device *dev,
 
 static const struct spi_driver_api spi_sifive_api = {
 	.transceive = spi_sifive_transceive,
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_sifive_release,
 };
 

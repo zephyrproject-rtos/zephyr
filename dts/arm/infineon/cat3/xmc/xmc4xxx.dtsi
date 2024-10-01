@@ -233,7 +233,15 @@
 		wdt0: watchdog@50008000 {
 			compatible = "infineon,xmc4xxx-watchdog";
 			reg = <0x50008000 0x4000>;
-			interrupts = <0 1>;
+			interrupts = <0 1>; // shared interrupt line with rtc
+			status = "disabled";
+		};
+
+		rtc: rtc@50004a00 {
+			compatible = "infineon,xmc4xxx-rtc";
+			reg = <0x50004a00 0x200>;
+			interrupts = <0 1>; // shared interrupt line with wdt0
+			alarms-count = <1>;
 			status = "disabled";
 		};
 

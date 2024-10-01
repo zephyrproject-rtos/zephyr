@@ -21,7 +21,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static struct bt_micp_mic_ctlr *micp_mic_ctlr;
 #if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)

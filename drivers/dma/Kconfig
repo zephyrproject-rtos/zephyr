@@ -62,11 +62,15 @@ source "drivers/dma/Kconfig.intel_lpss"
 
 source "drivers/dma/Kconfig.mcux_pxp"
 
+source "drivers/dma/Kconfig.max32"
+
 source "drivers/dma/Kconfig.mcux_smartdma"
 
 source "drivers/dma/Kconfig.andes_atcdmac300"
 
 source "drivers/dma/Kconfig.sedi"
+
+source "drivers/dma/Kconfig.si32"
 
 source "drivers/dma/Kconfig.smartbond"
 
@@ -75,5 +79,7 @@ source "drivers/dma/Kconfig.nxp_sof_host_dma"
 source "drivers/dma/Kconfig.emul"
 
 source "drivers/dma/Kconfig.nxp_edma"
+
+source "drivers/dma/Kconfig.dw_axi_dmac"
 
 endif # DMA

@@ -116,17 +116,17 @@ static int nxp_lpc54114_init(void)
 
 SYS_INIT(nxp_lpc54114_init, PRE_KERNEL_1, 0);
 
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114_M0)
+#if defined(CONFIG_SOC_RESET_HOOK) && defined(CONFIG_SOC_LPC54114_M0)
 
 /* M4 core has a custom platform initialization routine in assembly,
  * but M0 core does not. install one here to call SystemInit.
  */
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
+#endif /* CONFIG_SOC_RESET_HOOK */
 
 
 #if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_LPC54114_M4)

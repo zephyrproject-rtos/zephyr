@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,6 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "spi_nxp_s32.h"
-
-extern Spi_Ip_StateStructureType * Spi_Ip_apxStateStructureArray[SPI_INSTANCE_COUNT];
 
 static bool spi_nxp_s32_last_packet(struct spi_nxp_s32_data *data)
 {
@@ -45,6 +43,7 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 
 	Spi_Ip_StatusType status;
 	Spi_Ip_CallbackType data_cb;
+	Spi_Ip_TransferAdjustmentType param;
 
 #ifdef CONFIG_NXP_S32_SPI_INTERRUPT
 	data_cb = config->cb;
@@ -56,12 +55,9 @@ static int spi_nxp_s32_transfer_next_packet(const struct device *dev)
 	data->transfer_len = MIN(data->transfer_len,
 					SPI_NXP_S32_MAX_BYTES_PER_PACKAGE(data->bytes_per_frame));
 
-	/*
-	 * Keep CS signal asserted until the last package, there is no other way
-	 * than directly intervening to internal state of low level driver
-	 */
-	Spi_Ip_apxStateStructureArray[config->spi_hw_cfg->Instance]->KeepCs =
-		!spi_nxp_s32_last_packet(data);
+	param.KeepCs = !spi_nxp_s32_last_packet(data);
+	param.DeviceParams = NULL;
+	Spi_Ip_UpdateTransferParam(&data->transfer_cfg, &param);
 
 	status = Spi_Ip_AsyncTransmit(&data->transfer_cfg, (uint8_t *)data->ctx.tx_buf,
 						data->ctx.rx_buf, data->transfer_len, data_cb);
@@ -608,6 +604,9 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_nxp_s32_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = spi_nxp_s32_release,
 };
 
@@ -705,7 +704,7 @@ static const struct spi_driver_api spi_nxp_s32_driver_api = {
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)			\
 	};										\
 	DEVICE_DT_INST_DEFINE(n,							\
-			&spi_nxp_s32_init, NULL,					\
+			spi_nxp_s32_init, NULL,						\
 			&spi_nxp_s32_data_##n, &spi_nxp_s32_config_##n,			\
 			POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,				\
 			&spi_nxp_s32_driver_api);

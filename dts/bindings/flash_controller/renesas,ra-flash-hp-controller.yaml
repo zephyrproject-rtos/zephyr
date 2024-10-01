@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA family flash high-performance controller
+
+compatible: "renesas,ra-flash-hp-controller"
+
+include: flash-controller.yaml

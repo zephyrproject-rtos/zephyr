@@ -1,0 +1,42 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic FLL16M
+
+  The FLL16M can use the following clocks as clock sources:
+
+    - HFXO: The HFXO clock is used as a clock source if the
+      FLL16M mode is BYPASS, or if the FLL16M mode is
+      closed-loop and the LFXO clock is not available.
+
+    - LFXO: The LFXO clock is used as a clock source if the
+      FLL16M mode is closed-loop and the LFXO clock is
+      available.
+
+  Devicetree example:
+
+    fll16m {
+            open-loop-accuracy-ppm = <20000>;
+            closed-loop-base-accuracy-ppm = <5000>;
+            clocks = <&hfxo>, <&lfxo>;
+            clock-names = "hfxo", "lfxo";
+    };
+
+compatible: "nordic,nrf-fll16m"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 16000000
+
+  open-loop-accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million if open-loop clock source is used.
+
+  closed-loop-base-accuracy-ppm:
+    type: int
+    description: |
+      Base clock accuracy in parts per million if closed-loop clock source is used.
+      The actual accuracy is this property plus the accuracy of the HFXO or LFXO.

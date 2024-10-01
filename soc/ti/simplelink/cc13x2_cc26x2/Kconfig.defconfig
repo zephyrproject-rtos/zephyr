@@ -30,12 +30,12 @@ config IEEE802154_CC13XX_CC26XX_SUB_GHZ
 
 endif # IEEE802154
 
-if BT
+if BT || CC13X2_CC26X2_BASIC_BT
 
 config BLE_CC13XX_CC26XX
 	bool
 	default y
 
-endif # BT
+endif # BT || CC13X2_CC26X2_BASIC_BT
 
 endif # SOC_SERIES_CC13X2_CC26X2

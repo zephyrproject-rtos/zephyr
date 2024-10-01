@@ -7,17 +7,19 @@
 #include <st/f0/stm32f031.dtsi>
 
 / {
+
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32f042", "st,stm32f0", "simple-bus";
 
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
-			};
-		};
 
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";

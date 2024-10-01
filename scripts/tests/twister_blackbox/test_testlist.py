@@ -31,7 +31,7 @@ class TestTestlist:
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_save_tests(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
         saved_tests_file_path = os.path.realpath(os.path.join(out_path, '..', 'saved-tests.json'))
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \

@@ -190,7 +190,7 @@ static int dht20_read_sample(const struct device *dev, uint32_t *t_sample, uint3
 
 #if defined(CONFIG_DHT20_CRC)
 	/* Compute and check CRC with last byte of measurement data */
-	crc = crc8(rx_buf, 6, DHT20_CRC_POLYNOM, 0xFF, false);
+	uint8_t crc = crc8(rx_buf, 6, DHT20_CRC_POLYNOM, 0xFF, false);
 
 	if (crc != rx_buf[6]) {
 		rc = -EIO;

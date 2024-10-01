@@ -19,7 +19,7 @@ if SSD1306
 config SSD1306_DEFAULT_CONTRAST
 	int "SSD1306 default contrast"
 	default 128
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  SSD1306 default contrast.
 

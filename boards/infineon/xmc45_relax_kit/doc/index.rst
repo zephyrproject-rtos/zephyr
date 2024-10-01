@@ -63,6 +63,8 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 | PTP       | on-chip    | ethernet              |
 +-----------+------------+-----------------------+
+| RTC       | on-chip    | rtc                   |
++-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4500 TRM`_
 Other hardware features are not currently supported by the Zephyr kernel.
@@ -72,7 +74,7 @@ Building and Flashing
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -82,7 +84,7 @@ Here is an example for the :ref:`hello_world` application.
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

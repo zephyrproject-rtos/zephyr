@@ -54,11 +54,12 @@ The following configuration option must me enabled in :file:`prj.conf` file.
 Application interfaces
 **********************
 
-Only two Application Interfaces as defined in section 9 of the standard
+The following Application Interfaces as defined in section 9 of the standard
 are available:
 
+- ``ClockSourceTime`` interface (:c:func:`gptp_clk_src_time_invoke`)
 - ``ClockTargetPhaseDiscontinuity`` interface (:c:func:`gptp_register_phase_dis_cb`)
-- ``ClockTargetEventCapture`` interface  (:c:func:`gptp_event_capture`)
+- ``ClockTargetEventCapture`` interface (:c:func:`gptp_event_capture`)
 
 Testing
 *******

@@ -93,6 +93,14 @@ config CPU_CORTEX_R7
 	help
 	  This option signifies the use of a Cortex-R7 CPU
 
+config CPU_CORTEX_R8
+	bool
+	select CPU_AARCH32_CORTEX_R
+	select ARMV7_R
+	select ARMV7_R_FP if CPU_HAS_FPU
+	help
+	  This option signifies the use of a Cortex-R8 CPU
+
 config CPU_CORTEX_R52
 	bool
 	select CPU_AARCH32_CORTEX_R

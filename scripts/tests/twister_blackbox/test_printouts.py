@@ -83,7 +83,7 @@ class TestPrintOuts:
     TESTDATA_4 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f']
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb']
         )
     ]
 
@@ -271,7 +271,7 @@ class TestPrintOuts:
 
     @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
     def test_size(self, capfd, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                [val for pair in zip(

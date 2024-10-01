@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This is a representation of an external radio coexistence setup for coexistence
+  with nRF70 WiFi chips.
+
+properties:
+  req-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SOC connected to the PTA's REQUEST pin.
+
+  status0-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SOC connected to the PTA's PRIORITY pin.
+      This GPIO is also used to indicate direction (TX/RX).
+
+  grant-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SOC connected to the PTA's GRANT pin.
+
+  swctrl1-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the SOC controlling the Priority (STATUS1) pin (in 4-wire
+      coex case) of the nRF7002
+
+  srrf-switch-gpios:
+    type: phandle-array
+    description: |
+      GPIO of the RF Switch to control SR RF output to either SR Antenna
+      or shared Antenna with Wi-Fi

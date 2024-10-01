@@ -97,6 +97,11 @@ Programming and Debugging
 
 The CYW920829M2EVK-02 includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
+The CYW920829M2EVK-02 supports RTT via a SEGGER JLink device, under the target name cyw20829_tm. This can be enabled for an application by building with the rtt-console snippet or setting the following config values: CONFIG_UART_CONSOLE=n, CONFIG_RTT_CONSOLE=y, and CONFIG_USE_SEGGER_RTT=y.
+e.g. west build -p always -b cyw920829m2evk_02 samples/basic/blinky -S rtt-console
+
+As an additional note there is currently a discrepancy in RAM address between SEGGER and the CYW920829M2EVK-02 device. So, for RTT control block, do not use "Auto Detection". Instead, set the search range to something reflecting: RAM RangeStart at 0x20000000 and RAM RangeSize of 0x3d000.
+
 Infineon OpenOCD Installation
 =============================
 

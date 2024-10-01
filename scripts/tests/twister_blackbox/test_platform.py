@@ -23,7 +23,7 @@ class TestPlatform:
     TESTDATA_1 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 9,
@@ -42,7 +42,7 @@ class TestPlatform:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'device'),
-            ['qemu_x86', 'qemu_x86_64', 'frdm_k64f'],
+            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
             {
                 'selected_test_scenarios': 1,
                 'selected_test_instances': 3,
@@ -102,7 +102,7 @@ class TestPlatform:
         assert str(sys_exit.value) == expected_returncode
 
     def test_force_platform(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                ['--force-platform'] + \

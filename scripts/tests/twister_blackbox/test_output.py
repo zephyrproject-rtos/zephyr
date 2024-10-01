@@ -14,7 +14,6 @@ import pytest
 import sys
 import json
 
-# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -22,10 +21,14 @@ from twisterlib.testplan import TestPlan
 @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
 class TestOutput:
     TESTDATA_1 = [
-    (
-        os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
-    ),
-]
+        ([]),
+        (['-ll', 'DEBUG']),
+        (['-v']),
+        (['-v', '-ll', 'DEBUG']),
+        (['-vv']),
+        (['-vv', '-ll', 'DEBUG']),
+    ]
+
     @classmethod
     def setup_class(cls):
         apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
@@ -46,7 +49,7 @@ class TestOutput:
         ids=['no-detailed-test-id', 'detailed-test-id']
     )
     def test_detailed_test_id(self, out_path, flag, expect_paths):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
         args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
                [flag] + \
@@ -74,7 +77,7 @@ class TestOutput:
         assert all([testsuite.startswith(expected_start)for _, testsuite, _ in filtered_j])
 
     def test_inline_logs(self, out_path):
-        test_platforms = ['qemu_x86', 'frdm_k64f']
+        test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'always_build_error', 'dummy')
         args = ['--outdir', out_path, '-T', path] + \
                [val for pair in zip(
@@ -149,15 +152,15 @@ class TestOutput:
                     matches = []
         return matches
 
+
     @pytest.mark.parametrize(
-        'test_path',
+        'flags',
         TESTDATA_1,
-        ids=[
-            'single_v',
-        ]
+        ids=['not verbose', 'not verbose + debug', 'v', 'v + debug', 'vv', 'vv + debug']
     )
-    def test_single_v(self, capfd, out_path, test_path):
-        args = ['--outdir', out_path, '-T', test_path, '-v']
+    def test_output_levels(self, capfd, out_path, flags):
+        test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
+        args = ['--outdir', out_path, '-T', test_path, *flags]
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
             pytest.raises(SystemExit) as sys_exit:
@@ -166,35 +169,26 @@ class TestOutput:
         out, err = capfd.readouterr()
         sys.stdout.write(out)
         sys.stderr.write(err)
-        regex_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
-        matches = self._get_matches(err, regex_line)
-        print(matches)
-        assert str(sys_exit.value) == '0'
-        assert len(matches) > 0
-
-    @pytest.mark.parametrize(
-        'test_path',
-        TESTDATA_1,
-        ids=[
-            'double_v',
-        ]
-    )
-    def test_double_v(self, capfd, out_path, test_path):
-        args = ['--outdir', out_path, '-T', test_path, '-vv']
-
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-            pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-
-        out, err = capfd.readouterr()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        regex_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
-        matches = self._get_matches(err, regex_line)
-        booting_zephyr_regex = re.compile(r'^DEBUG\s+-\s+([^*]+)\*\*\*\s+Booting\s+Zephyr\s+OS\s+build.*$', re.MULTILINE)
-        info_debug_line_regex = r'^\s*(INFO|DEBUG)'
 
         assert str(sys_exit.value) == '0'
-        assert re.search(booting_zephyr_regex, err) is not None
-        assert re.search(info_debug_line_regex, err) is not None
-        assert len(matches) > 0
+
+        regex_debug_line = r'^\s*DEBUG'
+        debug_matches = re.search(regex_debug_line, err, re.MULTILINE)
+        if '-ll' in flags and 'DEBUG' in flags:
+            assert debug_matches is not None
+        else:
+            assert debug_matches is None
+
+        # Summary requires verbosity > 1
+        if '-vv' in flags:
+            assert 'Total test suites: ' in out
+        else:
+            assert 'Total test suites: ' not in out
+
+        # Brief summary shows up only on verbosity 0 - instance-by-instance otherwise
+        regex_info_line = [r'INFO', r'-', r'\d+/\d+', r'\S+', r'\S+', r'[A-Z]+', r'\(\w+', r'[\d.]+s\)']
+        info_matches = self._get_matches(err, regex_info_line)
+        if not any(f in flags for f in ['-v', '-vv']):
+            assert not info_matches
+        else:
+            assert info_matches

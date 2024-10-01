@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF54H Series low-frequency crystal oscillator
+
+compatible: "nordic,nrf54h-lfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  accuracy-ppm:
+    type: int
+    description: Clock accuracy in parts per million
+    required: true
+
+  startup-time-us:
+    type: int
+    description: Clock startup time in micro seconds
+    required: true
+
+  mode:
+    type: string
+    description: LFXO operational mode
+    required: true
+    enum:
+      - "crystal"
+      - "external-sine"
+      - "external-square"

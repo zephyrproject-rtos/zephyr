@@ -7,6 +7,8 @@
 /**
  * @file
  * @brief Public APIs for MSPI driver
+ * @since 3.7
+ * @version 0.1.0
  */
 
 #ifndef ZEPHYR_INCLUDE_MSPI_H_
@@ -202,7 +204,10 @@ enum mspi_timing_param {
  * @brief Stub for struct timing_cfg
  */
 struct mspi_timing_cfg {
-
+#ifdef __cplusplus
+	/* For C++ compatibility. */
+	uint8_t dummy;
+#endif
 };
 
 /**

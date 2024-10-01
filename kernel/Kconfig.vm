@@ -123,6 +123,15 @@ menuconfig DEMAND_PAGING
 	  backing store for evicted pages.
 
 if DEMAND_PAGING
+config DEMAND_MAPPING
+	bool "Allow on-demand memory mappings"
+	depends on ARCH_HAS_DEMAND_MAPPING
+	default y
+	help
+	  When this is enabled, RAM-based memory mappings don't actually
+	  allocate memory at mem_map time. They are made to be populated
+	  at access time using the demand paging mechanism instead.
+
 config DEMAND_PAGING_ALLOW_IRQ
 	bool "Allow interrupts during page-ins/outs"
 	help

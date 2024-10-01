@@ -64,11 +64,31 @@ struct bt_bap_ep {
 	struct bt_bap_broadcast_sink *broadcast_sink;
 };
 
+struct bt_bap_unicast_group_cig_param {
+	uint32_t c_to_p_interval;
+	uint32_t p_to_c_interval;
+	uint16_t c_to_p_latency;
+	uint16_t p_to_c_latency;
+	uint8_t framing;
+	uint8_t packing;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	uint8_t c_to_p_ft;
+	uint8_t p_to_c_ft;
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+};
+
 struct bt_bap_unicast_group {
+	/* Group-wide QoS used to create the CIG */
+	struct bt_bap_unicast_group_cig_param cig_param;
+
+	/* Unicast group fields */
 	uint8_t index;
 	bool allocated;
-	/* QoS used to create the CIG */
-	const struct bt_audio_codec_qos *qos;
+	/* Used to determine whether any stream in this group has been started which will prevent
+	 * reconfiguring it
+	 */
+	bool has_been_connected;
 	struct bt_iso_cig *cig;
 	/* The ISO API for CIG creation requires an array of pointers to ISO channels */
 	struct bt_iso_chan *cis[UNICAST_GROUP_STREAM_CNT];

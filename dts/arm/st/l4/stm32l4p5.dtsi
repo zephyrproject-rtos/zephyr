@@ -15,17 +15,18 @@
 		reg = <0x20000000 DT_SIZE_K(320)>;
 	};
 
+	clocks {
+		clk_hsi48: clk-hsi48 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			status = "disabled";
+		};
+	};
+
 	soc {
 		compatible = "st,stm32l4p5", "st,stm32l4", "simple-bus";
 
-		clocks {
-			clk_hsi48: clk-hsi48 {
-				#clock-cells = <0>;
-				compatible = "fixed-clock";
-				clock-frequency = <DT_FREQ_M(48)>;
-				status = "disabled";
-			};
-		};
 
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
@@ -297,6 +298,7 @@
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			resets = <&rctl STM32_RESET(AHB2, 16U)>;
 			interrupts = <79 0>;
 			interrupt-names = "aes";
 			status = "disabled";

@@ -72,6 +72,23 @@
 	};
 };
 
+&vregmain {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregradio {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&vregh {
+	status = "okay";
+};
+
+&lfxo {
+	load-capacitors = "internal";
+	load-capacitance-picofarad = <7>;
+};
+
 &adc {
 	status = "okay";
 	#address-cells = <1>;
@@ -220,55 +237,6 @@ arduino_spi: &spi4 {
 	pinctrl-names = "default", "sleep";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-		};
-		slot0_ns_partition: partition@50000 {
-			label = "image-0-nonsecure";
-		};
-		slot1_partition: partition@80000 {
-			label = "image-1";
-		};
-		slot1_ns_partition: partition@c0000 {
-			label = "image-1-nonsecure";
-		};
-		storage_partition: partition@fa000 {
-			label = "storage";
-			reg = <0x000fa000 0x00006000>;
-		};
-	};
-};
-
-/ {
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sram0_image: image@20000000 {
-			/* Zephyr image(s) memory */
-		};
-
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-		};
-
-		sram0_ns: image_ns@20040000 {
-			/* Non-Secure image memory */
-		};
-	};
-};
-
 zephyr_udc0: &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "okay";
@@ -285,6 +253,6 @@ zephyr_udc0: &usbd {
 	};
 };
 
-/* Include partition configuration file */
-#include "nrf5340_audio_dk_nrf5340_cpuapp_partition_conf.dtsi"
+/* Include default memory partition configuration file */
+#include <common/nordic/nrf5340_cpuapp_partition.dtsi>
 #include "nrf5340_audio_dk_nrf5340_shared.dtsi"

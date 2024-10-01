@@ -25,7 +25,3 @@ tests:
   sample.task_wdt:
     integration_platforms:
       - nucleo_g474re
-  sample.task_wdt.no_hw_fallback:
-    extra_args: CONF_FILE="prj_no_hw_fallback.conf"
-    platform_allow:
-      - mr_canhubk3

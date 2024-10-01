@@ -33,6 +33,11 @@ properties:
     required: true
     description: sample time in clock cycles
 
+  vref-mv:
+    type: int
+    required: true
+    description: Indicates the reference voltage of the ADC in mV.
+
   "#io-channel-cells":
     const: 1
 

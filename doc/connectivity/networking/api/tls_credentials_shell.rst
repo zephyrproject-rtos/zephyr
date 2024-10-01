@@ -206,7 +206,7 @@ After the list is printed, a final summary of the found credentials will be prin
 
    <N> credentials found.
 
-Where `<N>` is the number of credentials found, and is zero if none are found.
+Where ``<N>`` is the number of credentials found, and is zero if none are found.
 
 .. _tls_credentials_shell_cred_types:
 

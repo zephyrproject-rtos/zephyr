@@ -8,7 +8,7 @@ menu "Memory Domains"
 config MAX_DOMAIN_PARTITIONS
 	int "Maximum number of partitions per memory domain"
 	default 16
-	range 0 255
+	range 0 $(UINT8_MAX)
 	depends on USERSPACE
 	help
 	  Configure the maximum number of partitions per memory domain.

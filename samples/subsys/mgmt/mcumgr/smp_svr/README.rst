@@ -1,3 +1,5 @@
+:orphan:
+
 .. zephyr:code-sample:: smp-svr
    :name: SMP server
 

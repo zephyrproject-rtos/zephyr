@@ -21,15 +21,13 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h5_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
@@ -47,7 +45,8 @@ static int stm32h5_init(void)
 	}
 
 #endif /* PWR_UCPDR_UCPD_DBDIS */
-	return 0;
-}
 
-SYS_INIT(stm32h5_init, PRE_KERNEL_1, 0);
+#if CONFIG_PM
+	stm32_power_init();
+#endif
+}

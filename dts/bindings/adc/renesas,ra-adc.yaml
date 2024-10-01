@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA ADC node
+
+compatible: "renesas,ra-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  vref-mv:
+    type: int
+    required: true
+    description: ADC reference voltage (Unit:mV)
+
+  channel-count:
+    type: int
+    required: true
+    description: The number of ADC channels
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

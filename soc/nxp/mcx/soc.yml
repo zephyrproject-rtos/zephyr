@@ -1,12 +1,25 @@
 family:
 - name: nxp_mcx
   series:
-  - name: mcxnx4x
+  - name: mcxn
     socs:
     - name: mcxn947
       cpuclusters:
       - name: cpu0
       - name: cpu1
+    - name: mcxn236
+  - name: mcxc
+    socs:
+    - name: mcxc141
+    - name: mcxc142
+    - name: mcxc242
+    - name: mcxc444
+  - name: mcxa
+    socs:
+    - name: mcxa156
+  - name: mcxw
+    socs:
+    - name: mcxw716c
 runners:
   run_once:
     '--erase':

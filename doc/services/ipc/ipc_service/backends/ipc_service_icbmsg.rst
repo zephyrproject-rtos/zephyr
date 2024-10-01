@@ -80,4 +80,4 @@ Swap the MBOX channels, memory regions (``tx-region`` and ``rx-region``), and bl
 Samples
 =======
 
-* :ref:`ipc_multi_endpoint_sample`
+* :zephyr:code-sample:`ipc_multi_endpoint`

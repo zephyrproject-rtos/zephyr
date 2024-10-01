@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  * Copyright (c) 2021 Carbon Robotics
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,12 +56,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PHY_ADDR	CONFIG_ETH_STM32_HAL_PHY_ADDRESS
 
-#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
+#if defined(CONFIG_MDIO)
 
 #define DEVICE_PHY_BY_NAME(n) \
-	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), ethernet_phy_0))
+	    DEVICE_DT_GET(DT_CHILD(DT_INST_CHILD(n, mdio), _CONCAT(ethernet_phy_, PHY_ADDR)))
 
 static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
+
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H5X)
 
 #define PHY_BSR  ((uint16_t)0x0001U)  /*!< Transceiver Basic Status Register */
 #define PHY_LINKED_STATUS  ((uint16_t)0x0004U)  /*!< Valid link established */
@@ -1327,7 +1331,9 @@ static void eth_iface_init(struct net_if *iface)
 		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
 				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
 				rx_thread, (void *) dev, NULL, NULL,
-				K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
+				IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+					? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
+					: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 				0, K_NO_WAIT);
 
 		k_thread_name_set(&dev_data->rx_thread, "stm_eth");

@@ -795,6 +795,16 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		 */
 		ret = sdmmc_wait_ready(card);
 		break;
+	case DISK_IOCTL_CTRL_DEINIT:
+		/* Ensure card is not busy with data write */
+		ret = sdmmc_wait_ready(card);
+		if (ret < 0) {
+			LOG_WRN("Card busy when powering off");
+		}
+		/* Power down the card */
+		card->bus_io.power_mode = SDHC_POWER_OFF;
+		ret = sdhc_set_io(card->sdhc, &card->bus_io);
+		break;
 	default:
 		ret = -ENOTSUP;
 	}

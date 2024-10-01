@@ -10,3 +10,4 @@ config SOC_SERIES_STM32L1X
 	select HAS_STM32CUBE
 	select HAS_SWO
 	select CPU_HAS_ARM_MPU
+	select SOC_EARLY_INIT_HOOK

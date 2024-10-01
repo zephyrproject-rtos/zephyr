@@ -6,10 +6,41 @@ config COMMON_LIBC_ABORT
 	help
 	  common implementation of abort().
 
+config COMMON_LIBC_ASCTIME
+	bool
+	help
+	  common implementation of asctime().
+
+config COMMON_LIBC_ASCTIME_R
+	bool "Thread-safe version of asctime()"
+	select COMMON_LIBC_ASCTIME
+	help
+	  common implementation of asctime_r().
+
+config COMMON_LIBC_CTIME
+	bool
+	select COMMON_LIBC_LOCALTIME_R_UTC
+	help
+	  common implementation of ctime().
+
+config COMMON_LIBC_CTIME_R
+	bool "Thread-safe version of ctime()"
+	select COMMON_LIBC_CTIME
+	help
+	  common implementation of ctime_r().
+
 config COMMON_LIBC_GMTIME_R
 	bool
 	help
 	  common implementation of gmtime_r().
+
+config COMMON_LIBC_LOCALTIME_R_UTC
+	bool
+	select COMMON_LIBC_GMTIME_R
+	help
+	  Simple implementation of localtime() & localtime_r().
+	  This option just wraps around the gmtime(), the result is always expressed as
+	  Coordinated Universal Time (UTC).
 
 config COMMON_LIBC_TIME
 	bool
@@ -82,3 +113,10 @@ config COMMON_LIBC_THRD
 	default y
 	help
 	  Common implementation of C11 <threads.h> API.
+
+config COMMON_LIBC_REMOVE
+	bool "Common C library remove"
+	depends on !SEMIHOST
+	default y if FILE_SYSTEM
+	help
+	  Common implementation of remove().

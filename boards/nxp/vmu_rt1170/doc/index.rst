@@ -68,8 +68,6 @@ Hardware
 For more information about the MIMXRT1176 SoC and VMU RT1170 board, see
 these references:
 
-- `VMU RT1170 Website`_
-- `VMU RT1170 User Guide`_
 - `VMU RT1170 Schematics`_
 - `i.MX RT1170 Datasheet`_
 - `i.MX RT1170 Reference Manual`_
@@ -509,7 +507,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -526,7 +524,7 @@ You should see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -540,12 +538,6 @@ should see the following message in the terminal:
 
    ***** Booting Zephyr OS v3.4.0-xxxx-xxxxxxxxxxxxx *****
    Hello World! vmu_rt1170
-
-.. _VMU RT1170 Website:
-   https://www.nxp.com/part/VMU-RT1170
-
-.. _VMU RT1170 User Guide:
-   https://cognipilot.org/cerebri/boards/nxp_vmu_rt1170/
 
 .. _VMU RT1170 Schematics:
    https://github.com/CogniPilot/NXP-VMU_RT117x-HW

@@ -110,9 +110,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 #else
 	callback_arg = id + STM32_DMA_STREAM_OFFSET;
 #endif /* CONFIG_DMAMUX_STM32 */
-	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-		stream->busy = false;
-	}
 
 	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
@@ -122,12 +119,10 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
 		/* Circular buffer never stops receiving as long as peripheral is enabled */
 		if (!stream->cyclic) {
 			stream->busy = false;
 		}
-#endif
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
@@ -139,6 +134,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 				     callback_arg, -EIO);
 	} else {
 		LOG_ERR("Transfer Error.");
+		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 		stream->dma_callback(dev, stream->user_data,
@@ -606,6 +602,11 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
+	}
+
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
 	}
 
 	/* Repeated stop : return now if channel is already stopped */

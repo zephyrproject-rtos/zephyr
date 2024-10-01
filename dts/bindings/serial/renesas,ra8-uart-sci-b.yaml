@@ -11,11 +11,3 @@ properties:
   channel:
     type: int
     required: true
-
-  tx-dtc:
-    type: boolean
-    description: Enable dtc support for transmit
-
-  rx-dtc:
-    type: boolean
-    description: Enable dtc support for receive

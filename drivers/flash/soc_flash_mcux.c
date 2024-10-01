@@ -43,10 +43,15 @@ LOG_MODULE_REGISTER(flash_mcux);
 
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
+#elif defined(CONFIG_SOC_MCXA156)
+#include "fsl_romapi.h"
+#define FLASH_Erase   FLASH_EraseSector
+#define FLASH_Program FLASH_ProgramPhrase
+#elif defined(CONFIG_MCUX_FLASH_K4_API)
+#include "fsl_k4_flash.h"
 #else
 #include "fsl_flash.h"
 #endif /* SOC_HAS_IAP && !CONFIG_SOC_LPC55S36*/
-
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
@@ -162,7 +167,11 @@ static int flash_mcux_erase(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
-	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
+	rc = FLASH_Erase(&priv->config,
+#if CONFIG_MCUX_FLASH_K4_API
+			(FMU_Type *) DT_INST_REG_ADDR(0),
+#endif
+			addr, len, kFLASH_ApiEraseKey);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -243,7 +252,11 @@ static int flash_mcux_write(const struct device *dev, off_t offset,
 	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
-	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
+	rc = FLASH_Program(&priv->config,
+#if CONFIG_MCUX_FLASH_K4_API
+			(FMU_Type *) DT_INST_REG_ADDR(0),
+#endif
+			addr, (uint8_t *) data, len);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -287,6 +300,12 @@ static const struct flash_driver_api flash_mcux_api = {
 #endif
 };
 
+#if (defined(SOC_HAS_IAP) || defined(SOC_HAS_IAP_MSF1)) && !defined(CONFIG_MCUX_FLASH_K4_API)
+#define FLASH_PROP_BLOCK_BASE	kFLASH_PropertyPflashBlockBaseAddr
+#else
+#define FLASH_PROP_BLOCK_BASE kFLASH_PropertyPflash0BlockBaseAddr
+#endif
+
 static int flash_mcux_init(const struct device *dev)
 {
 	struct flash_priv *priv = dev->data;
@@ -297,13 +316,8 @@ static int flash_mcux_init(const struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
-#if defined(SOC_HAS_IAP) || defined(SOC_HAS_IAP_MSF1)
-	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
-			  &pflash_block_base);
-#else
-	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflash0BlockBaseAddr,
-			  &pflash_block_base);
-#endif
+	FLASH_GetProperty(&priv->config, FLASH_PROP_BLOCK_BASE, &pflash_block_base);
+
 	priv->pflash_block_base = (uint32_t) pflash_block_base;
 
 	return (rc == kStatus_Success) ? 0 : -EIO;

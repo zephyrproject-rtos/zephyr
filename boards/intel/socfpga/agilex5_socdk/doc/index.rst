@@ -45,7 +45,7 @@ hardware features:
 NOTE: TODO, more details on dev kit will be updated as and when available.
 
 The default configuration can be found in the defconfig file:
-        `boards/intel/socfpga/agilex5_socdk/intel_socfpga_agilex5_socdk_defconfig`
+:zephyr_file:`boards/intel/socfpga/agilex5_socdk/intel_socfpga_agilex5_socdk_defconfig`.
 
 Programming and Debugging
 *************************

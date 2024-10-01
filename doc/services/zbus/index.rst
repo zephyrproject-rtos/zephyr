@@ -380,7 +380,8 @@ Limitations
 Based on the fact that developers can use zbus to solve many different problems, some challenges
 arise. ZBus will not solve every problem, so it is necessary to analyze the situation to be sure
 zbus is applicable. For instance, based on the zbus benchmark, it would not be well suited to a
-high-speed stream of bytes between threads. The `Pipe` kernel object solves this kind of need.
+high-speed stream of bytes between threads. The :ref:`Pipe <pipes_v2>` kernel object solves this
+kind of need.
 
 Delivery guarantees
 -------------------
@@ -397,7 +398,7 @@ rate by following design tips:
 * Consider using message queues or pipes for intensive byte transfers.
 
 .. warning::
-   ZBus uses :zephyr_file:`include/zephyr/net/buf.h` (network buffers) to exchange data with message
+   ZBus uses :zephyr_file:`include/zephyr/net_buf.h` (network buffers) to exchange data with message
    subscribers. Thus, choose carefully the configurations
    :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` and
    :kconfig:option:`CONFIG_HEAP_MEM_POOL_SIZE`. They are crucial to a proper VDED execution
@@ -524,12 +525,12 @@ sequence of the static observers.
    notified.
 
 
-Channels can have a `validator function` that enables a channel to accept only valid messages.
+Channels can have a *validator function* that enables a channel to accept only valid messages.
 Publish attempts invalidated by hard channels will return immediately with an error code. This
 allows original creators of a channel to exert some authority over other developers/publishers who
 may want to piggy-back on their channels. The following code defines and initializes a :dfn:`hard
 channel` and its dependencies. Only valid messages can be published to a :dfn:`hard channel`. It is
-possible because a `validator function` was passed to the channel's definition. In this example,
+possible because a *validator function* was passed to the channel's definition. In this example,
 only messages with ``move`` equal to 0, -1, and 1 are valid. Publish function will discard all other
 values to ``move``.
 

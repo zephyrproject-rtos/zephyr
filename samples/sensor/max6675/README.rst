@@ -1,5 +1,9 @@
-MAX6675 K-thermocouple to digital converter
-###########################################
+.. zephyr:code-sample:: max6675
+   :name: MAX6675 K-thermocouple to digital converter
+   :relevant-api: sensor_interface
+
+   Get temperature from a MAX6675 K-thermocouple to digital converter (polling
+   mode).
 
 Overview
 ********

@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <soc.h>
 
@@ -661,6 +662,9 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = qmspi_transceive_async,
 #endif
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release = qmspi_release,
 };
 
@@ -700,7 +704,7 @@ static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 };
 
 DEVICE_DT_INST_DEFINE(0,
-		    &qmspi_init, NULL, &spi_qmspi_0_dev_data,
+		    qmspi_init, NULL, &spi_qmspi_0_dev_data,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 

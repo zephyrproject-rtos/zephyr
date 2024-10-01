@@ -2344,7 +2344,7 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 void ull_dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 				    uint16_t *max_tx_time)
 {
-	return dle_max_time_get(conn, max_rx_time, max_tx_time);
+	dle_max_time_get(conn, max_rx_time, max_tx_time);
 }
 
 /*

@@ -16,6 +16,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -24,7 +25,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/check.h>
@@ -208,17 +209,6 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos
 	return BT_BAP_ASCS_REASON_NONE;
 }
 
-static bool valid_ltv_cb(struct bt_data *data, void *user_data)
-{
-	/* just return true to continue parsing as bt_data_parse will validate for us */
-	return true;
-}
-
-bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
-{
-	return bt_audio_data_parse(data, data_len, valid_ltv_cb, NULL) == 0;
-}
-
 bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
 	if (codec_cfg == NULL) {
@@ -271,6 +261,69 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		return false;
 	}
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
+
+	return true;
+}
+
+bool bt_audio_valid_qos_pref(const struct bt_audio_codec_qos_pref *qos_pref)
+{
+	const uint8_t phy_mask = BT_GAP_LE_PHY_1M | BT_GAP_LE_PHY_2M | BT_GAP_LE_PHY_CODED;
+
+	if ((qos_pref->phy & (~phy_mask)) != 0U) {
+		LOG_DBG("Invalid phy: %u", qos_pref->phy);
+
+		return false;
+	}
+
+	if (!IN_RANGE(qos_pref->latency, BT_ISO_LATENCY_MIN, BT_ISO_LATENCY_MAX)) {
+		LOG_DBG("Invalid latency: %u", qos_pref->latency);
+
+		return false;
+	}
+
+	if (qos_pref->pd_min > BT_AUDIO_PD_MAX) {
+		LOG_DBG("Invalid pd_min: %u", qos_pref->pd_min);
+
+		return false;
+	}
+
+	if (qos_pref->pd_max > BT_AUDIO_PD_MAX) {
+		LOG_DBG("Invalid pd_min: %u", qos_pref->pd_min);
+
+		return false;
+	}
+
+	if (qos_pref->pd_max < qos_pref->pd_min) {
+		LOG_DBG("Invalid combination of pd_min %u and pd_max: %u", qos_pref->pd_min,
+			qos_pref->pd_max);
+
+		return false;
+	}
+
+	/* The absolute minimum and maximum values of pref_pd_min and pref_pd_max are implicitly
+	 * checked using the bounds of pd_min and pd_max, so we can just compare the preferences
+	 * to the min and max values that have been bound checked already
+	 */
+	if (!IN_RANGE(qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_min %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pd_min, qos_pref->pd_max);
+
+		return false;
+	}
+
+	if (qos_pref->pref_pd_max < qos_pref->pref_pd_min) {
+		LOG_DBG("Invalid combination of pref_pd_min %u and pref_pd_max: %u",
+			qos_pref->pref_pd_min, qos_pref->pref_pd_max);
+
+		return false;
+	}
+
+	if (!IN_RANGE(qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max)) {
+		LOG_DBG("Invalid combination of pref_pd_max %u, pd_min %u and pd_max: %u",
+			qos_pref->pref_pd_max, qos_pref->pd_min, qos_pref->pd_max);
+
+		return false;
+	}
 
 	return true;
 }
@@ -456,7 +509,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
 	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
 
-	LOG_DBG("stream %p", stream);
+	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
 		bt_conn_unref(stream->conn);
@@ -534,7 +587,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	       codec_cfg, codec_cfg ? codec_cfg->id : 0, codec_cfg ? codec_cfg->cid : 0,
 	       codec_cfg ? codec_cfg->vid : 0);
 
-	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL) {
+	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || ep == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}

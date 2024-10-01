@@ -22,7 +22,7 @@ If you use this feature, you don't need to run ``west sign`` yourself; the
 build system will do it for you.
 
 Here is an example workflow, which builds and flashes MCUboot, as well as the
-:ref:`hello_world` application for chain-loading by MCUboot. Run these commands
+:zephyr:code-sample:`hello_world` application for chain-loading by MCUboot. Run these commands
 from the :file:`zephyrproject` workspace you created in the
 :ref:`getting_started`.
 
@@ -116,7 +116,7 @@ for all images, for example:
    west build -b <board> <application> -DSIGNING_SCRIPT=<file>
 
 The zephyr property method is achieved by adjusting the ``SIGNING_SCRIPT`` property
-on the `zephyr_property_target`, ideally from by a module by using:
+on the ``zephyr_property_target``, ideally from by a module by using:
 
 .. code-block:: cmake
 

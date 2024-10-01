@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <adi/max32/max32xxx.dtsi>
+#include <zephyr/dt-bindings/dma/max32662_dma.h>
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_K(256)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(16)>;
+};
+
+/delete-node/ &clk_iso;
+
+/delete-node/ &gpio1;
+
+/delete-node/ &uart2;
+
+/delete-node/ &timer3;
+
+&adc {
+	compatible = "adi,max32-adc-sar", "adi,max32-adc";
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+	clock-divider = <16>;
+	channel-count = <19>;
+	track-count = <4>;
+	idle-count = <0>;
+	vref-mv = <1250>;
+	resolution = <12>;
+};
+
+/* MAX32662 extra peripherals. */
+/ {
+	soc {
+		sram1: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(16)>;
+		};
+
+		sram2: memory@20008000 {
+			compatible = "mmio-sram";
+			reg = <0x20008000 DT_SIZE_K(16)>;
+		};
+
+		sram3: memory@2000c000 {
+			compatible = "mmio-sram";
+			reg = <0x2000c000 DT_SIZE_K(16)>;
+		};
+
+		sram4: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(4)>;
+		};
+
+		sram5: memory@20011000 {
+			compatible = "mmio-sram";
+			reg = <0x20011000 DT_SIZE_K(4)>;
+		};
+
+		sram6: memory@20012000 {
+			compatible = "mmio-sram";
+			reg = <0x20012000 DT_SIZE_K(4)>;
+		};
+
+		sram7: memory@20013000 {
+			compatible = "mmio-sram";
+			reg = <0x20013000 DT_SIZE_K(4)>;
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+			dma-channels = <4>;
+			status = "disabled";
+			#dma-cells = <2>;
+		};
+
+		spi0: spi@40046000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40046000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40047000 {
+			compatible = "adi,max32-spi";
+			reg = <0x40047000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
+			interrupts = <17 0>;
+			status = "disabled";
+		};
+
+		lptimer0: timer@40113000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40113000 0x2000>;
+			interrupts = <8 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+		};
+	};
+};

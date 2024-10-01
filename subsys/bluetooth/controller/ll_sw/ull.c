@@ -74,6 +74,7 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_types.h"
 #include "ull_central_iso_internal.h"
+#include "ull_llcp_internal.h"
 #include "ull_llcp.h"
 
 #include "ull_conn_iso_internal.h"
@@ -126,7 +127,9 @@
 				   (TICKER_ID_SCAN_SYNC_BASE) + 1)
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 #define BT_SCAN_SYNC_ISO_TICKER_NODES ((TICKER_ID_SCAN_SYNC_ISO_LAST) - \
-				       (TICKER_ID_SCAN_SYNC_ISO_BASE) + 1)
+				       (TICKER_ID_SCAN_SYNC_ISO_BASE) + 1 + \
+				       (TICKER_ID_SCAN_SYNC_ISO_RESUME_LAST) - \
+				       (TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE) + 1)
 #else /* !CONFIG_BT_CTLR_SYNC_ISO */
 #define BT_SCAN_SYNC_ISO_TICKER_NODES 0
 #endif /* !CONFIG_BT_CTLR_SYNC_ISO */
@@ -511,13 +514,13 @@ static void *mark_update;
 
 #if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
 #if defined(CONFIG_BT_CONN)
-#define BT_BUF_ACL_TX_COUNT CONFIG_BT_BUF_ACL_TX_COUNT
+#define BT_CTLR_TX_BUFFERS (CONFIG_BT_BUF_ACL_TX_COUNT + LLCP_TX_CTRL_BUF_COUNT)
 #else
-#define BT_BUF_ACL_TX_COUNT 0
+#define BT_CTLR_TX_BUFFERS 0
 #endif /* CONFIG_BT_CONN */
 
 static MFIFO_DEFINE(tx_ack, sizeof(struct lll_tx),
-		    BT_BUF_ACL_TX_COUNT + BT_CTLR_ISO_TX_BUFFERS);
+		    BT_CTLR_TX_BUFFERS + BT_CTLR_ISO_TX_BUFFERS);
 #endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
 
 static void *mark_disable;
@@ -1052,6 +1055,7 @@ void ll_rx_dequeue(void)
 	{
 		struct node_rx_pdu *rx_curr;
 		struct pdu_adv *adv;
+		uint8_t loop = PDU_RX_POOL_SIZE / PDU_RX_NODE_POOL_ELEMENT_SIZE;
 
 		adv = (struct pdu_adv *)rx->pdu;
 		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
@@ -1061,6 +1065,9 @@ void ll_rx_dequeue(void)
 		rx_curr = rx->rx_ftr.extra;
 		while (rx_curr) {
 			memq_link_t *link_free;
+
+			LL_ASSERT(loop);
+			loop--;
 
 			link_free = rx_curr->hdr.link;
 			rx_curr = rx_curr->rx_ftr.extra;

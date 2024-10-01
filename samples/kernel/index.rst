@@ -1,10 +1,6 @@
-.. _kernel-samples:
+.. zephyr:code-sample-category:: kernel
+   :name: Kernel and Scheduler
+   :show-listing:
+   :glob: **/*
 
-Various Kernel and Scheduler Samples
-####################################
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   These samples demonstrate how to use various kernel and scheduler features.

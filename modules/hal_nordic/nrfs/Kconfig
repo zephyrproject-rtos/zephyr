@@ -36,7 +36,7 @@ config NRFS_HAS_VBUS_DETECTOR_SERVICE
 
 config NRFS
 	bool "nRF Services Support"
-	select NRFS_LOCAL_DOMAIN if (SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD)
+	select NRFS_LOCAL_DOMAIN if (SOC_NRF54H20_CPUAPP || SOC_NRF54H20_CPURAD || SOC_NRF9280_CPUAPP || SOC_NRF9280_CPURAD)
 	depends on HAS_NRFS
 	help
 	  This option enables the nRF Services library.
@@ -95,7 +95,7 @@ config NRFS_PMIC_SERVICE_ENABLED
 config NRFS_DVFS_SERVICE_ENABLED
 	bool "DVFS service"
 	depends on NRFS_HAS_DVFS_SERVICE
-	default y if SOC_NRF54H20_CPUAPP
+	default y if SOC_NRF54H20_CPUAPP || SOC_NRF9280_CPUAPP
 
 config NRFS_DIAG_SERVICE_ENABLED
 	bool "System Diagnostics service (only for development purposes)"

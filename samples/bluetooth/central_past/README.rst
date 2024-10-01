@@ -1,18 +1,19 @@
-.. _bluetooth-central-past-sample:
+.. zephyr:code-sample:: ble_central_past
+   :name: Central Periodic Advertising Sync Transfer (PAST)
+   :relevant-api: bt_gap bluetooth
 
-Bluetooth: Central Periodic Advertising Sync Transfer (PAST)
-############################################################
+   Use the Periodic Advertising Sync Transfer (PAST) feature as the sender.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Periodic Advertising Sync Transfer
+A simple application demonstrating the Bluetooth LE Periodic Advertising Sync Transfer
 functionality as the sender.
 
 Requirements
 ************
 
-* A board with BLE 5.1 support
+* A board with Bluetooth LE 5.1 support
 
 Building and Running
 ********************
@@ -28,4 +29,4 @@ Use the sample found under :zephyr_file:`samples/bluetooth/peripheral_past` in
 the Zephyr tree on another board that will advertise and await a periodic
 advertising sync transfer.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

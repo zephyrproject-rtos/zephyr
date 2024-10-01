@@ -253,5 +253,125 @@ ZTEST(flash_driver, test_flash_flatten)
 	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
 }
 
+ZTEST(flash_driver, test_flash_erase)
+{
+	int rc;
+	uint8_t read_buf[EXPECTED_SIZE];
+	bool comparison_result;
+	const struct flash_parameters *fparams = flash_get_parameters(flash_dev);
+
+	erase_value = fparams->erase_value;
+
+	/* Write test data */
+	rc = flash_write(flash_dev, page_info.start_offset, expected, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot write to flash");
+
+	/* Confirm write operation */
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	comparison_result = true;
+	for (int i = 0; i < EXPECTED_SIZE; i++) {
+		if (read_buf[i] != expected[i]) {
+			comparison_result = false;
+			TC_PRINT("i=%d:\tread_buf[i]=%d\texpected[i]=%d\n", i, read_buf[i],
+				 expected[i]);
+		}
+	}
+	zassert_true(comparison_result, "Write operation failed");
+	/* Cross check - confirm that expected data is pseudo-random */
+	zassert_not_equal(read_buf[0], expected[1], "These values shall be different");
+
+	/* Erase a nb of pages aligned to the EXPECTED_SIZE */
+	rc = flash_erase(
+		flash_dev, page_info.start_offset,
+		(page_info.size * ((EXPECTED_SIZE + page_info.size - 1) / page_info.size)));
+	zassert_equal(rc, 0, "Flash memory not properly erased");
+
+	/* Confirm erase operation */
+	rc = flash_read(flash_dev, page_info.start_offset, read_buf, EXPECTED_SIZE);
+	zassert_equal(rc, 0, "Cannot read flash");
+
+	comparison_result = true;
+	for (int i = 0; i < EXPECTED_SIZE; i++) {
+		if (read_buf[i] != erase_value) {
+			comparison_result = false;
+			TC_PRINT("i=%d:\tread_buf[i]=%d\texpected=%d\n", i, read_buf[i],
+				 erase_value);
+		}
+	}
+	zassert_true(comparison_result, "Write operation failed");
+	/* Cross check - confirm that expected data
+	 * doesn't contain erase_value
+	 */
+	zassert_not_equal(expected[0], erase_value, "These values shall be different");
+}
+
+struct test_cb_data_type {
+	uint32_t page_counter; /* used to count how many pages was iterated */
+	uint32_t exit_page;    /* terminate iteration when this page is reached */
+};
+
+static bool flash_callback(const struct flash_pages_info *info, void *data)
+{
+	struct test_cb_data_type *cb_data = (struct test_cb_data_type *)data;
+
+	cb_data->page_counter++;
+
+	if (cb_data->page_counter >= cb_data->exit_page) {
+		return false;
+	}
+
+	return true;
+}
+
+ZTEST(flash_driver, test_flash_page_layout)
+{
+	int rc;
+	struct flash_pages_info page_info_off = {0};
+	struct flash_pages_info page_info_idx = {0};
+	size_t page_count;
+	struct test_cb_data_type test_cb_data = {0};
+
+#if !defined(CONFIG_FLASH_PAGE_LAYOUT)
+	ztest_test_skip();
+#endif
+
+	/* Get page info with flash_get_page_info_by_offs() */
+	rc = flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET, &page_info_off);
+	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
+	TC_PRINT("start_offset=0x%lx\tsize=%d\tindex=%d\n", page_info_off.start_offset,
+		 (int)page_info_off.size, page_info_off.index);
+	zassert_true(page_info_off.start_offset >= 0, "start_offset is %d", rc);
+	zassert_true(page_info_off.size > 0, "size is %d", rc);
+	zassert_true(page_info_off.index >= 0, "index is %d", rc);
+
+	/* Get info for the same page with flash_get_page_info_by_idx() */
+	rc = flash_get_page_info_by_idx(flash_dev, page_info_off.index, &page_info_idx);
+	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
+	zassert_equal(page_info_off.start_offset, page_info_idx.start_offset);
+	zassert_equal(page_info_off.size, page_info_idx.size);
+	zassert_equal(page_info_off.index, page_info_idx.index);
+
+	page_count = flash_get_page_count(flash_dev);
+	TC_PRINT("page_count=%d\n", (int)page_count);
+	zassert_true(page_count > 0, "flash_get_page_count returned %d", rc);
+	zassert_true(page_count >= page_info_off.index);
+
+	/* Test that callback is executed for every page */
+	test_cb_data.exit_page = page_count + 1;
+	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
+	zassert_true(page_count == test_cb_data.page_counter,
+		     "page_count = %d not equal to pages counted with cb = %d", page_count,
+		     test_cb_data.page_counter);
+
+	/* Test that callback can cancell iteration */
+	test_cb_data.page_counter = 0;
+	test_cb_data.exit_page = page_count >> 1;
+	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);
+	zassert_true(test_cb_data.exit_page == test_cb_data.page_counter,
+		     "%d pages were iterated while it shall stop on page %d",
+		     test_cb_data.page_counter, test_cb_data.exit_page);
+}
 
 ZTEST_SUITE(flash_driver, NULL, flash_driver_setup, NULL, NULL, NULL);

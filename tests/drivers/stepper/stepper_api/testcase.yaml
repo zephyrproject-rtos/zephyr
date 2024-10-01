@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.stepper.stepper_api:
+    tags:
+      - drivers
+      - stepper
+      - api
+    platform_allow:
+      - nucleo_g071rb
+      - qemu_x86_64

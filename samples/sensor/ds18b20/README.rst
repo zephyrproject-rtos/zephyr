@@ -1,12 +1,13 @@
-.. _ds18b20_sample:
+.. zephyr:code-sample:: ds18b20
+   :name: DS18B20 1-Wire Temperature Sensor
+   :relevant-api: sensor_interface w1_sensor
 
-DS18B20 1-Wire Temperature Sensor
-#################################
+   Get ambient temperature data from a DS18B20 sensor (polling mode).
 
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`sensor_api` API driver for the
+This sample shows how to use the Zephyr :ref:`sensor` API driver for the
 `Maxim DS18B20`_ temperature sensor.
 
 .. _Maxim DS18B20:

@@ -222,7 +222,7 @@ static void nxp_mcimx7_mu_config(void)
 }
 #endif /* CONFIG_IPM_IMX */
 
-static int nxp_mcimx7_init(void)
+void soc_early_init_hook(void)
 {
 
 	/* SoC specific RDC settings */
@@ -250,8 +250,4 @@ static int nxp_mcimx7_init(void)
 #ifdef CONFIG_IPM_IMX
 	nxp_mcimx7_mu_config();
 #endif /* CONFIG_IPM_IMX */
-
-	return 0;
 }
-
-SYS_INIT(nxp_mcimx7_init, PRE_KERNEL_1, 0);

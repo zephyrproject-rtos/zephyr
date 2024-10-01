@@ -1,0 +1,7 @@
+# EFR32XG24 MGM240P board
+
+# Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SPARKFUN_THING_PLUS_MATTER_MGM240P
+	select SOC_PART_NUMBER_EFR32MG24B020F1536IM40

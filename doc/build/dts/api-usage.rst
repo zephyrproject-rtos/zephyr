@@ -330,8 +330,8 @@ Here are pointers to some other available APIs.
 
 - :c:func:`DT_CHOSEN`, :c:func:`DT_HAS_CHOSEN`: for properties
   of the special ``/chosen`` node
-- :c:func:`DT_HAS_COMPAT_STATUS_OKAY`, :c:func:`DT_NODE_HAS_COMPAT`: global-
-  and node-specific tests related to the ``compatible`` property
+- :c:func:`DT_HAS_COMPAT_STATUS_OKAY`, :c:func:`DT_NODE_HAS_COMPAT`: global- and
+  node-specific tests related to the ``compatible`` property
 - :c:func:`DT_BUS`: get a node's bus controller, if there is one
 - :c:func:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
   choices

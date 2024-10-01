@@ -83,8 +83,13 @@ child-binding:
         The input code for the axis to report for the device, typically any of
         INPUT_ABS_*.
 
-    invert:
+    invert-input:
       type: boolean
       description: |
         If set, invert the raw ADC value before processing it. Useful for
         differential channels.
+
+    invert-output:
+      type: boolean
+      description: |
+        If set, invert the output value.

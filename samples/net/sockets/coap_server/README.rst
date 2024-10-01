@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: coap-server
    :name: CoAP service
-   :relevant-api: coap coap_service udp
+   :relevant-api: coap coap_service
 
    Use the CoAP server subsystem to register CoAP resources.
 

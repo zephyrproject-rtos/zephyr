@@ -409,7 +409,7 @@ static void rndis_queue_rsp(struct net_buf *rsp)
 
 	LOG_DBG("Queued response pkt %p", rsp);
 
-	net_buf_put(&rndis_tx_queue, rsp);
+	k_fifo_put(&rndis_tx_queue, rsp);
 }
 
 /* Notify host about available data */
@@ -776,7 +776,7 @@ static int queue_encapsulated_cmd(uint8_t *data, uint32_t len)
 
 	memcpy(net_buf_add(buf, len), data, len);
 
-	net_buf_put(&rndis_cmd_queue, buf);
+	k_fifo_put(&rndis_cmd_queue, buf);
 
 	LOG_DBG("queued buf %p", buf);
 
@@ -827,7 +827,7 @@ static int handle_encapsulated_rsp(uint8_t **data, uint32_t *len)
 
 	LOG_DBG("");
 
-	buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT);
+	buf = k_fifo_get(&rndis_tx_queue, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Error getting response buffer");
 		*len = 0U;
@@ -894,7 +894,7 @@ static void cmd_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rndis_cmd_queue, K_FOREVER);
+		buf = k_fifo_get(&rndis_cmd_queue, K_FOREVER);
 
 		LOG_DBG("got buf %p", buf);
 

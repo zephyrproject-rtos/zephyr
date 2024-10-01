@@ -159,8 +159,9 @@ static void SOC_CacheInit(void)
 	LMEM_PSCCR = LMEM_PSCCR_INVW1_MASK | LMEM_PSCCR_INVW0_MASK;
 	LMEM_PSCCR |= LMEM_PSCCR_GO_MASK;
 	/* Wait until the command completes */
-	while (LMEM_PSCCR & LMEM_PSCCR_GO_MASK)
+	while (LMEM_PSCCR & LMEM_PSCCR_GO_MASK) {
 		;
+	}
 	/* Enable system bus cache, enable write buffer */
 	LMEM_PSCCR = (LMEM_PSCCR_ENWRBUF_MASK | LMEM_PSCCR_ENCACHE_MASK);
 	barrier_isync_fence_full();
@@ -172,8 +173,9 @@ static void SOC_CacheInit(void)
 	LMEM_PCCCR = LMEM_PCCCR_INVW1_MASK | LMEM_PCCCR_INVW0_MASK;
 	LMEM_PCCCR |= LMEM_PCCCR_GO_MASK;
 	/* Wait until the command completes */
-	while (LMEM_PCCCR & LMEM_PCCCR_GO_MASK)
+	while (LMEM_PCCCR & LMEM_PCCCR_GO_MASK) {
 		;
+	}
 	/* Enable code bus cache, enable write buffer */
 	LMEM_PCCCR = (LMEM_PCCCR_ENWRBUF_MASK | LMEM_PCCCR_ENCACHE_MASK);
 	barrier_isync_fence_full();
@@ -285,7 +287,7 @@ static void SOC_ClockInit(void)
  *
  * @return 0
  */
-static int mcimx6x_m4_init(void)
+void soc_early_init_hook(void)
 {
 	/* Configure RDC */
 	SOC_RdcInit();
@@ -298,8 +300,4 @@ static int mcimx6x_m4_init(void)
 
 	/* Initialize clock */
 	SOC_ClockInit();
-
-	return 0;
 }
-
-SYS_INIT(mcimx6x_m4_init, PRE_KERNEL_1, 0);

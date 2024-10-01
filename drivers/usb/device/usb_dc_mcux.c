@@ -78,7 +78,7 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 /* Controller ID is for HAL usage */
 #if defined(CONFIG_SOC_SERIES_IMXRT5XX) || \
 	defined(CONFIG_SOC_SERIES_IMXRT6XX) || \
-	defined(CONFIG_SOC_LPC55S28) || \
+	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
 	defined(CONFIG_SOC_LPC55S16)
 #define CONTROLLER_ID	kUSB_ControllerLpcIp3511Hs0
 #elif defined(CONFIG_SOC_LPC55S36)
@@ -91,7 +91,7 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #endif /* LPC55s69 */
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX) || \
 	defined(CONFIG_SOC_SERIES_IMXRT10XX) || \
-	defined(CONFIG_SOC_SERIES_MCXNX4X)
+	defined(CONFIG_SOC_SERIES_MCXN)
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay)
 #define CONTROLLER_ID kUSB_ControllerEhci0
 #elif DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay)

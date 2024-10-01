@@ -8,7 +8,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/buf.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
@@ -343,7 +343,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf;
 
 		/* Wait until a buffer is available */
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		recv(buf);
 	}
 }

@@ -455,6 +455,13 @@ bool arch_irq_is_used(unsigned int irq);
  * @param parameter Value to pass to the function when invoked
  */
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
+
+
+/**
+ * Initialize the architecture-specific portion of the irq_offload subsystem
+ */
+void arch_irq_offload_init(void);
+
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */
@@ -1252,6 +1259,17 @@ bool arch_pcie_msi_vector_connect(msi_vector_t *vector,
 void arch_spin_relax(void);
 
 /**
+ * @defgroup arch-stackwalk Architecture-specific Stack Walk APIs
+ * @ingroup arch-interface
+ *
+ * To add API support to an architecture, `arch_stack_walk()` should be implemented and a non-user
+ * configurable Kconfig `ARCH_HAS_STACKWALK` that is default to `y` should be created in the
+ * architecture's top level Kconfig, with all the relevant dependencies.
+ *
+ * @{
+ */
+
+/**
  * stack_trace_callback_fn - Callback for @ref arch_stack_walk
  * @param cookie Caller supplied pointer handed back by @ref arch_stack_walk
  * @param addr The stack entry address to consume
@@ -1277,6 +1295,11 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
  */
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf);
+
+/**
+ * arch-stackwalk
+ * @}
+ */
 
 #ifdef __cplusplus
 }

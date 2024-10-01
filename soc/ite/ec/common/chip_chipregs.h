@@ -347,6 +347,9 @@ struct kscan_it8xxx2_regs {
  * (1Fxxh) External Timer & External Watchdog (ETWD)
  *
  */
+#define WDT_IT8XXX2_REGS_BASE \
+	((struct wdt_it8xxx2_regs *)DT_REG_ADDR(DT_NODELABEL(twd0)))
+
 #ifndef __ASSEMBLER__
 struct wdt_it8xxx2_regs {
 	/* 0x000: Reserved1 */
@@ -1276,6 +1279,12 @@ enum chip_pll_mode {
 #define IT8XXX2_ECPM_SCDCR2     ECREG(IT8XXX2_ECPM_BASE + 0x0e)
 #define IT8XXX2_ECPM_SCDCR3     ECREG(IT8XXX2_ECPM_BASE + 0x0f)
 #define IT8XXX2_ECPM_SCDCR4     ECREG(IT8XXX2_ECPM_BASE + 0x10)
+#define IT8XXX2_ECPM_PFACC0R    ECREG(IT8XXX2_ECPM_BASE + 0x20)
+#define IT8XXX2_ECPM_PFACC1R    ECREG(IT8XXX2_ECPM_BASE + 0x21)
+#define IT8XXX2_ECPM_PFACC2R    ECREG(IT8XXX2_ECPM_BASE + 0x40)
+#define IT8XXX2_ECPM_LCOTF2     ECREG(IT8XXX2_ECPM_BASE + 0x54)
+#define IT8XXX2_ECPM_LCOCR      ECREG(IT8XXX2_ECPM_BASE + 0x55)
+#define IT8XXX2_ECPM_LCOCR1     ECREG(IT8XXX2_ECPM_BASE + 0x57)
 
 /*
  * The count number of the counter for 25 ms register.
@@ -1542,8 +1551,10 @@ struct gctrl_it8xxx2_regs {
 	volatile uint8_t reserved_00_01[2];
 	/* 0x02: Chip Version */
 	volatile uint8_t GCTRL_ECHIPVER;
-	/* 0x03-0x05: Reserved_03_05 */
-	volatile uint8_t reserved_03_05[3];
+	/* 0x03: DBGR Operate Status */
+	volatile uint8_t GCTRL_DBGROS;
+	/* 0x04-0x05: Reserved_04_05 */
+	volatile uint8_t reserved_04_05[2];
 	/* 0x06: Reset Status */
 	volatile uint8_t GCTRL_RSTS;
 	/* 0x07-0x09: Reserved_07_09 */
@@ -1630,6 +1641,8 @@ struct gctrl_it8xxx2_regs {
 #endif /* !__ASSEMBLER__ */
 
 /* GCTRL register fields */
+/* 0x03: DBGR Operate Status */
+#define IT8XXX2_GCTRL_SMB_DBGR		BIT(0)
 /* 0x06: Reset Status */
 #define IT8XXX2_GCTRL_LRS		(BIT(1) | BIT(0))
 #define IT8XXX2_GCTRL_IWDTR		BIT(1)

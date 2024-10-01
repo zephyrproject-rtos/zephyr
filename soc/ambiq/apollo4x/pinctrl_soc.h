@@ -37,6 +37,8 @@ struct apollo4_pinctrl_soc_pin {
 	uint32_t ambiq_pull_up_ohms : 3;
 	/** IOM nCE module select */
 	uint32_t iom_nce : 6;
+	/** IOM interrupt direction */
+	uint32_t interrupt_direction: 2;
 };
 
 typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
@@ -48,20 +50,21 @@ typedef struct apollo4_pinctrl_soc_pin pinctrl_soc_pin_t;
  * @param prop Property name.
  * @param idx Property entry index.
  */
-#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)				\
-	{									\
-		APOLLO4_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),	\
-		APOLLO4_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),	\
-		DT_PROP(node_id, input_enable),					\
-		DT_ENUM_IDX(node_id, drive_strength),				\
-		DT_ENUM_IDX(node_id, slew_rate),				\
-		DT_PROP(node_id, drive_push_pull),				\
-		DT_PROP(node_id, drive_open_drain),				\
-		DT_PROP(node_id, bias_high_impedance),				\
-		DT_PROP(node_id, bias_pull_up),					\
-		DT_PROP(node_id, bias_pull_down),				\
-		DT_ENUM_IDX(node_id, ambiq_pull_up_ohms),			\
-		DT_PROP(node_id, ambiq_iom_nce_module),				\
+#define Z_PINCTRL_STATE_PIN_INIT(node_id, prop, idx)                                               \
+	{                                                                                          \
+		APOLLO4_GET_PIN_NUM(DT_PROP_BY_IDX(node_id, prop, idx)),                           \
+		APOLLO4_GET_PIN_ALT_FUNC(DT_PROP_BY_IDX(node_id, prop, idx)),                      \
+		DT_PROP(node_id, input_enable),                                                    \
+		DT_ENUM_IDX(node_id, drive_strength),                                              \
+		DT_ENUM_IDX(node_id, slew_rate),                                                   \
+		DT_PROP(node_id, drive_push_pull),                                                 \
+		DT_PROP(node_id, drive_open_drain),                                                \
+		DT_PROP(node_id, bias_high_impedance),                                             \
+		DT_PROP(node_id, bias_pull_up),                                                    \
+		DT_PROP(node_id, bias_pull_down),                                                  \
+		DT_ENUM_IDX(node_id, ambiq_pull_up_ohms),                                          \
+		DT_PROP(node_id, ambiq_iom_nce_module),                                            \
+		DT_PROP(node_id, ambiq_interrupt_direction),                                       \
 	},
 
 /**

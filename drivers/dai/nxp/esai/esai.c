@@ -684,8 +684,6 @@ static int esai_init(const struct device *dev)
 
 	device_map(&data->regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
 
-	ESAI_Reset(UINT_TO_ESAI(data->regmap));
-
 	ret = esai_parse_pinmodes(cfg, data);
 	if (ret < 0) {
 		return ret;

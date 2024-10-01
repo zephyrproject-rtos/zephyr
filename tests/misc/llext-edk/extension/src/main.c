@@ -5,13 +5,13 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/llext/symbol.h>
 
 #include <app_api.h>
 
-int start(void)
+int start(int bar)
 {
-	int bar = 42;
-
 	printk("foo(%d) is %d\n", bar, foo(bar));
 	return 0;
 }
+EXPORT_SYMBOL(start);

@@ -339,6 +339,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	is_new_set = !adv->is_created;
 	adv->is_created = 1;
 	adv->is_ad_data_cmplt = 1U;
+	adv->max_skip = skip;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	/* remember parameters so that set adv/scan data and adv enable
@@ -1391,6 +1392,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			struct lll_adv_aux *lll_aux = lll->aux;
 			uint32_t ticks_slot_overhead_aux;
 			uint32_t ticks_anchor_aux;
+			uint64_t interval_us;
 
 			aux = HDR_LLL2ULL(lll_aux);
 
@@ -1487,20 +1489,29 @@ uint8_t ll_adv_enable(uint8_t enable)
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
-			/* Keep aux interval equal or higher than primary PDU
-			 * interval.
+			/* Keep aux interval equal or lower than primary PDU
+			 * interval * (max_skip + 1).
 			 * Use periodic interval units to represent the
 			 * periodic behavior of scheduling of AUX_ADV_IND PDUs
 			 * so that it is grouped with similar interval units
 			 * used for ACL Connections, Periodic Advertising and
 			 * BIG radio events.
 			 */
-			aux->interval =
-				DIV_ROUND_UP(((uint64_t)adv->interval *
-						  ADV_INT_UNIT_US) +
-						 HAL_TICKER_TICKS_TO_US(
-							ULL_ADV_RANDOM_DELAY),
-						 PERIODIC_INT_UNIT_US);
+			interval_us = (uint64_t)adv->interval * ADV_INT_UNIT_US;
+
+			if (adv->max_skip == 0U) {
+				/* Special case to keep behaviour unchanged from
+				 * before max_skip was implemented; In this case
+				 * add ULL_ADV_RANDOM_DELAY and round up for a
+				 * aux interval equal or higher instead
+				 */
+				aux->interval = DIV_ROUND_UP(interval_us +
+						     HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY),
+						     PERIODIC_INT_UNIT_US);
+			} else {
+				aux->interval = (interval_us * (adv->max_skip + 1))
+						 / PERIODIC_INT_UNIT_US;
+			}
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
 						ticks_slot_overhead_aux);

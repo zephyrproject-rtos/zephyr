@@ -132,9 +132,10 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data)
 	__ASSERT(cb != NULL, "%s: NULL callback for evtchn #%u\n",
 		__func__, port);
 
-	if (event_channels[port].cb != empty_callback)
+	if (event_channels[port].cb != empty_callback) {
 		LOG_WRN("%s: re-bind callback for evtchn #%u\n",
 				__func__, port);
+	}
 
 	event_channels[port].priv = data;
 	event_channels[port].cb = cb;

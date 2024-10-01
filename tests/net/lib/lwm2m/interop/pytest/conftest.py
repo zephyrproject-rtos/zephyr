@@ -182,3 +182,18 @@ def endpoint(endpoint_registered) -> str:
     """Fixture that returns an endpoint that is registered."""
     endpoint_registered.check_update()
     return endpoint_registered
+
+@pytest.fixture(scope='module')
+def configuration_C13(endpoint_registered, shell: Shell) -> str:
+    """Fixture that returns an endpoint that has C13 configuration."""
+    shell.exec_command('lwm2m create /16/0')
+    shell.exec_command('lwm2m create /16/0/0/0')
+    shell.exec_command('lwm2m create /16/0/0/1')
+    shell.exec_command('lwm2m create /16/0/0/2')
+    shell.exec_command('lwm2m create /16/0/0/3')
+    shell.exec_command('lwm2m write /16/0/0/0 "Host Device ID #1"')
+    shell.exec_command('lwm2m write /16/0/0/1 "Host Device Manufacturer #1"')
+    shell.exec_command('lwm2m write /16/0/0/2 "Host Device Model #1"')
+    shell.exec_command('lwm2m write /16/0/0/3 "Host Device Software Version #1"')
+    yield endpoint_registered
+    shell.exec_command('lwm2m delete /16/0')

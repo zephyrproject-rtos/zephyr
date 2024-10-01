@@ -133,8 +133,9 @@ int cad_qspi_stig_cmd_helper(struct cad_qspi_params *cad_params, int cs, uint32_
 	do {
 		uint32_t reg = sys_read32(cad_params->reg_base + CAD_QSPI_FLASHCMD);
 
-		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT))
+		if (!(reg & CAD_QSPI_FLASHCMD_EXECUTE_STAT)) {
 			break;
+		}
 		count++;
 	} while (count < CAD_QSPI_COMMAND_TIMEOUT);
 
@@ -172,8 +173,9 @@ int cad_qspi_stig_read_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -208,8 +210,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 		return -1;
 	}
 
-	if ((num_bytes > 8) || (num_bytes == 0))
+	if ((num_bytes > 8) || (num_bytes == 0)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -225,8 +228,9 @@ int cad_qspi_stig_wr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, ui
 
 	sys_write32(input[0], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA0);
 
-	if (num_bytes > 4)
+	if (num_bytes > 4) {
 		sys_write32(input[1], cad_params->reg_base + CAD_QSPI_FLASHCMD_WRDATA1);
+	}
 
 	return cad_qspi_stig_cmd_helper(cad_params, cad_params->cad_qspi_cs, cmd);
 }
@@ -236,8 +240,9 @@ int cad_qspi_stig_addr_cmd(struct cad_qspi_params *cad_params, uint32_t opcode, 
 {
 	uint32_t cmd;
 
-	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1))
+	if (dummy > ((1 << CAD_QSPI_FLASHCMD_NUM_DUMMYBYTES_MAX) - 1)) {
 		return -1;
+	}
 
 	if (cad_params == NULL) {
 		LOG_ERR("Wrong parameter\n");
@@ -302,8 +307,9 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 			LOG_ERR("Error getting device status\n");
 			return -1;
 		}
-		if (!CAD_QSPI_STIG_SR_BUSY(status))
+		if (!CAD_QSPI_STIG_SR_BUSY(status)) {
 			break;
+		}
 		count++;
 	}
 
@@ -323,12 +329,14 @@ int cad_qspi_n25q_wait_for_program_and_erase(struct cad_qspi_params *cad_params,
 		}
 
 		if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMREADY(flag_sr)) ||
-		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr)))
+		    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEREADY(flag_sr))) {
 			break;
+		}
 	}
 
-	if (count >= CAD_QSPI_COMMAND_TIMEOUT)
+	if (count >= CAD_QSPI_COMMAND_TIMEOUT) {
 		LOG_ERR("Timed out waiting for program and erase\n");
+	}
 
 	if ((program_only && CAD_QSPI_STIG_FLAGSR_PROGRAMERROR(flag_sr)) ||
 	    (!program_only && CAD_QSPI_STIG_FLAGSR_ERASEERROR(flag_sr))) {
@@ -541,10 +549,11 @@ void cad_qspi_calibration(struct cad_qspi_params *cad_params, uint32_t dev_clk,
 		}
 
 		if (rdid == sample_rdid) {
-			if (first_pass == -1)
+			if (first_pass == -1) {
 				first_pass = data_cap_delay;
-			else
+			} else {
 				last_pass = data_cap_delay;
+			}
 		}
 
 		data_cap_delay++;
@@ -576,11 +585,13 @@ int cad_qspi_int_disable(struct cad_qspi_params *cad_params, uint32_t mask)
 		return -EINVAL;
 	}
 
-	if (cad_qspi_idle(cad_params) == 0)
+	if (cad_qspi_idle(cad_params) == 0) {
 		return -1;
+	}
 
-	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0)
+	if ((CAD_QSPI_INT_STATUS_ALL & mask) == 0) {
 		return -1;
+	}
 
 	sys_write32(mask, cad_params->reg_base + CAD_QSPI_IRQMSK);
 	return 0;
@@ -718,8 +729,9 @@ int cad_qspi_indirect_page_bound_write(struct cad_qspi_params *cad_params, uint3
 		space = MIN(write_capacity - write_fill_level,
 			    (len - write_count) / sizeof(uint32_t));
 		write_data = (uint32_t *)(buffer + write_count);
-		for (i = 0; i < space; ++i)
+		for (i = 0; i < space; ++i) {
 			sys_write32(*write_data++, cad_params->data_base);
+		}
 
 		write_count += space * sizeof(uint32_t);
 	}
@@ -749,8 +761,9 @@ int cad_qspi_read_bank(struct cad_qspi_params *cad_params, uint8_t *buffer, uint
 			level = CAD_QSPI_SRAMFILL_INDRDPART(
 				sys_read32(cad_params->reg_base + CAD_QSPI_SRAMFILL));
 			read_data = (uint32_t *)(buffer + read_count);
-			for (i = 0; i < level; ++i)
+			for (i = 0; i < level; ++i) {
 				*read_data++ = sys_read32(cad_params->data_base);
+			}
 
 			read_count += level * sizeof(uint32_t);
 			count++;

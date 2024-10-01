@@ -299,7 +299,7 @@ You should see following confirmation on your Linux host:
    usb 1-2.1: SerialNumber: 3574364C3034
 
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -347,7 +347,7 @@ in general, see :ref:`build_an_application`.
       :board: 96b_carbon/stm32f401xe
       :goals: build flash
 
-#. Refer to the instructions in :ref:`peripheral_hr` for how
+#. Refer to the instructions in :zephyr:code-sample:`ble_peripheral_hr` for how
    to verify functionality.
 
 Congratulations! Your 96Boards Carbon now has Bluetooth

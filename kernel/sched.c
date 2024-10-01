@@ -623,7 +623,7 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 	thread->base.pended_on = NULL;
 }
 
-ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
+void z_unpend_thread_no_timeout(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
 		if (thread->base.pended_on != NULL) {
@@ -905,7 +905,7 @@ static inline void set_current(struct k_thread *new_thread)
  * function.
  *
  * @warning
- * The @ref _current value may have changed after this call and not refer
+ * The _current value may have changed after this call and not refer
  * to the interrupted thread anymore. It might be necessary to make a local
  * copy before calling this function.
  *
@@ -1038,7 +1038,6 @@ void z_impl_k_thread_priority_set(k_tid_t thread, int prio)
 	 * keep track of it) and idle cannot change its priority.
 	 */
 	Z_ASSERT_VALID_PRIO(prio, NULL);
-	__ASSERT(!arch_is_in_isr(), "");
 
 	bool need_sched = z_thread_prio_set((struct k_thread *)thread, prio);
 

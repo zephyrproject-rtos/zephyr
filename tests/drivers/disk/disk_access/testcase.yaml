@@ -37,10 +37,10 @@ tests:
   drivers.disk.stm32_sdhc:
     filter: dt_compat_enabled("st,stm32-sdmmc")
   drivers.disk.simulator.no_explicit_erase:
-    extra_args: DTC_OVERLAY_FILE=boards/native_posix_no_explicit_erase.overlay
+    extra_args: DTC_OVERLAY_FILE=boards/native_sim_no_explicit_erase.overlay
     extra_configs:
       - CONFIG_DISK_DRIVER_FLASH=y
       - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
     platform_allow:
-      - native_posix/native/64
-      - native_posix
+      - native_sim/native/64
+      - native_sim

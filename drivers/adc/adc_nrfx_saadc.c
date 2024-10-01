@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(adc_nrfx_saadc);
 
 #if (NRF_SAADC_HAS_AIN_AS_PIN)
 
-#if defined(CONFIG_SOC_NRF54H20)
+#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
 static const uint8_t saadc_psels[NRF_SAADC_AIN7 + 1] = {
 	[NRF_SAADC_AIN0] = NRF_PIN_PORT_TO_PIN_NUMBER(0U, 1),
 	[NRF_SAADC_AIN1] = NRF_PIN_PORT_TO_PIN_NUMBER(1U, 1),
@@ -62,9 +62,9 @@ BUILD_ASSERT((NRF_SAADC_AIN0 == NRF_SAADC_INPUT_AIN0) &&
 	     "Definitions from nrf-adc.h do not match those from nrf_saadc.h");
 #endif
 
-#ifdef CONFIG_SOC_NRF54H20
+#if defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
 
-/* nRF54H20 always uses bounce buffers in RAM */
+/* nRF54H20 and nRF9280 always use bounce buffers in RAM */
 
 #define SAADC_MEMORY_SECTION					                     \
 	COND_CODE_1(DT_NODE_HAS_PROP(DT_NODELABEL(adc), memory_regions), \
@@ -76,7 +76,7 @@ static uint16_t adc_samples_buffer[SAADC_CH_NUM] SAADC_MEMORY_SECTION;
 
 #define ADC_BUFFER_IN_RAM
 
-#endif /* CONFIG_SOC_NRF54H20 */
+#endif /* defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280) */
 
 struct driver_data {
 	struct adc_context ctx;
@@ -133,6 +133,7 @@ static int adc_convert_acq_time(uint16_t acquisition_time, nrf_saadc_acqtime_t *
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 20):
 		*p_tacq_val = NRF_SAADC_ACQTIME_20US;
 		break;
+	case ADC_ACQ_TIME_MAX:
 	case ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40):
 		*p_tacq_val = NRF_SAADC_ACQTIME_40US;
 		break;
@@ -663,7 +664,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 #endif
 #if defined(CONFIG_SOC_NRF54L15)
 	.ref_internal  = 900,
-#elif defined(CONFIG_SOC_NRF54H20)
+#elif defined(CONFIG_SOC_NRF54H20) || defined(CONFIG_SOC_NRF9280)
 	.ref_internal  = 1024,
 #else
 	.ref_internal  = 600,

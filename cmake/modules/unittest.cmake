@@ -121,6 +121,8 @@ target_link_libraries(testbinary PRIVATE
   ${EXTRA_LDFLAGS_AS_LIST}
   )
 
+target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,debug>)
+
 if(CONFIG_COVERAGE)
   target_compile_options(test_interface INTERFACE $<TARGET_PROPERTY:compiler,coverage>)
 

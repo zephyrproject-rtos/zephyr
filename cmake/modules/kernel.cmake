@@ -9,7 +9,7 @@
 #
 # This CMake module creates 'project(Zephyr-Kernel)'
 #
-# It defines properties to use while configuring libraries to be build as well
+# It defines properties to use while configuring libraries to be built as well
 # as using add_subdirectory() to add the main <ZEPHYR_BASE>/CMakeLists.txt file.
 #
 # Outcome:

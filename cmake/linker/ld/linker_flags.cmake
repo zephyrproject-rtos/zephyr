@@ -1,3 +1,31 @@
+# Copyright (c) 2024 Nordic Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+
+check_set_linker_property(TARGET linker PROPERTY base
+                          ${LINKERFLAGPREFIX},--gc-sections
+                          ${LINKERFLAGPREFIX},--build-id=none
+)
+
+if(NOT CONFIG_MINIMAL_LIBCPP AND NOT CONFIG_NATIVE_LIBRARY AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
+  set_property(TARGET linker PROPERTY cpp_base -lstdc++)
+endif()
+
+check_set_linker_property(TARGET linker PROPERTY baremetal
+                          -nostdlib
+                          -static
+                          ${LINKERFLAGPREFIX},-X
+                          ${LINKERFLAGPREFIX},-N
+)
+
+check_set_linker_property(TARGET linker PROPERTY orphan_warning
+                          ${LINKERFLAGPREFIX},--orphan-handling=warn
+)
+
+check_set_linker_property(TARGET linker PROPERTY orphan_error
+                          ${LINKERFLAGPREFIX},--orphan-handling=error
+)
+
 check_set_linker_property(TARGET linker PROPERTY memusage "${LINKERFLAGPREFIX},--print-memory-usage")
 
 # -no-pie is not supported until binutils 2.37.
@@ -13,6 +41,13 @@ endif()
 set_property(TARGET linker PROPERTY partial_linking "-r")
 
 set_property(TARGET linker PROPERTY lto_arguments -flto -fno-ipa-sra -ffunction-sections -fdata-sections)
+
+check_set_linker_property(TARGET linker PROPERTY no_relax ${LINKERFLAGPREFIX},--no-relax)
+
+check_set_linker_property(TARGET linker PROPERTY sort_alignment
+                          ${LINKERFLAGPREFIX},--sort-common=descending
+                          ${LINKERFLAGPREFIX},--sort-section=alignment
+)
 
 # Some linker flags might not be purely ld specific, but a combination of
 # linker and compiler, such as:

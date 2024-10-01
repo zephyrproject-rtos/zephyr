@@ -7,5 +7,6 @@ config PWM_SIFIVE
 	bool "SiFive Freedom PWM driver"
 	default y
 	depends on DT_HAS_SIFIVE_PWM0_ENABLED
+	select PINCTRL if SOC_SERIES_SIFIVE_FREEDOM_FE300
 	help
 	  Enable the PWM driver for the SiFive Freedom platform

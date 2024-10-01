@@ -15,7 +15,7 @@
 /**
  * @brief Microphone Control Profile (MICP)
  *
- * @defgroup bt_gatt_micp Microphone Control Profile (MICP)
+ * @defgroup bt_micp Microphone Control Profile (MICP)
  *
  * @since 2.7
  * @version 0.8.0

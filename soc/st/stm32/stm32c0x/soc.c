@@ -22,11 +22,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32c0_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I-cache and prefetch */
 	LL_FLASH_EnableInstCache();
@@ -35,8 +32,4 @@ static int stm32c0_init(void)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 48 MHz from HSI */
 	SystemCoreClock = 48000000;
-
-	return 0;
 }
-
-SYS_INIT(stm32c0_init, PRE_KERNEL_1, 0);

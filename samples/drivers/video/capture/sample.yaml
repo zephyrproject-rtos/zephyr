@@ -1,0 +1,31 @@
+sample:
+  name: Video capture
+tests:
+  sample.video.capture:
+    tags:
+      - video
+      - shield
+      - samples
+    extra_args:
+      - platform:mimxrt1064_evk:SHIELD="dvp_fpc24_mt9m114;rk043fn66hs_ctg"
+      - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+    harness: console
+    harness_config:
+      fixture: fixture_camera
+      type: multi_line
+      ordered: true
+      regex:
+        - "Capture started"
+        - "Got frame"
+        - "size"
+        - "timestamp"
+    platform_allow:
+      - arduino_nicla_vision/stm32h747xx/m7
+      - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mm_swiftio
+      - esp32s3_eye/esp32s3/procpu
+    depends_on: video
+    integration_platforms:
+      - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7

@@ -1,0 +1,7 @@
+# MAX32666EVKIT boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32666EVKIT
+	select SOC_MAX32666_CPU0 if BOARD_MAX32666EVKIT_MAX32666_CPU0

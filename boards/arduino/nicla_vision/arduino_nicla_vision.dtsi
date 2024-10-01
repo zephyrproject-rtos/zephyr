@@ -1,0 +1,33 @@
+/*
+ * Copyright 2024 Felipe Neves
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+		};
+		green_led: led_1 {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+		blue_led: led_2 {
+			gpios = <&gpiof 4 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&rcc {
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&mailbox {
+	status = "okay";
+};

@@ -1,22 +1,43 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 #include <strings.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 #endif /* defined(CONFIG_LIBLC3) */
 #if defined(CONFIG_USB_DEVICE_AUDIO)
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -432,15 +453,13 @@ static void usb_data_request_cb(const struct device *dev)
 	uint8_t usb_audio_data[USB_STEREO_SAMPLE_SIZE] = {0};
 	static struct net_buf *pcm_buf;
 	static size_t cnt;
-	uint32_t size;
 	int err;
 
-	size = ring_buf_get(&usb_ring_buf, (uint8_t *)usb_audio_data, sizeof(usb_audio_data));
-	if (size == 0) {
-		/* size is 0, noop */
-		return;
-	}
-	/* Size lower than USB_STEREO_SAMPLE_SIZE is OK as usb_audio_data is 0-initialized */
+	ring_buf_get(&usb_ring_buf, (uint8_t *)usb_audio_data, sizeof(usb_audio_data));
+	/* Ignore ring_buf_get() return value, if size is 0 we send empty PCM frames to
+	 * not starve USB audio interface, if size is lower than USB_STEREO_SAMPLE_SIZE
+	 * we send frames padded with 0's as usb_audio_data is 0-initialized
+	 */
 
 	pcm_buf = net_buf_alloc(&usb_tx_buf_pool, K_NO_WAIT);
 	if (pcm_buf == NULL) {
@@ -1065,7 +1084,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0U) {
-		printk("Failed to connect to %s (%u)\n", addr, err);
+		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
 
 		broadcast_assistant_conn = NULL;
 		return;
@@ -1087,7 +1106,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(broadcast_assistant_conn);
 	broadcast_assistant_conn = NULL;
@@ -1289,8 +1308,13 @@ static int init(void)
 		return err;
 	}
 
+	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+	if (err) {
+		printk("Scan delegator register failed (err %d)\n", err);
+		return err;
+	}
+
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	bt_le_scan_cb_register(&bap_scan_cb);
 

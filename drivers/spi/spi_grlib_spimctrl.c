@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT gaisler_spimctrl
 
 #include <zephyr/drivers/spi.h>
+#include <zephyr/drivers/spi/rtio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(spi_spimctrl);
@@ -219,6 +220,9 @@ static struct spi_driver_api api = {
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async       = transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+	.iodev_submit = spi_rtio_iodev_default_submit,
+#endif
 	.release                = release,
 };
 

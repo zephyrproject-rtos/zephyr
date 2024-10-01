@@ -1,0 +1,21 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	acmp0_default: acmp0_default {
+		group0 {
+			pinmux = <ACMP0_IN4_PTC3>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&acmp0_default>;
+	pinctrl-names = "default";
+};

@@ -1,12 +1,13 @@
-.. _bme280:
+.. zephyr:code-sample:: bme280
+   :name: BME280 humidity and pressure sensor
+   :relevant-api: sensor_interface
 
-BME280 Humidity and Pressure Sensor
-###################################
+   Get temperature, pressure, and humidity data from a BME280 sensor.
 
 Overview
 ********
 
-This sample shows how to use the Zephyr :ref:`sensor_api` API driver for the
+This sample shows how to use the Zephyr :ref:`sensor` API driver for the
 `Bosch BME280`_ environmental sensor.
 
 .. _Bosch BME280:

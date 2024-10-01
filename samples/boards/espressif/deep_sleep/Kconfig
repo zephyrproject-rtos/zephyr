@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Espressif Deep Sleep demo"
+
+config EXAMPLE_EXT1_WAKEUP
+	bool "Enable wakeup from GPIO"
+	depends on !SOC_SERIES_ESP32C3
+	help
+	  This option enables wake-up from deep sleep using GPIO2 and
+	  GPIO4. The sample enables internal pull-down on EXT1 pins to
+	  avoid random wake-ups. Otherwise, external pull-down should
+	  be used for the same purpose. To trigger a wake-up, connect
+	  one or both of the pins to HIGH.
+
+config EXAMPLE_GPIO_WAKEUP
+	bool "Enable wakeup from GPIO"
+	depends on SOC_SERIES_ESP32C3
+	help
+	  This option enables wake-up from GPIO. Only GPIO0~5 can be used
+	  as wake-up source. Be aware that when low level is used to trigger
+	  wake-up, an external pull-up resistance is necessary.
+
+source "Kconfig.zephyr"

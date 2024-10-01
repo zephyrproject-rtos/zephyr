@@ -7,6 +7,7 @@
  *
  * @brief public S2RAM APIs.
  * @defgroup pm_s2ram S2RAM APIs
+ * @ingroup subsys_pm
  * @{
  */
 

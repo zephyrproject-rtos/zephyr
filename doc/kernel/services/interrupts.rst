@@ -604,8 +604,8 @@ If this configuration is supported by the used architecture and toolchaing the
 :kconfig:option:`ISR_TABLES_LOCAL_DECLARATION_SUPPORTED` is set.
 See details of this option for the information about currently supported configurations.
 
-Any invocation of :c:macro:`IRQ_CONNECT` or `IRQ_DIRECT_CONNECT` will declare an instance of struct
-_isr_list_sname which is placde in a special .intList section:
+Any invocation of :c:macro:`IRQ_CONNECT` or :c:macro:`IRQ_DIRECT_CONNECT` will declare an instance
+of ``struct _isr_list_sname`` which is placed in a special .intList section:
 
 .. code-block:: c
 
@@ -619,7 +619,7 @@ _isr_list_sname which is placde in a special .intList section:
     };
 
 Note that the section name is placed in flexible array member.
-It means that the size of the initialized structure will warry depending on the
+It means that the size of the initialized structure will vary depending on the
 structure name length.
 The whole entry is used by the script during the build of the application
 and has all the information needed for proper interrupt placement.
@@ -720,7 +720,7 @@ aggregator. In this case it may be desirable to override these defaults and use 
 number of bits per level. Regardless of how many bits used for each level, the sum of
 the total bits used between all levels must sum to be less than or equal to 32-bits,
 fitting into a single 32-bit integer. To modify the bit total per level, override the
-default 8 in `Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
+default 8 in :file:`Kconfig.multilevel` by setting :kconfig:option:`CONFIG_1ST_LEVEL_INTERRUPT_BITS`
 for the  first level, :kconfig:option:`CONFIG_2ND_LEVEL_INTERRUPT_BITS` for the second level and
 :kconfig:option:`CONFIG_3RD_LEVEL_INTERRUPT_BITS` for the third level. These masks control the
 length of the bit masks and shift to apply when generating interrupt values, when checking the

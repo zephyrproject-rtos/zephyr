@@ -3,53 +3,54 @@
 
 common:
   tags:
-    - subsys
+    - display
+    - drivers
     - cfb
   filter: dt_chosen_enabled("zephyr,display")
   build_only: true # The CI environment has no display device
 tests:
-  cfb.basic.mono01:
+  display.cfb.basic.mono01:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
-  cfb.basic.mono10:
+  display.cfb.basic.mono10:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
-  cfb.basic.mono01.lsbfirst:
+  display.cfb.basic.mono01.lsbfirst:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
-  cfb.basic.mono10.lsbfirst:
+  display.cfb.basic.mono10.lsbfirst:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
-  cfb.basic.mono01.msbfirst_font:
+  display.cfb.basic.mono01.msbfirst_font:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_TEST_MSB_FIRST_FONT=y
-  cfb.basic.mono10.msbfirst_font:
+  display.cfb.basic.mono10.msbfirst_font:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_TEST_MSB_FIRST_FONT=y
-  cfb.basic.mono01.lsbfirst.msbfirst_font:
+  display.cfb.basic.mono01.lsbfirst.msbfirst_font:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
       - CONFIG_TEST_MSB_FIRST_FONT=y
-  cfb.basic.mono10.lsbfirst.msbfirst_font:
+  display.cfb.basic.mono10.lsbfirst.msbfirst_font:
     filter: dt_compat_enabled("zephyr,sdl-dc")
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y

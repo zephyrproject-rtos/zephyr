@@ -114,6 +114,7 @@
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		#forward-cells = <1>;
 		reg = <0x100 4>;
 	};
 

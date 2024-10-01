@@ -64,6 +64,7 @@ enum coap_option_num {
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
 	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
+	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
 	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
 };
 
@@ -220,6 +221,22 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,   /**< application/json-patch+json */
 	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,  /**< application/merge-patch+json */
 	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
+};
+
+/**
+ * @brief Set of No-Response option values for CoAP.
+ *
+ * To be used when encoding or decoding a No-Response option defined
+ * in RFC 7967.
+ */
+enum coap_no_response {
+	COAP_NO_RESPONSE_SUPPRESS_2_XX = 0x02,
+	COAP_NO_RESPONSE_SUPPRESS_4_XX = 0x08,
+	COAP_NO_RESPONSE_SUPPRESS_5_XX = 0x10,
+
+	COAP_NO_RESPONSE_SUPPRESS_ALL = COAP_NO_RESPONSE_SUPPRESS_2_XX |
+					COAP_NO_RESPONSE_SUPPRESS_4_XX |
+					COAP_NO_RESPONSE_SUPPRESS_5_XX,
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -887,21 +904,22 @@ int coap_get_option_int(const struct coap_packet *cpkt, uint16_t code);
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint8_t *block_number);
+int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number);
 
 /**
  * @brief Get values from CoAP block2 option.
  *
- * Decode block number and block size from option. Ignore the has_more flag
- * as it should always be zero on queries.
+ * Decode block number, more flag and block size from option.
  *
  * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
  * @param block_number Is set to the number of the block
  *
  * @return Integer value of the block size in case of success
  * or negative in case of error.
  */
-int coap_get_block2_option(const struct coap_packet *cpkt, uint8_t *block_number);
+int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			   uint32_t *block_number);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates

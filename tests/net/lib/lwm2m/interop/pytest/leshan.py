@@ -420,7 +420,7 @@ class Leshan:
         Events are notifications, updates and sends.
 
         The event stream must be closed after the use, so this must be used in 'with' statement like this:
-            with leshan.get_event_stream('native_posix') as events:
+            with leshan.get_event_stream('native_sim') as events:
                 data = events.next_event('SEND')
 
         If timeout happens, the event streams returns None.

@@ -20,8 +20,8 @@ Due to its novel design, for high-volume deployment the low-cost Swan
 can also be soldered directly to a parent PCB integrating those sensors,
 utilizing the full range of Swan's I/O capabilities.
 
-The board has three independent power options-USB, Battery, or Line power-
-and provides a software-switchable 2 Amp regulator for powering external
+The board has three independent power options---USB, Battery, or Line
+power---and provides a software-switchable 2 Amp regulator for powering external
 sensors. When operating in its low-power operating mode, the entire Swan
 board commonly draws only about 8uA while retaining all of its memory,
 making it quite suitable for battery-powered devices.
@@ -198,7 +198,7 @@ Programming and Debugging
 
 Connect Swan to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Swan:
 

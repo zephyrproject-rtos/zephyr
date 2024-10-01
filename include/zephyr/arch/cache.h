@@ -349,6 +349,9 @@ void *arch_cache_uncached_ptr_get(void __sparse_cache *ptr);
 #define cache_uncached_ptr(ptr) arch_cache_uncached_ptr_get(ptr)
 #endif /* CONFIG_CACHE_DOUBLEMAP */
 
+
+void arch_cache_init(void);
+
 /**
  * @}
  */

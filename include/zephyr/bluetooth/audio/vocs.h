@@ -15,7 +15,7 @@
 /**
  * @brief Volume Offset Control Service (VOCS)
  *
- * @defgroup bt_gatt_vocs Volume Offset Control Service (VOCS)
+ * @defgroup bt_vocs Volume Offset Control Service (VOCS)
  *
  * @since 2.6
  * @version 0.8.0

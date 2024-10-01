@@ -1,0 +1,265 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/imx95_clock.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem0: memory@44611000 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x44611000 0x80>;
+		};
+	};
+
+	firmware {
+		scmi {
+			compatible = "arm,scmi";
+			shmem = <&scmi_shmem0>;
+			mboxes = <&mu5 0>;
+			mbox-names = "tx";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			scmi_clk: protocol@14 {
+				compatible = "arm,scmi-clock";
+				reg = <0x14>;
+				#clock-cells = <1>;
+			};
+
+			scmi_iomuxc: protocol@19 {
+				compatible = "arm,scmi-pinctrl";
+				reg = <0x19>;
+
+				pinctrl: pinctrl {
+					compatible = "nxp,imx95-pinctrl", "nxp,imx93-pinctrl";
+				};
+			};
+		};
+	};
+
+	soc {
+		itcm: itcm@0 {
+			compatible = "nxp,imx-itcm";
+			reg = <0x0 DT_SIZE_K(256)>;
+		};
+
+		dtcm: dtcm@20000000 {
+			compatible = "nxp,imx-dtcm";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		edma2: dma@42000000 {
+			compatible = "nxp,edma";
+			reg = <0x42000000 (DT_SIZE_K(64) * 33)>;
+			valid-channels = <30>, <31>;
+			interrupts = <143 0>, <143 0>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		lpi2c3: i2c@42530000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42530000 0x4000>;
+			interrupts = <58 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C3>;
+			status = "disabled";
+		};
+
+		lpi2c4: i2c@42540000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42540000 0x4000>;
+			interrupts = <59 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C4>;
+			status = "disabled";
+		};
+
+		lpuart3: serial@42570000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42570000 DT_SIZE_K(64)>;
+			interrupts = <64 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART3>;
+			status = "disabled";
+		};
+
+		lpuart4: serial@42580000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42580000 DT_SIZE_K(64)>;
+			interrupts = <65 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART4>;
+			status = "disabled";
+		};
+
+		lpuart5: serial@42590000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42590000 DT_SIZE_K(64)>;
+			interrupts = <66 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART5>;
+			status = "disabled";
+		};
+
+		lpuart6: serial@425a0000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x425a0000 DT_SIZE_K(64)>;
+			interrupts = <67 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART6>;
+			status = "disabled";
+		};
+
+		sai3: dai@42650000 {
+			compatible = "nxp,dai-sai";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX95_CLK_SAI3>;
+			clock-names = "mclk1";
+			interrupts = <170 0>;
+			dai-index = <3>;
+			mclk-is-output;
+			dmas = <&edma2 30 60>, <&edma2 31 61>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		lpuart7: serial@42690000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x42690000 DT_SIZE_K(64)>;
+			interrupts = <68 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART7>;
+			status = "disabled";
+		};
+
+		lpuart8: serial@426a0000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x426a0000 DT_SIZE_K(64)>;
+			interrupts = <69 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART8>;
+			status = "disabled";
+		};
+
+		lpi2c5: i2c@426b0000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426b0000 0x4000>;
+			interrupts = <181 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C5>;
+			status = "disabled";
+		};
+
+		lpi2c6: i2c@426c0000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426c0000 0x4000>;
+			interrupts = <182 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C6>;
+			status = "disabled";
+		};
+
+		lpi2c7: i2c@426d0000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426d0000 0x4000>;
+			interrupts = <183 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C7>;
+			status = "disabled";
+		};
+
+		lpi2c8: i2c@426e0000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426e0000 0x4000>;
+			interrupts = <184 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C8>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@44340000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44340000 0x4000>;
+			interrupts = <13 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C1>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@44350000 {
+			compatible = "nxp,imx-lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44350000 0x4000>;
+			interrupts = <14 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPI2C2>;
+			status = "disabled";
+		};
+
+		lpuart1: serial@44380000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x44380000 DT_SIZE_K(64)>;
+			interrupts = <19 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART1>;
+			status = "disabled";
+		};
+
+		lpuart2: serial@44390000 {
+			compatible = "nxp,imx-lpuart", "nxp,kinetis-lpuart";
+			reg = <0x44390000 DT_SIZE_K(64)>;
+			interrupts = <20 3>;
+			clocks = <&scmi_clk IMX95_CLK_LPUART2>;
+			status = "disabled";
+		};
+
+		mu5: mailbox@44610000 {
+			compatible = "nxp,mbox-imx-mu";
+			reg = <0x44610000 DT_SIZE_K(4)>;
+			interrupts = <205 0>;
+			#mbox-cells = <1>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

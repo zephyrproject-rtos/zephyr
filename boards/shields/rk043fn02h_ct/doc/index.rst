@@ -1,7 +1,7 @@
 .. _rk043fn02h_ct:
 
-RK043FN02H-CT Parallel Display
-##############################
+NXP RK043FN02H-CT Parallel Display
+##################################
 
 Overview
 ********

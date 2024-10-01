@@ -919,6 +919,11 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			struct net_buf *rsp_buf;
 			int err;
 
+			if (buf->len < sizeof(sigid)) {
+				LOG_ERR("Invalid AVDTP Header");
+				return 0;
+			}
+
 			sigid = net_buf_pull_u8(buf);
 			rsp_buf = avdtp_create_reply_pdu(BT_AVDTP_REJECT,
 					BT_AVDTP_PACKET_TYPE_SINGLE,

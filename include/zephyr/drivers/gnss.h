@@ -48,27 +48,6 @@ typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interv
 /** API for getting fix rate */
 typedef int (*gnss_get_fix_rate_t)(const struct device *dev, uint32_t *fix_interval_ms);
 
-/**
- * @brief GNSS periodic tracking configuration
- *
- * @note Setting either active_time or inactive_time to 0 will disable periodic
- * function.
- */
-struct gnss_periodic_config {
-	/** The time the GNSS will spend in the active state in ms */
-	uint32_t active_time_ms;
-	/** The time the GNSS will spend in the inactive state in ms */
-	uint32_t inactive_time_ms;
-};
-
-/** API for setting periodic tracking configuration */
-typedef int (*gnss_set_periodic_config_t)(const struct device *dev,
-					  const struct gnss_periodic_config *periodic_config);
-
-/** API for setting periodic tracking configuration */
-typedef int (*gnss_get_periodic_config_t)(const struct device *dev,
-					  struct gnss_periodic_config *periodic_config);
-
 /** GNSS navigation modes */
 enum gnss_navigation_mode {
 	/** Dynamics have no impact on tracking */
@@ -169,7 +148,7 @@ struct gnss_time {
 	uint8_t hour;
 	/** Minute [0, 59] */
 	uint8_t minute;
-	/** Millisecond [0, 59999] */
+	/** Millisecond [0, 60999] */
 	uint16_t millisecond;
 	/** Day of month [1, 31] */
 	uint8_t month_day;
@@ -183,8 +162,6 @@ struct gnss_time {
 __subsystem struct gnss_driver_api {
 	gnss_set_fix_rate_t set_fix_rate;
 	gnss_get_fix_rate_t get_fix_rate;
-	gnss_set_periodic_config_t set_periodic_config;
-	gnss_get_periodic_config_t get_periodic_config;
 	gnss_set_navigation_mode_t set_navigation_mode;
 	gnss_get_navigation_mode_t get_navigation_mode;
 	gnss_set_enabled_systems_t set_enabled_systems;
@@ -284,54 +261,6 @@ static inline int z_impl_gnss_get_fix_rate(const struct device *dev, uint32_t *f
 	}
 
 	return api->get_fix_rate(dev, fix_interval_ms);
-}
-
-/**
- * @brief Set the GNSS periodic tracking configuration
- *
- * @param dev Device instance
- * @param config Periodic tracking configuration to set
- *
- * @return 0 if successful
- * @return -errno negative errno code on failure
- */
-__syscall int gnss_set_periodic_config(const struct device *dev,
-				       const struct gnss_periodic_config *config);
-
-static inline int z_impl_gnss_set_periodic_config(const struct device *dev,
-						  const struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->set_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->set_periodic_config(dev, config);
-}
-
-/**
- * @brief Get the GNSS periodic tracking configuration
- *
- * @param dev Device instance
- * @param config Destination for periodic tracking configuration
- *
- * @return 0 if successful
- * @return -errno negative errno code on failure
- */
-__syscall int gnss_get_periodic_config(const struct device *dev,
-				       struct gnss_periodic_config *config);
-
-static inline int z_impl_gnss_get_periodic_config(const struct device *dev,
-						  struct gnss_periodic_config *config)
-{
-	const struct gnss_driver_api *api = (const struct gnss_driver_api *)dev->api;
-
-	if (api->get_periodic_config == NULL) {
-		return -ENOSYS;
-	}
-
-	return api->get_periodic_config(dev, config);
 }
 
 /**

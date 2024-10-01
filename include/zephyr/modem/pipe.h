@@ -63,7 +63,7 @@ struct modem_pipe_api {
 
 struct modem_pipe {
 	void *data;
-	struct modem_pipe_api *api;
+	const struct modem_pipe_api *api;
 	modem_pipe_api_callback callback;
 	void *user_data;
 	struct k_spinlock spinlock;
@@ -77,7 +77,7 @@ struct modem_pipe {
  * @param data Pipe data to bind to pipe instance
  * @param api Pipe API implementation to bind to pipe instance
  */
-void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api *api);
+void modem_pipe_init(struct modem_pipe *pipe, void *data, const struct modem_pipe_api *api);
 
 /**
  * @endcond
@@ -87,6 +87,7 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
  * @brief Open pipe
  *
  * @param pipe Pipe instance
+ * @param timeout Timeout waiting for pipe to open
  *
  * @retval 0 if pipe was successfully opened or was already open
  * @retval -errno code otherwise
@@ -95,7 +96,7 @@ void modem_pipe_init(struct modem_pipe *pipe, void *data, struct modem_pipe_api 
  * It may block the calling thread, which in the case of the system workqueue
  * can result in a deadlock until this call times out waiting for the pipe to be open.
  */
-int modem_pipe_open(struct modem_pipe *pipe);
+int modem_pipe_open(struct modem_pipe *pipe, k_timeout_t timeout);
 
 /**
  * @brief Open pipe asynchronously
@@ -163,6 +164,7 @@ void modem_pipe_release(struct modem_pipe *pipe);
  * @brief Close pipe
  *
  * @param pipe Pipe instance
+ * @param timeout Timeout waiting for pipe to close
  *
  * @retval 0 if pipe open was called closed or pipe was already closed
  * @retval -errno code otherwise
@@ -171,7 +173,7 @@ void modem_pipe_release(struct modem_pipe *pipe);
  * It may block the calling thread, which in the case of the system workqueue
  * can result in a deadlock until this call times out waiting for the pipe to be closed.
  */
-int modem_pipe_close(struct modem_pipe *pipe);
+int modem_pipe_close(struct modem_pipe *pipe, k_timeout_t timeout);
 
 /**
  * @brief Close pipe asynchronously

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2024 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Microchip MEC5 MEC174x, MEC540x, MEC175x, and MEC550x add two more UART's
+ * in the 176-pin (LJ) package.
+ * Include this file in the soc {} section in the above chip DTSI files.
+ */
+uart2: uart@400f2c00 {
+	reg = <0x400f2c00 0x400>;
+	interrupts = <183 1>;
+	clock-frequency = <1843200>;
+	current-speed = <38400>;
+	status = "disabled";
+};
+
+uart3: uart@400f3000 {
+	reg = <0x400f3000 0x400>;
+	interrupts = <184 1>;
+	clock-frequency = <1843200>;
+	current-speed = <38400>;
+	status = "disabled";
+};

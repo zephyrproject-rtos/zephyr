@@ -32,6 +32,11 @@
 /* Disable binary info */
 #define PICO_NO_BINARY_INFO 1
 
+#ifdef CONFIG_DT_HAS_RASPBERRYPI_PICO_XOSC_ENABLED
+#include <zephyr/devicetree.h>
+#define PICO_XOSC_STARTUP_DELAY_MULTIPLIER DT_PROP(DT_NODELABEL(xosc), startup_delay_multiplier)
+#endif
+
 /* Zephyr compatible way of forcing inline */
 #ifndef __always_inline
 #define __always_inline ALWAYS_INLINE

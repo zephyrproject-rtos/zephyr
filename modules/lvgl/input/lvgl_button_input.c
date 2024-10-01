@@ -20,8 +20,9 @@ struct lvgl_button_input_config {
 	const lv_coord_t *coordinates;
 };
 
-static void lvgl_button_process_event(const struct device *dev, struct input_event *evt)
+static void lvgl_button_process_event(struct input_event *evt, void *user_data)
 {
+	const struct device *dev = user_data;
 	struct lvgl_common_input_data *data = dev->data;
 	const struct lvgl_button_input_config *cfg = dev->config;
 	uint8_t i;

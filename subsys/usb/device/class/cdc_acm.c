@@ -527,8 +527,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		dev_data, len, ring_buf_space_get(dev_data->tx_ringbuf));
 
 	if (!dev_data->configured || dev_data->suspended) {
-		LOG_WRN("Device not configured or suspended, drop %d bytes",
-			len);
+		LOG_INF("Device suspended or not configured");
 		return 0;
 	}
 
@@ -537,9 +536,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	lock = irq_lock();
 	wrote = ring_buf_put(dev_data->tx_ringbuf, tx_data, len);
 	irq_unlock(lock);
-	if (wrote < len) {
-		LOG_WRN("Ring buffer full, drop %zd bytes", len - wrote);
-	}
+	LOG_DBG("Wrote %zu of %d bytes to TX ringbuffer", wrote, len);
 
 	k_work_schedule_for_queue(&USB_WORK_Q, &dev_data->tx_work, K_NO_WAIT);
 

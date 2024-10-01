@@ -814,7 +814,7 @@ int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arc_mpu_init(void)
+void arc_mpu_init(void)
 {
 	uint32_t num_regions;
 	uint32_t i;
@@ -826,7 +826,7 @@ static int arc_mpu_init(void)
 		__ASSERT(0,
 		"Request to configure: %u regions (supported: %u)\n",
 		mpu_config.num_regions, num_regions);
-		return -EINVAL;
+		return;
 	}
 
 	static_regions_num = 0U;
@@ -851,7 +851,7 @@ static int arc_mpu_init(void)
 			MPU_DYNAMIC_REGION_AREAS_NUM) {
 				LOG_ERR("not enough dynamic regions %d",
 				 dynamic_regions_num);
-				return -EINVAL;
+				return;
 			}
 
 			dyn_reg_info[dynamic_regions_num].index = i;
@@ -886,10 +886,8 @@ static int arc_mpu_init(void)
 	/* Enable MPU */
 	arc_core_mpu_enable();
 
-	return 0;
+	return;
 }
 
-SYS_INIT(arc_mpu_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_ */

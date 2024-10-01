@@ -20,25 +20,26 @@ ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/compile.sh
 
 app=tests/bsim/bluetooth/host/iso/cis compile
 app=tests/bsim/bluetooth/host/iso/bis compile
+app=tests/bsim/bluetooth/host/iso/frag compile
+app=tests/bsim/bluetooth/host/iso/frag_2 compile
 
 app=tests/bsim/bluetooth/host/misc/disable compile
-app=tests/bsim/bluetooth/host/misc/disconnect/dut compile
-app=tests/bsim/bluetooth/host/misc/disconnect/tester compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/misc/disconnect/compile.sh
 app=tests/bsim/bluetooth/host/misc/conn_stress/central compile
 app=tests/bsim/bluetooth/host/misc/conn_stress/peripheral compile
-app=tests/bsim/bluetooth/host/misc/hfc compile
-app=tests/bsim/bluetooth/host/misc/hfc_multilink/dut compile
-app=tests/bsim/bluetooth/host/misc/hfc_multilink/tester compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/misc/hfc/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/misc/hfc_multilink/compile.sh
 app=tests/bsim/bluetooth/host/misc/unregister_conn_cb compile
-app=tests/bsim/bluetooth/host/misc/sample_test compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/misc/sample_test/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/misc/acl_tx_frag/compile.sh
 
-app=tests/bsim/bluetooth/host/privacy/central compile
-app=tests/bsim/bluetooth/host/privacy/peripheral compile
-app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_expired.conf compile
-app=tests/bsim/bluetooth/host/privacy/peripheral conf_file=prj_rpa_sharing.conf compile
-app=tests/bsim/bluetooth/host/privacy/device compile
-app=tests/bsim/bluetooth/host/privacy/legacy compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/privacy/central/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/privacy/peripheral/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/privacy/device/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/privacy/legacy/compile.sh
 
-app=tests/bsim/bluetooth/host/id/settings compile
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/id/settings/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/scan/start_stop/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/scan/slow/compile.sh
 
 wait_for_background_jobs

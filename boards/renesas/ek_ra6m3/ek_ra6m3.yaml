@@ -1,0 +1,11 @@
+identifier: ek_ra6m3
+name: Renesas EK-RA6M3
+type: mcu
+arch: arm
+ram: 640
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio

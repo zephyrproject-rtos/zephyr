@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
  * for ESP32-S2 is doing it, so we copy that approach in Zephyr driver
  */
 #define ADC_CLIP_MVOLT_11DB	2550
+#elif CONFIG_SOC_SERIES_ESP32S3
+#define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP_FIT
 #else
 #define ADC_CALI_SCHEME		ESP_ADC_CAL_VAL_EFUSE_TP
 #endif
@@ -143,8 +145,6 @@ static void adc_hw_calibration(adc_unit_t unit)
 
 static bool adc_calibration_init(const struct device *dev)
 {
-	struct adc_esp32_data *data = dev->data;
-
 	switch (esp_adc_cal_check_efuse(ADC_CALI_SCHEME)) {
 	case ESP_ERR_NOT_SUPPORTED:
 		LOG_WRN("Skip software calibration - Not supported!");
@@ -568,7 +568,6 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 {
 	const struct adc_esp32_conf *conf = (const struct adc_esp32_conf *)dev->config;
 	struct adc_esp32_data *data = (struct adc_esp32_data *) dev->data;
-	int err;
 
 	if (cfg->channel_id >= conf->channel_count) {
 		LOG_ERR("Unsupported channel id '%d'", cfg->channel_id);
@@ -636,7 +635,8 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		.pin = io_num,
 	};
 
-	err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+	int err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
+
 	if (err) {
 		LOG_ERR("Error disconnecting io (%d)", io_num);
 		return err;

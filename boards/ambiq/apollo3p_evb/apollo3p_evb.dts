@@ -106,6 +106,7 @@
 	compatible = "ambiq,spi";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpio0_31 11 GPIO_ACTIVE_LOW>;
 	clock-frequency = <DT_FREQ_M(1)>;
 	status = "okay";
 };
@@ -148,6 +149,13 @@
 
 &counter7 {
 	status = "okay";
+};
+
+&adc0 {
+	compatible = "ambiq,adc";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &gpio0_31 {

@@ -13,6 +13,7 @@
  * architecture
  */
 
+#include <stdio.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/kernel_structs.h>
 #include <ksched.h>
@@ -52,6 +53,40 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.thread_status = thread_status;
 
 	thread_status->thread_idx = posix_new_thread((void *)thread_status);
+}
+
+int arch_thread_name_set(struct k_thread *thread, const char *str)
+{
+#define MAX_HOST_THREAD_NAME 16
+
+	int ret;
+	int thread_index;
+	posix_thread_status_t *thread_status;
+	char th_name[MAX_HOST_THREAD_NAME];
+
+	thread_status = thread->callee_saved.thread_status;
+	if (!thread_status) {
+		return -EAGAIN;
+	}
+
+	thread_index = thread_status->thread_idx;
+
+	if (!str) {
+		return -EAGAIN;
+	}
+
+	snprintf(th_name, MAX_HOST_THREAD_NAME,
+	#if (CONFIG_NATIVE_SIMULATOR_NUMBER_MCUS > 1)
+			STRINGIFY(CONFIG_NATIVE_SIMULATOR_MCU_N) ":"
+	#endif
+		"%s", str);
+
+	ret = posix_arch_thread_name_set(thread_index, th_name);
+	if (ret) {
+		return -EAGAIN;
+	}
+
+	return 0;
 }
 
 void posix_arch_thread_entry(void *pa_thread_status)

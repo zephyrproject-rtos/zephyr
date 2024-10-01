@@ -363,6 +363,9 @@ static int i2c_imx_init(const struct device *dev)
 static const struct i2c_driver_api i2c_imx_driver_api = {
 	.configure = i2c_imx_configure,
 	.transfer = i2c_imx_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define I2C_IMX_INIT(n)							\

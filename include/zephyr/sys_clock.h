@@ -252,21 +252,6 @@ k_timepoint_t sys_timepoint_calc(k_timeout_t timeout);
 k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint);
 
 /**
- * @brief Provided for backward compatibility.
- *
- * This is deprecated. Consider `sys_timepoint_calc()` instead.
- *
- * @see sys_timepoint_calc()
- */
-__deprecated
-static inline uint64_t sys_clock_timeout_end_calc(k_timeout_t timeout)
-{
-	k_timepoint_t tp = sys_timepoint_calc(timeout);
-
-	return tp.tick;
-}
-
-/**
  * @brief Compare two timepoint values.
  *
  * This function is used to compare two timepoint values.

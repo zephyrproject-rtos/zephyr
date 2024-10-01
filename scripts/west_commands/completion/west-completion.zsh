@@ -34,6 +34,7 @@ _west_cmds() {
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
+  'sdk[manage SDKs]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})

@@ -1,0 +1,22 @@
+# VIDEO resolution settings
+
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config VIDEO_WIDTH
+	int "Define the width of the video"
+	default 320
+
+config VIDEO_HEIGHT
+	int "Define the height of the video"
+	default 240
+
+config VIDEO_HFLIP
+	bool "Horizontal flip"
+	default n
+
+config VIDEO_VFLIP
+	bool "Vertical flip"
+	default n

@@ -8,6 +8,7 @@ supported:
   - gpio
   - uart
   - i2c
+  - i2s
   - spi
   - can
   - counter
@@ -16,6 +17,7 @@ supported:
   - pwm
   - dma
   - input
+  - video
 testing:
   ignore_tags:
     - net

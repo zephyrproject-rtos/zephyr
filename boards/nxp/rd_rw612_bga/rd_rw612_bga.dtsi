@@ -25,6 +25,7 @@
 		zephyr,sram = &sram_data;
 		zephyr,flash = &mx25u51245g;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm3;
 		zephyr,flash-controller = &mx25u51245g;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
@@ -281,4 +282,9 @@ zephyr_udc0: &usb_otg {
 &hci {
 	status = "okay";
 	wakeup-source;
+};
+
+&pin1 {
+	status = "okay";
+	wakeup-level = "low";
 };

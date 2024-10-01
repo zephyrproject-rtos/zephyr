@@ -277,7 +277,7 @@ static void tbs_client_cp_cb(struct bt_conn *conn, int err, uint8_t inst_index, 
 	tbs_client_cp_ev(conn, err);
 }
 
-static const struct bt_tbs_client_cb tbs_client_callbacks = {
+static struct bt_tbs_client_cb tbs_client_callbacks = {
 	.discover = tbs_client_discover_cb,
 	.originate_call = tbs_client_cp_cb,
 	.terminate_call = tbs_client_cp_cb,
@@ -860,10 +860,15 @@ static const struct btp_handler ccp_handlers[] = {
 
 uint8_t tester_init_ccp(void)
 {
+	int err;
+
 	tester_register_command_handlers(BTP_SERVICE_ID_CCP, ccp_handlers,
 					 ARRAY_SIZE(ccp_handlers));
 
-	bt_tbs_client_register_cb(&tbs_client_callbacks);
+	err = bt_tbs_client_register_cb(&tbs_client_callbacks);
+	if (err != 0) {
+		return BTP_STATUS_FAILED;
+	}
 
 	return BTP_STATUS_SUCCESS;
 }

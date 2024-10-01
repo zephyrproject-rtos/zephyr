@@ -275,7 +275,7 @@ DEVICE_DT_INST_DEFINE(0, &eeprom_sim_init, NULL,
 
 #ifdef CONFIG_ARCH_POSIX
 
-static void eeprom_native_posix_cleanup(void)
+static void eeprom_native_cleanup(void)
 {
 	if ((mock_eeprom != MAP_FAILED) && (mock_eeprom != NULL)) {
 		munmap(mock_eeprom, DT_INST_PROP(0, size));
@@ -286,7 +286,7 @@ static void eeprom_native_posix_cleanup(void)
 	}
 }
 
-static void eeprom_native_posix_options(void)
+static void eeprom_native_options(void)
 {
 	static struct args_struct_t eeprom_options[] = {
 		{ .manual = false,
@@ -304,8 +304,7 @@ static void eeprom_native_posix_options(void)
 	native_add_command_line_opts(eeprom_options);
 }
 
-
-NATIVE_TASK(eeprom_native_posix_options, PRE_BOOT_1, 1);
-NATIVE_TASK(eeprom_native_posix_cleanup, ON_EXIT, 1);
+NATIVE_TASK(eeprom_native_options, PRE_BOOT_1, 1);
+NATIVE_TASK(eeprom_native_cleanup, ON_EXIT, 1);
 
 #endif /* CONFIG_ARCH_POSIX */

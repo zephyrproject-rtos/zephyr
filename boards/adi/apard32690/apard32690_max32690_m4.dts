@@ -93,6 +93,10 @@
 	status = "okay";
 };
 
+&trng {
+	status = "okay";
+};
+
 arduino_serial: &uart1 {
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 	pinctrl-0 = <&uart1a_tx_p2_16 &uart1a_rx_p2_14>;
@@ -103,6 +107,28 @@ arduino_serial: &uart1 {
 arduino_spi: &spi1 {
 	pinctrl-0 = <&spi1a_miso_p1_28 &spi1a_mosi_p1_29 &spi1a_sck_p1_26
 		     &spi1a_ss0_p1_23>;
+	pinctrl-names = "default";
+};
+
+&spi4a_miso_p1_2 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_mosi_p1_1 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_sck_p1_3 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi4a_ss0_p1_0 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+pmod_spi: &spi4 {
+	pinctrl-0 = <&spi4a_miso_p1_2 &spi4a_mosi_p1_1 &spi4a_sck_p1_3
+		     &spi4a_ss0_p1_0>;
 	pinctrl-names = "default";
 };
 

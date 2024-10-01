@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u0/stm32u031.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32u073", "st,stm32u0", "simple-bus";
+
+		i2c4: i2c@4000a000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000a000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			interrupts = <24 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+	};
+
+	sram1: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM1";
+	};
+
+	sram2: memory@20008000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM2";
+	};
+};

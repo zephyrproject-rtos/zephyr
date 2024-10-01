@@ -59,7 +59,7 @@ source "drivers/ethernet/Kconfig.dwmac"
 source "drivers/ethernet/Kconfig.smsc911x"
 source "drivers/ethernet/Kconfig.native_posix"
 source "drivers/ethernet/Kconfig.stellaris"
-source "drivers/ethernet/Kconfig.liteeth"
+source "drivers/ethernet/Kconfig.litex"
 source "drivers/ethernet/Kconfig.gecko"
 source "drivers/ethernet/Kconfig.w5500"
 source "drivers/ethernet/Kconfig.dsa"
@@ -76,6 +76,7 @@ source "drivers/ethernet/Kconfig.xmc4xxx"
 
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 
+source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 
 source "drivers/ethernet/nxp_enet/Kconfig"

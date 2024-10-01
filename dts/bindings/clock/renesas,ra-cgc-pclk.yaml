@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Clock Control Peripheral Clock
+
+compatible: "renesas,ra-cgc-pclk"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clk-src:
+    type: int
+
+  clk-div:
+    type: int
+    required: true
+    description: Prescale divider to calculate the subclock frequency from the
+                 system clock frequency.
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - mstp
+  - stop_bit

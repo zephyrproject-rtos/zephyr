@@ -29,6 +29,8 @@ Supported Features
 +-----------+------------+----------------------+
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
+| GPS       | u-blox     | gnss                 |
++-----------+------------+----------------------+
 | I2C(M)    | on-chip    | i2c                  |
 +-----------+------------+----------------------+
 | MPU       | on-chip    | arch/arm             |
@@ -132,7 +134,7 @@ Flashing
 The byteSENSI-L board can be flashed with the SEGGER JLink programmer.
 
 You can build and flash applications in the usual way. Here is an example for
-the :ref:`hello_world` application.
+the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

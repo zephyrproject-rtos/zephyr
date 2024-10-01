@@ -1,0 +1,88 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1180_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &green_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio4 27 GPIO_ACTIVE_HIGH>;
+			label = "User LED D6";
+	    };
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW8";
+			gpios = <&gpio1 4 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&user_button {
+	status = "okay";
+};
+
+&green_led {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&flexspi1 {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	w25q128jw: w25q128jw@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <134217728>;
+		reg = <0>;
+		spi-max-frequency = <133000000>;
+		status = "okay";
+		jedec-id = [ef 80 18];
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+	};
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&pinmux_lpi2c2>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
+&lpadc1 {
+	pinctrl-0 = <&pinmux_lpadc1>;
+	pinctrl-names = "default";
+};

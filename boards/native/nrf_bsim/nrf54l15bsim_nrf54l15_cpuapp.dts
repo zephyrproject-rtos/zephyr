@@ -60,14 +60,15 @@
 			/delete-node/ gpio@10a000;
 			/delete-node/ gpiote@10c000;
 		};
-		/delete-node/ spu@50003000;
-		/delete-node/ gpiote@5000d000;
-		/delete-node/ crypto@50844000;
 	};
 
 	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";
+	};
+
+	psa_rng: psa-rng {
+		status = "disabled";
 	};
 };
 
@@ -96,8 +97,9 @@
 
 &radio {
 	status = "okay";
-	/* This feature is not yet supported by the RADIO model */
+	/* These features are not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
+	/delete-property/ cs-supported;
 };
 
 &clock {

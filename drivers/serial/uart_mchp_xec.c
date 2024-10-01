@@ -1097,7 +1097,7 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),		\
 	};								\
 	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(n, &uart_xec_init,			\
+	DEVICE_DT_INST_DEFINE(n, uart_xec_init,				\
 			      PM_DEVICE_DT_INST_GET(n),			\
 			      &uart_xec_dev_data_##n,			\
 			      &uart_xec_dev_cfg_##n,			\

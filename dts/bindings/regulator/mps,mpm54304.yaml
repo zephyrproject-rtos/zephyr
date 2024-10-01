@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Monolithic Power Systems MPM54304 quad-output DC/DC step-down power module.
+  See https://www.monolithicpower.com/en/mpm54304.html.
+
+  The MPM54304 has four buck regulators. All need to be defined as
+  children nodes, strictly following the BUCK1..4 node names. For
+  example:
+
+  mpm54304@68 {
+    reg = <0x68>;
+    ...
+
+    BUCK1 {
+      /* all properties for BUCK1 */
+    };
+    BUCK2 {
+      /* all properties for BUCK2 */
+    };
+    BUCK3 {
+      /* all properties for BUCK3 */
+    };
+    BUCK4 {
+      /* all properties for BUCK4 */
+    };
+  };
+
+compatible: "mps,mpm54304"
+
+include: i2c-device.yaml

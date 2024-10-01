@@ -279,34 +279,32 @@ static int mimxrt595_evk_init(void)
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #ifdef CONFIG_I2S
-
+#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Set shared signal set 0 SCK, WS from Transmit I2S - Flexcomm3 */
 	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(3) |
 				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(3);
-
-#ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Select Data in from Transmit I2S - Flexcomm 3 */
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_SHAREDDATASEL(3);
 	/* Enable Transmit I2S - Flexcomm 3 for Shared Data Out */
 	SYSCTL1->SHAREDCTRLSET[0] |= SYSCTL1_SHAREDCTRLSET_FC3DATAOUTEN(1);
+#else
+	/* Set shared signal set 0: SCK, WS from Flexcomm1 */
+	SYSCTL1->SHAREDCTRLSET[0] = SYSCTL1_SHAREDCTRLSET_SHAREDSCKSEL(1) |
+				SYSCTL1_SHAREDCTRLSET_SHAREDWSSEL(1);
 #endif
-
 	/* Set Receive I2S - Flexcomm 1 SCK, WS from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[1] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
 				SYSCTL1_FCCTRLSEL_WSINSEL(1);
-
 	/* Set Transmit I2S - Flexcomm 3 SCK, WS from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[3] = SYSCTL1_FCCTRLSEL_SCKINSEL(1) |
 				SYSCTL1_FCCTRLSEL_WSINSEL(1);
-
 #ifdef CONFIG_I2S_TEST_SEPARATE_DEVICES
 	/* Select Receive I2S - Flexcomm 1 Data in from shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[1] |= SYSCTL1_FCCTRLSEL_DATAINSEL(1);
 	/* Select Transmit I2S - Flexcomm 3 Data out to shared signal set 0 */
 	SYSCTL1->FCCTRLSEL[3] |= SYSCTL1_FCCTRLSEL_DATAOUTSEL(1);
-#endif
-
-#endif
+#endif /* CONFIG_I2S_TEST_SEPARATE_DEVICES */
+#endif /* CONFIG_I2S */
 
 
 #ifdef CONFIG_REBOOT

@@ -47,3 +47,13 @@ tests:
     filter: CONFIG_UART_CONSOLE
     depends_on: usb_device
     harness: keyboard
+  drivers.uart.basic_api.shell_ke17z9_uart:
+    tags:
+      - drivers
+      - uart
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
+    platform_allow: frdm_ke17z512
+    extra_args:
+      - CONF_FILE=prj_shell.conf
+      - DTC_OVERLAY_FILE="boards/frdm_ke17z512_uart.overlay"

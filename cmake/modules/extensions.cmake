@@ -113,7 +113,14 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
-  target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    if(ARGC GREATER 2)
+      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    endif()
+    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
+  else()
+    target_link_libraries(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 function(zephyr_libc_link_libraries)
@@ -851,6 +858,39 @@ endfunction()
 function(board_set_rimage_target target)
   set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
   zephyr_check_cache(RIMAGE_TARGET)
+endfunction()
+
+function(board_emu_args emu)
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  # Note the "_EXPLICIT_" here, and see below.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_EXPLICIT_${emu_id} ${ARGN})
+endfunction()
+
+function(board_finalize_emu_args emu)
+  # If the application provided a macro to add additional emu
+  # arguments, handle them.
+  if(COMMAND app_set_emu_args)
+    app_set_emu_args()
+  endif()
+
+  # Retrieve the list of explicitly set arguments.
+  string(MAKE_C_IDENTIFIER ${emu} emu_id)
+  get_property(explicit GLOBAL PROPERTY "BOARD_EMU_ARGS_EXPLICIT_${emu_id}")
+
+  # Note no _EXPLICIT_ here. This property contains the final list.
+  set_property(GLOBAL APPEND PROPERTY BOARD_EMU_ARGS_${emu_id}
+    # Default arguments from the common emu file come first.
+    ${ARGN}
+    # Arguments explicitly given with board_emu_args() come
+    # next, so they take precedence over the common emu file.
+    ${explicit}
+    # Arguments given via the CMake cache come last of all. Users
+    # can provide variables in this way from the CMake command line.
+    ${BOARD_EMU_ARGS_${emu_id}}
+    )
+
+  # Add the finalized emu to the global property list.
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_EMUS ${emu})
 endfunction()
 
 # Zephyr board revision:
@@ -2393,18 +2433,20 @@ function(check_set_linker_property)
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)
   list(REMOVE_AT LINKER_PROPERTY_PROPERTY 0)
-  set(option ${LINKER_PROPERTY_PROPERTY})
 
-  string(MAKE_C_IDENTIFIER check${option} check)
+  foreach(option ${LINKER_PROPERTY_PROPERTY})
+    string(MAKE_C_IDENTIFIER check${option} check)
 
-  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
-  zephyr_check_compiler_flag(C "" ${check})
-  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    zephyr_check_compiler_flag(C "" ${check})
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  if(${${check}})
-    set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
-  endif()
+    if(${${check}})
+      set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${property} ${option})
+      set(APPEND "APPEND")
+    endif()
+  endforeach()
 endfunction()
 
 # 'set_compiler_property' is a function that sets the property for the C and
@@ -3594,9 +3636,11 @@ endfunction()
 #
 # <var>              : Return variable where the node path will be stored
 # NODELABEL <label>  : Node label
+# REQUIRED           : Generate a fatal error if the node-label is not found
 function(dt_nodelabel var)
+  set(options "REQUIRED")
   set(req_single_args "NODELABEL")
-  cmake_parse_arguments(DT_LABEL "" "${req_single_args}" "" ${ARGN})
+  cmake_parse_arguments(DT_LABEL "${options}" "${req_single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_nodelabel(${ARGV0} ...) missing return parameter.")
@@ -3612,6 +3656,9 @@ function(dt_nodelabel var)
 
   get_target_property(${var} devicetree_target "DT_NODELABEL|${DT_LABEL_NODELABEL}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
+    if(DT_LABEL_REQUIRED)
+      message(FATAL_ERROR "required nodelabel not found: ${DT_LABEL_NODELABEL}")
+    endif()
     set(${var})
   endif()
 
@@ -3637,9 +3684,11 @@ endfunction()
 #
 # <var>           : Return variable where the node path will be stored
 # PROPERTY <prop> : The alias to check
+# REQUIRED        : Generate a fatal error if the alias is not found
 function(dt_alias var)
+  set(options "REQUIRED")
   set(req_single_args "PROPERTY")
-  cmake_parse_arguments(DT_ALIAS "" "${req_single_args}" "" ${ARGN})
+  cmake_parse_arguments(DT_ALIAS "${options}" "${req_single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_alias(${ARGV0} ...) missing return parameter.")
@@ -3655,6 +3704,9 @@ function(dt_alias var)
 
   get_target_property(${var} devicetree_target "DT_ALIAS|${DT_ALIAS_PROPERTY}")
   if(${${var}} STREQUAL ${var}-NOTFOUND)
+    if(DT_ALIAS_REQUIRED)
+      message(FATAL_ERROR "required alias not found: ${DT_ALIAS_PROPERTY}")
+    endif()
     set(${var})
   endif()
 
@@ -3807,10 +3859,12 @@ endfunction()
 # PROPERTY <prop>: Property for which a value should be returned, as it
 #                  appears in the DTS source
 # INDEX <idx>    : Optional index when retrieving a value in an array property
+# REQUIRED       : Generate a fatal error if the property is not found
 function(dt_prop var)
+  set(options "REQUIRED")
   set(req_single_args "PATH;PROPERTY")
   set(single_args "INDEX")
-  cmake_parse_arguments(DT_PROP "" "${req_single_args};${single_args}" "" ${ARGN})
+  cmake_parse_arguments(DT_PROP "${options}" "${req_single_args};${single_args}" "" ${ARGN})
 
   if(${ARGV0} IN_LIST req_single_args)
     message(FATAL_ERROR "dt_prop(${ARGV0} ...) missing return parameter.")
@@ -3832,6 +3886,9 @@ function(dt_prop var)
 
   if(NOT exists)
     set(${var} PARENT_SCOPE)
+    if(DT_PROP_REQUIRED)
+      message(FATAL_ERROR "required property not found: ${canonical}/${DT_PROP_PROPERTY}")
+    endif()
     return()
   endif()
 
@@ -5169,6 +5226,24 @@ macro(zephyr_check_arguments_required function prefix)
 endmacro()
 
 #
+# Helper macro for verifying that at least one of the required arguments has
+# been provided by the caller. Arguments with empty values are allowed.
+#
+# A FATAL_ERROR will be raised if not one of the required arguments has been
+# passed by the caller.
+#
+# Usage:
+#   zephyr_check_arguments_required_allow_empty(<function_name> <prefix> <arg1> [<arg2> ...])
+#
+macro(zephyr_check_arguments_required_allow_empty function prefix)
+  set(check_defined DEFINED)
+  set(allow_empty TRUE)
+  zephyr_check_flags_required(${function} ${prefix} ${ARGN})
+  set(allow_empty)
+  set(check_defined)
+endmacro()
+
+#
 # Helper macro for verifying that at least one of the required flags has
 # been provided by the caller.
 #
@@ -5182,6 +5257,8 @@ macro(zephyr_check_flags_required function prefix)
   set(required_found FALSE)
   foreach(required ${ARGN})
     if(${check_defined} ${prefix}_${required})
+      set(required_found TRUE)
+    elseif("${allow_empty}" AND ${required} IN_LIST ${prefix}_KEYWORDS_MISSING_VALUES)
       set(required_found TRUE)
     endif()
   endforeach()

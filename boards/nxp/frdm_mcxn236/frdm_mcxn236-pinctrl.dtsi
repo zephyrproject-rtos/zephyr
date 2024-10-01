@@ -1,0 +1,93 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/mcx/MCXN236VDF-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm2_lpuart: pinmux_flexcomm2_lpuart {
+		group0 {
+			pinmux = <FC2_P2_PIO4_2>,
+				<FC2_P3_PIO4_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm2_lpi2c: pinmux_flexcomm2_lpi2c {
+		group0 {
+			pinmux = <FC2_P0_PIO4_0>,
+			    <FC2_P1_PIO4_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_flexcomm3_lpspi: pinmux_flexcomm3_lpspi {
+		group0 {
+			pinmux = <FC3_P0_PIO1_0>,
+				<FC3_P1_PIO1_1>,
+				<FC3_P2_PIO1_2>,
+				<FC3_P3_PIO1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm4_lpuart: pinmux_flexcomm4_lpuart {
+		group0 {
+			pinmux = <FC4_P0_PIO1_8>,
+				<FC4_P1_PIO1_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcomm5_lpi2c: pinmux_flexcomm5_lpi2c {
+		group0 {
+			pinmux = <FC5_P0_PIO1_16>,
+				<FC5_P1_PIO1_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A0_PIO3_12>,
+				<PWM1_B0_PIO2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm1: pinmux_flexpwm1_pwm1 {
+		group0 {
+			pinmux = <PWM1_A1_PIO3_14>,
+				<PWM1_B1_PIO3_15>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexpwm1_pwm2: pinmux_flexpwm1_pwm2 {
+		group0 {
+			pinmux = <PWM1_A2_PIO3_16>,
+				<PWM1_B2_PIO3_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+};

@@ -14,8 +14,8 @@ BLE (Bluetooth Low Energy)
 MCUmgr Clients need to use following BLE Characteristics, when implementing
 SMP client:
 
-- **Service UUID**: `8D53DC1D-1DB7-4CD3-868B-8A527460AA84`
-- **Characteristic UUID**: `DA2E7828-FBCE-4E01-AE9E-261174997C48`
+- **Service UUID**: ``8D53DC1D-1DB7-4CD3-868B-8A527460AA84``
+- **Characteristic UUID**: ``DA2E7828-FBCE-4E01-AE9E-261174997C48``
 
 All SMP communication utilizes a single GATT characteristic.  An SMP request is
 sent via a GATT Write Without Response command. An SMP response is sent in the form

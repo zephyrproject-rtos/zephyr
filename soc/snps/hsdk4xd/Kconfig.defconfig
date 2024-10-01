@@ -44,7 +44,7 @@ config UART_NS16550_ACCESS_WORD_ONLY
 config ARC_HAS_ACCL_REGS
 	default y
 
-config ARC_EARLY_SOC_INIT
+config SOC_RESET_HOOK
 	default y
 
 config ARC_HAS_STACK_CHECKING

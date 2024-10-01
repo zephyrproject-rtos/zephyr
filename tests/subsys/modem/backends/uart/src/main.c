@@ -172,12 +172,12 @@ static void test_modem_backend_uart_before(void *f)
 	prng_reset();
 	ring_buf_reset(&transmit_ring_buf);
 	k_sem_reset(&receive_ready_sem);
-	__ASSERT_NO_MSG(modem_pipe_open(pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_open(pipe, K_SECONDS(10)) == 0);
 }
 
 static void test_modem_backend_uart_after(void *f)
 {
-	__ASSERT_NO_MSG(modem_pipe_close(pipe) == 0);
+	__ASSERT_NO_MSG(modem_pipe_close(pipe, K_SECONDS(10)) == 0);
 }
 
 /*************************************************************************************************/

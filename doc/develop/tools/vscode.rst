@@ -17,7 +17,7 @@ Get VS Code
 
 `Download VS Code`_ and install it.
 
-Install the required extensions through the `Extensions` marketplace in the left panel.
+Install the required extensions through the :guilabel:`Extensions` marketplace in the left panel.
 Search for the `C/C++ Extension Pack`_ and install it.
 
 Initialize a new workspace

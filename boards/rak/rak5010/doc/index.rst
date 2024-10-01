@@ -126,7 +126,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the RAK5010 board to your host computer using the USB debug port.
-   Then build and flash the :ref:`hello_world` application.
+   Then build and flash the :zephyr:code-sample:`hello_world` application.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -139,7 +139,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

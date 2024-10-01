@@ -26,6 +26,11 @@ config NRFS_LOCAL_DOMAIN_DOWNSCALE_SAFETY_TIMEOUT_US
 	default 1000000 if (NRFS_LOCAL_DOMAIN_DVFS_TEST || LOG)
 	default 1500
 
+config NRFS_LOCAL_DOMAIN_DOWNSCALE_FINISH_DELAY_TIMEOUT_US
+	int "Additional delay to let secdom finish dowscale procedure in us"
+	range 1 10000000
+	default 1000
+
 config NRFS_LOCAL_DOMAIN_DVFS_HANDLER_TASK_STACK_SIZE
 	int "Stack size used for DVFS handling task"
 	range 256 2048

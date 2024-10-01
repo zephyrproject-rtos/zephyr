@@ -5,6 +5,7 @@
  */
 
 #include "skeleton.dtsi"
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -105,6 +106,24 @@
 			interrupts = <2 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		gpio0: gpio@8030c000 {
+			interrupts = <17>;
+			reg = <0x8030c000 0x1000>;
+			compatible = "gaisler,grgpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@8030d000 {
+			interrupts = <16>;
+			reg = <0x8030d000 0x1000>;
+			compatible = "gaisler,grgpio";
+			gpio-controller;
+			#gpio-cells = <2>;
 			status = "disabled";
 		};
 	};

@@ -15,8 +15,7 @@
 #include <esp_private/esp_mmu_map_private.h>
 #include <esp_flash_internal.h>
 #if CONFIG_ESP_SPIRAM
-#include <esp_psram.h>
-#include <esp_private/esp_psram_extram.h>
+#include "psram.h"
 #endif
 
 #include <zephyr/kernel_structs.h>
@@ -36,14 +35,13 @@
 #include <esp_err.h>
 #include <esp_clk_internal.h>
 #include <zephyr/sys/printk.h>
+#include "esp_log.h"
+
+#define TAG "boot.esp32s2"
 
 extern void rtc_clk_cpu_freq_set_xtal(void);
 extern void esp_reset_reason_init(void);
-
-#if CONFIG_ESP_SPIRAM
-extern int _ext_ram_bss_start;
-extern int _ext_ram_bss_end;
-#endif
+extern void z_prep_c(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -98,52 +96,33 @@ void __attribute__((section(".iram1"))) __esp_platform_start(void)
 	esp_config_data_cache_mode();
 	esp_rom_Cache_Enable_DCache(0);
 
-#ifdef CONFIG_SOC_FLASH_ESP32
+	esp_timer_early_init();
+
 	esp_mspi_pin_init();
-	spi_flash_init_chip_state();
-#endif /* CONFIG_SOC_FLASH_ESP32 */
+
+	esp_flash_app_init();
 
 	esp_mmu_map_init();
 
 #if CONFIG_ESP_SPIRAM
-	esp_err_t err = esp_psram_init();
-
-	if (err != ESP_OK) {
-		printk("Failed to Initialize SPIRAM, aborting.\n");
-		abort();
-	}
-	if (esp_psram_get_size() < CONFIG_ESP_SPIRAM_SIZE) {
-		printk("SPIRAM size is less than configured size, aborting.\n");
-		abort();
-	}
-
-	if (esp_psram_is_initialized()) {
-		if (!esp_psram_extram_test()) {
-			printk("External RAM failed memory test!");
-			abort();
-		}
-	}
-
-	memset(&_ext_ram_bss_start, 0,
-	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
-
+	esp_init_psram();
 #endif /* CONFIG_ESP_SPIRAM */
 
-	esp_timer_early_init();
-
-	/* Scheduler is not started at this point. Hence, guard functions
-	 * must be initialized after esp_spiram_init_cache which internally
-	 * uses guard functions. Setting guard functions before SPIRAM
-	 * cache initialization will result in a crash.
-	 */
-#if CONFIG_SOC_FLASH_ESP32 || CONFIG_ESP_SPIRAM
-	spi_flash_guard_set(&g_flash_guard_default_ops);
-#endif
 #endif /* !CONFIG_MCUBOOT */
 
 	esp_intr_initialize();
+
+#if CONFIG_ESP_SPIRAM
+	/* Init Shared Multi Heap for PSRAM */
+	int err = esp_psram_smh_init();
+
+	if (err) {
+		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
+	}
+#endif
+
 	/* Start Zephyr */
-	z_cstart();
+	z_prep_c();
 
 	CODE_UNREACHABLE;
 }

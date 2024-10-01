@@ -1,7 +1,8 @@
-.. _th02-sample:
+.. zephyr:code-sample:: th02
+   :name: TH02 Temperature and Humidity Sensor
+   :relevant-api: sensor_interface
 
-TH02: Temperature and Humidity Monitor
-######################################
+   Get temperature and humidity data from a TH02 sensor (polling mode).
 
 Overview
 ********

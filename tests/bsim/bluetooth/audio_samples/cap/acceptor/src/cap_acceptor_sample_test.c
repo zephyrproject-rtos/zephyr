@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/util_macro.h>
+
 #include "bs_types.h"
 #include "bs_tracing.h"
 #include "bs_utils.h"
@@ -43,16 +45,37 @@ static void test_cap_acceptor_sample_tick(bs_time_t HW_device_time)
 	 * we consider the test failed
 	 */
 
-	extern uint64_t total_rx_iso_packet_count;
+	if (IS_ENABLED(CONFIG_SAMPLE_UNICAST)) {
+		extern uint64_t total_unicast_rx_iso_packet_count;
+		extern uint64_t total_unicast_tx_iso_packet_count;
 
-	bs_trace_info_time(2, "%" PRIu64 " packets received, expected >= %i\n",
-			   total_rx_iso_packet_count, PASS_THRESHOLD);
+		bs_trace_info_time(2, "%" PRIu64 " unicast packets received, expected >= %i\n",
+				   total_unicast_tx_iso_packet_count, PASS_THRESHOLD);
+		bs_trace_info_time(2, "%" PRIu64 " unicast packets sent, expected >= %i\n",
+				   total_unicast_tx_iso_packet_count, PASS_THRESHOLD);
 
-	if (total_rx_iso_packet_count >= PASS_THRESHOLD) {
-		PASS("cap_acceptor PASSED\n");
-	} else {
-		FAIL("cap_acceptor FAILED (Did not pass after %i seconds)\n", WAIT_TIME);
+		if (total_unicast_rx_iso_packet_count < PASS_THRESHOLD ||
+		    total_unicast_tx_iso_packet_count < PASS_THRESHOLD) {
+			FAIL("cap_acceptor FAILED with(Did not pass after %d seconds)\n ",
+			     WAIT_TIME);
+			return;
+		}
 	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_BROADCAST)) {
+		extern uint64_t total_broadcast_rx_iso_packet_count;
+
+		bs_trace_info_time(2, "%" PRIu64 " broadcast packets received, expected >= %i\n",
+				   total_broadcast_rx_iso_packet_count, PASS_THRESHOLD);
+
+		if (total_broadcast_rx_iso_packet_count < PASS_THRESHOLD) {
+			FAIL("cap_acceptor FAILED with (Did not pass after %d seconds)\n ",
+			     WAIT_TIME);
+			return;
+		}
+	}
+
+	PASS("cap_acceptor PASSED\n");
 }
 
 static const struct bst_test_instance test_sample[] = {

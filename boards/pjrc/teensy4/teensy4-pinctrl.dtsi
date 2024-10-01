@@ -129,9 +129,9 @@
 	pinmux_lpspi3: pinmux_lpspi3 {
 		group0 {
 			pinmux = <&iomuxc_gpio_ad_b1_12_lpspi3_pcs0>,
-				<&iomuxc_gpio_ad_b0_00_lpspi3_sck>,
-				<&iomuxc_gpio_ad_b0_02_lpspi3_sdi>,
-				<&iomuxc_gpio_ad_b0_01_lpspi3_sdo>;
+				<&iomuxc_gpio_ad_b1_15_lpspi3_sck>,
+				<&iomuxc_gpio_ad_b1_13_lpspi3_sdi>,
+				<&iomuxc_gpio_ad_b1_14_lpspi3_sdo>;
 			drive-strength = "r0-6";
 			slew-rate = "slow";
 			nxp,speed = "100-mhz";

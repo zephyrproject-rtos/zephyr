@@ -1621,6 +1621,10 @@ static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
 			*total = net_buf_pull_be16(buf);
 			pulled += 2U;
 			break;
+		case BT_SDP_SEQ32:
+			*total = net_buf_pull_be32(buf);
+			pulled += 4U;
+			break;
 		default:
 			LOG_WRN("Sequence type 0x%02x not handled", seq);
 			*total = 0U;
@@ -1649,6 +1653,9 @@ static uint16_t get_record_len(struct net_buf *buf)
 		break;
 	case BT_SDP_SEQ16:
 		len = net_buf_pull_be16(buf);
+		break;
+	case BT_SDP_SEQ32:
+		len = net_buf_pull_be32(buf);
 		break;
 	default:
 		LOG_WRN("Sequence type 0x%02x not handled", seq);

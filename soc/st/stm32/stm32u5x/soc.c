@@ -21,15 +21,13 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
+extern void stm32_power_init(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32u5_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable instruction cache in 1-way (direct mapped cache) */
 	LL_ICACHE_SetMode(LL_ICACHE_1WAY);
@@ -42,11 +40,16 @@ static int stm32u5_init(void)
 	/* Enable PWR */
 	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_PWR);
 
+	/* For devices with USB C PD, we can disable the dead battery
+	 * pull-down behaviour.
+	 */
+#if defined(UCPD1)
 	if (IS_ENABLED(CONFIG_DT_HAS_ST_STM32_UCPD_ENABLED) ||
 		!IS_ENABLED(CONFIG_USB_DEVICE_DRIVER)) {
 		/* Disable USB Type-C dead battery pull-down behavior */
 		LL_PWR_DisableUCPDDeadBattery();
 	}
+#endif
 
 	/* Power Configuration */
 #if defined(CONFIG_POWER_SUPPLY_DIRECT_SMPS)
@@ -57,7 +60,7 @@ static int stm32u5_init(void)
 #error "Unsupported power configuration"
 #endif
 
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(stm32u5_init, PRE_KERNEL_1, 0);

@@ -94,6 +94,8 @@ find_package(Dtc 1.4.6)
 # The directory containing devicetree related scripts.
 set(DT_SCRIPTS                  ${ZEPHYR_BASE}/scripts/dts)
 
+# This parses and collects the DT information
+set(GEN_EDT_SCRIPT              ${DT_SCRIPTS}/gen_edt.py)
 # This generates DT information needed by the C macro APIs,
 # along with a few other things.
 set(GEN_DEFINES_SCRIPT          ${DT_SCRIPTS}/gen_defines.py)
@@ -216,7 +218,7 @@ foreach(dts_root ${DTS_ROOT})
 
   set(vendor_prefixes ${dts_root}/${VENDOR_PREFIXES})
   if(EXISTS ${vendor_prefixes})
-    list(APPEND EXTRA_GEN_DEFINES_ARGS --vendor-prefixes ${vendor_prefixes})
+    list(APPEND EXTRA_GEN_EDT_ARGS --vendor-prefixes ${vendor_prefixes})
   endif()
 endforeach()
 
@@ -266,41 +268,56 @@ toolchain_parse_make_rule(${DTS_DEPS}
 set_property(DIRECTORY APPEND PROPERTY
   CMAKE_CONFIGURE_DEPENDS
   ${DTS_INCLUDE_FILES}
+  ${GEN_EDT_SCRIPT}
   ${GEN_DEFINES_SCRIPT}
   ${GEN_DRIVER_KCONFIG_SCRIPT}
   ${GEN_DTS_CMAKE_SCRIPT}
   )
 
 #
-# Run GEN_DEFINES_SCRIPT.
+# Run GEN_EDT_SCRIPT.
 #
 
 string(REPLACE ";" " " EXTRA_DTC_FLAGS_RAW "${EXTRA_DTC_FLAGS}")
-set(CMD_GEN_DEFINES ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
+set(CMD_GEN_EDT ${PYTHON_EXECUTABLE} ${GEN_EDT_SCRIPT}
 --dts ${DTS_POST_CPP}
 --dtc-flags '${EXTRA_DTC_FLAGS_RAW}'
 --bindings-dirs ${DTS_ROOT_BINDINGS}
---header-out ${DEVICETREE_GENERATED_H}.new
 --dts-out ${ZEPHYR_DTS}.new # for debugging and dtc
---edt-pickle-out ${EDT_PICKLE}
+--edt-pickle-out ${EDT_PICKLE}.new
+${EXTRA_GEN_EDT_ARGS}
+)
+
+execute_process(
+  COMMAND ${CMD_GEN_EDT}
+  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  COMMAND_ERROR_IS_FATAL ANY
+  )
+zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
+zephyr_file_copy(${EDT_PICKLE}.new ${EDT_PICKLE} ONLY_IF_DIFFERENT)
+file(REMOVE ${ZEPHYR_DTS}.new ${EDT_PICKLE}.new)
+message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
+message(STATUS "Generated pickled edt: ${EDT_PICKLE}")
+
+#
+# Run GEN_DEFINES_SCRIPT.
+#
+
+set(CMD_GEN_DEFINES ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
+--header-out ${DEVICETREE_GENERATED_H}.new
+--edt-pickle ${EDT_PICKLE}
 ${EXTRA_GEN_DEFINES_ARGS}
 )
 
 execute_process(
   COMMAND ${CMD_GEN_DEFINES}
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-  RESULT_VARIABLE ret
+  COMMAND_ERROR_IS_FATAL ANY
   )
-if(NOT "${ret}" STREQUAL "0")
-  message(STATUS "In: ${PROJECT_BINARY_DIR}, command: ${CMD_GEN_DEFINES}")
-  message(FATAL_ERROR "gen_defines.py failed with return code: ${ret}")
-else()
-  zephyr_file_copy(${ZEPHYR_DTS}.new ${ZEPHYR_DTS} ONLY_IF_DIFFERENT)
-  zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
-  file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
-  message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
-  message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
-endif()
+zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
+file(REMOVE ${ZEPHYR_DTS}.new ${DEVICETREE_GENERATED_H}.new)
+message(STATUS "Generated zephyr.dts: ${ZEPHYR_DTS}")
+message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
 
 #
 # Run GEN_DRIVER_KCONFIG_SCRIPT.
@@ -377,9 +394,14 @@ execute_process(
   OUTPUT_QUIET # Discard stdout
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   RESULT_VARIABLE ret
+  ERROR_VARIABLE stderr
   )
 
 if(NOT "${ret}" STREQUAL "0")
-  message(FATAL_ERROR "command failed with return code: ${ret}")
+  message(FATAL_ERROR "dtc failed with return code: ${ret}")
+elseif(stderr)
+  # dtc printed warnings on stderr but did not fail.
+  # Display them as CMake warnings to draw attention.
+  message(WARNING "dtc raised one or more warnings:\n${stderr}")
 endif()
 endif(DTC)

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <string.h>
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/unistd.h>

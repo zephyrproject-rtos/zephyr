@@ -43,8 +43,9 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 			volatile uint32_t *key_read_ptr = &adsp_pending_buffer;
 			uint32_t key_value = *key_read_ptr;
 
-			if (key_value != INTEL_ADSP_ACE15_MAGIC_KEY)
+			if (key_value != INTEL_ADSP_ACE15_MAGIC_KEY) {
 				return -EINVAL;
+			}
 		}
 #endif
 		sys_write16(sys_read16((mem_addr_t)ACE_PWRCTL) & ~(SPA_bit_mask),

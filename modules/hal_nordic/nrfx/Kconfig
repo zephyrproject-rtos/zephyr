@@ -62,9 +62,24 @@ config NRFX_EGU5
 	depends on $(dt_nodelabel_has_compat,egu5,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
+config NRFX_EGU10
+	bool "EGU10 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu10,$(DT_COMPAT_NORDIC_NRF_EGU))
+	select NRFX_EGU
+
+config NRFX_EGU20
+	bool "EGU20 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu20,$(DT_COMPAT_NORDIC_NRF_EGU))
+	select NRFX_EGU
+
 config NRFX_EGU020
 	bool "EGU020 driver instance"
 	depends on $(dt_nodelabel_has_compat,egu020,$(DT_COMPAT_NORDIC_NRF_EGU))
+	select NRFX_EGU
+
+config NRFX_EGU130
+	bool "EGU130 driver instance"
+	depends on $(dt_nodelabel_has_compat,egu130,$(DT_COMPAT_NORDIC_NRF_EGU))
 	select NRFX_EGU
 
 config NRFX_GPIOTE
@@ -518,6 +533,10 @@ config NRFX_SPIS137
 config NRFX_SYSTICK
 	bool "SYSTICK driver"
 	depends on CPU_CORTEX_M_HAS_SYSTICK
+
+config NRFX_TBM
+	bool "TBM driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_TBM))
 
 config NRFX_TEMP
 	bool "TEMP driver"

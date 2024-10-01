@@ -51,9 +51,11 @@ struct lis2dux12_data {
 	int sample_y;
 	int sample_z;
 	float gain;
+	uint8_t range;
+	uint8_t odr;
 
 #ifdef CONFIG_LIS2DUX12_ENABLE_TEMP
-	int sample_temp;
+	float sample_temp;
 #endif
 
 #ifdef CONFIG_LIS2DUX12_TRIGGER

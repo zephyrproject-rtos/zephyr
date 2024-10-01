@@ -1,10 +1,10 @@
 common:
   timeout: 5
-  platform_allow: nucleo_wba52cg
+  platform_allow: nucleo_wba52cg nucleo_wba55cg
 tests:
-  drivers.clock.stm32_clock_configuration.wba.sysclksrc_hsi_32:
+  drivers.clock.stm32_clock_configuration.wba.sysclksrc_hsi_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16.overlay"
-  drivers.clock.stm32_clock_configuration.wba.sysclksrc_hsi_32_ahb5_div:
+  drivers.clock.stm32_clock_configuration.wba.sysclksrc_hsi_16_ahb5_div:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_16_ahb5_div.overlay"
   drivers.clock.stm32_clock_configuration.wba.sysclksrc_hse_16:
     extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_16.overlay"

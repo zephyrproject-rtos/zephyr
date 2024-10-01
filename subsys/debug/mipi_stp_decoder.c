@@ -257,7 +257,7 @@ static void data64_mts_cb(uint64_t data, uint64_t ts)
 	cfg.cb(STP_DATA64, d, &ts, true);
 }
 
-static void master_cb(uint64_t id, uint64_t ts)
+static void major_cb(uint64_t id, uint64_t ts)
 {
 	ARG_UNUSED(ts);
 	uint16_t m_id = (uint16_t)id;
@@ -265,7 +265,7 @@ static void master_cb(uint64_t id, uint64_t ts)
 
 	curr_ch = 0;
 
-	cfg.cb(STP_DECODER_MASTER, data, NULL, false);
+	cfg.cb(STP_DECODER_MAJOR, data, NULL, false);
 }
 
 static void channel16_cb(uint64_t id, uint64_t ts)
@@ -383,7 +383,7 @@ static void async_cb(uint64_t data, uint64_t ts)
 
 static const struct stp_item items[] = {
 	STP_ITEM(STP_NULL, (0x0), 1, 0, false, null_cb),
-	STP_ITEM(STP_M8, (0x1), 1, 2, false, master_cb),
+	STP_ITEM(STP_M8, (0x1), 1, 2, false, major_cb),
 	STP_ITEM(STP_MERR, (0x2), 1, 2, false, merror_cb),
 	STP_ITEM(STP_C8, (0x3), 1, 2, false, channel_cb),
 	STP_ITEM(STP_D8, (0x4), 1, 2, false, data8_cb),
@@ -412,7 +412,7 @@ static const struct stp_item items[] = {
 	STP_ITEM(STP_FREQ_40, (0xf0, 0xf0), 4, 10, false, freq_cb),
 	STP_ITEM(STP_FREQ_40_TS, (0xf0, 0xf1), 4, 0, true, notsup_cb),
 	STP_ITEM(STP_DIP, (0xf0, 0xf2), 4, 0, false, notsup_cb),
-	STP_ITEM(STP_M16, (0xf1), 2, 4, false, master_cb),
+	STP_ITEM(STP_M16, (0xf1), 2, 4, false, major_cb),
 	STP_ITEM(STP_GERR, (0xf2), 2, 2, false, gerror_cb),
 	STP_ITEM(STP_C16, (0xf3), 2, 4, false, channel16_cb),
 	STP_ITEM(STP_D8TS, (0xf4), 2, 2, true, data8_ts_cb),

@@ -142,9 +142,12 @@ struct coredump_cmd_copy_arg {
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/byteorder.h>
 
-#define COREDUMP_HDR_VER		1
+#define COREDUMP_HDR_VER		2
 
 #define	COREDUMP_ARCH_HDR_ID		'A'
+
+#define THREADS_META_HDR_ID		'T'
+#define THREADS_META_HDR_VER		1
 
 #define	COREDUMP_MEM_HDR_ID		'M'
 #define COREDUMP_MEM_HDR_VER		1
@@ -183,6 +186,18 @@ struct coredump_hdr_t {
 /* Architecture-specific block header */
 struct coredump_arch_hdr_t {
 	/* COREDUMP_ARCH_HDR_ID */
+	char		id;
+
+	/* Header version */
+	uint16_t	hdr_version;
+
+	/* Number of bytes in this block (excluding header) */
+	uint16_t	num_bytes;
+} __packed;
+
+/* Threads metadata header */
+struct coredump_threads_meta_hdr_t {
+	/* THREADS_META_HDR_ID */
 	char		id;
 
 	/* Header version */

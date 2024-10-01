@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 GARDENA GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <silabs/sim3u.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(32)>;
+	};
+
+	soc {
+		compatible =  "silabs,sim3u167", \
+			      "silabs,sim3u", \
+			      "silabs,sim3", \
+			      "simple-bus";
+
+		flash-controller@4002e000 {
+			flash0: flash@0 {
+				reg = <0 DT_SIZE_K(256)>;
+				erase-block-size = <DT_SIZE_K(1)>;
+			};
+		};
+	};
+};

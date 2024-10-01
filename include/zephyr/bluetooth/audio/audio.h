@@ -419,6 +419,12 @@ enum bt_audio_active_state {
 	BT_AUDIO_ACTIVE_STATE_ENABLED        = 0x01,
 };
 
+/** Assisted Listening Stream defined by the Generic Audio assigned numbers (bluetooth.com). */
+enum bt_audio_assisted_listening_stream {
+	/** Unspecified audio enhancement */
+	BT_AUDIO_ASSISTED_LISTENING_STREAM_UNSPECIFIED = 0x00,
+};
+
 /**
  * @brief Codec metadata type IDs
  *
@@ -435,7 +441,7 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT        = 0x01,
+	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT = 0x01,
 
 	/**
 	 * @brief Streaming audio context.
@@ -447,10 +453,10 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT      = 0x02,
+	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT = 0x02,
 
 	/** UTF-8 encoded title or summary of stream content */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO = 0x03,
 
 	/**
 	 * @brief Language
@@ -458,30 +464,37 @@ enum bt_audio_metadata_type {
 	 * 3 octet lower case language code defined by ISO 639-3
 	 * Possible values can be found at https://iso639-3.sil.org/code_tables/639/data
 	 */
-	BT_AUDIO_METADATA_TYPE_LANG                = 0x04,
+	BT_AUDIO_METADATA_TYPE_LANG = 0x04,
 
 	/** Array of 8-bit CCID values */
-	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
+	BT_AUDIO_METADATA_TYPE_CCID_LIST = 0x05,
 
 	/**
 	 * @brief Parental rating
 	 *
 	 * See @ref bt_audio_parental_rating for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING     = 0x06,
+	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING = 0x06,
 
 	/** UTF-8 encoded URI for additional Program information */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI    = 0x07,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI = 0x07,
 
 	/**
 	 * @brief Audio active state
 	 *
 	 * See @ref bt_audio_active_state for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_AUDIO_STATE         = 0x08,
+	BT_AUDIO_METADATA_TYPE_AUDIO_STATE = 0x08,
 
 	/** Broadcast Audio Immediate Rendering flag  */
 	BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE = 0x09,
+
+	/**
+	 * @brief Assisted listening stream
+	 *
+	 * See @ref bt_audio_assisted_listening_stream for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM = 0x0A,
 
 	/** Extended metadata */
 	BT_AUDIO_METADATA_TYPE_EXTENDED            = 0xFE,
@@ -978,13 +991,22 @@ struct bt_audio_codec_qos_pref {
 	 */
 	bool unframed_supported;
 
-	/** Preferred PHY */
+	/**
+	 * @brief Preferred PHY bitfield
+	 *
+	 * Bitfield consisting of one or more of @ref BT_GAP_LE_PHY_1M, @ref BT_GAP_LE_PHY_2M and
+	 * @ref BT_GAP_LE_PHY_CODED.
+	 */
 	uint8_t phy;
 
 	/** Preferred Retransmission Number */
 	uint8_t rtn;
 
-	/** Preferred Transport Latency */
+	/**
+	 * Preferred Transport Latency
+	 *
+	 * Value range @ref BT_ISO_LATENCY_MIN to @ref BT_ISO_LATENCY_MAX
+	 */
 	uint16_t latency;
 
 	/**
@@ -1010,14 +1032,15 @@ struct bt_audio_codec_qos_pref {
 	/**
 	 * @brief Preferred minimum Presentation Delay
 	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range @ref bt_audio_codec_qos_pref.pd_min to @ref bt_audio_codec_qos_pref.pd_max.
 	 */
 	uint32_t pref_pd_min;
 
 	/**
 	 * @brief Preferred maximum Presentation Delay
 	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
+	 * Value range @ref bt_audio_codec_qos_pref.pd_min to @ref bt_audio_codec_qos_pref.pd_max,
+	 * and higher than @ref bt_audio_codec_qos_pref.pref_pd_min
 	 */
 	uint32_t pref_pd_max;
 };
@@ -1554,7 +1577,7 @@ int bt_audio_codec_cfg_meta_set_audio_active_state(struct bt_audio_codec_cfg *co
  *
  * @retval 0 if the flag was found
  * @retval -EINVAL if arguments are invalid
- * @retval -ENODATA if not the flag was not found
+ * @retval -ENODATA if the flag was not found
  */
 int bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(
 	const struct bt_audio_codec_cfg *codec_cfg);
@@ -1570,6 +1593,34 @@ int bt_audio_codec_cfg_meta_get_bcast_audio_immediate_rend_flag(
  */
 int bt_audio_codec_cfg_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cfg The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cfg_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the assisted listening stream value of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cfg *codec_cfg, enum bt_audio_assisted_listening_stream val);
 
 /**
  * @brief Extract extended metadata
@@ -2115,6 +2166,34 @@ int bt_audio_codec_cap_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cap *codec_cap);
 
 /**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cap The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cap_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the assisted listening stream value of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_assisted_listening_stream val);
+
+/**
  * @brief Extract extended metadata
  *
  * See @ref BT_AUDIO_METADATA_TYPE_EXTENDED for more information about this value.
@@ -2174,6 +2253,303 @@ int bt_audio_codec_cap_meta_set_vendor(struct bt_audio_codec_cap *codec_cap,
 
 /** @} */ /* End of bt_audio_codec_cap */
 
+/**
+ * @brief Assigned numbers to string API
+ * @defgroup bt_audio_to_str Assigned numbers to string API
+ *
+ * Functions to return string representation of Bluetooth Audio assigned number values.
+ *
+ * @{
+ */
+
+/**
+ * @brief Returns a string representation of a specific @ref bt_audio_context bit
+ *
+ * If @p context contains multiple bits, it will return "Unknown context"
+ *
+ * @param context A single context bit
+ *
+ * @return String representation of the supplied bit
+ */
+static inline char *bt_audio_context_bit_to_str(enum bt_audio_context context)
+{
+	switch (context) {
+	case BT_AUDIO_CONTEXT_TYPE_PROHIBITED:
+		return "Prohibited";
+	case BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED:
+		return "Unspecified";
+	case BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL:
+		return "Conversational";
+	case BT_AUDIO_CONTEXT_TYPE_MEDIA:
+		return "Media";
+	case BT_AUDIO_CONTEXT_TYPE_GAME:
+		return "Game";
+	case BT_AUDIO_CONTEXT_TYPE_INSTRUCTIONAL:
+		return "Instructional";
+	case BT_AUDIO_CONTEXT_TYPE_VOICE_ASSISTANTS:
+		return "Voice assistant";
+	case BT_AUDIO_CONTEXT_TYPE_LIVE:
+		return "Live";
+	case BT_AUDIO_CONTEXT_TYPE_SOUND_EFFECTS:
+		return "Sound effects";
+	case BT_AUDIO_CONTEXT_TYPE_NOTIFICATIONS:
+		return "Notifications";
+	case BT_AUDIO_CONTEXT_TYPE_RINGTONE:
+		return "Ringtone";
+	case BT_AUDIO_CONTEXT_TYPE_ALERTS:
+		return "Alerts";
+	case BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM:
+		return "Emergency alarm";
+	default:
+		return "Unknown context";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a @ref bt_audio_parental_rating value
+ *
+ * @param parental_rating The parental rating value
+ *
+ * @return String representation of the supplied parental rating value
+ */
+static inline char *bt_audio_parental_rating_to_str(enum bt_audio_parental_rating parental_rating)
+{
+	switch (parental_rating) {
+	case BT_AUDIO_PARENTAL_RATING_NO_RATING:
+		return "No rating";
+	case BT_AUDIO_PARENTAL_RATING_AGE_ANY:
+		return "Any";
+	case BT_AUDIO_PARENTAL_RATING_AGE_5_OR_ABOVE:
+		return "Age 5 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_6_OR_ABOVE:
+		return "Age 6 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_7_OR_ABOVE:
+		return "Age 7 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_8_OR_ABOVE:
+		return "Age 8 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_9_OR_ABOVE:
+		return "Age 9 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_10_OR_ABOVE:
+		return "Age 10 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_11_OR_ABOVE:
+		return "Age 11 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_12_OR_ABOVE:
+		return "Age 12 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_13_OR_ABOVE:
+		return "Age 13 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_14_OR_ABOVE:
+		return "Age 14 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_15_OR_ABOVE:
+		return "Age 15 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_16_OR_ABOVE:
+		return "Age 16 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_17_OR_ABOVE:
+		return "Age 17 or above";
+	case BT_AUDIO_PARENTAL_RATING_AGE_18_OR_ABOVE:
+		return "Age 18 or above";
+	default:
+		return "Unknown rating";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a @ref bt_audio_active_state value
+ *
+ * @param state The active state value
+ *
+ * @return String representation of the supplied active state value
+ */
+static inline char *bt_audio_active_state_to_str(enum bt_audio_active_state state)
+{
+	switch (state) {
+	case BT_AUDIO_ACTIVE_STATE_DISABLED:
+		return "Disabled";
+	case BT_AUDIO_ACTIVE_STATE_ENABLED:
+		return "Enabled";
+	default:
+		return "Unknown active state";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a specific @ref bt_audio_codec_cap_freq bit
+ *
+ * If @p freq contains multiple bits, it will return "Unknown supported frequency"
+ *
+ * @param freq A single frequency bit
+ *
+ * @return String representation of the supplied bit
+ */
+static inline char *bt_audio_codec_cap_freq_bit_to_str(enum bt_audio_codec_cap_freq freq)
+{
+	switch (freq) {
+	case BT_AUDIO_CODEC_CAP_FREQ_8KHZ:
+		return "8000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_11KHZ:
+		return "11025 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_16KHZ:
+		return "16000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_22KHZ:
+		return "22050 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_24KHZ:
+		return "24000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_32KHZ:
+		return "32000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_44KHZ:
+		return "44100 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_48KHZ:
+		return "48000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_88KHZ:
+		return "88200 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_96KHZ:
+		return "96000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_176KHZ:
+		return "176400 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_192KHZ:
+		return "192000 Hz";
+	case BT_AUDIO_CODEC_CAP_FREQ_384KHZ:
+		return "384000 Hz";
+	default:
+		return "Unknown supported frequency";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a specific @ref bt_audio_codec_cap_frame_dur bit
+ *
+ * If @p frame_dur contains multiple bits, it will return "Unknown frame duration"
+ *
+ * @param frame_dur A single frame duration bit
+ *
+ * @return String representation of the supplied bit
+ */
+static inline char *
+bt_audio_codec_cap_frame_dur_bit_to_str(enum bt_audio_codec_cap_frame_dur frame_dur)
+{
+	switch (frame_dur) {
+	case BT_AUDIO_CODEC_CAP_DURATION_7_5:
+		return "7.5 ms";
+	case BT_AUDIO_CODEC_CAP_DURATION_10:
+		return "10 ms";
+	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_7_5:
+		return "7.5 ms preferred";
+	case BT_AUDIO_CODEC_CAP_DURATION_PREFER_10:
+		return "10 ms preferred";
+	default:
+		return "Unknown frame duration";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a specific @ref bt_audio_codec_cap_chan_count bit
+ *
+ * If @p chan_count contains multiple bits, it will return "Unknown channel count"
+ *
+ * @param chan_count A single frame channel count bit
+ *
+ * @return String representation of the supplied bit
+ */
+static inline char *
+bt_audio_codec_cap_chan_count_bit_to_str(enum bt_audio_codec_cap_chan_count chan_count)
+{
+	switch (chan_count) {
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_1:
+		return "1 channel";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_2:
+		return "2 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_3:
+		return "3 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_4:
+		return "4 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_5:
+		return "5 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_6:
+		return "6 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_7:
+		return "7 channels";
+	case BT_AUDIO_CODEC_CAP_CHAN_COUNT_8:
+		return "8 channels";
+	default:
+		return "Unknown channel count";
+	}
+}
+
+/**
+ * @brief Returns a string representation of a specific @ref bt_audio_location bit
+ *
+ * If @p location contains multiple bits, it will return "Unknown location"
+ *
+ * @param location A single location bit
+ *
+ * @return String representation of the supplied bit
+ */
+static inline char *bt_audio_location_bit_to_str(enum bt_audio_location location)
+{
+	switch (location) {
+	case BT_AUDIO_LOCATION_MONO_AUDIO:
+		return "Mono";
+	case BT_AUDIO_LOCATION_FRONT_LEFT:
+		return "Front left";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT:
+		return "Front right";
+	case BT_AUDIO_LOCATION_FRONT_CENTER:
+		return "Front center";
+	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_1:
+		return "Low frequency effects 1";
+	case BT_AUDIO_LOCATION_BACK_LEFT:
+		return "Back left";
+	case BT_AUDIO_LOCATION_BACK_RIGHT:
+		return "Back right";
+	case BT_AUDIO_LOCATION_FRONT_LEFT_OF_CENTER:
+		return "Front left of center";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT_OF_CENTER:
+		return "Front right of center";
+	case BT_AUDIO_LOCATION_BACK_CENTER:
+		return "Back center";
+	case BT_AUDIO_LOCATION_LOW_FREQ_EFFECTS_2:
+		return "Low frequency effects 2";
+	case BT_AUDIO_LOCATION_SIDE_LEFT:
+		return "Side left";
+	case BT_AUDIO_LOCATION_SIDE_RIGHT:
+		return "Side right";
+	case BT_AUDIO_LOCATION_TOP_FRONT_LEFT:
+		return "Top front left";
+	case BT_AUDIO_LOCATION_TOP_FRONT_RIGHT:
+		return "Top front right";
+	case BT_AUDIO_LOCATION_TOP_FRONT_CENTER:
+		return "Top front center";
+	case BT_AUDIO_LOCATION_TOP_CENTER:
+		return "Top center";
+	case BT_AUDIO_LOCATION_TOP_BACK_LEFT:
+		return "Top back left";
+	case BT_AUDIO_LOCATION_TOP_BACK_RIGHT:
+		return "Top back right";
+	case BT_AUDIO_LOCATION_TOP_SIDE_LEFT:
+		return "Top side left";
+	case BT_AUDIO_LOCATION_TOP_SIDE_RIGHT:
+		return "Top side right";
+	case BT_AUDIO_LOCATION_TOP_BACK_CENTER:
+		return "Top back center";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_CENTER:
+		return "Bottom front center";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_LEFT:
+		return "Bottom front left";
+	case BT_AUDIO_LOCATION_BOTTOM_FRONT_RIGHT:
+		return "Bottom front right";
+	case BT_AUDIO_LOCATION_FRONT_LEFT_WIDE:
+		return "Front left wide";
+	case BT_AUDIO_LOCATION_FRONT_RIGHT_WIDE:
+		return "Front right wde";
+	case BT_AUDIO_LOCATION_LEFT_SURROUND:
+		return "Left surround";
+	case BT_AUDIO_LOCATION_RIGHT_SURROUND:
+		return "Right surround";
+	default:
+		return "Unknown location";
+	}
+}
+
+/** @} */ /* End of bt_audio_to_str */
 #ifdef __cplusplus
 }
 #endif

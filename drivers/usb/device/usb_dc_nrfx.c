@@ -22,6 +22,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/dt-bindings/regulator/nrf5x.h>
 #include <nrf_usbd_common.h>
 #include <hal/nrf_usbd.h>
 #include <nrfx_power.h>
@@ -1895,11 +1896,12 @@ static int usb_init(void)
 #endif
 
 	static const nrfx_power_config_t power_config = {
-		.dcdcen = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X) ||
-			  IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_APP),
+		.dcdcen = (DT_PROP(DT_INST(0, nordic_nrf5x_regulator), regulator_initial_mode)
+			   == NRF5X_REG_MODE_DCDC),
 #if NRFX_POWER_SUPPORTS_DCDCEN_VDDH
-		.dcdcenhv = IS_ENABLED(CONFIG_SOC_DCDC_NRF52X_HV) ||
-			    IS_ENABLED(CONFIG_SOC_DCDC_NRF53X_HV),
+		.dcdcenhv = COND_CODE_1(CONFIG_SOC_SERIES_NRF52X,
+			(DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52x_regulator_hv), okay)),
+			(DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf53x_regulator_hv), okay))),
 #endif
 	};
 

@@ -134,6 +134,13 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
+static const struct device *eth_nxp_s32_get_phy(const struct device *dev)
+{
+	const struct eth_nxp_s32_config *cfg = dev->config;
+
+	return cfg->phy_dev;
+}
+
 #if defined(CONFIG_SOC_SERIES_S32K3)
 static int select_phy_interface(Gmac_Ip_MiiModeType mode)
 {
@@ -589,6 +596,7 @@ static void eth_nxp_s32_rx_irq(const struct device *dev)
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_nxp_s32_iface_init,
 	.get_capabilities = eth_nxp_s32_get_capabilities,
+	.get_phy = eth_nxp_s32_get_phy,
 	.start = eth_nxp_s32_start,
 	.stop = eth_nxp_s32_stop,
 	.send = eth_nxp_s32_tx,

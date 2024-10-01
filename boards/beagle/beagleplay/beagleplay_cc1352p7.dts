@@ -1,0 +1,95 @@
+/*
+ * Copyright (c) 2022 Jason Kridner, BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc1352r7.dtsi>
+#include "beagleplay-cc1352p7-pinctrl.dtsi"
+
+/ {
+	model = "beagleplay";
+	compatible = "beagle,beagleplay-cc1352p7";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154g;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		led1: led_1 {
+			gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+
+	/**
+	 * The BeaglePlay cc1352 has an on-board antenna switch (SKY13317-373LF) used to
+	 * select the appropriate RF signal port based on the currently-used PHY.
+	 *
+	 * Truth table:
+	 *
+	 * Path         DIO29 DIO30
+	 * ===========  ===== =====
+	 * Off          0     0
+	 * Sub-1 GHz    0     1     // DIO30 mux to IOC_PORT_RFC_GPO0 for auto
+	 * 20 dBm TX    1     0     // DIO29 mux to IOC_PORT_RFC_GPO3 for auto
+	 */
+	antenna_mux0: antenna_mux0 {
+		compatible = "skyworks,sky13317";
+		status = "okay";
+		gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>, <&gpio0 30 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&board_ant_tx_pa_off &board_ant_subg_off>;
+		pinctrl-1 = <&board_ant_tx_pa_off &board_ant_subg_on>;
+		pinctrl-2 = <&board_ant_tx_pa_on &board_ant_subg_on>;
+		pinctrl-names = "default", "ant_subg", "ant_subg_pa";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <48000000>;
+	cpu-power-states = <&idle &standby>;
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
+	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&ieee802154g {
+	status = "okay";
+};

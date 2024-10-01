@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 counter
+
+compatible: "adi,max32-counter"
+
+include: [base.yaml]

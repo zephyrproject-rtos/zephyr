@@ -88,7 +88,7 @@ The GD32L233R-EVAL includes an onboard programmer/debugger (GD-Link) which
 allows flash programming and debugging over USB. There is also a SWD header
 which can be used with tools like Segger J-Link(latest version required).
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

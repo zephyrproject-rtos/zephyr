@@ -6,6 +6,7 @@
 
 #include <zephyr/fff.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/ztest.h>
 
 #include "stubs.h"
@@ -23,13 +24,7 @@ static uint16_t messages_needing_response[2];
 static struct coap_client client;
 
 static char *short_payload = "testing";
-static char *long_payload = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
-				  "eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut "
-				  "enim ad minim veniam, quis nostrud exercitation ullamco laboris "
-				  "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor "
-				  "in reprehenderit in voluptate velit esse cillum dolore eu fugiat"
-				  " nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
-				  " sunt in culpa qui officia deserunt mollit anim id est laborum.";
+static char *long_payload = LOREM_IPSUM_SHORT;
 
 static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max_len, int flags,
 					  struct sockaddr *src_addr, socklen_t *addrlen)
@@ -382,7 +377,6 @@ ZTEST(coap_client, test_get_request)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
@@ -411,7 +405,7 @@ ZTEST(coap_client, test_resend_request)
 	LOG_INF("Send request");
 	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
-	k_sleep(K_MSEC(300));
+	k_sleep(K_MSEC(15));
 	set_socket_events(ZSOCK_POLLIN);
 
 	k_sleep(K_MSEC(100));
@@ -445,7 +439,6 @@ ZTEST(coap_client, test_echo_option)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
@@ -476,7 +469,6 @@ ZTEST(coap_client, test_echo_option_next_req)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 
@@ -491,7 +483,6 @@ ZTEST(coap_client, test_echo_option_next_req)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
@@ -545,7 +536,6 @@ ZTEST(coap_client, test_send_large_data)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
@@ -579,8 +569,8 @@ ZTEST(coap_client, test_no_response)
 	ret = coap_client_req(&client, 0, &address, &client_request, &params);
 
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
-	k_sleep(K_MSEC(300));
 
+	k_sleep(K_MSEC(700));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
 }
 
@@ -610,9 +600,7 @@ ZTEST(coap_client, test_separate_response)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
-
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
 
@@ -643,11 +631,9 @@ ZTEST(coap_client, test_multiple_requests)
 	ret = coap_client_req(&client, 0, &address, &client_request, NULL);
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 
-	k_sleep(K_MSEC(5));
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_response_code, COAP_RESPONSE_CODE_OK, "Unexpected response");
 }
@@ -681,9 +667,8 @@ ZTEST(coap_client, test_unmatching_tokens)
 	zassert_true(ret >= 0, "Sending request failed, %d", ret);
 	set_socket_events(ZSOCK_POLLIN);
 
-	k_sleep(K_MSEC(1));
-	k_sleep(K_MSEC(1));
+	k_sleep(K_MSEC(2));
 	clear_socket_events();
-	k_sleep(K_MSEC(500));
+	k_sleep(K_MSEC(700));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
 }

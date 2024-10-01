@@ -95,6 +95,14 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
 #endif /* CONFIG_ZTEST */
 
+static int fake_can_init(const struct device *dev)
+{
+	/* Install default delegate for reporting the core clock */
+	fake_can_get_core_clock_fake.custom_fake = fake_can_get_core_clock_delegate;
+
+	return 0;
+}
+
 static const struct can_driver_api fake_can_driver_api = {
 	.start = fake_can_start,
 	.stop = fake_can_stop,
@@ -159,7 +167,7 @@ static const struct can_driver_api fake_can_driver_api = {
 									                \
 	static struct fake_can_data fake_can_data_##inst;		                \
 									                \
-	CAN_DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &fake_can_data_##inst,              \
+	CAN_DEVICE_DT_INST_DEFINE(inst, fake_can_init, NULL, &fake_can_data_##inst,     \
 				  &fake_can_config_##inst, POST_KERNEL,	                \
 				  CONFIG_CAN_INIT_PRIORITY,                             \
 				  &fake_can_driver_api);

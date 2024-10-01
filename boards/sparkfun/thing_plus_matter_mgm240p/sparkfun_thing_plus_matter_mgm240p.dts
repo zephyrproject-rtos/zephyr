@@ -1,0 +1,140 @@
+/*
+ * Copyright (c) 2024 Daikin Comfort Technologies North America, Inc.
+ * Copyright (c) 2020 TriaGnoSys GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32mg24b020f1536im40.dtsi>
+#include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	 model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
+	 compatible = "sparkfun,sparkfun_thing_plus_mgm240p", "silabs,efr32mg24";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &bt_hci_silabs;
+	};
+
+	aliases {
+		led0 = &blue_led;
+		watchdog0 = &wdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		blue_led: led_1 {
+			gpios = <&gpioa GECKO_PIN(8) GPIO_ACTIVE_LOW>;
+		};
+
+	};
+
+	wake_up_trigger: gpio-wake-up  {
+		compatible = "silabs,gecko-wake-up-trigger";
+		gpios = <&gpioa GECKO_PIN(5) GPIO_ACTIVE_LOW>;
+	};
+
+};
+
+&cpu0 {
+	clock-frequency = <78000000>;
+};
+
+&usart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserve 48 kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0x0000c000>;
+			read-only;
+		};
+
+		/* Reserve 464 kB for the application in slot 0 */
+		slot0_partition: partition@c000 {
+			label = "storage";
+			reg = <0x0000c000 0x00074000>;
+		};
+
+		/* Reserve 464 kB for the application in slot 1 */
+		slot1_partition: partition@80000 {
+			label = "image-0";
+			reg = <0x00080000 0x00074000>;
+		};
+
+		/* Reserve 32 kB for the scratch partition */
+		scratch_partition: partition@f4000 {
+			label = "image-1";
+			reg = <0x000f4000 0x00008000>;
+		};
+
+		/* Set 528Kb of storage at the end of the 1024Kb of flash */
+		storage_partition: partition@fc000 {
+			label = "image-scratch";
+			reg = <0x000fc000 0x00084000>;
+		};
+	};
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&stimer0 {
+	status = "okay";
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};

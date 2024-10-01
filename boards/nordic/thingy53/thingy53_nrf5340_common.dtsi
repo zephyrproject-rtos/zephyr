@@ -5,6 +5,7 @@
  */
 #include "thingy53_nrf5340_common-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 
 / {
 	chosen {
@@ -95,6 +96,14 @@
 		output-ohms = <180000>;
 		full-ohms = <(1500000 + 180000)>;
 		power-gpios = <&gpio0 16 0>;
+	};
+
+	fuel_gauge: fuel_gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		battery-voltage = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <1350000>;
 	};
 
 	regulator_3v3: regulator-3v3-ctrl {
@@ -288,39 +297,6 @@ edge_connector_spi: &spi4 {
 	pinctrl-names = "default", "sleep";
 };
 
-&flash0 {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x00000000 0x00010000>;
-		};
-		slot0_partition: partition@10000 {
-			label = "image-0";
-		};
-		slot0_ns_partition: partition@50000 {
-			label = "image-0-nonsecure";
-		};
-		slot1_partition: partition@80000 {
-			label = "image-1";
-		};
-		slot1_ns_partition: partition@c0000 {
-			label = "image-1-nonsecure";
-		};
-		scratch_partition: partition@f0000 {
-			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
-		};
-		storage_partition: partition@fa000 {
-			label = "storage";
-			reg = <0x000fa000 0x00006000>;
-		};
-	};
-};
-
 &ieee802154 {
 	status = "okay";
 };
@@ -334,26 +310,5 @@ zephyr_udc0: &usbd {
 	};
 };
 
-/ {
-
-	reserved-memory {
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sram0_image: image@20000000 {
-			/* Zephyr image(s) memory */
-		};
-
-		sram0_s: image_s@20000000 {
-			/* Secure image memory */
-		};
-
-		sram0_ns: image_ns@20040000 {
-			/* Non-Secure image memory */
-		};
-	};
-};
-
-/* Include partition configuration file */
-#include "thingy53_nrf5340_partition_conf.dtsi"
+/* Include default memory partition configuration file */
+#include <common/nordic/nrf5340_cpuapp_partition.dtsi>

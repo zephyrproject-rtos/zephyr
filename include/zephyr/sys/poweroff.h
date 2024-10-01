@@ -29,8 +29,6 @@ extern "C" {
  */
 FUNC_NORETURN void z_sys_poweroff(void);
 
-/** @} */
-
 /** @endcond */
 
 /**

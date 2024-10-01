@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+#include "nrf7002dk_nrf5340_cpunet_pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Nordic NRF7002 DK NRF5340 Network";
+	compatible = "nordic,nrf7002-dk-nrf5340-cpunet";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,bt-mon-uart = &uart0;
+		zephyr,bt-c2h-uart = &uart0;
+		zephyr,bt-hci-ipc = &ipc0;
+		nordic,802154-spinel-ipc = &ipc0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	leds {
+			compatible = "gpio-leds";
+			led0: led_0 {
+					gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
+					label = "Green LED 0";
+			};
+			led1: led_1 {
+					gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+					label = "Green LED 1";
+			};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio1 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		button1: button_1 {
+			gpios = <&gpio1 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>,	/* A0 */
+			   <1 0 &gpio0 5 0>,	/* A1 */
+			   <2 0 &gpio0 6 0>,	/* A2 */
+			   <3 0 &gpio0 7 0>,	/* A3 */
+			   <4 0 &gpio0 25 0>,	/* A4 */
+			   <5 0 &gpio0 26 0>,	/* A5 */
+			   <6 0 &gpio1 0 0>,	/* D0 */
+			   <7 0 &gpio1 1 0>,	/* D1 */
+			   <8 0 &gpio1 4 0>,	/* D2 */
+			   <9 0 &gpio1 5 0>,	/* D3 */
+			   <10 0 &gpio1 6 0>,	/* D4 */
+			   <11 0 &gpio1 7 0>,	/* D5 */
+			   <12 0 &gpio1 8 0>,	/* D6 */
+			   <13 0 &gpio1 9 0>,	/* D7 */
+			   <14 0 &gpio1 10 0>,	/* D8 */
+			   <15 0 &gpio1 11 0>,	/* D9 */
+			   <16 0 &gpio1 12 0>,	/* D10 */
+			   <17 0 &gpio1 13 0>,	/* D11 */
+			   <18 0 &gpio1 14 0>,	/* D12 */
+			   <19 0 &gpio1 15 0>,	/* D13 */
+			   <20 0 &gpio1 2 0>,	/* D14 */
+			   <21 0 &gpio1 3 0>;	/* D15 */
+	};
+
+	nrf70: coex {
+		status = "okay";
+		compatible = "nordic,nrf70-coex";
+
+		#include "nrf70_common_coex.dtsi"
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+		bootloader-led0 = &led0;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_serial: &uart0{};
+
+arduino_i2c: &i2c0 {
+	compatible = "nordic,nrf-twim";
+	/* Cannot be used together with uart0. */
+	/* status = "okay"; */
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+arduino_spi: &spi0 {
+	compatible = "nordic,nrf-spim";
+	/* Cannot be used together with uart0. */
+	/* status = "okay"; */
+	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>; /* D10 */
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-1 = <&spi0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x17000>;
+		};
+		slot1_partition: partition@23000 {
+			label = "image-1";
+			reg = <0x00023000 0x17000>;
+		};
+		storage_partition: partition@3a000 {
+			label = "storage";
+			reg = <0x0003a000 0x6000>;
+		};
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+/* Include default shared RAM configuration file */
+#include <common/nordic/nrf5340_shared_sram_partition.dtsi>

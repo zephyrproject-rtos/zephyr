@@ -1,19 +1,15 @@
-# Copyright 2024, NXP
+# Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: i.MX RGPIO node
 
 compatible: "nxp,imx-rgpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, base.yaml, "nxp,rdc-policy.yaml"]
 
 properties:
   reg:
     required: true
-
-  rdc:
-    type: int
-    description: Set the RDC permission for this peripheral
 
   pinmux:
     type: phandles

@@ -26,7 +26,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, macos-13, macos-14, windows-2022]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -46,6 +46,7 @@ jobs:
           git config --global user.email "actions@zephyrproject.org"
           git config --global user.name "Github Actions"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log --graph --oneline HEAD...${PR_HEAD}
 
       - name: Set up Python

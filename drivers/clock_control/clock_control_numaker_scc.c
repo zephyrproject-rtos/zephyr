@@ -136,7 +136,7 @@ static int numaker_scc_init(const struct device *dev)
 #endif
 
 	/*
-	 * z_arm_platform_init() will respect above configurations and
+	 * soc_reset_hook() will respect above configurations and
 	 * actually take charge of system clock control initialization.
 	 */
 

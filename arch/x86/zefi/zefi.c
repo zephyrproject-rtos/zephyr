@@ -32,6 +32,14 @@
 		.Data4 = { 0xbc, 0x22, 0x00, 0x80, 0xc7, 0x3c, 0x88, 0x81 }, \
 	}
 
+#define EFI_LOADED_IMAGE_PROTOCOL_GUID					\
+	{								\
+		.Data1 = 0x5b1b31a1,					\
+		.Data2 = 0x9562,					\
+		.Data3 = 0x11d2,					\
+		.Data4 = { 0x8e, 0x3f, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } \
+	}
+
 /* The linker places this dummy last in the data memory.  We can't use
  * traditional linker address symbols because we're relocatable; the
  * linker doesn't know what the runtime address will be.  The compiler
@@ -135,7 +143,9 @@ static void disable_hpet(void)
  */
 uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 {
+#ifndef CONFIG_DYNAMIC_BOOTARGS
 	(void)img_handle;
+#endif /* CONFIG_DYNAMIC_BOOTARGS */
 
 	efi = sys_tab;
 	z_putchar = efi_putchar;
@@ -179,6 +189,30 @@ uintptr_t __abi efi_entry(void *img_handle, struct efi_system_table *sys_tab)
 			}
 		}
 	}
+
+#ifdef CONFIG_DYNAMIC_BOOTARGS
+	char *dst_bootargs = (char *)zefi_bootargs;
+	struct efi_loaded_image_protocol *loaded_image;
+	efi_guid_t loaded_image_protocol = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+	efi_status_t loaded_image_status = sys_tab->BootServices->HandleProtocol(
+		img_handle,
+		&loaded_image_protocol,
+		(void **)&loaded_image
+	);
+
+	if (loaded_image_status == EFI_SUCCESS) {
+		uint16_t *src_bootargs = (uint16_t *)loaded_image->LoadOptions;
+
+		while (*src_bootargs != '\0' &&
+		       dst_bootargs + 1 <
+			       (char *)zefi_bootargs + CONFIG_BOOTARGS_ARGS_BUFFER_SIZE) {
+			*dst_bootargs++ = *src_bootargs++ & 0x7f;
+		}
+		*dst_bootargs = '\0';
+	} else {
+		*dst_bootargs = '\0';
+	}
+#endif /* CONFIG_DYNAMIC_BOOTARGS */
 
 	unsigned char *code = (void *)zefi_entry;
 

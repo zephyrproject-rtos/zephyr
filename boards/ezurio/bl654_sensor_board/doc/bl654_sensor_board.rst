@@ -145,7 +145,7 @@ as usual (see :ref:`build_an_application` and :ref:`application_run` for more
 details). If using a Ezurio USB-SWD Programmer Board, see the
 `pyOCD website`_ to find details about the software and how to install it.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output - note that an
 external UART is required to be connected to the BL654 sensor board's UART, if
@@ -222,9 +222,9 @@ Testing Bluetooth on the BL654 Sensor Board
 Many of the Bluetooth examples will work on the BL654 Sensor Board.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 
 Testing the LED and button on the BL654 Sensor Board

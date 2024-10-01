@@ -7,5 +7,6 @@ config SPI_SIFIVE
 	bool "SiFive SPI controller driver"
 	default y
 	depends on DT_HAS_SIFIVE_SPI0_ENABLED
+	select PINCTRL if SOC_SERIES_SIFIVE_FREEDOM_FE300
 	help
 	  Enable the SPI peripherals on SiFive Freedom processors

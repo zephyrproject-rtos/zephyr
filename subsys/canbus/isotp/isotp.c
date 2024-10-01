@@ -6,7 +6,7 @@
  */
 
 #include "isotp_internal.h"
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
@@ -278,7 +278,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 		ud_rem_len = net_buf_user_data(rctx->buf);
 		*ud_rem_len = 0;
 		LOG_DBG("SM process SF of length %d", rctx->length);
-		net_buf_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, rctx->buf);
 		rctx->state = ISOTP_RX_STATE_RECYCLE;
 		receive_state_machine(rctx);
 		break;
@@ -300,7 +300,7 @@ static void receive_state_machine(struct isotp_recv_ctx *rctx)
 			rctx->bs = rctx->opts.bs;
 			ud_rem_len = net_buf_user_data(rctx->buf);
 			*ud_rem_len = rctx->length;
-			net_buf_put(&rctx->fifo, rctx->buf);
+			k_fifo_put(&rctx->fifo, rctx->buf);
 		}
 
 		rctx->wft = ISOTP_WFT_FIRST;
@@ -538,7 +538,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 	if (rctx->length == 0) {
 		rctx->state = ISOTP_RX_STATE_RECYCLE;
 		*ud_rem_len = 0;
-		net_buf_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, rctx->buf);
 		return;
 	}
 
@@ -546,7 +546,7 @@ static void process_cf(struct isotp_recv_ctx *rctx, struct can_frame *frame)
 		LOG_DBG("Block is complete. Allocate new buffer");
 		rctx->bs = rctx->opts.bs;
 		*ud_rem_len = rctx->length;
-		net_buf_put(&rctx->fifo, rctx->buf);
+		k_fifo_put(&rctx->fifo, rctx->buf);
 		rctx->state = ISOTP_RX_STATE_TRY_ALLOC;
 	}
 }
@@ -684,7 +684,7 @@ void isotp_unbind(struct isotp_recv_ctx *rctx)
 
 	rctx->state = ISOTP_RX_STATE_UNBOUND;
 
-	while ((buf = net_buf_get(&rctx->fifo, K_NO_WAIT))) {
+	while ((buf = k_fifo_get(&rctx->fifo, K_NO_WAIT))) {
 		net_buf_unref(buf);
 	}
 
@@ -702,7 +702,7 @@ int isotp_recv_net(struct isotp_recv_ctx *rctx, struct net_buf **buffer, k_timeo
 	struct net_buf *buf;
 	int ret;
 
-	buf = net_buf_get(&rctx->fifo, timeout);
+	buf = k_fifo_get(&rctx->fifo, timeout);
 	if (!buf) {
 		ret = rctx->error_nr ? rctx->error_nr : ISOTP_RECV_TIMEOUT;
 		rctx->error_nr = 0;
@@ -721,7 +721,7 @@ int isotp_recv(struct isotp_recv_ctx *rctx, uint8_t *data, size_t len, k_timeout
 	int err;
 
 	if (!rctx->recv_buf) {
-		rctx->recv_buf = net_buf_get(&rctx->fifo, timeout);
+		rctx->recv_buf = k_fifo_get(&rctx->fifo, timeout);
 		if (!rctx->recv_buf) {
 			err = rctx->error_nr ? rctx->error_nr : ISOTP_RECV_TIMEOUT;
 			rctx->error_nr = 0;

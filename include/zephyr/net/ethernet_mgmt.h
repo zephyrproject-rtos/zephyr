@@ -22,6 +22,8 @@ extern "C" {
 /**
  * @brief Ethernet library
  * @defgroup ethernet_mgmt Ethernet Library
+ * @since 1.12
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

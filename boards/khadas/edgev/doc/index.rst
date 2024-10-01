@@ -41,7 +41,7 @@ Programming and Debugging
 *************************
 
 Use the following configuration to run basic Zephyr applications and
-kernel tests on Khadas Edge-V board. For example, with the :ref:`hello_world`:
+kernel tests on Khadas Edge-V board. For example, with the :zephyr:code-sample:`hello_world`:
 
 1. Non-SMP mode
 

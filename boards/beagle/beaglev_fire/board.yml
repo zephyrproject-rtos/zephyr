@@ -3,3 +3,6 @@ board:
   vendor: beagle
   socs:
   - name: polarfire
+    variants:
+    - name: smp
+      cpucluster: u54

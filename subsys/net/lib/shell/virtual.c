@@ -8,6 +8,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <stdlib.h>
+
 #if defined(CONFIG_NET_L2_VIRTUAL)
 #include <zephyr/net/virtual.h>
 #endif
@@ -84,7 +86,7 @@ static void attached_iface_cb(struct net_if *iface, void *user_data)
 }
 #endif /* CONFIG_NET_L2_VIRTUAL */
 
-static int cmd_net_virtual(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_virtual_show(const struct shell *sh, size_t argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -113,6 +115,76 @@ static int cmd_net_virtual(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_SUBCMD_ADD((net), virtual, NULL,
-		 "Show virtual network interfaces.",
-		 cmd_net_virtual, 1, 0);
+static int cmd_virtual_attach(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	struct net_if *virtual_iface, *lower_iface;
+	int ret;
+
+	virtual_iface = net_if_get_by_index(atoi(argv[1]));
+	if (virtual_iface == NULL) {
+		PR("No %s interface %s found.\n", "virtual", argv[1]);
+		return -ENOENT;
+	}
+
+	lower_iface = net_if_get_by_index(atoi(argv[2]));
+	if (lower_iface == NULL) {
+		PR("No %s interface %s found.\n", "such", argv[2]);
+		return -ENOENT;
+	}
+
+	ret = net_virtual_interface_attach(virtual_iface, lower_iface);
+	if (ret < 0) {
+		PR("Cannot attach interface %s to %s (%d)\n", argv[1], argv[2], ret);
+		return -ENOENT;
+	}
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_L2_VIRTUAL",
+		"virtual network interface");
+#endif
+	return 0;
+}
+
+static int cmd_virtual_detach(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_L2_VIRTUAL)
+	struct net_if *virtual_iface;
+	int ret;
+
+	virtual_iface = net_if_get_by_index(atoi(argv[1]));
+	if (virtual_iface == NULL) {
+		PR("No %s interface %s found.\n", "virtual", argv[1]);
+		return -ENOENT;
+	}
+
+	ret = net_virtual_interface_attach(virtual_iface, NULL);
+	if (ret < 0) {
+		PR("Cannot detach interface %s (%d)\n", argv[1], ret);
+		return -ENOENT;
+	}
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_L2_VIRTUAL",
+		"virtual network interface");
+#endif
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(virtual_commands,
+	SHELL_CMD_ARG(attach, NULL,
+		  "Attach a network interface to another interface.\n"
+		  "'virtual attach <upper virtual iface index> <lower iface index>'",
+		  cmd_virtual_attach, 3, 0),
+	SHELL_CMD_ARG(detach, NULL,
+		  "Detach a network interface from another interface.\n"
+		  "'virtual detach <upper virtual iface index>'",
+		  cmd_virtual_detach, 2, 0),
+	SHELL_CMD_ARG(show, NULL,
+		  "Show virtual interface information.\n"
+		  "'virtual show'",
+		  cmd_virtual_show, 1, 1),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_SUBCMD_ADD((net), virtual, &virtual_commands,
+		 "Show/manipulate virtual network interfaces.",
+		 cmd_virtual_show, 1, 1);

@@ -147,7 +147,7 @@ found in :ref:`nordic_segger_flashing`. Then build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Use a USB to TTL converter to connect the computer and raytac_mdbt50q_db_33/nrf52833
 J10 connector. Then run your favorite terminal program to listen for output.

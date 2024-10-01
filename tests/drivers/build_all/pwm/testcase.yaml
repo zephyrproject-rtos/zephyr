@@ -50,7 +50,10 @@ tests:
   drivers.pwm.build.xlnx:
     platform_allow: arty_a7/designstart_fpga_cortex_m1
   drivers.pwm.build.test:
-    platform_allow: qemu_cortex_m3
+    platform_allow:
+      - qemu_cortex_m3
+      - native_sim
+      - native_sim/native/64
   drivers.pwm.max31790.build:
     platform_allow: nucleo_f429zi
     extra_args: DTC_OVERLAY_FILE=max31790.overlay

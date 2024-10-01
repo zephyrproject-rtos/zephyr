@@ -144,6 +144,10 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	rail_isr_installer();
 	sl_rail_util_pa_init();
 
+	/* Disable 2M and coded PHYs, they do not work with the current configuration */
+	sl_btctrl_disable_2m_phy();
+	sl_btctrl_disable_coded_phy();
+
 	/* sl_btctrl_init_mem returns the number of memory buffers allocated */
 	ret = sl_btctrl_init_mem(SL_BT_CONTROLLER_BUFFER_MEMORY);
 	if (!ret) {
@@ -162,6 +166,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_init_adv();
 	sl_btctrl_init_scan();
 	sl_btctrl_init_conn();
+	sl_btctrl_init_phy();
 	sl_btctrl_init_adv_ext();
 	sl_btctrl_init_scan_ext();
 

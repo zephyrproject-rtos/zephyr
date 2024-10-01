@@ -10,13 +10,13 @@ set -ue
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
 
-app=tests/bsim/bluetooth/host/security/bond_overwrite_allowed compile
-app=tests/bsim/bluetooth/host/security/bond_overwrite_denied compile
-app=tests/bsim/bluetooth/host/security/bond_per_connection compile
-app=tests/bsim/bluetooth/host/security/ccc_update compile
-app=tests/bsim/bluetooth/host/security/ccc_update conf_file=prj_2.conf compile
-app=tests/bsim/bluetooth/host/security/id_addr_update/central compile
-app=tests/bsim/bluetooth/host/security/id_addr_update/peripheral compile
-app=tests/bsim/bluetooth/host/security/security_changed_callback compile
+run_in_background \
+    ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/bond_overwrite_allowed/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/bond_overwrite_denied/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/bond_per_connection/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/ccc_update/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/id_addr_update/compile.sh
+run_in_background \
+    ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/security/security_changed_callback/compile.sh
 
 wait_for_background_jobs

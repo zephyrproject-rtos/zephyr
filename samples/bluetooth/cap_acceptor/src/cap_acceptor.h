@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/conn.h>
@@ -37,6 +39,14 @@ struct peer_config {
  * @retval -ENOEXEC if callbacks failed to be registered
  */
 int init_cap_acceptor_unicast(struct peer_config *peer);
+
+/**
+ * @brief Initialize the unicast part of the CAP Acceptor
+ *
+ * @retval 0 if success
+ * @retval -ENOEXEC if callbacks failed to be registered
+ */
+int init_cap_acceptor_broadcast(void);
 
 /**
  * @brief Request to allocate a CAP stream

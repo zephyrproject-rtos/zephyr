@@ -22,4 +22,5 @@ supported:
   - backup_sram
   - usb_device
   - rtc
+  - can
 vendor: st

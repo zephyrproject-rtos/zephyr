@@ -12,7 +12,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <usb_descriptor.h>
 
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
@@ -105,7 +105,7 @@ static void bt_h4_read(uint8_t ep, int size, void *priv)
 			return;
 		}
 
-		net_buf_put(&rx_queue, buf);
+		k_fifo_put(&rx_queue, buf);
 	}
 
 	/* Start a new read transfer */
@@ -124,7 +124,7 @@ static void hci_tx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&tx_queue, K_FOREVER);
+		buf = k_fifo_get(&tx_queue, K_FOREVER);
 
 		usb_transfer_sync(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr,
 				  buf->data, buf->len, USB_TRANS_WRITE);
@@ -142,7 +142,7 @@ static void hci_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf;
 
-		buf = net_buf_get(&rx_queue, K_FOREVER);
+		buf = k_fifo_get(&rx_queue, K_FOREVER);
 		if (bt_send(buf)) {
 			LOG_ERR("Error sending to driver");
 			net_buf_unref(buf);

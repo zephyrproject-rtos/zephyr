@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include <zephyr/logging/log.h>
@@ -198,7 +199,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
-		LOG_ERR("Failed to connect to %s (%u)", addr, err);
+		LOG_ERR("Failed to connect to %s %u %s", addr, err, bt_hci_err_to_str(err));
 		return;
 	}
 
@@ -213,7 +214,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_DBG("Disconnected from %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected from %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
 
 	k_poll_signal_raise(&disconn_signal, 0);
 }
@@ -227,7 +228,8 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", addr, level);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr, level, err);
+		LOG_DBG("Security failed: %s level %u err %s(%d)", addr, level,
+			bt_security_err_to_str(err), err);
 	}
 }
 

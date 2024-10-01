@@ -35,6 +35,24 @@ config LOG_BACKEND_SWO_FREQ_HZ
 	  reset. To ensure flawless operation the frequency configured here and
 	  by the SWO viewer program has to match.
 
+choice
+	prompt "SWO protocol"
+	default LOG_BACKEND_SWO_PROTOCOL_NRZ
+
+config LOG_BACKEND_SWO_PROTOCOL_NRZ
+	bool "NRZ encoding"
+	help
+	  Use UART-like NRZ encoding. This is the most common option, but requires the SWO output
+	  frequency to be known on the receiving side.
+
+config LOG_BACKEND_SWO_PROTOCOL_MANCHESTER
+	bool "Manchester encoding"
+	help
+	  Use Manchester encoding. This is less widely supported, but permits the clock to be
+	  recovered automatically on the receiving side.
+
+endchoice
+
 backend = SWO
 backend-str = swo
 source "subsys/logging/Kconfig.template.log_format_config"

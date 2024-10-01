@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This is a representation of the Wi-Fi transmit power ceilings
+  i.e., maximum transmit power allowed for 2.4GHz band. Based on the
+  RF performance of the device, the transmit power can be limited
+  for different data rates and sub-bands to get the best performance.
+  Resolution is 1 dBm
+
+properties:
+  wifi-max-tx-pwr-2g-dsss:
+    type: int
+    required: true
+    description: Maximum transmit power allowed in 2.4GHz band for DSSS/CCK rates
+  wifi-max-tx-pwr-2g-mcs0:
+    type: int
+    required: true
+    description: Maximum transmit power allowed in 2.4GHz band for MCS0
+  wifi-max-tx-pwr-2g-mcs7:
+    type: int
+    required: true
+    description: Maximum transmit power allowed in 2.4GHz band for MCS7

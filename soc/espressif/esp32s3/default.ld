@@ -36,12 +36,21 @@ user_dram_seg_len = user_idram_size;
 #define RAMABLE_REGION     dram0_0_seg
 #define ROMABLE_REGION     FLASH
 
+#undef GROUP_DATA_LINK_IN
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
+
+#undef GROUP_NOLOAD_LINK_IN
+#define GROUP_NOLOAD_LINK_IN(vregion, lregion) > vregion
+
 /* Flash segments (rodata and text) should be mapped in the virtual address spaces.
  * Executing directly from LMA is not possible. */
 #undef GROUP_ROM_LINK_IN
 #define GROUP_ROM_LINK_IN(vregion, lregion) > RODATA_REGION AT > lregion
 
 /* Make sure new sections have consistent alignment between input and output sections */
+#undef SECTION_DATA_PROLOGUE
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
 
@@ -92,7 +101,7 @@ MEMORY
 ENTRY(CONFIG_KERNEL_ENTRY)
 
 /* Used as a pointer to the heap end */
-_heap_sentry = DRAM_BUFFERS_START;
+_heap_sentry = DRAM_RESERVED_START;
 
 SECTIONS
 {
@@ -680,14 +689,6 @@ SECTIONS
     _data_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-  .dram0.noinit (NOLOAD):
-  {
-    . = ALIGN(4);
-    *(.noinit)
-    *(.noinit.*)
-    . = ALIGN(4) ;
-  } GROUP_LINK_IN(RAMABLE_REGION)
-
   /* Shared RAM */
   .dram0.bss (NOLOAD) :
   {
@@ -720,18 +721,19 @@ SECTIONS
     __bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  .dram0.heap_start (NOLOAD) :
+  .dram0.noinit (NOLOAD):
   {
-    . = ALIGN (8);
-    /* Lowest possible start address for the heap */
-    _heap_start = ABSOLUTE(.);
+    . = ALIGN(4);
+    *(.noinit)
+    *(.noinit.*)
+    . = ALIGN(4) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _iram_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM segment data does not fit.")
 
   /* --- END OF DRAM --- */
 
@@ -897,6 +899,7 @@ SECTIONS
 
 #endif /* CONFIG_ESP_SPIRAM */
 
+  /* --- XTENSA GLUE AND DEBUG BEGIN --- */
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <zephyr/linker/intlist.ld>
@@ -940,11 +943,7 @@ SECTIONS
 
 }
 
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
-
-ASSERT(((_heap_start - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
-          "DRAM segment data does not fit.")
+  /* --- XTENSA GLUE AND DEBUG END --- */
 
 #if defined(CONFIG_ESP_SPIRAM)
 ASSERT(((_ext_ram_bss_end - _ext_ram_bss_start) <= CONFIG_ESP_SPIRAM_SIZE),

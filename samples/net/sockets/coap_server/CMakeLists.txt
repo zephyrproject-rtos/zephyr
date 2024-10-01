@@ -15,4 +15,4 @@ zephyr_linker_sources(DATA_SECTIONS sections-ram.ld)
 zephyr_iterable_section(
   NAME coap_resource_coap_server
   GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT}
-  SUBALIGN CONFIG_LINKER_ITERABLE_SUBALIGN)
+  SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})

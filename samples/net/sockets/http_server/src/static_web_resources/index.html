@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="main.js"></script>
+    <title>Zephyr HTTP Server</title>
+</head>
+<body>
+    <h1>Welcome to Zephyr HTTP Server!</h1>
+    <p>This is a simple HTML file.</p>
+
+    <h4>LED Control</h4>
+    <p>The buttons below toggle the LED on the board, or print a message to the console if the board does not have an LED. This demonstrates dynamic handling of a POST request.</p>
+    <input id="led_on" type="button" value="LED on">
+    <input id="led_off" type="button" value="LED off">
+
+    <h4>Uptime Counter</h4>
+    <p>Below is the device uptime. This demonstrates dynamic handling of a GET request</p>
+    <p id="uptime"></p>
+
+    <h4>Network Statistics</h4>
+    <p>Below are the network statistics. This demonstrates streaming data from server to client using a websocket.</p>
+    <table>
+        <tr>
+            <td>Total bytes received</td>
+            <td id="bytes_recv"></td>
+        </tr>
+        <tr>
+            <td>Total bytes sent</td>
+            <td id="bytes_sent"></td>
+        </tr>
+        <tr>
+            <td>IPv6 packets received</td>
+            <td id="ipv6_pkt_recv"></td>
+        </tr>
+        <tr>
+            <td>IPv6 packets sent</td>
+            <td id="ipv6_pkt_sent"></td>
+        </tr>
+        <tr>
+            <td>IPv4 packets received</td>
+            <td id="ipv4_pkt_recv"></td>
+        </tr>
+        <tr>
+            <td>IPv4 packets sent</td>
+            <td id="ipv4_pkt_sent"></td>
+        </tr>
+        <tr>
+            <td>TCP bytes received</td>
+            <td id="tcp_bytes_recv"></td>
+        </tr>
+        <tr>
+            <td>TCP bytes sent</td>
+            <td id="tcp_bytes_sent"></td>
+        </tr>
+    </table>
+</body>
+</html>

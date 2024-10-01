@@ -17,6 +17,16 @@ compatible: "zephyr,uac2"
 # "consume" one of the available IDs.
 
 properties:
+  full-speed:
+    type: boolean
+    description: |
+      True if this instance is allowed to operate at Full-Speed.
+
+  high-speed:
+    type: boolean
+    description: |
+      True if this instance is allowed to operate at High-Speed.
+
   audio-function:
     type: int
     required: true

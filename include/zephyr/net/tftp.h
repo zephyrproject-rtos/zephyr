@@ -9,6 +9,8 @@
  * @brief TFTP Client Implementation
  *
  * @defgroup tftp_client TFTP Client library
+ * @since 2.3
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

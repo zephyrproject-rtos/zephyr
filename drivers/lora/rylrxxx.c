@@ -625,7 +625,7 @@ static int rylr_init(const struct device *dev)
 		return err;
 	}
 
-	err = modem_pipe_open(data->uart_pipe);
+	err = modem_pipe_open(data->uart_pipe, K_SECONDS(10));
 	if (err != 0) {
 		LOG_ERR("error opening uart pipe %d", err);
 		return err;

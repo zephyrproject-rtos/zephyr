@@ -3,14 +3,14 @@
 # used by twister for --test-tree option
 anytree
 
+# to use in ./scripts for memory footprint, code coverage, etc.
+gitpython
+
 # helper for developers - check git commit messages
 gitlint
 
 # helper for developers
 junit2html
-
-# helper for developers - code formatter
-clang-format>=15.0.0
 
 # Script used to build firmware images for NXP LPC MCUs.
 lpc_checksum

@@ -78,7 +78,8 @@ void nrf_802154_clock_hfclk_stop(void)
 #elif defined(NRF54H_SERIES)
 
 #define NRF_LRCCONF_RADIO_PD NRF_LRCCONF010
-#define MAX_HFXO_RAMP_UP_TIME_US 1000
+/* HF clock time to ramp-up. */
+#define MAX_HFXO_RAMP_UP_TIME_US 550
 
 static void hfclk_started_timer_handler(struct k_timer *dummy)
 {

@@ -15,6 +15,14 @@ config SOC_POLARFIRE
 	help
 	  Microchip MPFS system implementation
 
+config SOC_POLARFIRE_U54
+	bool
+	select SOC_POLARFIRE
+
+config SOC_POLARFIRE_E51
+	bool
+	select SOC_POLARFIRE
+
 config SOC_SERIES
 	default "polarfire" if SOC_SERIES_POLARFIRE
 

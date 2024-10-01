@@ -1,7 +1,8 @@
-.. _adt7420:
+.. zephyr:code-sample:: adt7420
+   :name: ADT7420 high-accuracy digital I2C temperature sensor
+   :relevant-api: sensor_interface
 
-ADT7420: High accuracy digital I2C temperature sensor
-#####################################################
+   Get temperature data from an ADT7420 sensor using polling and window mode.
 
 Description
 ***********

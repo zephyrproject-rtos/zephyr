@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H747I_DISCO_STM32H747XX_M7
+if LVGL
+
+# Double frame buffer maintained by lvgl.
+config STM32_LTDC_FB_NUM
+	default 0
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_VBD_CUSTOM_SECTION
+	default y
+
+config LV_Z_FULL_REFRESH
+	default y
+
+endif #LVGL
+endif # BOARD_STM32H747I_DISCO_STM32H747XX_M7

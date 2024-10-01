@@ -237,7 +237,7 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int ke1xf_init(void)
+void soc_early_init_hook(void)
 
 {
 #if !defined(CONFIG_ARM_MPU)
@@ -264,11 +264,9 @@ static int ke1xf_init(void)
 	/* SystemInit will have enabled the code cache. Disable it here */
 	L1CACHE_DisableCodeCache();
 #endif
-
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
 #ifdef CONFIG_WDOG_INIT
 
@@ -307,12 +305,10 @@ void z_arm_watchdog_init(void)
 
 #endif /* CONFIG_WDOG_INIT */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	/* SystemInit is provided by the NXP SDK */
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(ke1xf_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

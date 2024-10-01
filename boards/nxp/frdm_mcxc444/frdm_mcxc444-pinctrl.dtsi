@@ -1,0 +1,19 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+
+#include <nxp/mcx/MCXC444VLH-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RX_PTA1>,
+				<LPUART0_TX_PTA2>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};

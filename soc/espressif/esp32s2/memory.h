@@ -9,8 +9,7 @@
  */
 #define SRAM_IRAM_START  0x40020000
 #define SRAM_DRAM_START  0x3ffb0000
-#define SRAM_CACHE_SIZE  (CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
-			+ CONFIG_ESP32S2_DATA_CACHE_SIZE)
+#define SRAM_CACHE_SIZE  (CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE + CONFIG_ESP32S2_DATA_CACHE_SIZE)
 
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
@@ -28,29 +27,31 @@
  * Used to convert between 0x4002xxxx and 0x3ffbxxxx addresses.
  */
 #define IRAM_DRAM_OFFSET         0x70000
-#define DRAM_BUFFERS_START       0x3ffeab00
-#define DRAM_RESERVED_START      0x3ffec000
-#define DRAM_STACK_START         0x3fffc410
+#define DRAM_BUFFERS_START       0x3ffea400
+#define DRAM_BUFFERS_END         0x3fffc410
+#define DRAM_ROM_CPU_STACK_START 0x3fffc410
 #define DRAM_ROM_BSS_DATA_START  0x3fffe710
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
-#define BOOTLOADER_DRAM_SEG_LEN        0x7000
+#define BOOTLOADER_DRAM_SEG_LEN        0x8000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
 #define BOOTLOADER_IRAM_SEG_LEN        0xa000
+
+/* Set the limit for the application runtime dynamic allocations */
+#define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
  */
-#define BOOTLOADER_USER_DRAM_END (DRAM_RESERVED_START - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_USER_DRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
 
 /* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_DRAM_END + IRAM_DRAM_OFFSET \
-					- BOOTLOADER_IRAM_LOADER_SEG_LEN)
-#define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_SEG_LEN \
-					- IRAM_DRAM_OFFSET)
-#define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_DRAM_SEG_START - BOOTLOADER_IRAM_SEG_LEN \
-					+ IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_LOADER_SEG_START \
+	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
+#define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN - IRAM_DRAM_OFFSET)
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE

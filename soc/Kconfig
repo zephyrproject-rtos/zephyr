@@ -58,6 +58,8 @@ config SOC_DEPRECATED_RELEASE
 	  the Zephyr release that the SoC configuration will be removed.
 	  When set, any build for that SoC will generate a clearly visible
 	  deprecation warning.
+	  When adding this to a SOC, remember to follow the instructions in
+	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config SOC_HAS_TIMING_FUNCTIONS
 	bool

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <errno.h>
 #include <stddef.h>
 #include <zephyr/net/ppp.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_core.h>

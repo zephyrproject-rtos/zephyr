@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
@@ -58,7 +58,7 @@ static void smp_client_handle_reqs(struct k_work *work)
 	smp_client = (void *)work;
 	smpt = smp_client->smpt;
 
-	while ((nb = net_buf_get(&smp_client->tx_fifo, K_NO_WAIT)) != NULL) {
+	while ((nb = k_fifo_get(&smp_client->tx_fifo, K_NO_WAIT)) != NULL) {
 		smpt->functions.output(nb);
 	}
 }
@@ -111,7 +111,7 @@ static void smp_client_transport_work_fn(struct k_work *work)
 			entry->nb = net_buf_ref(entry->nb);
 			entry->retry_cnt--;
 			entry->timestamp = time_stamp_ref + CONFIG_SMP_CMD_RETRY_TIME;
-			net_buf_put(&entry->smp_client->tx_fifo, entry->nb);
+			k_fifo_put(&entry->smp_client->tx_fifo, entry->nb);
 			smp_tx_req(&entry->smp_client->work);
 			continue;
 		}
@@ -319,7 +319,7 @@ int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb
 	/* Increment reference for re-transmission and read smp header */
 	nb = net_buf_ref(nb);
 	smp_cmd_add_to_list(cmd_req);
-	net_buf_put(&smp_client->tx_fifo, nb);
+	k_fifo_put(&smp_client->tx_fifo, nb);
 	smp_tx_req(&smp_client->work);
 	return MGMT_ERR_EOK;
 }

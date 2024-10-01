@@ -30,7 +30,7 @@ static inline void wait_controller_cycle(void)
  *
  * Note: Valid PLL VCO range is 2400MHz to 4800MHz
  */
-static int fu740_clock_init(void)
+void soc_early_init_hook(void)
 {
 
 	PRCI_REG(PRCI_COREPLLCFG) =
@@ -40,8 +40,9 @@ static int fu740_clock_init(void)
 		PLL_RANGE(PLL_RANGE_18MHZ) | /* 18MHz <= post divr(= 26MHz) < 30MHz */
 		PLL_BYPASS(PLL_BYPASS_DISABLE) |
 		PLL_FSE(PLL_FSE_INTERNAL);
-	while ((PRCI_REG(PRCI_COREPLLCFG) & PLL_LOCK(1)) == 0)
+	while ((PRCI_REG(PRCI_COREPLLCFG) & PLL_LOCK(1)) == 0) {
 		;
+	}
 
 	/* Switch CORE_CLK to CORE_PLL from HFCLK */
 	PRCI_REG(PRCI_COREPLLSEL) = COREPLLSEL_SEL(COREPLLSEL_COREPLL);
@@ -54,8 +55,9 @@ static int fu740_clock_init(void)
 		PLL_RANGE(PLL_RANGE_18MHZ) | /* 18MHz <= post divr(= 26MHz) < 30MHz */
 		PLL_BYPASS(PLL_BYPASS_DISABLE) |
 		PLL_FSE(PLL_FSE_INTERNAL);
-	while ((PRCI_REG(PRCI_HFPCLKPLLCFG) & PLL_LOCK(1)) == 0)
+	while ((PRCI_REG(PRCI_HFPCLKPLLCFG) & PLL_LOCK(1)) == 0) {
 		;
+	}
 
 	/* Switch PCLK to HFPCLKPLL/2 from HFCLK/2 */
 	PRCI_REG(PRCI_HFPCLKPLLOUTDIV) = OUTDIV_PLLCKE(OUTDIV_PLLCKE_ENA);
@@ -68,8 +70,9 @@ static int fu740_clock_init(void)
 		PLL_RANGE(PLL_RANGE_18MHZ) |
 		PLL_BYPASS(PLL_BYPASS_DISABLE) |
 		PLL_FSE(PLL_FSE_INTERNAL);
-	while ((PRCI_REG(PRCI_DDRPLLCFG) & PLL_LOCK(1)) == 0)
+	while ((PRCI_REG(PRCI_DDRPLLCFG) & PLL_LOCK(1)) == 0) {
 		;
+	}
 
 	PRCI_REG(PRCI_DDRPLLOUTDIV) |= OUTDIV_PLLCKE(OUTDIV_PLLCKE_ENA);
 
@@ -89,7 +92,4 @@ static int fu740_clock_init(void)
 	for (int i = 0; i < 256; i++) {
 		__asm__ volatile ("nop");
 	}
-	return 0;
 }
-
-SYS_INIT(fu740_clock_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

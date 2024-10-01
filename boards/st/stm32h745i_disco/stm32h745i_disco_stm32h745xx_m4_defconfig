@@ -1,12 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+# Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# Enable clock
-CONFIG_CLOCK_CONTROL=y
 
 # By default SERIAL peripherals are assigned to m7
 
@@ -16,6 +13,3 @@ CONFIG_CLOCK_CONTROL=y
 # Console
 #CONFIG_CONSOLE=y
 #CONFIG_UART_CONSOLE=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

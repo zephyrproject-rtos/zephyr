@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Chris Ruehl
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMP180 pressure sensor accessed through I2C bus
+
+compatible: "bosch,bmp180"
+
+include: [i2c-device.yaml, sensor-device.yaml]
+
+properties:
+  osr-press:
+    type: int
+    required: true
+    description: |
+      Default pressure oversampling rate. Only the following values are
+      allowed:
+        0 ultra low power, 1 sample
+        1 standard,        2 sample
+        2 high,            4 sample
+        3 ultra high,      8 sample
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3

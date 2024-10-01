@@ -7,6 +7,6 @@ elseif (CONFIG_SOC_NRF54L15_ENGA_CPUFLPR)
   board_runner_args(jlink "--speed=4000")
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

@@ -111,7 +111,7 @@ Connect a USB cable from your PC to J7, and use the serial terminal of your choi
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -130,7 +130,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -196,7 +196,7 @@ Remove resistors:
 - R508
 - R505
 
-Then, build for the board target `rd_rw612_bga//ethernet`.
+Then, build for the board target ``rd_rw612_bga//ethernet``.
 
 Resources
 *********

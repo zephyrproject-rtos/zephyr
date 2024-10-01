@@ -16,7 +16,7 @@
 		zephyr,sram = &sram1;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
-		zephyr,canbus = &can0;
+		zephyr,canbus = &flexcan0;
 	};
 
 	aliases {
@@ -32,4 +32,8 @@
 &enetc_psi0 {
 	mboxes = <&mru4 0>;
 	mbox-names = "rx";
+};
+
+&flexcan0 {
+	status = "okay";
 };

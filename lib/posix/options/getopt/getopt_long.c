@@ -364,10 +364,11 @@ getopt_internal(struct getopt_state *state, int nargc, char * const *nargv,
 		flags &= ~FLAG_PERMUTE;
 	}
 #else
-	if (*options == '+')
+	if (*options == '+') {
 		flags &= ~FLAG_PERMUTE;
-	else if (*options == '-')
+	} else if (*options == '-') {
 		flags |= FLAG_ALLARGS;
+	}
 #endif
 	if (*options == '+' || *options == '-') {
 		options++;

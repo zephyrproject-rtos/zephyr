@@ -121,9 +121,10 @@ static int adxl367_set_op_mode(const struct device *dev,
 		return ret;
 	}
 
-	if (op_mode == ADXL367_MEASURE)
+	if (op_mode == ADXL367_MEASURE) {
 		/* Wait 100 ms to allow the acceleration outputs to settle */
 		k_sleep(K_MSEC(100));
+	}
 
 	return 0;
 }
@@ -351,8 +352,9 @@ int adxl367_self_test(const struct device *dev)
 	x_axis_2 = ((int16_t)read_val[0] << 6) + (read_val[1] >> 2);
 
 	/* extend sign to 16 bits */
-	if ((x_axis_2 & BIT(13)) != 0)
+	if ((x_axis_2 & BIT(13)) != 0) {
 		x_axis_2 |= GENMASK(15, 14);
+	}
 
 	ret = adxl367_set_op_mode(dev, ADXL367_STANDBY);
 	if (ret != 0) {

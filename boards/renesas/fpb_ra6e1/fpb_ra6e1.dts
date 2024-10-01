@@ -1,0 +1,82 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra6/r7fa6e10f2cfp.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "fpb_ra6e1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas FPB-RA6E1";
+	compatible = "renesas,ra6e1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport4 7 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioport4 8 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	source = <RA_PLL_SOURCE_HOCO>;
+	div = <RA_PLL_DIV_2>;
+	mul = <20 0>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "application";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 DT_SIZE_K(512)>;
+		};
+	};
+};

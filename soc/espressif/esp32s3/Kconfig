@@ -7,17 +7,12 @@ config SOC_SERIES_ESP32S3
 	select ARCH_SUPPORTS_COREDUMP
 	select CLOCK_CONTROL
 	select PINCTRL
-	select XIP if !MCUBOOT
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
 	select HAS_PM
 	select HAS_POWEROFF
 
 if SOC_SERIES_ESP32S3
-
-config IDF_TARGET_ESP32S3
-	bool "ESP32S3 as target SOC"
-	default y
 
 config ESP32S3_APPCPU_IRAM
 	hex "ESP32S3 APPCPU IRAM size"
@@ -37,20 +32,9 @@ config SOC_ENABLE_APPCPU
 	bool
 	default y
 	depends on IPM && SOC_ESP32S3_PROCPU
+	depends on MBOX && SOC_ESP32S3_PROCPU
 	help
 	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
-
-config ESP32_PHY_MAX_WIFI_TX_POWER
-	int "Max WiFi/BLE TX power (dBm)"
-	range 10 20
-	default 20
-	help
-	  Set maximum transmit power for WiFi radio. Actual transmit power for high
-	  data rates may be lower than this setting.
-
-config ESP32_PHY_MAX_TX_POWER
-	int
-	default ESP32_PHY_MAX_WIFI_TX_POWER
 
 menu "Cache config"
 

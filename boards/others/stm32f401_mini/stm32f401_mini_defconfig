@@ -14,9 +14,3 @@ CONFIG_UART_CONSOLE=y
 
 # Enable GPIO
 CONFIG_GPIO=y
-
-# Clock configuration
-CONFIG_CLOCK_CONTROL=y
-
-# enable pin controller
-CONFIG_PINCTRL=y

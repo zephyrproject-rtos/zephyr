@@ -1,0 +1,21 @@
+# Copyright 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_MPM54304
+	bool "MPM54304 DC/DC step-down power module"
+	default y
+	depends on DT_HAS_MPS_MPM54304_ENABLED
+	select I2C
+	help
+	  Enable MPM54304 DC/DC step-down power module support.
+
+if REGULATOR_MPM54304
+
+config REGULATOR_MPM54304_INIT_PRIORITY
+	int "MPM54304 regulator driver init priority"
+	default 85
+	help
+	  Init priority for the MPS MPM54304 regulator driver.
+	  It must be greater than I2C init priority.
+
+endif

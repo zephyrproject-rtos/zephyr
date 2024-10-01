@@ -28,8 +28,12 @@
  */
 
 #define DRAM_BUFFERS_START       0x4086ad08
-#define DRAM_STACK_START         0x4087c610
+#define DRAM_BUFFERS_END         0x4087c610
+#define DRAM_STACK_START         DRAM_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START  0x4087e610
+
+/* Set the limit for the application runtime dynamic allocations */
+#define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
@@ -44,8 +48,7 @@
 #define BOOTLOADER_USER_SRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
 
 /* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_IRAM_LOADER_SEG_START	\
-		(BOOTLOADER_USER_SRAM_END -	BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_SRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_IRAM_SEG_START (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 

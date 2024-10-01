@@ -1,4 +1,4 @@
-.. mini_stm32h743:
+.. _mini_stm32h743:
 
 WeAct Studio MiniSTM32H743 Core Board
 #####################################
@@ -168,7 +168,7 @@ the device using the west tool or the STM32CubeProgrammer.
 Flashing an application to MiniSTM32H743
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, put the board in bootloader mode as described above. Then build and flash
 the application in the usual way. Just add ``CONFIG_BOOT_DELAY=5000`` to the

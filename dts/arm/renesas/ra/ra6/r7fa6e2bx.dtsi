@@ -1,0 +1,165 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra6/ra6-cm33-common.dtsi>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(40)>;
+		};
+
+		ioport8: gpio@40080100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		id_code: id_code@100a120 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a120 0x10>;
+			zephyr,memory-region = "ID_CODE";
+			status = "okay";
+		};
+	};
+
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-xtal {
+			compatible = "renesas,ra-cgc-external-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(8)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclk {
+			compatible = "renesas,ra-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			compatible = "renesas,ra-cgc-pll";
+			#clock-cells = <0>;
+
+			/* PLL */
+			source = <RA_PLL_SOURCE_MAIN_OSC>;
+			div = <RA_PLL_DIV_1>;
+			mul = <10 0>;
+			status = "disabled";
+		};
+
+		pclkblock: pclkblock@40084000 {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x40084000 4>, <0x40084004 4>, <0x40084008 4>,
+			      <0x4008400c 4>, <0x40084010 4>;
+			reg-names = "MSTPA", "MSTPB","MSTPC",
+				    "MSTPD", "MSTPE";
+			#clock-cells = <0>;
+			sysclock-src = <RA_CLOCK_SOURCE_PLL>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclka: pclka {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkc: pclkc {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clk-div = <RA_SYS_CLOCK_DIV_4>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			uclk: uclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			canfdclk: canfdclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			cecclk: cecclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			i3cclk: i3cclk {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+		};
+	};
+};

@@ -16,7 +16,7 @@ Requirements
 ************
 
 The shield uses a mikroBUS interface. The target board must define
-a `mikrobus_spi` and `mikrobus_header`  node labels
+a ``mikrobus_spi`` and ``mikrobus_header``  node labels
 (see :ref:`shields` for more details). The target board must also
 support level triggered interrupts.
 

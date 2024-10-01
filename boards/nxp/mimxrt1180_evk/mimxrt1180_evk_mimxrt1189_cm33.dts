@@ -1,0 +1,48 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt118x_cm33.dtsi>
+#include "mimxrt1180_evk.dtsi"
+
+/ {
+	model = "NXP MIMXRT1180-EVK board";
+	compatible = "nxp,mimxrt1189";
+
+	chosen {
+		zephyr,sram = &hyperram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,flash-controller = &w25q128jw;
+		zephyr,flash = &w25q128jw;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	hyperram0: memory@14000000 {
+		/* Winbond W957A8MFYA5K */
+		device_type = "memory";
+		reg = <0x14000000 DT_SIZE_M(8)>;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpadc1 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&gpt2 {
+	status = "okay";
+};

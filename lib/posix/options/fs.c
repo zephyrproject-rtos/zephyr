@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -64,6 +66,7 @@ static int posix_mode_to_zephyr(int mf)
 	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
 
 	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
 
 	switch (mf & O_ACCMODE) {
 	case O_RDONLY:
@@ -314,6 +317,40 @@ struct dirent *readdir(DIR *dirp)
 	return &pdirent;
 }
 
+#ifdef CONFIG_POSIX_FILE_SYSTEM_R
+int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
+{
+	struct dirent *dir;
+
+	errno = 0;
+
+	dir = readdir(dirp);
+	if (dir == NULL) {
+		int error = errno;
+
+		if (error != 0) {
+			if (result != NULL) {
+				*result = NULL;
+			}
+
+			return 0;
+		} else {
+			return error;
+		}
+	}
+
+	if (entry != NULL) {
+		memcpy(entry, dir, sizeof(struct dirent));
+	}
+
+	if (result != NULL) {
+		*result = entry;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_POSIX_FILE_SYSTEM_R */
+
 /**
  * @brief Rename a file.
  *
@@ -428,3 +465,13 @@ int fstat(int fildes, struct stat *buf)
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
 FUNC_ALIAS(fstat, _fstat, int);
 #endif
+
+/**
+ * @brief Remove a directory.
+ *
+ * See IEEE 1003.1
+ */
+int rmdir(const char *path)
+{
+	return unlink(path);
+}

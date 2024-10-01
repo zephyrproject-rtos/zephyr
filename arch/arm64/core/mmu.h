@@ -127,6 +127,14 @@
 #define PTE_PHYSADDR_MASK		GENMASK64(47, PAGE_SIZE_SHIFT)
 
 /*
+ * Descriptor bits 58 to 55 are defined as "Reserved for Software Use".
+ *
+ * When using demand paging, RW memory is marked RO to trap the first write
+ * for dirty page tracking. Bit 55 indicates if memory is actually writable.
+ */
+#define PTE_SW_WRITABLE			(1ULL << 55)
+
+/*
  * TCR definitions.
  */
 #define TCR_EL1_IPS_SHIFT	32U

@@ -228,6 +228,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <5>;
 				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000010>;
 			};
@@ -236,6 +237,7 @@
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
+				ngpios = <4>;
 				reg = <0x48001c00 0x400>;
 				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			};
@@ -429,6 +431,7 @@
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
+			status = "disabled";
 		};
 
 		lptim1: timers@40007c00 {
@@ -511,6 +514,7 @@
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00010000>;
+			resets = <&rctl STM32_RESET(AHB2, 16U)>;
 			interrupts = <51 0>;
 			status = "disabled";
 		};

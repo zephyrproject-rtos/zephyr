@@ -112,9 +112,9 @@ extern "C" {
 	atomic_t name[ATOMIC_BITMAP_SIZE(num_bits)]
 
 /**
- * @brief Atomically test a bit.
+ * @brief Atomically get and test a bit.
  *
- * This routine tests whether bit number @a bit of @a target is set or not.
+ * Atomically get a value and then test whether bit number @a bit of @a target is set or not.
  * The target may be a single atomic variable or an array of them.
  *
  * @note @atomic_api
@@ -132,7 +132,7 @@ static inline bool atomic_test_bit(const atomic_t *target, int bit)
 }
 
 /**
- * @brief Atomically test and clear a bit.
+ * @brief Atomically clear a bit and test it.
  *
  * Atomically clear bit number @a bit of @a target and return its old value.
  * The target may be a single atomic variable or an array of them.
@@ -155,7 +155,7 @@ static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
 }
 
 /**
- * @brief Atomically set a bit.
+ * @brief Atomically set a bit and test it.
  *
  * Atomically set bit number @a bit of @a target and return its old value.
  * The target may be a single atomic variable or an array of them.

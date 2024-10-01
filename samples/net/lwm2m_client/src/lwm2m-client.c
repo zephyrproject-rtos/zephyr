@@ -127,9 +127,6 @@ static int lwm2m_setup(void)
 #if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
 	/* Mark 1st instance of security object as a bootstrap server */
 	lwm2m_set_u8(&LWM2M_OBJ(0, 0, 1), 1);
-
-	/* Create 2nd instance of security object needed for bootstrap */
-	lwm2m_create_object_inst(&LWM2M_OBJ(0, 1));
 #else
 	/* Match Security object instance with a Server object instance with
 	 * Short Server ID.

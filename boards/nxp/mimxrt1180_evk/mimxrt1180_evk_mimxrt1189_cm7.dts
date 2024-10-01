@@ -1,0 +1,40 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt118x_cm7.dtsi>
+#include "mimxrt1180_evk.dtsi"
+
+/ {
+	model = "NXP MIMXRT1180-EVK board";
+	compatible = "nxp,mimxrt1189";
+
+	chosen {
+		zephyr,sram = &dtcm;
+		zephyr,flash-controller = &w25q128jw;
+		zephyr,flash = &itcm;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&lpadc1 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
+
+&gpt2 {
+	status = "okay";
+};

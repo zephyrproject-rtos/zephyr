@@ -13,3 +13,4 @@ config SOC_FAMILY_INTEL_ISH
 	select INTEL_HAL
 	select HAS_PM
 	select HAS_COVERAGE_SUPPORT
+	select SOC_EARLY_INIT_HOOK

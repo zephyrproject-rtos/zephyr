@@ -9,6 +9,9 @@ if SOC_FAMILY_STM32
 
 rsource "*/Kconfig.defconfig"
 
+config CLOCK_CONTROL
+	default y
+
 config CORTEX_M_SYSTICK
 	default n if STM32_LPTIM_TIMER
 
@@ -24,6 +27,11 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config LOG_BACKEND_SWO_REF_FREQ_HZ
 	default "$(DT_STM32_RCC_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,rcc)"
 	depends on LOG_BACKEND_SWO
+
+# If sysclock is not LPTIM, tick of 10000 is too high for a frequency lower than 32MHz
+config SYS_CLOCK_TICKS_PER_SEC
+	default 8000 if SYS_CLOCK_HW_CYCLES_PER_SEC <= 32000000
+	depends on !STM32_LPTIM_TIMER
 
 # set the tick per sec as a divider of the LPTIM clock source
 # with a minimum value of 4096 for SYS_CLOCK_TICKS_PER_SEC to keep
@@ -48,10 +56,6 @@ choice STM32_LPTIM_CLOCK
 	default STM32_LPTIM_CLOCK_LSE if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
 	default STM32_LPTIM_CLOCK_LSI if "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
 endchoice
-
-config CLOCK_CONTROL_STM32_CUBE
-	default y
-	depends on CLOCK_CONTROL
 
 config CLOCK_CONTROL_INIT_PRIORITY
 	default 1

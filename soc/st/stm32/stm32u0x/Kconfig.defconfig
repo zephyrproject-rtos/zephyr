@@ -1,0 +1,19 @@
+# ST Microelectronics STM32U0 MCU line
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32U0X
+
+rsource "Kconfig.defconfig.stm32u0*"
+
+if I2C_STM32
+
+config SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c3)
+	default y if $(dt_nodelabel_enabled,i2c2) && $(dt_nodelabel_enabled,i2c4)
+	default y if $(dt_nodelabel_enabled,i2c3) && $(dt_nodelabel_enabled,i2c4)
+
+endif # I2C_STM32
+
+endif # SOC_SERIES_STM32U0X

@@ -21,7 +21,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
@@ -112,21 +112,6 @@ static void recv_cb(struct bt_bap_stream *stream,
 		k_sem_give(&sem_data_received);
 	}
 	printk("Receiving ISO packets\n");
-}
-
-static uint16_t interval_to_sync_timeout(uint16_t interval)
-{
-	uint32_t interval_ms;
-	uint32_t timeout;
-
-	/* Add retries and convert to unit in 10's of ms */
-	interval_ms = BT_GAP_PER_ADV_INTERVAL_TO_MS(interval);
-	timeout = (interval_ms * PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO) / 10;
-
-	/* Enforce restraints */
-	timeout = CLAMP(timeout, BT_GAP_PER_ADV_MIN_TIMEOUT, BT_GAP_PER_ADV_MAX_TIMEOUT);
-
-	return (uint16_t)timeout;
 }
 
 static bool pa_decode_base(struct bt_data *data, void *user_data)

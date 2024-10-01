@@ -58,7 +58,7 @@ BUILD_ASSERT(!(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE &
 	(CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE - 1)),
 	"the size of the partition must be power of 2");
 
-static int z_arm_debug_enable_null_pointer_detection(void)
+int z_arm_debug_enable_null_pointer_detection(void)
 {
 
 	z_arm_dwt_init();
@@ -117,8 +117,5 @@ static int z_arm_debug_enable_null_pointer_detection(void)
 
 	return 0;
 }
-
-SYS_INIT(z_arm_debug_enable_null_pointer_detection, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /* CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT */

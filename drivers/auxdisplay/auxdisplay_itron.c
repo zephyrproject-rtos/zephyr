@@ -153,7 +153,6 @@ static int auxdisplay_itron_init(const struct device *dev)
 
 static int auxdisplay_itron_set_powered(const struct device *dev, bool enabled)
 {
-	int rc = 0;
 	uint8_t cmd[] = {AUXDISPLAY_ITRON_CMD_USER_SETTING, AUXDISPLAY_ITRON_CMD_ACTION,
 			 AUXDISPLAY_ITRON_CMD_N, AUXDISPLAY_ITRON_CMD_SCREEN_SAVER, 0};
 

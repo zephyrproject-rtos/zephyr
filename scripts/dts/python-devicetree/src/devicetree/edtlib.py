@@ -1928,9 +1928,14 @@ class EDT:
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
+      The collection is sorted so that enabled nodes appear first in the
+      collection.
 
     compat2okay:
       Like compat2nodes, but just for nodes with status 'okay'.
+
+    compat2notokay:
+      Like compat2nodes, but just for nodes with status not 'okay'.
 
     compat2vendor:
       A collections.defaultdict that maps each 'compatible' string that appears
@@ -2036,6 +2041,7 @@ class EDT:
         self.nodes: List[Node] = []
         self.compat2nodes: Dict[str, List[Node]] = defaultdict(list)
         self.compat2okay: Dict[str, List[Node]] = defaultdict(list)
+        self.compat2notokay: Dict[str, List[Node]] = defaultdict(list)
         self.compat2vendor: Dict[str, str] = defaultdict(str)
         self.compat2model: Dict[str, str]  = defaultdict(str)
         self.label2node: Dict[str, Node] = {}
@@ -2267,7 +2273,6 @@ class EDT:
                 _err(
                         f"'{binding_path}' appears in binding directories "
                         f"but isn't valid YAML: {e}")
-                continue
 
             # Convert the raw data to a Binding object, erroring out
             # if necessary.
@@ -2369,10 +2374,10 @@ class EDT:
                 self.label2node[label] = node
 
             for compat in node.compats:
-                self.compat2nodes[compat].append(node)
-
                 if node.status == "okay":
                     self.compat2okay[compat].append(node)
+                else:
+                    self.compat2notokay[compat].append(node)
 
                 if compat in self.compat2vendor:
                     continue
@@ -2401,6 +2406,11 @@ class EDT:
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
+        for compat, nodes in self.compat2okay.items():
+            self.compat2nodes[compat].extend(nodes)
+
+        for compat, nodes in self.compat2notokay.items():
+            self.compat2nodes[compat].extend(nodes)
 
         for nodeset in self.scc_order:
             node = nodeset[0]

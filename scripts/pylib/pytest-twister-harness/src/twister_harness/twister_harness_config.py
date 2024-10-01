@@ -19,6 +19,7 @@ class DeviceConfig:
     type: str
     build_dir: Path
     base_timeout: float = 60.0  # [s]
+    flash_timeout: float = 60.0  # [s]
     platform: str = ''
     serial: str = ''
     baud: int = 115200
@@ -65,6 +66,7 @@ class TwisterHarnessConfig:
             type=config.option.device_type,
             build_dir=_cast_to_path(config.option.build_dir),
             base_timeout=config.option.base_timeout,
+            flash_timeout=config.option.flash_timeout,
             platform=config.option.platform,
             serial=config.option.device_serial,
             baud=config.option.device_serial_baud,

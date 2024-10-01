@@ -4,8 +4,6 @@
 cmake_minimum_required(VERSION 3.20.0)
 include(ExternalProject)
 
-# Add the sources and set up the build for either unit testing or native_sim
-list(APPEND SOURCES src/main.cpp)
 if(BOARD STREQUAL unit_testing)
   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
   set(target testbinary)
@@ -22,7 +20,7 @@ endif()
 
 # Create the project and set the sources for the target
 project(fail)
-target_sources(${target} PRIVATE ${SOURCES})
+target_sources(${target} PRIVATE src/main.cpp)
 
 # Find which CONFIG_ZTEST_FAIL_TEST_* choice was set so we can pass it to the external project
 # Once we find the config, we'll need to prepend a '-D' and append '=y' so we can pass it to the

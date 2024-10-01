@@ -1445,6 +1445,24 @@ static void sync_lost(void *param)
 
 	/* Enqueue the sync lost towards ULL context */
 	ll_rx_put_sched(rx->hdr.link, rx);
+
+#if defined(CONFIG_BT_CTLR_SYNC_ISO)
+	if (sync->iso.sync_iso) {
+		/* ISO create BIG flag in the periodic advertising context is still set */
+		struct ll_sync_iso_set *sync_iso;
+
+		sync_iso = sync->iso.sync_iso;
+
+		rx = (void *)&sync_iso->node_rx_lost;
+		rx->hdr.handle = sync_iso->big_handle;
+		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO;
+		rx->rx_ftr.param = sync_iso;
+		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+
+		/* Enqueue the sync iso lost towards ULL context */
+		ll_rx_put_sched(rx->hdr.link, rx);
+	}
+#endif /* CONFIG_BT_CTLR_SYNC_ISO */
 }
 
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_SYNC)

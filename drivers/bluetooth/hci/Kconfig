@@ -32,12 +32,12 @@ config BT_H5
 # Removed: Here only to give the user a warning about its removal
 # Remove after 3.7.0 is released
 config BT_RPMSG
-	bool "[REMOVED] HCI using RPMsg"
+	bool
 	help
 	  Use BT_HCI_IPC instead
 
 config BT_HCI_IPC
-	bool "HCI using the IPC subsystem"
+	bool
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_IPC_ENABLED
 	select BT_HAS_HCI_VS
@@ -58,41 +58,44 @@ config BT_SPI
 	  devices are.
 
 config BT_STM32_IPM
-	bool "IPM HCI"
+	bool
 	default y
 	depends on DT_HAS_ST_STM32WB_RF_ENABLED
 	select USE_STM32_HAL_CORTEX
 	select HAS_STM32LIB
+	select BT_HCI_SETUP
 	help
 	  TODO
 
 config BT_STM32WBA
-	bool "STM32WBA HCI driver"
+	bool
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
 config BT_SILABS_HCI
-	bool "Silicon Labs Bluetooth interface"
+	bool
 	default y
 	depends on DT_HAS_SILABS_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS
 	depends on !PM || SOC_GECKO_PM_BACKEND_PMGR
 	select SOC_GECKO_USE_RAIL
 	select ENTROPY_GENERATOR
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_ENTROPY_ENABLED
-	select MBEDTLS_ZEPHYR_ENTROPY
+	select MBEDTLS_ENTROPY_C
+	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	help
 	  Use Silicon Labs binary Bluetooth library to connect to the
 	  controller.
 
 config BT_USERCHAN
-	bool "HCI User Channel based driver"
-	depends on BOARD_NATIVE_POSIX
+	bool
+	depends on (BOARD_NATIVE_POSIX || BOARD_NATIVE_SIM)
 	default y
 	depends on DT_HAS_ZEPHYR_BT_HCI_USERCHAN_ENABLED
 	help
@@ -103,23 +106,25 @@ config BT_USERCHAN
 	  be able to use it.
 
 config BT_ESP32
-	bool "ESP32 HCI driver"
+	bool
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS
 	help
 	  Espressif HCI bluetooth interface
 
 config BT_PSOC6_BLESS
-	bool "PSOC6 BLESS driver"
+	bool
 	default y
 	depends on DT_HAS_INFINEON_CAT1_BLESS_HCI_ENABLED
+	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	select BT_HCI_SETUP
 	help
 	  PSOC6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
 config BT_DA1469X
-	bool "DA1469x HCI driver"
+	bool
 	default y
 	depends on DT_HAS_RENESAS_BT_HCI_DA1469X_ENABLED
 	help
@@ -127,22 +132,24 @@ config BT_DA1469X
 	  on DA1469x MCU.
 
 config BT_NXP
-	bool "NXP HCI driver"
+	bool
 	default y
 	depends on DT_HAS_NXP_HCI_BLE_ENABLED
 	select BT_HCI_SETUP
+	select USE_DT_CODE_PARTITION if !NXP_MONOLITHIC_BT
 	help
 	  NXP HCI bluetooth interface
 
 config BT_CYW208XX
-	bool "CYW208XX BLE driver"
+	bool
 	default y
 	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	select BT_HCI_SET_PUBLIC_ADDR
 	help
 	  Infineon CYW208XX HCI bluetooth interface
 
 config BT_AMBIQ_HCI
-	bool "AMBIQ BT HCI driver"
+	bool
 	default y
 	depends on DT_HAS_AMBIQ_BT_HCI_SPI_ENABLED
 	select SPI

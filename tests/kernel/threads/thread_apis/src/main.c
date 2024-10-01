@@ -636,7 +636,7 @@ ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
 	large_stack(&b);
 	/* FIXME: Ideally, the follow condition will assert true:
 	 * (a - b) == INT_ARRAY_SIZE * sizeof(int)
-	 * but it is not the case in native_posix, qemu_leon3 and
+	 * but it is not the case in native_sim, qemu_leon3 and
 	 * qemu_cortex_a53. Relax check condition here
 	 */
 	zassert_true(b <= a);

@@ -77,7 +77,7 @@ config SMBUS_INTEL_PCH_SMBALERT
 
 endif # SMBUS_INTEL_PCH
 
-config SMBUS_STM32
+menuconfig SMBUS_STM32
 	bool "STM32 SMBus driver"
 	default y
 	depends on DT_HAS_ST_STM32_SMBUS_ENABLED

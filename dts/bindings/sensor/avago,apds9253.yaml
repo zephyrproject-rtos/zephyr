@@ -1,0 +1,80 @@
+# Copyright(c) 2018, Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: APDS9253 ambient light, RGB
+
+compatible: "avago,apds9253"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: Interrupt pin.
+
+      The interrupt pin of APDS9253 is open-drain, active low.
+      If connected directly the MCU pin should be configured
+      as pull-up, active low.
+
+  rate:
+    type: int
+    required: true
+    description: |
+      Select the rate interval (ms) for all comparator channel.
+      Default value is chosen from the official documentation.
+      - <APDS9253_MEASUREMENT_RATE_2000MS>: 6
+      - <APDS9253_MEASUREMENT_RATE_1000MS>: 5
+      - <APDS9253_MEASUREMENT_RATE_500MS>:  4
+      - <APDS9253_MEASUREMENT_RATE_200MS>:  3
+      - <APDS9253_MEASUREMENT_RATE_100MS>:  2
+      - <APDS9253_MEASUREMENT_RATE_50MS>    1
+      - <APDS9253_MEASUREMENT_RATE_25MS>    0
+    default: 2
+    enum:
+      - 6
+      - 5
+      - 4
+      - 3
+      - 2
+      - 1
+      - 0
+
+  gain:
+    type: int
+    required: true
+    description: |
+      Select the gain value for all comparator channel.
+      Default value is chosen from the official documentation.
+      - <APDS9253_GAIN_RANGE_18>: 4
+      - <APDS9253_GAIN_RANGE_9>:  3
+      - <APDS9253_GAIN_RANGE_6>:  2
+      - <APDS9253_GAIN_RANGE_3>:  1
+      - <APDS9253_GAIN_RANGE_1>:  0
+    default: 1
+    enum:
+      - 4
+      - 3
+      - 2
+      - 1
+      - 0
+
+  resolution:
+    type: int
+    required: true
+    description: |
+      Select the resolution value for all comparator channel.
+      Default value is chosen from the official documentation.
+      - <APDS9253_RESOLUTION_20BIT_400MS>:  0
+      - <APDS9253_RESOLUTION_19BIT_200MS>   16
+      - <APDS9253_RESOLUTION_18BIT_100MS>:  32
+      - <APDS9253_RESOLUTION_17BIT_50MS>:   48
+      - <APDS9253_RESOLUTION_16BIT_25MS>:   64
+      - <APDS9253_RESOLUTION_13BIT_3MS>:    80
+    default: 32
+    enum:
+      - 0
+      - 16
+      - 32
+      - 48
+      - 64
+      - 80

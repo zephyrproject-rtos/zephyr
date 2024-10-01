@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_WM8904
+	bool "Wolfson WM8904 codec support"
+	select I2C
+	depends on DT_HAS_WOLFSON_WM8904_ENABLED
+	help
+	  Enable support for the Wolfson WM8904 codec

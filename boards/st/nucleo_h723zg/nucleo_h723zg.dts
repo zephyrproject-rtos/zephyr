@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -24,6 +24,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds: leds {
@@ -93,6 +94,16 @@
 	div-p = <1>;
 	div-q = <4>;
 	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <1>;
+	mul-n = <10>;
+	div-p = <1>;
+	div-q = <1>;
+	div-r = <1>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -188,5 +199,13 @@ zephyr_udc0: &usbotg_hs {
 };
 
 &rng {
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	status = "okay";
 };

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -22,7 +23,6 @@
 #ifdef CONFIG_BT_TBS
 extern enum bst_result_t bst_result;
 static uint8_t g_call_index;
-static volatile uint8_t call_state;
 
 CREATE_FLAG(is_connected);
 CREATE_FLAG(call_placed);
@@ -328,21 +328,84 @@ static void test_tbs_server_only(void)
 	test_set_status_flags();
 }
 
-static void test_main(void)
+static void init(void)
 {
+	const struct bt_tbs_register_param gtbs_param = {
+		.provider_name = "Generic TBS",
+		.uci = "un000",
+		.uri_schemes_supported = "tel,skype",
+		.gtbs = true,
+		.authorization_required = false,
+		.technology = BT_TBS_TECHNOLOGY_3G,
+		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+	};
 	int err;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		FAIL("Bluetooth enable failed (err %d)\n", err);
+
 		return;
 	}
 
-	printk("Audio Client: Bluetooth initialized\n");
+	printk("Bluetooth initialized\n");
 
-	bt_conn_cb_register(&conn_callbacks);
-	bt_le_scan_cb_register(&common_scan_cb);
+	err = bt_conn_cb_register(&conn_callbacks);
+	if (err != 0) {
+		FAIL("Failed to register conn CBs (err %d)\n", err);
+
+		return;
+	}
+
+	err = bt_le_scan_cb_register(&common_scan_cb);
+	if (err != 0) {
+		FAIL("Failed to register scan CBs (err %d)\n", err);
+
+		return;
+	}
+
 	bt_tbs_register_cb(&tbs_cbs);
+
+	err = bt_tbs_register_bearer(&gtbs_param);
+	if (err < 0) {
+		FAIL("Failed to register GTBS (err %d)\n", err);
+
+		return;
+	}
+
+	printk("Registered GTBS\n");
+
+	for (int i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
+		char prov_name[22]; /* Enough to store "Telephone Bearer #255" */
+		const struct bt_tbs_register_param tbs_param = {
+			.provider_name = prov_name,
+			.uci = "un000",
+			.uri_schemes_supported = "tel,skype",
+			.gtbs = false,
+			.authorization_required = false,
+			/* Set different technologies per bearer */
+			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+		};
+
+		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
+
+		err = bt_tbs_register_bearer(&tbs_param);
+		if (err < 0) {
+			FAIL("Failed to register TBS[%d]: %d", i, err);
+
+			return;
+		}
+
+		printk("Registered TBS[%d] with index %u\n", i, (uint8_t)err);
+	}
+}
+
+static void test_main(void)
+{
+	int err;
+
+	init();
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
@@ -383,14 +446,7 @@ static void test_main(void)
 
 static void tbs_test_server_only(void)
 {
-	int err;
-
-	err = bt_enable(NULL);
-
-	if (err != 0) {
-		FAIL("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
+	init();
 
 	test_tbs_server_only();
 

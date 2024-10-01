@@ -109,7 +109,7 @@ static void z_renesas_configure_cache(void)
 }
 #endif /* CONFIG_HAS_FLASH_LOAD_OFFSET */
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #if defined(CONFIG_PM)
 	uint32_t *ivt;
@@ -131,7 +131,10 @@ void z_arm_platform_init(void)
 #endif
 }
 
-static int renesas_da1469x_init(void)
+/* defined in power.c */
+extern int renesas_da1469x_pm_init(void);
+
+void soc_early_init_hook(void)
 {
 	/* Freeze watchdog until configured */
 	GPREG->SET_FREEZE_REG = GPREG_SET_FREEZE_REG_FRZ_SYS_WDOG_Msk;
@@ -176,8 +179,7 @@ static int renesas_da1469x_init(void)
 	da1469x_pd_acquire(MCU_PD_DOMAIN_TIM);
 
 	da1469x_pdc_reset();
-
-	return 0;
+#if CONFIG_PM
+	renesas_da1469x_pm_init();
+#endif
 }
-
-SYS_INIT(renesas_da1469x_init, PRE_KERNEL_1, 0);

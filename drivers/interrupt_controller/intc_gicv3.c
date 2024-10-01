@@ -1,5 +1,6 @@
 /*
  * Copyright 2020 Broadcom
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,8 +171,6 @@ void arm_gic_irq_enable(unsigned int intid)
 	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
 	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
 
-	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
-
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
 	 * Affinity routing is enabled for Armv8-A Non-secure state (GICD_CTLR.ARE_NS
@@ -182,6 +181,8 @@ void arm_gic_irq_enable(unsigned int intid)
 		arm_gic_write_irouter(MPIDR_TO_CORE(GET_MPIDR()), intid);
 	}
 #endif
+
+	sys_write32(mask, ISENABLER(GET_DIST_BASE(intid), idx));
 }
 
 void arm_gic_irq_disable(unsigned int intid)
@@ -225,6 +226,14 @@ bool arm_gic_irq_is_pending(unsigned int intid)
 	val = sys_read32(ISPENDR(GET_DIST_BASE(intid), idx));
 
 	return (val & mask) != 0;
+}
+
+void arm_gic_irq_set_pending(unsigned int intid)
+{
+	uint32_t mask = BIT(intid & (GIC_NUM_INTR_PER_REG - 1));
+	uint32_t idx = intid / GIC_NUM_INTR_PER_REG;
+
+	sys_write32(mask, ISPENDR(GET_DIST_BASE(intid), idx));
 }
 
 void arm_gic_irq_clear_pending(unsigned int intid)

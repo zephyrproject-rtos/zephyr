@@ -467,7 +467,7 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(frag_pkt, &ipv4_access);
 	if (!ipv4_hdr) {
-		return -ENOBUFS;
+		goto fail;
 	}
 
 	memcpy(ipv4_hdr->id, &rand_id, sizeof(rand_id));

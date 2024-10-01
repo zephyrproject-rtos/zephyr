@@ -74,7 +74,7 @@ def test_pytest_command_extra_args(testinstance: TestInstance):
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     pytest_harness = Pytest()
-    pytest_args_from_yaml = '-k test_from_yaml'
+    pytest_args_from_yaml = '--extra-option'
     pytest_args_from_cmd = ['-k', 'test_from_cmd']
     testinstance.testsuite.harness_config['pytest_args'] = [pytest_args_from_yaml]
     testinstance.handler.options.pytest_args = pytest_args_from_cmd
@@ -82,7 +82,8 @@ def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     command = pytest_harness.generate_command()
     assert pytest_args_from_cmd[0] in command
     assert pytest_args_from_cmd[1] in command
-    assert pytest_args_from_yaml not in command
+    assert pytest_args_from_yaml in command
+    assert command.index(pytest_args_from_yaml) < command.index(pytest_args_from_cmd[1])
 
 
 @pytest.mark.parametrize(
@@ -169,7 +170,7 @@ def test_if_report_is_parsed(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -199,7 +200,7 @@ def test_if_report_with_error(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "failed"
+    assert pytest_harness.status == "failed"
     assert testinstance.status == "failed"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -235,7 +236,7 @@ def test_if_report_with_skip(pytester, testinstance: TestInstance):
 
     pytest_harness._update_test_status()
 
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"
     assert len(testinstance.testcases) == 2
     for tc in testinstance.testcases:
@@ -265,7 +266,7 @@ def test_if_report_with_filter(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "passed"
+    assert pytest_harness.status == "passed"
     assert testinstance.status == "passed"
     assert len(testinstance.testcases) == 1
 
@@ -291,5 +292,5 @@ def test_if_report_with_no_collected(pytester, testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.report_file = report_file
     pytest_harness._update_test_status()
-    assert pytest_harness.state == "skipped"
+    assert pytest_harness.status == "skipped"
     assert testinstance.status == "skipped"

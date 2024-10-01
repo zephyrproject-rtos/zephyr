@@ -21,7 +21,16 @@ static inline void net_dhcpv4_stop(struct net_if *iface)
 
 struct wpa_global *zephyr_get_default_supplicant_context(void);
 struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+struct hostapd_iface *zephyr_get_hapd_handle_by_ifname(const char *ifname);
+void wpa_supplicant_msg_send(void *ctx, int level, enum wpa_msg_type type, const char *txt,
+			     size_t len);
+void hostapd_msg_send(void *ctx, int level, enum wpa_msg_type type, const char *buf, size_t len);
+#endif
 struct wpa_supplicant_event_msg {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	int hostapd;
+#endif
 	bool global;
 	void *ctx;
 	unsigned int event;

@@ -313,7 +313,7 @@ body {
 body, table, div, p, dl, #nav-tree .label, .title,
 .sm-dox a, .sm-dox a:hover, .sm-dox a:focus, #projectname,
 .SelectItem, #MSearchField, .navpath li.navelem a,
-.navpath li.navelem a:hover, p.reference, p.definition {
+.navpath li.navelem a:hover, p.reference, p.definition, div.toc li, div.toc h3 {
     font-family: var(--font-family);
 }
 
@@ -334,6 +334,7 @@ p.reference, p.definition {
 a:link, a:visited, a:hover, a:focus, a:active {
     color: var(--primary-color) !important;
     font-weight: 500;
+    background: none;
 }
 
 a.anchor {
@@ -806,6 +807,10 @@ html.dark-mode iframe#MSearchResults {
     line-height: var(--tree-item-height);
 }
 
+#nav-tree .item > a:focus {
+    outline: none;
+}
+
 #nav-sync {
     bottom: 12px;
     right: 12px;
@@ -843,6 +848,7 @@ html.dark-mode iframe#MSearchResults {
 
 #nav-tree .arrow {
     opacity: var(--side-nav-arrow-opacity);
+    background: none;
 }
 
 .arrow {
@@ -1040,7 +1046,7 @@ blockquote::after {
 blockquote p {
     margin: var(--spacing-small) 0 var(--spacing-medium) 0;
 }
-.paramname {
+.paramname, .paramname em {
     font-weight: 600;
     color: var(--primary-dark-color);
 }
@@ -1090,7 +1096,7 @@ div.contents .toc {
     border: 0;
     border-left: 1px solid var(--separator-color);
     border-radius: 0;
-    background-color: transparent;
+    background-color: var(--page-background-color);
     box-shadow: none;
     position: sticky;
     top: var(--toc-sticky-top);
@@ -1982,14 +1988,16 @@ hr {
 }
 
 .contents hr {
-    box-shadow: 100px 0 0 var(--separator-color),
-                -100px 0 0 var(--separator-color),
-                500px 0 0 var(--separator-color),
-                -500px 0 0 var(--separator-color),
-                1500px 0 0 var(--separator-color),
-                -1500px 0 0 var(--separator-color),
-                2000px 0 0 var(--separator-color),
-                -2000px 0 0 var(--separator-color);
+    box-shadow: 100px 0 var(--separator-color),
+                -100px 0 var(--separator-color),
+                500px 0 var(--separator-color),
+                -500px 0 var(--separator-color),
+                900px 0 var(--separator-color),
+                -900px 0 var(--separator-color),
+                1400px 0 var(--separator-color),
+                -1400px 0 var(--separator-color),
+                1900px 0 var(--separator-color),
+                -1900px 0 var(--separator-color);
 }
 
 .contents img, .contents .center, .contents center, .contents div.image object {
@@ -2460,17 +2468,17 @@ h2:hover a.anchorlink, h1:hover a.anchorlink, h3:hover a.anchorlink, h4:hover a.
  Optional tab feature
 */
 
-.tabbed ul {
+.tabbed > ul {
     padding-inline-start: 0px;
     margin: 0;
     padding: var(--spacing-small) 0;
 }
 
-.tabbed li {
+.tabbed > ul > li {
     display: none;
 }
 
-.tabbed li.selected {
+.tabbed > ul > li.selected {
     display: block;
 }
 

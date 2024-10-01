@@ -137,7 +137,7 @@ Flashing an application to SLWSTK6121A
 
 Connect the SLWSTK6121A to your host computer using the USB port.
 
-Here is an example to build and flash the :ref:`hello_world` application.
+Here is an example to build and flash the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

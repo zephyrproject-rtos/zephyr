@@ -96,6 +96,11 @@ void adsp_clock_init(void)
 	} else {
 		platform_lowest_freq_idx = ADSP_CPU_CLOCK_FREQ_IPLL;
 	}
+#if CONFIG_SOC_INTEL_ACE30
+	/* Set the Cardinal clock divider to 18 to get 24.576MHz */
+	ACE_DfPMCCU.dfcrodiv &= ACE_CRODIV_CARCDS_MASK;
+	ACE_DfPMCCU.dfcrodiv |= ACE_CRODIV_CARCDS(0x12);
+#endif
 #else
 	CAVS_SHIM.clkctl |= CAVS_CLKCTL_WOVCRO;
 	if (CAVS_SHIM.clkctl & CAVS_CLKCTL_WOVCRO) {

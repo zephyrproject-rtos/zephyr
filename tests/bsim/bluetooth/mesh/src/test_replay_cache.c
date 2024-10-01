@@ -381,11 +381,11 @@ static void test_rx_rpl_frag(void)
 		.ctx.addr = 100,
 		.local_match = 1,
 	};
-	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl, false));
 	rx.ctx.addr = 101;
-	ASSERT_FALSE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_FALSE(bt_mesh_rpl_check(&rx, &rpl, false));
 	rx.ctx.addr = 102;
-	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl, false));
 
 	/* Let the settings store RPL. */
 	k_sleep(K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT));
@@ -455,11 +455,11 @@ static void test_rx_reboot_after_defrag(void)
 		.ctx.addr = 100,
 		.local_match = 1,
 	};
-	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl, false));
 	rx.ctx.addr = 101;
-	ASSERT_FALSE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_FALSE(bt_mesh_rpl_check(&rx, &rpl, false));
 	rx.ctx.addr = 102;
-	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl));
+	ASSERT_TRUE(bt_mesh_rpl_check(&rx, &rpl, false));
 
 	PASS();
 }

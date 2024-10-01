@@ -12,6 +12,7 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 endif()
 
+# keep first
 if(CONFIG_STM32_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32U585I-IOT02A.stldr")
@@ -25,6 +26,7 @@ board_runner_args(openocd "--no-halt")
 
 board_runner_args(jlink "--device=STM32U585AI" "--reset-after-load")
 
+# keep first
 include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
 # FIXME: openocd runner requires use of STMicro openocd fork.
 # Check board documentation for more details.

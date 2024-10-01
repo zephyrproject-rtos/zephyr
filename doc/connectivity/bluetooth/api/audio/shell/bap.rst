@@ -16,7 +16,7 @@ Commands
 
    bap --help
    Subcommands:
-      init
+      init                   : [ase_sink_count, ase_source_count]
       select_broadcast       : <stream>
       create_broadcast       : [preset <preset_name>] [enc <broadcast_code>]
       start_broadcast        :

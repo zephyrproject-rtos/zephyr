@@ -38,7 +38,7 @@ System requirements
 Prerequisites
 =============
 A Linux host system is required for Xtensa development work.
-We recommend using a __``Debian 9.x (Stretch)``__ or recent __``Ubuntu``__
+We recommend using a Debian 9.x (Stretch) or recent Ubuntu
 releases (with multilib support).
 
 Only Xtensa tools version ``RF-2016.4-linux`` or later are officially

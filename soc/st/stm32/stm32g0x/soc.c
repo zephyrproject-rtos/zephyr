@@ -71,15 +71,14 @@ static void stm32g0_disable_dead_battery(void)
 #endif /* SYSCFG_CFGR1_UCPD1_STROBE || SYSCFG_CFGR1_UCPD2_STROBE */
 }
 
+extern void stm32_power_init(void);
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32g0_init(void)
+void soc_early_init_hook(void)
 {
 	/* Enable ART Accelerator I-cache and prefetch */
 	LL_FLASH_EnableInstCache();
@@ -91,8 +90,7 @@ static int stm32g0_init(void)
 
 	/* Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral */
 	stm32g0_disable_dead_battery();
-
-	return 0;
+#if CONFIG_PM
+	stm32_power_init();
+#endif
 }
-
-SYS_INIT(stm32g0_init, PRE_KERNEL_1, 0);

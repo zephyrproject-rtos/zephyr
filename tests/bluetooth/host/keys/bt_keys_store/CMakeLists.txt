@@ -2,8 +2,9 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
-project(bt_keys_store)
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project(bt_keys_store)
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host host_mocks)
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/host/keys/mocks mocks)

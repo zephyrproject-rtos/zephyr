@@ -1446,9 +1446,10 @@ int shell_start(const struct shell *sh)
 		z_shell_vt100_color_set(sh, SHELL_NORMAL);
 	}
 
-	if (z_shell_strlen(sh->default_prompt) > 0) {
-		z_shell_raw_fprintf(sh->fprintf_ctx, "\n\n");
-	}
+	/* print new line before printing the prompt to clear the line
+	 * vt100 are not used here for compatibility reasons
+	 */
+	z_cursor_next_line_move(sh);
 	state_set(sh, SHELL_STATE_ACTIVE);
 
 	k_mutex_unlock(&sh->ctx->wr_mtx);
@@ -1545,8 +1546,13 @@ void shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 	k_mutex_unlock(&sh->ctx->wr_mtx);
 }
 
-/* This function mustn't be used from shell context to avoid deadlock.
- * However it can be used in shell command handlers.
+/* These functions mustn't be used from shell context to avoid deadlock:
+ * - shell_fprintf_impl
+ * - shell_fprintf_info
+ * - shell_fprintf_normal
+ * - shell_fprintf_warn
+ * - shell_fprintf_error
+ * However, they can be used in shell command handlers.
  */
 void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 		   const char *fmt, ...)
@@ -1558,6 +1564,42 @@ void shell_fprintf_impl(const struct shell *sh, enum shell_vt100_color color,
 	va_end(args);
 }
 
+void shell_fprintf_info(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_INFO, fmt, args);
+	va_end(args);
+}
+
+void shell_fprintf_normal(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_NORMAL, fmt, args);
+	va_end(args);
+}
+
+void shell_fprintf_warn(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_WARNING, fmt, args);
+	va_end(args);
+}
+
+void shell_fprintf_error(const struct shell *sh, const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(sh, SHELL_ERROR, fmt, args);
+	va_end(args);
+}
+
 void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 			const uint8_t *data, size_t len)
 {
@@ -1565,35 +1607,35 @@ void shell_hexdump_line(const struct shell *sh, unsigned int offset,
 
 	int i;
 
-	shell_fprintf(sh, SHELL_NORMAL, "%08X: ", offset);
+	shell_fprintf_normal(sh, "%08X: ", offset);
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 
 		if (i < len) {
-			shell_fprintf(sh, SHELL_NORMAL, "%02x ",
-				      data[i] & 0xFF);
+			shell_fprintf_normal(sh, "%02x ",
+					     data[i] & 0xFF);
 		} else {
-			shell_fprintf(sh, SHELL_NORMAL, "   ");
+			shell_fprintf_normal(sh, "   ");
 		}
 	}
 
-	shell_fprintf(sh, SHELL_NORMAL, "|");
+	shell_fprintf_normal(sh, "|");
 
 	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 
 		if (i < len) {
 			char c = data[i];
 
-			shell_fprintf(sh, SHELL_NORMAL, "%c",
-				      isprint((int)c) != 0 ? c : '.');
+			shell_fprintf_normal(sh, "%c",
+					     isprint((int)c) != 0 ? c : '.');
 		} else {
-			shell_fprintf(sh, SHELL_NORMAL, " ");
+			shell_fprintf_normal(sh, " ");
 		}
 	}
 

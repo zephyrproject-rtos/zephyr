@@ -1,7 +1,8 @@
-.. _sgp40_sht4x:
+.. zephyr:code-sample:: sgp40_sht4x
+   :name: SGP40 and SHT4X digital humidity and multipixel gas sensor
+   :relevant-api: sensor_interface
 
-SGP40 and SHT4X: High accuracy digital I2C humidity sensor and multipixel gas sensor
-####################################################################################
+   Get temperature, humidity and gas sensor data from SGP40 and SHT4X sensors (polling mode).
 
 Description
 ***********

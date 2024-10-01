@@ -86,10 +86,6 @@ menuconfig FLASH
 
 if FLASH
 
-module = FLASH
-module-str = flash
-source "subsys/logging/Kconfig.template.log_config"
-
 config FLASH_JESD216_API
 	bool "Provide API to read JESD216 flash parameters"
 	depends on FLASH_JESD216
@@ -209,6 +205,8 @@ source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.simulator"
 
+source "drivers/flash/Kconfig.si32"
+
 source "drivers/flash/Kconfig.rv32m1"
 
 source "drivers/flash/Kconfig.nordic_qspi_nor"
@@ -222,6 +220,7 @@ source "drivers/flash/Kconfig.gd32"
 source "drivers/flash/Kconfig.xmc4xxx"
 
 source "drivers/flash/Kconfig.ifx_cat1"
+
 source "drivers/flash/Kconfig.cadence_nand"
 
 source "drivers/flash/Kconfig.numaker"
@@ -237,5 +236,11 @@ source "drivers/flash/Kconfig.nrf_rram"
 source "drivers/flash/Kconfig.nrf_mram"
 
 source "drivers/flash/Kconfig.numaker_rmc"
+
+source "drivers/flash/Kconfig.renesas_ra"
+
+module = FLASH
+module-str = flash
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # FLASH

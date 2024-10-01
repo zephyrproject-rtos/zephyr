@@ -1,0 +1,37 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMXRT118X
+
+config NUM_IRQS
+	default 239
+
+config GPIO
+	default y
+
+if CORTEX_M_SYSTICK
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 240000000 if SOC_MIMXRT1189_CM33
+	default 792000000 if SOC_MIMXRT1189_CM7
+
+endif # CORTEX_M_SYSTICK
+
+config DCDC_VALUE
+	default 0x13
+
+config FLEXSPI_CONFIG_BLOCK_OFFSET
+	default 0x400 if BOOT_FLEXSPI_NOR
+
+config ROM_START_OFFSET
+	default 0xb000 if BOOT_FLEXSPI_NOR
+
+if SECOND_CORE_MCUX
+
+# RT Boot header is only needed on primary core
+config NXP_IMXRT_BOOT_HEADER
+	depends on !CPU_CORTEX_M7
+
+endif # SECOND_CORE_MCUX
+
+endif # SOC_SERIES_IMXRT118X

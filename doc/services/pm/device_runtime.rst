@@ -32,7 +32,7 @@ in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_pu
 calls on the child device.
 
 For the previous to automatically control the power domain state, device runtime PM must be enabled
-on the power domain device (either through the `zephyr,pm-device-runtime-auto` devicetree property
+on the power domain device (either through the ``zephyr,pm-device-runtime-auto`` devicetree property
 or :c:func:`pm_device_runtime_enable`).
 
 .. graphviz::
@@ -124,7 +124,7 @@ by the PM subsystem to suspend or resume devices.
 .. code-block:: c
 
     static int mydev_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_SUSPEND:

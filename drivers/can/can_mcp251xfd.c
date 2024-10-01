@@ -1497,7 +1497,10 @@ static int mcp251xfd_reset(const struct device *dev)
 		return ret;
 	}
 
-	return spi_write_dt(&dev_cfg->bus, &tx);
+	ret = spi_write_dt(&dev_cfg->bus, &tx);
+	/* Adding delay after init to fix occasional init issue. Delay time found experimentally. */
+	k_sleep(K_USEC(MCP251XFD_RESET_DELAY_USEC));
+	return ret;
 }
 
 static int mcp251xfd_init(const struct device *dev)
@@ -1570,14 +1573,14 @@ static int mcp251xfd_init(const struct device *dev)
 	ret = mcp251xfd_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset the device [%d]", ret);
-		goto done;
+		return ret;
 	}
 
 	ret = can_calc_timing(dev, &timing, dev_cfg->common.bitrate,
 			      dev_cfg->common.sample_point);
 	if (ret < 0) {
 		LOG_ERR("Can't find timing for given param");
-		goto done;
+		return ret;
 	}
 
 	LOG_DBG("Presc: %d, BS1: %d, BS2: %d", timing.prescaler, timing.phase_seg1,
@@ -1589,7 +1592,7 @@ static int mcp251xfd_init(const struct device *dev)
 				   dev_cfg->common.sample_point_data);
 	if (ret < 0) {
 		LOG_ERR("Can't find data timing for given param");
-		goto done;
+		return ret;
 	}
 
 	LOG_DBG("Data phase Presc: %d, BS1: %d, BS2: %d", timing_data.prescaler,
@@ -1599,8 +1602,7 @@ static int mcp251xfd_init(const struct device *dev)
 
 	reg = mcp251xfd_read_crc(dev, MCP251XFD_REG_CON, MCP251XFD_REG_SIZE);
 	if (!reg) {
-		ret = -EINVAL;
-		goto done;
+		return -EIO;
 	}
 
 	*reg = sys_le32_to_cpu(*reg);
@@ -1609,57 +1611,57 @@ static int mcp251xfd_init(const struct device *dev)
 
 	if (opmod != MCP251XFD_REG_CON_MODE_CONFIG) {
 		LOG_ERR("Device did not reset into configuration mode [%d]", opmod);
-		ret = -EIO;
-		goto done;
+		return -EIO;
 	}
 
 	dev_data->current_mcp251xfd_mode = MCP251XFD_REG_CON_MODE_CONFIG;
 
 	ret = mcp251xfd_init_con_reg(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = mcp251xfd_init_osc_reg(dev);
 	if (ret < 0) {
-		goto done;
+		LOG_ERR("Error initializing OSC register [%d]", ret);
+		return ret;
 	}
 
 	ret = mcp251xfd_init_iocon_reg(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = mcp251xfd_init_int_reg(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = mcp251xfd_set_tdc(dev, false);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	ret = mcp251xfd_init_tscon(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 #endif
 
 	ret = mcp251xfd_init_tef_fifo(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = mcp251xfd_init_tx_queue(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	ret = mcp251xfd_init_rx_fifo(dev);
 	if (ret < 0) {
-		goto done;
+		return ret;
 	}
 
 	LOG_DBG("%d TX FIFOS: 1 element", MCP251XFD_TX_QUEUE_ITEMS);
@@ -1668,7 +1670,6 @@ static int mcp251xfd_init(const struct device *dev)
 		MCP251XFD_TEF_FIFO_SIZE + MCP251XFD_TX_QUEUE_SIZE + MCP251XFD_RX_FIFO_SIZE,
 		MCP251XFD_RAM_SIZE);
 
-done:
 	ret = can_set_timing(dev, &timing);
 	if (ret < 0) {
 		return ret;
@@ -1676,9 +1677,6 @@ done:
 
 #if defined(CONFIG_CAN_FD_MODE)
 	ret = can_set_timing_data(dev, &timing_data);
-	if (ret < 0) {
-		return ret;
-	}
 #endif
 
 	return ret;

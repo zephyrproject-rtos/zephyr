@@ -70,10 +70,11 @@ static void pwm_npcx_configure(const struct device *dev, int clk_bus)
 			NPCX_PWM_CLOCK_APB2_LFCLK);
 
 	/* Select clock source to LFCLK by flag, otherwise APB clock source */
-	if (clk_bus == NPCX_CLOCK_BUS_LFCLK)
+	if (clk_bus == NPCX_CLOCK_BUS_LFCLK) {
 		inst->PWMCTL |= BIT(NPCX_PWMCTL_CKSEL);
-	else
+	} else {
 		inst->PWMCTL &= ~BIT(NPCX_PWMCTL_CKSEL);
+	}
 }
 
 /* PWM api functions */

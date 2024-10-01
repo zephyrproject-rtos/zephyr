@@ -579,7 +579,7 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
    * - 4
      - REGISTRATION_FAILURE
      - Registration to LwM2M server failed.
-       Occurs if there is a failure in the registration.
+       Occurs if server rejects the registration attempt.
    * - 5
      - REGISTRATION_COMPLETE
      - Registration to LwM2M server successful.
@@ -587,8 +587,8 @@ The events are prefixed with ``LWM2M_RD_CLIENT_EVENT_``.
        or when session resumption is used.
    * - 6
      - REG_TIMEOUT
-     - Registration or registration update timeout.
-       Occurs if there is a timeout during registration. Client have lost connection to the server.
+     - Registration status lost.
+       Occurs if there is socket errors or message timeouts. Client have lost connection to the server.
    * - 7
      - REG_UPDATE_COMPLETE
      - Registration update completed.
@@ -641,7 +641,8 @@ where it cannot recover.
    * - BOOTSTRAP_TRANSFER_COMPLETE
      - No actions needed
    * - REGISTRATION_FAILURE
-     - No actions needed
+     - No actions needed.
+       Client proceeds re-registration automatically. Might need a bootstrap or configuration fix. Cannot send or receive data.
    * - REGISTRATION_COMPLETE
      - No actions needed.
        Application can send or receive data.

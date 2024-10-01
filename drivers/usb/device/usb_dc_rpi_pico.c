@@ -330,8 +330,8 @@ static void udc_rpi_isr(const void *arg)
 		msg.ep = 0U;
 		msg.ep_event = false;
 		msg.type = usb_hw->sie_status & USB_SIE_STATUS_CONNECTED_BITS ?
-			USB_DC_DISCONNECTED :
-			USB_DC_CONNECTED;
+			USB_DC_CONNECTED :
+			USB_DC_DISCONNECTED;
 
 		k_msgq_put(&usb_dc_msgq, &msg, K_NO_WAIT);
 	}

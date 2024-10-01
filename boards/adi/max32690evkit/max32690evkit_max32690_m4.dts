@@ -10,6 +10,7 @@
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 
 / {
 	model = "Analog Devices MAX32690EVKIT";
@@ -20,6 +21,7 @@
 		zephyr,shell-uart = &uart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,display = &st7735;
 	};
 
 	leds {
@@ -47,7 +49,52 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		sw0 = &pb0;
+		watchdog0 = &wdt0;
 	 };
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spibb0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		status = "okay";
+
+		st7735: st7735@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <DT_FREQ_M(6)>;
+			mipi-mode = <MIPI_DBI_MODE_SPI_3WIRE>;
+
+			reg = <0>;
+			width = <130>;
+			height = <132>;
+			x-offset = <0>;
+			y-offset = <0>;
+			madctl = <0xc0>;
+			colmod = <0x05>;
+			vmctr1 = <0x51>;
+			pwctr1 = [02 02];
+			pwctr2 = [c5];
+			pwctr3 = [0d 00];
+			pwctr4 = [8d 1a];
+			pwctr5 = [8d ee];
+			frmctr1 = [02 35 36];
+			frmctr2 = [02 35 36];
+			frmctr3 = [02 35 36 02 35 36];
+			gamctrp1 = [0a 1c 0c 14 33 2b 24 28 27 25 2c 39 00 05 03 0d];
+			gamctrn1 = [0a 1c 0c 14 33 2b 24 28 27 25 2d 3a 00 05 03 0d];
+		};
+	};
+
+	spibb0: spibb0 {
+		compatible = "zephyr,spi-bitbang";
+		status="okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+	};
 };
 
 &clk_ipo {
@@ -86,4 +133,28 @@
 	data-bits = <8>;
 	parity = "none";
 	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
+	pinctrl-names = "default";
 };

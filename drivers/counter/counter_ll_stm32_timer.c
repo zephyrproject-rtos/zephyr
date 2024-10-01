@@ -395,18 +395,18 @@ static int counter_stm32_get_tim_clk(const struct stm32_pclken *pclken, uint32_t
 		apb_psc = (uint32_t)(READ_BIT(RCC->APB1DIVR, RCC_APB1DIVR_APB1DIV));
 #else
 		apb_psc = STM32_APB1_PRESCALER;
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 	}
-#if !defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_SOC_SERIES_STM32G0X)
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f0_rcc)
 	else {
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
 		apb_psc = (uint32_t)(READ_BIT(RCC->APB2DIVR, RCC_APB2DIVR_APB2DIV));
 #else
 		apb_psc = STM32_APB2_PRESCALER;
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 	}
-#endif
-#endif
+#endif /* ! st_stm32f0_rcc */
+#endif /* CONFIG_SOC_SERIES_STM32H7X */
 
 #if defined(RCC_DCKCFGR_TIMPRE) || defined(RCC_DCKCFGR1_TIMPRE) || \
 	defined(RCC_CFGR_TIMPRE)

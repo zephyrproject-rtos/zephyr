@@ -7,6 +7,7 @@ config SOC_SERIES_MIV
 	select RISCV
 	select RISCV_PRIVILEGED
 	select RISCV_HAS_PLIC
+	imply XIP
 
 config SOC_MIV
 	select ATOMIC_OPERATIONS_BUILTIN

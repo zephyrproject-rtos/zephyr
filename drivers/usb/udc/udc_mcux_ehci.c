@@ -49,39 +49,30 @@ struct udc_mcux_config {
 struct udc_mcux_data {
 	const struct device *dev;
 	usb_device_struct_t mcux_device;
+	struct k_work work;
+	struct k_fifo fifo;
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
 
-/* TODO: implement the cache maintenance
- * solution1: Use the non-cached buf to do memcpy before/after giving buffer to usb controller.
- * solution2: Use cache API to flush/invalid cache. but it needs the given buffer is
- * cache line size aligned and the buffer range cover multiple of cache line size block.
- * Need to change the usb stack to implement it, will try to implement it later.
- */
-#if defined(CONFIG_NOCACHE_MEMORY)
-K_HEAP_DEFINE_NOCACHE(mcux_packet_alloc_pool, USB_DEVICE_CONFIG_ENDPOINTS * 2u * 1024u);
+/* Structure for driver's events */
+struct udc_mcux_event {
+	sys_snode_t node;
+	const struct device *dev;
+	usb_device_callback_message_struct_t mcux_msg;
+};
 
-/* allocate non-cached buffer for usb */
-static void *udc_mcux_nocache_alloc(uint32_t size)
+K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
+		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
+
+static int udc_mcux_lock(const struct device *dev)
 {
-	void *p = (void *)k_heap_alloc(&mcux_packet_alloc_pool, size, K_NO_WAIT);
-
-	if (p != NULL) {
-		(void)memset(p, 0, size);
-	}
-
-	return p;
+	return udc_lock_internal(dev, K_FOREVER);
 }
 
-/* free the allocated non-cached buffer */
-static void udc_mcux_nocache_free(void *p)
+static int udc_mcux_unlock(const struct device *dev)
 {
-	if (p == NULL) {
-		return;
-	}
-	k_heap_free(&mcux_packet_alloc_pool, p);
+	return udc_unlock_internal(dev);
 }
-#endif
 
 static int udc_mcux_control(const struct device *dev, usb_device_control_type_t command,
 				void *param)
@@ -112,7 +103,6 @@ static int udc_mcux_ep_feed(const struct device *dev,
 	usb_status_t status = kStatus_USB_Success;
 	uint8_t *data;
 	uint32_t len;
-	unsigned int key;
 	usb_device_endpoint_status_struct_t ep_status;
 
 	ep_status.endpointAddress = cfg->addr;
@@ -121,39 +111,30 @@ static int udc_mcux_ep_feed(const struct device *dev,
 		return -EACCES; /* stalled */
 	}
 
-	key = irq_lock();
+	udc_mcux_lock(dev);
 	if (!udc_ep_is_busy(dev, cfg->addr)) {
 		udc_ep_set_busy(dev, cfg->addr, true);
-		irq_unlock(key);
+		udc_mcux_unlock(dev);
 
 		if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 			len = net_buf_tailroom(buf);
-#if defined(CONFIG_NOCACHE_MEMORY)
-			data = (len == 0 ? NULL : udc_mcux_nocache_alloc(len));
-#else
 			data = net_buf_tail(buf);
-#endif
 			status = mcux_if->deviceRecv(priv->mcux_device.controllerHandle,
 					cfg->addr, data, len);
 		} else {
 			len = buf->len;
-#if defined(CONFIG_NOCACHE_MEMORY)
-			data = (len == 0 ? NULL : udc_mcux_nocache_alloc(len));
-			memcpy(data, buf->data, len);
-#else
 			data = buf->data;
-#endif
 			status = mcux_if->deviceSend(priv->mcux_device.controllerHandle,
 					cfg->addr, data, len);
 		}
 
-		key = irq_lock();
+		udc_mcux_lock(dev);
 		if (status != kStatus_USB_Success) {
 			udc_ep_set_busy(dev, cfg->addr, false);
 		}
-		irq_unlock(key);
+		udc_mcux_unlock(dev);
 	} else {
-		irq_unlock(key);
+		udc_mcux_unlock(dev);
 		return -EBUSY;
 	}
 
@@ -191,7 +172,7 @@ static int udc_mcux_ctrl_feed_dout(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	net_buf_put(&cfg->fifo, buf);
+	k_fifo_put(&cfg->fifo, buf);
 
 	ret = udc_mcux_ep_feed(dev, cfg, buf);
 
@@ -258,10 +239,6 @@ static int udc_mcux_handler_ctrl_out(const struct device *dev, struct net_buf *b
 	uint32_t len;
 
 	len = MIN(net_buf_tailroom(buf), mcux_len);
-#if defined(CONFIG_NOCACHE_MEMORY)
-	memcpy(net_buf_tail(buf), mcux_buf, len);
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	net_buf_add(buf, len);
 	if (udc_ctrl_stage_is_status_out(dev)) {
 		/* Update to next stage of control transfer */
@@ -289,9 +266,6 @@ static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *bu
 	len = MIN(buf->len, mcux_len);
 	buf->data += len;
 	buf->len -= len;
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 
 	if (udc_ctrl_stage_is_status_in(dev) ||
 	udc_ctrl_stage_is_no_data(dev)) {
@@ -324,9 +298,6 @@ static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
 	buf->data += len;
 	buf->len -= len;
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	err = udc_submit_ep_event(dev, buf, 0);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 
@@ -340,14 +311,8 @@ static int udc_mcux_handler_non_ctrl_out(const struct device *dev, uint8_t ep,
 	uint32_t len;
 
 	len = MIN(net_buf_tailroom(buf), mcux_len);
-#if defined(CONFIG_NOCACHE_MEMORY)
-	memcpy(net_buf_tail(buf), mcux_buf, len);
-#endif
 	net_buf_add(buf, len);
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	udc_mcux_nocache_free(mcux_buf);
-#endif
 	err = udc_submit_ep_event(dev, buf, 0);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 
@@ -359,13 +324,12 @@ static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
 {
 	int err;
 	struct net_buf *buf;
-	unsigned int key;
 
 	buf = udc_buf_get(dev, ep);
 
-	key = irq_lock();
+	udc_mcux_lock(dev);
 	udc_ep_set_busy(dev, ep, false);
-	irq_unlock(key);
+	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -413,7 +377,6 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 {
 	int err;
 	struct net_buf *buf;
-	unsigned int key;
 
 	buf = udc_buf_peek(dev, ep);
 	if (buf == NULL) {
@@ -427,9 +390,9 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 
 	buf = udc_buf_get(dev, ep);
 
-	key = irq_lock();
+	udc_mcux_lock(dev);
 	udc_ep_set_busy(dev, ep, false);
-	irq_unlock(key);
+	udc_mcux_unlock(dev);
 
 	if (buf == NULL) {
 		udc_submit_event(dev, UDC_EVT_ERROR, -ENOBUFS);
@@ -444,16 +407,95 @@ static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
 	return err;
 }
 
+static void udc_mcux_event_submit(const struct device *dev,
+				  const usb_device_callback_message_struct_t *mcux_msg)
+{
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_mcux_event *ev;
+	int ret;
+
+	ret = k_mem_slab_alloc(&udc_event_slab, (void **)&ev, K_NO_WAIT);
+	if (ret) {
+		udc_submit_event(dev, UDC_EVT_ERROR, ret);
+		LOG_ERR("Failed to allocate slab");
+		return;
+	}
+
+	ev->dev = dev;
+	ev->mcux_msg = *mcux_msg;
+	k_fifo_put(&priv->fifo, ev);
+	k_work_submit_to_queue(udc_get_work_q(), &priv->work);
+}
+
+static void udc_mcux_work_handler(struct k_work *item)
+{
+	struct udc_mcux_event *ev;
+	struct udc_mcux_data *priv;
+	usb_device_callback_message_struct_t *mcux_msg;
+	int err;
+	uint8_t ep;
+
+	priv = CONTAINER_OF(item, struct udc_mcux_data, work);
+	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
+		mcux_msg = &ev->mcux_msg;
+
+		if (mcux_msg->code == kUSB_DeviceNotifyBusReset) {
+			struct udc_ep_config *cfg;
+
+			udc_mcux_control(ev->dev, kUSB_DeviceControlSetDefaultStatus, NULL);
+			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_OUT);
+			if (cfg->stat.enabled) {
+				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_OUT);
+			}
+			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_IN);
+			if (cfg->stat.enabled) {
+				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_IN);
+			}
+			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_OUT,
+						USB_EP_TYPE_CONTROL,
+						USB_MCUX_EP0_SIZE, 0)) {
+				LOG_ERR("Failed to enable control endpoint");
+			}
+
+			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
+						USB_EP_TYPE_CONTROL,
+						USB_MCUX_EP0_SIZE, 0)) {
+				LOG_ERR("Failed to enable control endpoint");
+			}
+			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
+		} else {
+			ep  = mcux_msg->code;
+
+			if (mcux_msg->isSetup) {
+				struct usb_setup_packet *setup =
+					(struct usb_setup_packet *)mcux_msg->buffer;
+
+				err = udc_mcux_handler_setup(ev->dev, setup);
+			} else if (USB_EP_DIR_IS_IN(ep)) {
+				err = udc_mcux_handler_in(ev->dev, ep, mcux_msg->buffer,
+							  mcux_msg->length);
+			} else {
+				err = udc_mcux_handler_out(ev->dev, ep, mcux_msg->buffer,
+							   mcux_msg->length);
+			}
+
+			if (unlikely(err)) {
+				udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
+			}
+		}
+
+		k_mem_slab_free(&udc_event_slab, (void *)ev);
+	}
+}
+
 /* NXP MCUX controller driver notify transfers/status through this interface */
 usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 {
 	usb_device_callback_message_struct_t *mcux_msg = msg;
-	uint8_t ep;
 	usb_device_notification_t mcux_notify;
 	struct udc_mcux_data *priv;
 	const struct device *dev;
 	usb_status_t mcux_status = kStatus_USB_Success;
-	int err = 0;
 
 	if ((NULL == msg) || (NULL == handle)) {
 		return kStatus_USB_InvalidHandle;
@@ -465,31 +507,7 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 
 	switch (mcux_notify) {
 	case kUSB_DeviceNotifyBusReset:
-		struct udc_ep_config *cfg;
-
-		udc_mcux_control(dev, kUSB_DeviceControlSetDefaultStatus, NULL);
-		cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-		if (cfg->stat.enabled) {
-			udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
-		}
-		cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
-		if (cfg->stat.enabled) {
-			udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
-		}
-		if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT,
-					USB_EP_TYPE_CONTROL,
-					USB_MCUX_EP0_SIZE, 0)) {
-			LOG_ERR("Failed to enable control endpoint");
-			return -EIO;
-		}
-
-		if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN,
-					USB_EP_TYPE_CONTROL,
-					USB_MCUX_EP0_SIZE, 0)) {
-			LOG_ERR("Failed to enable control endpoint");
-			return -EIO;
-		}
-		udc_submit_event(dev, UDC_EVT_RESET, 0);
+		udc_mcux_event_submit(dev, mcux_msg);
 		break;
 	case kUSB_DeviceNotifyError:
 		udc_submit_event(dev, UDC_EVT_ERROR, -EIO);
@@ -510,26 +528,14 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 	case kUSB_DeviceNotifyAttach:
 		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		break;
+	case kUSB_DeviceNotifySOF:
+		udc_submit_event(dev, UDC_EVT_SOF, 0);
+		break;
 	default:
-		ep  = mcux_msg->code;
-		if (mcux_msg->isSetup) {
-			struct usb_setup_packet *setup =
-				(struct usb_setup_packet *)mcux_msg->buffer;
-
-			err = udc_mcux_handler_setup(dev, setup);
-		} else if (USB_EP_DIR_IS_IN(ep)) {
-			err = udc_mcux_handler_in(dev, ep, mcux_msg->buffer, mcux_msg->length);
-		} else {
-			err = udc_mcux_handler_out(dev, ep, mcux_msg->buffer, mcux_msg->length);
-		}
-
+		udc_mcux_event_submit(dev, mcux_msg);
 		break;
 	}
 
-	if (unlikely(err)) {
-		udc_submit_event(dev, UDC_EVT_ERROR, err);
-		mcux_status = kStatus_USB_Error;
-	}
 	return mcux_status;
 }
 
@@ -585,7 +591,6 @@ static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
 	struct net_buf *buf;
-	unsigned int key;
 
 	cfg->stat.halted = false;
 	buf = udc_buf_get_all(dev, cfg->addr);
@@ -593,9 +598,9 @@ static int udc_mcux_ep_dequeue(const struct device *dev,
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
-	key = irq_lock();
+	udc_mcux_lock(dev);
 	udc_ep_set_busy(dev, cfg->addr, false);
-	irq_unlock(key);
+	udc_mcux_unlock(dev);
 
 	return 0;
 }
@@ -624,6 +629,7 @@ static int udc_mcux_ep_enable(const struct device *dev,
 	ep_init.zlt             = 0U;
 	ep_init.interval        = cfg->interval;
 	ep_init.endpointAddress = cfg->addr;
+	/* HAL expects wMaxPacketSize value directly in maxPacketSize field */
 	ep_init.maxPacketSize   = cfg->mps;
 
 	switch (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
@@ -728,16 +734,6 @@ static int udc_mcux_shutdown(const struct device *dev)
 	return 0;
 }
 
-static int udc_mcux_lock(const struct device *dev)
-{
-	return udc_lock_internal(dev, K_FOREVER);
-}
-
-static int udc_mcux_unlock(const struct device *dev)
-{
-	return udc_unlock_internal(dev);
-}
-
 static inline void udc_mcux_get_hal_driver_id(struct udc_mcux_data *priv,
 			const struct udc_mcux_config *config)
 {
@@ -775,6 +771,8 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	k_mutex_init(&data->mutex);
+	k_fifo_init(&priv->fifo);
+	k_work_init(&priv->work, udc_mcux_work_handler);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
 		config->ep_cfg_out[i].caps.out = 1;
@@ -786,6 +784,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_out[i].caps.interrupt = 1;
 			config->ep_cfg_out[i].caps.iso = 1;
 			config->ep_cfg_out[i].caps.mps = 1024;
+			config->ep_cfg_out[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
@@ -806,6 +805,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 			config->ep_cfg_in[i].caps.interrupt = 1;
 			config->ep_cfg_in[i].caps.iso = 1;
 			config->ep_cfg_in[i].caps.mps = 1024;
+			config->ep_cfg_in[i].caps.high_bandwidth = 1;
 		}
 
 		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;

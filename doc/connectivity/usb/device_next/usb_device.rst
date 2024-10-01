@@ -30,7 +30,7 @@ The USB device stack has built-in USB functions. Some can be used directly in
 the user application through a special API, such as HID or Audio class devices,
 while others use a general Zephyr RTOS driver API, such as MSC and CDC class
 implementations. The *Identification string* identifies a class or function
-instance (`n`) and is used as an argument to the :c:func:`usbd_register_class`.
+instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`.
 
 +-----------------------------------+-------------------------+-------------------------+
 | Class or function                 | User API (if any)       | Identification string   |
@@ -55,6 +55,8 @@ Samples
 
 * :zephyr:code-sample:`uac2-explicit-feedback`
 
+* :zephyr:code-sample:`uac2-implicit-feedback`
+
 Samples ported to new USB device support
 ----------------------------------------
 
@@ -62,7 +64,7 @@ To build a sample that supports both the old and new USB device stack, set the
 configuration ``-DCONF_FILE=usbd_next_prj.conf`` either directly or via
 ``west``.
 
-* :ref:`bluetooth-hci-usb-sample`
+* :zephyr:code-sample:`bluetooth_hci_usb`
 
 * :zephyr:code-sample:`usb-cdc-acm`
 

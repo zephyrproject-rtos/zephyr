@@ -160,9 +160,16 @@ static int mcux_tpm_init(const struct device *dev)
 
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
+#if !(defined(FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT) && FSL_FEATURE_TPM_HAS_PAUSE_LEVEL_SELECT)
 		channel->level = kTPM_NoPwmSignal;
+#else
+		channel->level = kTPM_HighTrue;
+		channel->pauseLevel = kTPM_ClearOnPause;
+#endif
 		channel->dutyCyclePercent = 0;
+#if defined(FSL_FEATURE_TPM_HAS_COMBINE) && FSL_FEATURE_TPM_HAS_COMBINE
 		channel->firstEdgeDelayPercent = 0;
+#endif
 		channel++;
 	}
 

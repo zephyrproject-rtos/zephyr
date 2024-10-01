@@ -84,7 +84,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 
 	return (addr <= start) || (addr + size > end);
 }
-#endif
+#endif /* CONFIG_THREAD_STACK_INFO */
 
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 /**
@@ -120,40 +120,37 @@ bool z_x86_check_guard_page(uintptr_t addr)
 }
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
-#ifdef CONFIG_EXCEPTION_DEBUG
-
-static inline uintptr_t esf_get_code(const struct arch_esf *esf)
-{
-#ifdef CONFIG_X86_64
-	return esf->code;
-#else
-	return esf->errorCode;
-#endif
-}
-
-#if defined(CONFIG_EXCEPTION_STACK_TRACE)
+#if defined(CONFIG_ARCH_STACKWALK)
 struct stack_frame {
 	uintptr_t next;
 	uintptr_t ret_addr;
-#ifndef CONFIG_X86_64
-	uintptr_t args;
-#endif
 };
 
-#define MAX_STACK_FRAMES CONFIG_EXCEPTION_STACK_TRACE_MAX_FRAMES
-
-__pinned_func
-static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
+__pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
+					  const struct arch_esf *esf, int max_frames)
 {
+	uintptr_t base_ptr;
+	uint16_t cs;
 	struct stack_frame *frame;
 	int i;
+
+	if (esf != NULL) {
+#ifdef CONFIG_X86_64
+		base_ptr = esf->rbp;
+#else /* x86 32-bit */
+		base_ptr = esf->ebp;
+#endif /* CONFIG_X86_64 */
+		cs = esf->cs;
+	} else {
+		return;
+	}
 
 	if (base_ptr == 0U) {
 		LOG_ERR("NULL base ptr");
 		return;
 	}
 
-	for (i = 0; i < MAX_STACK_FRAMES; i++) {
+	for (i = 0; i < max_frames; i++) {
 		if (base_ptr % sizeof(base_ptr) != 0U) {
 			LOG_ERR("unaligned frame ptr");
 			return;
@@ -178,15 +175,56 @@ static void unwind_stack(uintptr_t base_ptr, uint16_t cs)
 		if (frame->ret_addr == 0U) {
 			break;
 		}
-#ifdef CONFIG_X86_64
-		LOG_ERR("     0x%016lx", frame->ret_addr);
-#else
-		LOG_ERR("     0x%08lx (0x%lx)", frame->ret_addr, frame->args);
-#endif
+
+		if (!cb(cookie, frame->ret_addr)) {
+			break;
+		}
+
 		base_ptr = frame->next;
 	}
 }
+
+void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
+		     const struct k_thread *thread, const struct arch_esf *esf)
+{
+	ARG_UNUSED(thread);
+
+	walk_stackframe(callback_fn, cookie, esf,
+			CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+}
+#endif /* CONFIG_ARCH_STACKWALK */
+
+#if defined(CONFIG_EXCEPTION_STACK_TRACE)
+static bool print_trace_address(void *arg, unsigned long addr)
+{
+	int *i = arg;
+
+#ifdef CONFIG_X86_64
+	LOG_ERR("     %d: 0x%016lx", (*i)++, addr);
+#else
+	LOG_ERR("     %d: 0x%08lx", (*i)++, addr);
+#endif
+
+	return true;
+}
+
+static ALWAYS_INLINE void unwind_stack(const struct arch_esf *esf)
+{
+	int i = 0;
+
+	walk_stackframe(print_trace_address, &i, esf, CONFIG_ARCH_STACKWALK_MAX_FRAMES);
+}
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
+
+#ifdef CONFIG_EXCEPTION_DEBUG
+static inline uintptr_t esf_get_code(const struct arch_esf *esf)
+{
+#ifdef CONFIG_X86_64
+	return esf->code;
+#else
+	return esf->errorCode;
+#endif
+}
 
 static inline uintptr_t get_cr3(const struct arch_esf *esf)
 {
@@ -226,13 +264,7 @@ static void dump_regs(const struct arch_esf *esf)
 	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: 0x%016lx",
 		esf->rsp, esf->rflags, esf->cs & 0xFFFFU, get_cr3(esf));
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-	LOG_ERR("call trace:");
-#endif
 	LOG_ERR("RIP: 0x%016lx", esf->rip);
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(esf->rbp, esf->cs);
-#endif
 }
 #else /* 32-bit */
 __pinned_func
@@ -245,13 +277,7 @@ static void dump_regs(const struct arch_esf *esf)
 	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: 0x%08lx", esf->eflags,
 		esf->cs & 0xFFFFU, get_cr3(esf));
 
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-	LOG_ERR("call trace:");
-#endif
 	LOG_ERR("EIP: 0x%08x", esf->eip);
-#ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(esf->ebp, esf->cs);
-#endif
 }
 #endif /* CONFIG_X86_64 */
 
@@ -368,6 +394,10 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 #ifdef CONFIG_EXCEPTION_DEBUG
 		dump_regs(esf);
 #endif
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+		LOG_ERR("call trace:");
+		unwind_stack(esf);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 #if defined(CONFIG_ASSERT) && defined(CONFIG_X86_64)
 		if (esf->rip == 0xb9) {
 			/* See implementation of __resume in locore.S. This is

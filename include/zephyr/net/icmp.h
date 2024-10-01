@@ -9,6 +9,8 @@
  * @brief ICMP sending and receiving.
  *
  * @defgroup icmp Send and receive IPv4 or IPv6 ICMP Echo Request messages.
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup networking
  * @{
  */

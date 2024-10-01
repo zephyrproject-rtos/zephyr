@@ -26,6 +26,7 @@
 		led0 = &green_led_1;
 		led1 = &red_led_1;
 		sw0 = &user_button;
+		die-temp0 = &die_temp;
 	};
 
 	octo_nor: memory@70000000 {
@@ -86,4 +87,13 @@
 		compatible = "zephyr,bt-hci-uart";
 		status = "okay";
 	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&adc1 {
+	st,adc-prescaler = <4>;
+	status = "okay";
 };

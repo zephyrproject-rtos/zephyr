@@ -183,8 +183,8 @@ config NET_GPTP_PATH_TRACE_ELEMENTS
 config NET_GPTP_BMCA_PRIORITY1
 	int "BMCA priority1 value"
 	default 248 if NET_GPTP_GM_CAPABLE
-	default 255
-	range 0 255
+	default $(UINT8_MAX)
+	range 0 $(UINT8_MAX)
 	help
 	  The priority1 attribute of the local clock. It is used in the
 	  Best Master Clock selection Algorithm (BMCA), lower values take
@@ -197,7 +197,7 @@ config NET_GPTP_BMCA_PRIORITY1
 config NET_GPTP_BMCA_PRIORITY2
 	int "BMCA priority2 value"
 	default 248
-	range 0 255
+	range 0 $(UINT8_MAX)
 	help
 	  The priority2 attribute of the local clock. It is used in the BMCA
 	  (Best Master Clock selection Algorithm), lower values take

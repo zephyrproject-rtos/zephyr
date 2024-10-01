@@ -104,6 +104,26 @@
 				compatible = "onnn,ncp5623";
 				reg = <0xd>;
 			};
+
+			is31fl3194@e {
+				compatible = "issi,is31fl3194";
+				reg = <0xe>;
+				led_rgb {
+					label = "led_rgb";
+					color-mapping = <0>, <1>, <2>;
+					current-limit = <10>;
+				};
+			};
+
+			is31fl3216a@f {
+				compatible = "issi,is31fl3216a";
+				reg = <0xf>;
+			};
+
+			is31fl3733@10 {
+				compatible = "issi,is31fl3733";
+				reg = <0x10>;
+			};
 		};
 	};
 };

@@ -65,4 +65,9 @@ config HAS_XMCLIB_CAN
 	help
 	  Enable XMCLIB CAN
 
+config HAS_XMCLIB_RTC
+	bool
+	help
+	  Enable XMCLIB RTC
+
 endif # HAS_XMCLIB

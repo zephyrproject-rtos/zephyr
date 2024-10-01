@@ -1,0 +1,24 @@
+identifier: esp32s3_eye/esp32s3/procpu
+name: ESP32-S3 EYE PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - video
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: espressif

@@ -63,8 +63,9 @@ static void before(void *args)
 
 	/* Flush the SQ and CQ */
 	rtio_sqe_drop_all(&sensor_read_rtio_ctx);
-	while (rtio_cqe_consume(&sensor_read_rtio_ctx))
+	while (rtio_cqe_consume(&sensor_read_rtio_ctx)) {
 		;
+	}
 }
 
 /**

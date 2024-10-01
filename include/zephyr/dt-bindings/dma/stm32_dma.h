@@ -46,6 +46,8 @@
 
 /** DMA  Peripheral increment offset config on bit 15 */
 #define STM32_DMA_CH_CFG_PERIPH_INC_FIXED(val)	((val & 0x1) << 15)
+#define STM32_DMA_OFFSET_LINKED_BUS		STM32_DMA_CH_CFG_PERIPH_INC_FIXED(0)
+#define STM32_DMA_OFFSET_FIXED_4		STM32_DMA_CH_CFG_PERIPH_INC_FIXED(1)
 
 /** DMA  Priority config  on bits 16, 17*/
 #define STM32_DMA_CH_CFG_PRIORITY(val)		((val & 0x3) << 16)

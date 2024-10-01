@@ -4,7 +4,6 @@ tests:
       - qemu_cortex_a9
       - hifive_unleashed
       - fvp_base_revc_2xaemv8a//smp/ns
-      - fvp_baser_aemv8r_aarch32_smp
     tags: zbus
     integration_platforms:
       - native_sim

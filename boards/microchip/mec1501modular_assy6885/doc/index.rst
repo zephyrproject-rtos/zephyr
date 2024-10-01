@@ -260,7 +260,7 @@ Setup
 
 Building
 ==========
-#. Build :ref:`hello_world` application as you would normally do.
+#. Build :zephyr:code-sample:`hello_world` application as you would normally do.
 
 #. Once you have ``zephyr.bin``, use the `MEC152x SPI Image Gen`_ microchip tool
    to create the final binary. You need the output from this tool to flash

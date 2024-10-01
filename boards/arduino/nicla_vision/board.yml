@@ -1,0 +1,5 @@
+board:
+  name: arduino_nicla_vision
+  vendor: arduino
+  socs:
+    - name: stm32h747xx

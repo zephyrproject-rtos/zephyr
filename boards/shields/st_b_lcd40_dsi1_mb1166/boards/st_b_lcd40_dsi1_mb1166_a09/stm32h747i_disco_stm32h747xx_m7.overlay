@@ -4,27 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/panel.h>
-
-&mipi_dsi {
+&zephyr_mipi_dsi {
+	status = "okay";
 	loosely-packed;
 	largest-packet-size = <64>;
 	bta-ack-disable;
-};
-
-&ltdc {
-	/* frida, nt35510 */
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		hsync-active = <0>;
-		vsync-active = <0>;
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hsync-len = <2>;
-		vsync-len = <120>;
-		hback-porch = <34>;
-		vback-porch = <150>;
-		hfront-porch = <34>;
-		vfront-porch = <150>;
-	};
 };

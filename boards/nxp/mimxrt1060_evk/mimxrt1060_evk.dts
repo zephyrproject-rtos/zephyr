@@ -26,6 +26,7 @@
 		zephyr,sram = &sdram0;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
+		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
@@ -193,6 +194,11 @@ zephyr_udc0: &usb1 {
 	tx-cal-45-dm-ohms = <6>;
 };
 
+&csi {
+	pinctrl-0 = <&pinmux_csi>;
+	pinctrl-names = "default";
+};
+
 &flexpwm2_pwm3 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm2_3>;
@@ -297,3 +303,7 @@ arduino_spi: &lpspi1 {
 &pit0 {
 	status = "okay";
 };
+
+dvp_fpc24_i2c: &lpi2c1 {};
+
+dvp_fpc24_interface: &csi {};

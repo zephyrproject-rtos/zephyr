@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <soc_dt.h>
 #include "soc_espi.h"
@@ -208,6 +209,7 @@ static const struct ec2i_t pmc2_settings[] = {
  */
 #define IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX 0x1000
 #define IT8XXX2_ESPI_H2RAM_OFFSET_MASK   GENMASK(5, 0)
+#define IT8XXX2_ESPI_H2RAM_BASEADDR_MASK GENMASK(19, 0)
 
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION)
 #define H2RAM_ACPI_SHM_MAX ((CONFIG_ESPI_IT8XXX2_ACPI_SHM_H2RAM_SIZE) + \
@@ -259,8 +261,8 @@ static void smfi_it8xxx2_init(const struct device *dev)
 	uint8_t h2ram_offset;
 
 	/* Set the host to RAM cycle address offset */
-	h2ram_offset = ((uint32_t)h2ram_pool & 0xffff) /
-				IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
+	h2ram_offset = ((uint32_t)h2ram_pool & IT8XXX2_ESPI_H2RAM_BASEADDR_MASK) /
+		       IT8XXX2_ESPI_H2RAM_POOL_SIZE_MAX;
 	gctrl->GCTRL_H2ROFSR =
 		(gctrl->GCTRL_H2ROFSR & ~IT8XXX2_ESPI_H2RAM_OFFSET_MASK) |
 		h2ram_offset;
@@ -853,13 +855,14 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			break;
 		case E8042_RESUME_IRQ:
 			/* Enable KBC IBF interrupt */
-			kbc_reg->KBHICR |= KBC_KBHICR_IBFCIE;
+			irq_enable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_PAUSE_IRQ:
 			/* Disable KBC IBF interrupt */
-			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFCIE;
+			irq_disable(IT8XXX2_KBC_IBF_IRQ);
 			break;
 		case E8042_CLEAR_OBF:
+			volatile uint8_t _kbhicr __unused;
 			/*
 			 * After enabling IBF/OBF clear mode, we have to make
 			 * sure that IBF interrupt is not triggered before
@@ -876,6 +879,12 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 			kbc_reg->KBHICR &= ~KBC_KBHICR_COBF;
 			/* Disable clear mode */
 			kbc_reg->KBHICR &= ~KBC_KBHICR_IBFOBFCME;
+			/*
+			 * I/O access synchronization, this load operation will
+			 * guarantee the above modification of SOC's register
+			 * can be seen by any following instructions.
+			 */
+			_kbhicr = kbc_reg->KBHICR;
 			irq_unlock(key);
 			break;
 		case E8042_SET_FLAG:
@@ -911,9 +920,9 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 		/* Enable/Disable PMC1 (port 62h/66h) interrupt */
 		case ECUSTOM_HOST_SUBS_INTERRUPT_EN:
 			if (*data) {
-				pmc_reg->PM1CTL |= PMC_PM1CTL_IBFIE;
+				irq_enable(IT8XXX2_PMC1_IBF_IRQ);
 			} else {
-				pmc_reg->PM1CTL &= ~PMC_PM1CTL_IBFIE;
+				irq_disable(IT8XXX2_PMC1_IBF_IRQ);
 			}
 			break;
 		case ECUSTOM_HOST_CMD_SEND_RESULT:
@@ -945,7 +954,7 @@ static int espi_it8xxx2_write_lpc_request(const struct device *dev,
 		   ((((tag) & 0xF) << 4) | (((len) >> 8) & 0xF))
 
 struct espi_oob_msg_packet {
-	uint8_t data_byte[0];
+	FLEXIBLE_ARRAY_DECLARE(uint8_t, data_byte);
 };
 
 static int espi_it8xxx2_send_oob(const struct device *dev,

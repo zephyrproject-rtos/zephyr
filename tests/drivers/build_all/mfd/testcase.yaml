@@ -6,5 +6,4 @@ common:
 tests:
   drivers.mfd.build:
     platform_allow:
-      - native_posix
       - native_sim

@@ -1,7 +1,8 @@
-.. _mpr-sample:
+.. zephyr:code-sample:: mpr
+   :name: MPR Pressure Sensor
+   :relevant-api: sensor_interface
 
-MPR Pressure Sensor
-###################
+   Get atmospheric pressure data from an MPR pressure sensor.
 
 Overview
 ********

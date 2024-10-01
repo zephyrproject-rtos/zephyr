@@ -1,21 +1,20 @@
-.. _bluetooth-beacon-sample:
+.. zephyr:code-sample:: bluetooth_beacon
+   :name: Beacon
+   :relevant-api: bluetooth
 
-Bluetooth: Beacon
-#################
+   Advertise an Eddystone URL using GAP Broadcaster role.
 
 Overview
 ********
 
-A simple application demonstrating the BLE Broadcaster role functionality by
+A simple application demonstrating the GAP Broadcaster role functionality by
 advertising an Eddystone URL (the Zephyr website).
-
-
 
 Requirements
 ************
 
 * BlueZ running on the host, or
-* A board with BLE support
+* A board with Bluetooth LE support
 
 Building and Running
 ********************
@@ -23,4 +22,4 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/beacon` in the
 Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

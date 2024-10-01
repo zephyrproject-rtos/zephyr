@@ -104,4 +104,11 @@
 #define DMA_EXTMEM_REJECT_SOURCE              98
 #define MAX_INTR_SOURCE                       99 /* number of interrupt sources */
 
+/* For Xtensa architecture, zero will allocate low/medium
+ * levels of priority (ESP_INTR_FLAG_LOWMED)
+ */
+#define IRQ_DEFAULT_PRIORITY	0
+
+#define ESP_INTR_FLAG_SHARED	(1<<8)	/* Interrupt can be shared between ISRs */
+
 #endif

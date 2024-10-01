@@ -41,7 +41,7 @@ Below are steps to run Qomu sample application:
 #. Build the sample in an usual way:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/boards/qomu
+      :zephyr-app: samples/boards/quicklogic/qomu
       :board: qomu
       :goals: build
 

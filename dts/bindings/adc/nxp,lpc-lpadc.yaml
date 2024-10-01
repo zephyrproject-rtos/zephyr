@@ -49,9 +49,13 @@ properties:
       - 64
       - 128
 
+  no-power-level:
+    type: boolean
+    description: |
+      There is no power level selection function.
+
   power-level:
     type: int
-    required: true
     description: |
       Power level selection. Corresponds to the value of
       register field CFG[PWRSEL] (see chip specific manual).

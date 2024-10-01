@@ -1,0 +1,21 @@
+/*
+ * Copyright 2024 Kelly Helmut Lord
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	fake_input_device: fake-device {
+		compatible = "vnd,input-device";
+	};
+
+	double_tap: doubletap {
+		input = <&fake_input_device>;
+		compatible = "zephyr,input-double-tap";
+		input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+		double-tap-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+		double-tap-delay-ms = <300>;
+	};
+};

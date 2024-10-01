@@ -15,6 +15,8 @@
 /**
  * @brief Network Interface abstraction layer
  * @defgroup net_if Network Interface abstraction layer
+ * @since 1.5
+ * @version 1.0.0
  * @ingroup networking
  * @{
  */
@@ -298,7 +300,7 @@ struct net_offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
@@ -420,7 +422,7 @@ struct net_if_dhcpv6 {
 #endif /* defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6) */
 
 /** @cond INTERNAL_HIDDEN */
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
 #define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
 #else
@@ -540,11 +542,11 @@ struct net_if_ipv4_autoconf {
  * @brief Network interface IP address configuration.
  */
 struct net_if_ip {
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 	struct net_if_ipv4 *ipv4;
 #endif /* CONFIG_NET_IPV4 */
 };
@@ -858,7 +860,8 @@ static inline enum net_if_oper_state net_if_oper_state_set(
 	NET_ASSERT(iface);
 	NET_ASSERT(iface->if_dev);
 
-	if (oper_state >= NET_IF_OPER_UNKNOWN && oper_state <= NET_IF_OPER_UP) {
+	BUILD_ASSERT((enum net_if_oper_state)(-1) > 0 && NET_IF_OPER_UNKNOWN == 0);
+	if (oper_state <= NET_IF_OPER_UP) {
 		iface->if_dev->oper_state = oper_state;
 	}
 
@@ -2428,7 +2431,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
 #else
 static inline struct net_if *net_if_ipv4_select_src_iface(
@@ -2451,7 +2454,7 @@ static inline struct net_if *net_if_ipv4_select_src_iface(
  * @return Pointer to IPv4 address to use, NULL if no IPv4 address
  * could be found.
  */
-#if defined(CONFIG_NET_NATIVE_IPV4)
+#if defined(CONFIG_NET_IPV4)
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
 						  const struct in_addr *dst);
 #else
@@ -2561,6 +2564,15 @@ __syscall bool net_if_ipv4_set_netmask_by_addr_by_index(int index,
 bool net_if_ipv4_set_netmask_by_addr(struct net_if *iface,
 				     const struct in_addr *addr,
 				     const struct in_addr *netmask);
+
+/**
+ * @brief Get IPv4 gateway of an interface.
+ *
+ * @param iface Interface to use.
+ *
+ * @return The gateway set on the interface, unspecified address if not found.
+ */
+struct in_addr net_if_ipv4_get_gw(struct net_if *iface);
 
 /**
  * @brief Set IPv4 gateway for an interface.

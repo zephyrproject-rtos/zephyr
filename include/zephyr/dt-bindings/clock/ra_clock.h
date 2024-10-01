@@ -117,4 +117,30 @@
 #define RA_I3C_CLOCK_DIV_6 3
 #define RA_I3C_CLOCK_DIV_8 4
 
+/* LCD clock divider options. */
+#define RA_LCD_CLOCK_DIV_1 0
+#define RA_LCD_CLOCK_DIV_2 1
+#define RA_LCD_CLOCK_DIV_3 5
+#define RA_LCD_CLOCK_DIV_4 2
+#define RA_LCD_CLOCK_DIV_5 6
+#define RA_LCD_CLOCK_DIV_6 3
+#define RA_LCD_CLOCK_DIV_8 4
+
+/* SDADC clock divider options. */
+#define RA_SDADC_CLOCK_DIV_1 0
+#define RA_SDADC_CLOCK_DIV_2 1
+#define RA_SDADC_CLOCK_DIV_3 2
+#define RA_SDADC_CLOCK_DIV_4 3
+#define RA_SDADC_CLOCK_DIV_5 4
+#define RA_SDADC_CLOCK_DIV_6 5
+#define RA_SDADC_CLOCK_DIV_8 6
+#define RA_SDADC_CLOCK_DIV_12 7
+#define RA_SDADC_CLOCK_DIV_16 8
+
+#define MSTPA 0
+#define MSTPB 1
+#define MSTPC 2
+#define MSTPD 3
+#define MSTPE 4
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_RA_H_ */

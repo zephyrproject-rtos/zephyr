@@ -253,7 +253,7 @@ static ALWAYS_INLINE void clock_init(void)
 	PM->MCCTRL = OSC_SRC_PLL0;
 }
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 #if defined(CONFIG_WDT_DISABLE_AT_BOOT)
 	wdt_set_ctrl(WDT->CTRL & ~WDT_CTRL_EN);

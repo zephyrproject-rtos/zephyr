@@ -16,4 +16,6 @@ supported:
   - can
   - spi
   - counter
+  - adc
+  - i2c
 vendor: nxp

@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_IP_LEASE_TIME_SIZE 6
 #define DHCPV4_OPTIONS_SERVER_ID_SIZE 6
 #define DHCPV4_OPTIONS_SUBNET_MASK_SIZE 6
+#define DHCPV4_OPTIONS_ROUTER_SIZE 6
+#define DHCPV4_OPTIONS_DNS_SERVER_SIZE 6
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(30)
@@ -69,6 +71,8 @@ struct dhcpv4_server_ctx {
 #endif
 };
 
+static void *address_provider_callback_user_data;
+static net_dhcpv4_server_provider_cb_t address_provider_callback;
 static struct dhcpv4_server_ctx server_ctx[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static struct zsock_pollfd fds[CONFIG_NET_DHCPV4_SERVER_INSTANCES];
 static K_MUTEX_DEFINE(server_lock);
@@ -379,6 +383,45 @@ static uint8_t *dhcpv4_encode_subnet_mask_option(uint8_t *buf, size_t *buflen,
 	return buf + DHCPV4_OPTIONS_SUBNET_MASK_SIZE;
 }
 
+static uint8_t *dhcpv4_encode_router_option(uint8_t *buf, size_t *buflen,
+					    struct in_addr *router)
+{
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_ROUTER_SIZE) {
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_ROUTER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], router->s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_ROUTER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_ROUTER_SIZE;
+}
+
+static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
+{
+	struct in_addr dns_address;
+
+	if (buf == NULL || *buflen < DHCPV4_OPTIONS_DNS_SERVER_SIZE) {
+		return NULL;
+	}
+
+	if (net_addr_pton(AF_INET, CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS, &dns_address)) {
+		LOG_ERR("Invalid DNS server address: %s",
+			CONFIG_NET_DHCPV4_SERVER_OPTION_DNS_ADDRESS);
+		return NULL;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_DNS_SERVER;
+	buf[1] = sizeof(struct in_addr);
+	memcpy(&buf[2], dns_address.s4_addr, sizeof(struct in_addr));
+
+	*buflen -= DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+
+	return buf + DHCPV4_OPTIONS_DNS_SERVER_SIZE;
+}
+
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 {
 	if (buf == NULL || *buflen < 1) {
@@ -472,6 +515,20 @@ static uint8_t *dhcpv4_encode_requested_params(
 			}
 			break;
 
+		case DHCPV4_OPTIONS_ROUTER:
+			buf = dhcpv4_encode_router_option(
+				buf, buflen, &ctx->iface->config.ip.ipv4->gw);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
+
+		case DHCPV4_OPTIONS_DNS_SERVER:
+			buf = dhcpv4_encode_dns_server_option(buf, buflen);
+			if (buf == NULL) {
+				goto out;
+			}
+			break;
 		/* Others - just ignore. */
 		default:
 			break;
@@ -918,6 +975,18 @@ static void dhcpv4_handle_discover(struct dhcpv4_server_ctx *ctx,
 
 			/* Got match in current bindings. */
 			selected = slot;
+			break;
+		}
+		struct in_addr addr = { 0 };
+
+		if (slot->state == DHCPV4_SERVER_ADDR_FREE &&
+		    address_provider_callback) {
+			ret = address_provider_callback(ctx->iface, &client_id, &addr,
+							address_provider_callback_user_data);
+			if (ret == 0) {
+				selected = slot;
+				slot->addr = addr;
+			}
 			break;
 		}
 	}
@@ -1719,8 +1788,17 @@ out:
 	return ret;
 }
 
+void net_dhcpv4_server_set_provider_cb(net_dhcpv4_server_provider_cb_t cb, void *user_data)
+{
+	address_provider_callback_user_data = user_data;
+	address_provider_callback = cb;
+}
+
 void net_dhcpv4_server_init(void)
 {
+	address_provider_callback = NULL;
+	address_provider_callback_user_data = NULL;
+
 	for (int i = 0; i < ARRAY_SIZE(fds); i++) {
 		fds[i].fd = -1;
 	}

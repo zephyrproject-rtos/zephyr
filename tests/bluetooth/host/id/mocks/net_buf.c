@@ -6,7 +6,7 @@
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include <mocks/net_buf.h>
 

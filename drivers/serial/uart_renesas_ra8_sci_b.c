@@ -1038,14 +1038,10 @@ static void uart_ra_sci_b_eri_isr(const struct device *dev)
 
 #define UART_RA_SCI_B_DTC_INIT(index)                                                              \
 	do {                                                                                       \
-		if (DT_INST_PROP_OR(index, rx_dtc, false)) {                                       \
-			uart_ra_sci_b_data_##index.fsp_config.p_transfer_rx =                      \
-				&uart_ra_sci_b_data_##index.rx_transfer;                           \
-		}                                                                                  \
-		if (DT_INST_PROP_OR(index, tx_dtc, false)) {                                       \
-			uart_ra_sci_b_data_##index.fsp_config.p_transfer_tx =                      \
-				&uart_ra_sci_b_data_##index.tx_transfer;                           \
-		}                                                                                  \
+		uart_ra_sci_b_data_##index.fsp_config.p_transfer_rx =                              \
+			&uart_ra_sci_b_data_##index.rx_transfer;                                   \
+		uart_ra_sci_b_data_##index.fsp_config.p_transfer_tx =                              \
+			&uart_ra_sci_b_data_##index.tx_transfer;                                   \
 	} while (0)
 
 #define UART_RA_SCI_B_ASYNC_INIT(index)                                                            \

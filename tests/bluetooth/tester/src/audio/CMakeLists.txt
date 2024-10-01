@@ -60,7 +60,7 @@ if(CONFIG_BT_CAP_INITIATOR)
     target_sources(app PRIVATE btp_cap.c)
 endif()
 
-if(CONFIG_BT_TBS OR CONFIG_BT_GTBS)
+if(CONFIG_BT_TBS)
     target_sources(app PRIVATE btp_ccp.c)
 endif()
 

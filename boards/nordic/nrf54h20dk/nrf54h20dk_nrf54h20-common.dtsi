@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20-memory_map.dtsi"
+#include "nrf54h20dk_nrf54h20-ipc_conf.dtsi"
+#include "nrf54h20dk_nrf54h20-pinctrl.dtsi"
+
+&hfxo {
+	status = "okay";
+	accuracy-ppm = <30>;
+	startup-time-us = <850>;
+	mode = "crystal";
+};
+
+&lfxo {
+	status = "okay";
+	accuracy-ppm = <20>;
+	startup-time-us = <600000>;
+	mode = "crystal";
+};

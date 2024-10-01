@@ -270,7 +270,7 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x83,					\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = 0,						\
+		.wMaxPacketSize = sys_cpu_to_le16(0),				\
 		.bInterval = LB_ISO_EP_INTERVAL,				\
 	},									\
 										\
@@ -279,7 +279,7 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x03,					\
 		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = 0,						\
+		.wMaxPacketSize = sys_cpu_to_le16(0),				\
 		.bInterval = LB_ISO_EP_INTERVAL,				\
 	},									\
 										\

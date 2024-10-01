@@ -21,6 +21,8 @@ extern "C" {
 /**
  * @brief CoAP Manager Events
  * @defgroup coap_mgmt CoAP Manager Events
+ * @since 3.6
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

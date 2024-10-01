@@ -60,8 +60,9 @@ static void ivshmem_ipm_event_loop_thread(void *arg, void *p2, void *p3)
 		/* get ready for next signal */
 		k_poll_signal_reset(&sig);
 
-		if (dev_data->cb)
+		if (dev_data->cb) {
 			dev_data->cb(dev, dev_data->user_data, 0, NULL);
+		}
 	}
 }
 

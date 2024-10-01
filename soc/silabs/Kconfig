@@ -2,9 +2,9 @@
 # Copyright (c) 2018 Gil Benkoe
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
-
 rsource "*/Kconfig"
+
+if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 config SOC_GECKO_SDID
 	int
@@ -130,7 +130,7 @@ config SOC_GECKO_PM_BACKEND_EMU
 	help
 	  Implement PM using direct calls to EMU driver in emlib
 
-endif
+endif # PM
 
 config SOC_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"

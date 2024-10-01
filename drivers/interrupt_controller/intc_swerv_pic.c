@@ -229,8 +229,9 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	uint32_t mie;
 
-	if (irq > RISCV_MAX_GENERIC_IRQ)
+	if (irq > RISCV_MAX_GENERIC_IRQ) {
 		return swerv_pic_irq_is_enabled(irq);
+	}
 
 	__asm__ volatile ("csrr %0, mie" : "=r" (mie));
 

@@ -75,15 +75,10 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	irq_unlock(0);
 }
 
-static int stm32_power_init(void)
+void stm32_power_init(void)
 {
 	/* Enable Power clock. It should by done by default, but make sure to
 	 * enable it for all STM32F4x chips.
 	 */
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-	/* Enabling debug during STOP mode is done by the common STM32 configuration */
-	return 0;
 }
-
-SYS_INIT(stm32_power_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

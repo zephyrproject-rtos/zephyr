@@ -1,0 +1,15 @@
+/* Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This node by default forwards the UART1 pins to CPUNET, but as UART1 uses
+ * same pins as bucken and iovdd-ctrl, we need these pins to be controlled by
+ * the CPUAPP. Since a child node of gpio_fwd cannot be disabled, hence
+ * the entire node is disabled. If the application needs to forward other pins
+ * to the CPUNET, it should create a separate instance of nrf-gpio-forwarder
+ * and use it instead.
+ */
+&gpio_fwd {
+	status = "disabled";
+};

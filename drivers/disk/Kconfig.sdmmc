@@ -2,12 +2,13 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-DT_STM32_SDMMC_HAS_DMA := $(dt_nodelabel_has_prop,sdmmc,dmas)
+DT_STM32_SDMMC_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SDMMC),dmas)
 
 config DISK_DRIVER_SDMMC
 	bool "SDMMC card driver"
-	default y if DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
+	depends on DT_HAS_ZEPHYR_SDMMC_DISK_ENABLED || \
 			DT_HAS_ST_STM32_SDMMC_ENABLED
+	default y
 	help
 	  SDMMC card driver.
 
@@ -44,7 +45,8 @@ config SDMMC_STM32
 	select USE_STM32_HAL_MMC_EX if SDMMC_STM32_EMMC && SOC_SERIES_STM32L4X
 	select USE_STM32_LL_SDMMC
 	select USE_STM32_HAL_DMA if (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32F4X)
-	select DMA if ($(DT_STM32_SDMMC_HAS_DMA) && SOC_SERIES_STM32F4X)
+	select DMA if $(DT_STM32_SDMMC_HAS_DMA) && (SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X)
+	select PINCTRL
 	select RESET
 	help
 	  File system on sdmmc accessed through stm32 sdmmc.

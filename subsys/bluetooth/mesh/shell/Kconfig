@@ -50,7 +50,7 @@ config BT_MESH_SHELL_TEST
 	  This option enables support for test mesh shell commands.
 
 config BT_MESH_SHELL_HEALTH_SRV_INSTANCE
-	bool "Support for shell Health Server model instance"
+	bool "Support for shell Health Server instance"
 	depends on BT_MESH_SHELL_TEST
 	help
 	  This option enables Health Server model instance in the
@@ -67,14 +67,21 @@ config BT_MESH_SHELL_GATT_PROXY
 	  This option enables support for GATT Proxy shell commands.
 
 config BT_MESH_SHELL_HEALTH_CLI
-	bool "Support for Health Client Model shell commands"
+	bool "Support for Health Client shell commands"
 	depends on BT_MESH_HEALTH_CLI
 	default y
 	help
 	  This option enables support of Health Client shell commands.
 
+config BT_MESH_SHELL_BRG_CFG_CLI
+	bool "Support for Bridge Configuration Client shell commands"
+	depends on BT_MESH_BRG_CFG_CLI
+	default y
+	help
+	  This option enables support of Bridge Configuration Client shell commands.
+
 config BT_MESH_SHELL_CFG_CLI
-	bool "Support for Configuration Client Model shell commands"
+	bool "Support for Configuration Client shell commands"
 	depends on BT_MESH_CFG_CLI
 	default y
 	help

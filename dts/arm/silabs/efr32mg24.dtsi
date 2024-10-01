@@ -10,6 +10,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/pinctrl/gecko-pinctrl.h>
 #include <dt-bindings/adc/adc.h>
+#include <dt-bindings/clock/silabs/xg24-clock.h>
 #include <freq.h>
 
 / {
@@ -84,6 +85,15 @@
 	};
 
 	soc {
+		cmu: clock@50008000 {
+			compatible = "silabs,series-clock";
+			reg = <0x50008000 0x4000>;
+			interrupts = <47 0>;
+			interrupt-names = "cmu";
+			status = "okay";
+			#clock-cells = <2>;
+		};
+
 		msc: flash-controller@50030000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x50030000 0x3148>;
@@ -105,6 +115,7 @@
 			interrupts = <9 0>, <10 0>;
 			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
+			clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 			status = "disabled";
 		};
 
@@ -112,6 +123,7 @@
 			compatible = "silabs,gecko-burtc";
 			reg = <0x50064000 0x3034>;
 			interrupts = <17 0>;
+			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			status = "disabled";
 		};
 
@@ -130,6 +142,7 @@
 			#size-cells = <0>;
 			reg = <0x5b000000 0x3044>;
 			interrupts = <27 0>;
+			clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
 			status = "disabled";
 		};
 
@@ -139,6 +152,7 @@
 			interrupts = <67 0>;
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			clocks = <&cmu CLOCK_SYSRTC0 CLOCK_BRANCH_SYSRTCCLK>;
 			status = "disabled";
 		};
 
@@ -147,6 +161,7 @@
 			reg = <0x5003c000 0x4000>;
 			interrupts = <26 2>, <25 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+			clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
 
 			ranges;
 			#address-cells = <1>;
@@ -194,6 +209,7 @@
 			reg = <0x5b004000 0x2C>;
 			peripheral-id = <0>;
 			interrupts = <42 0>;
+			clocks = <&cmu CLOCK_WDOG0 CLOCK_BRANCH_WDOG0CLK>;
 			status = "disabled";
 		};
 
@@ -202,6 +218,7 @@
 			reg = <0x5b008000 0x2C>;
 			peripheral-id = <1>;
 			interrupts = <43 0>;
+			clocks = <&cmu CLOCK_WDOG1 CLOCK_BRANCH_WDOG1CLK>;
 			status = "disabled";
 		};
 
@@ -209,6 +226,7 @@
 			compatible = "silabs,gecko-iadc";
 			reg = <0x59004000 0x4000>;
 			interrupts = <49 0>;
+			clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};

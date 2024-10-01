@@ -1,0 +1,25 @@
+/dts-v1/;
+#include "beaglev_fire_common.dtsi"
+
+/ {
+	model = "beagle,beaglev-fire";
+	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram1;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};

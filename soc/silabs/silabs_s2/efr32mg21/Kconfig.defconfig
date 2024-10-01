@@ -1,5 +1,3 @@
-# Silicon Labs EFR32MG21 (Might Gecko) series configuration options
-
 # Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,4 +12,4 @@ config GPIO_GECKO
 	default y
 	depends on GPIO || LOG_BACKEND_SWO
 
-endif # SOC_SERIES_EFR32MG21
+endif

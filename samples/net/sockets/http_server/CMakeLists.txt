@@ -26,13 +26,8 @@ target_sources(app PRIVATE src/main.c)
 
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
-set(source_file_index src/index.html)
-generate_inc_file_for_target(app ${source_file_index} ${gen_dir}/index.html.gz.inc --gzip)
-
-set(source_file_not_found src/not_found_page.html)
-generate_inc_file_for_target(app ${source_file_not_found} ${gen_dir}/not_found_page.html.gz.inc --gzip)
-
 target_sources_ifdef(CONFIG_NET_SAMPLE_WEBSOCKET_SERVICE app PRIVATE src/ws.c)
+target_sources_ifdef(CONFIG_USB_DEVICE_STACK app PRIVATE src/usb.c)
 
 target_link_libraries(app PRIVATE zephyr_interface zephyr)
 
@@ -45,6 +40,18 @@ zephyr_linker_section_ifdef(CONFIG_NET_SAMPLE_HTTP_SERVICE NAME
 				http_resource_desc_test_http_service
 				KVMA RAM_REGION GROUP RODATA_REGION
 				SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+
+foreach(web_resource
+  index.html
+  main.js
+    )
+  generate_inc_file_for_target(
+    app
+    src/static_web_resources/${web_resource}
+    ${gen_dir}/${web_resource}.gz.inc
+    --gzip
+  )
+endforeach()
 
 foreach(inc_file
 	ca.der

@@ -897,6 +897,11 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 	btp_send_discovery_completed_ev(conn, BTP_BAP_DISCOVERY_STATUS_SUCCESS);
 }
 
+static struct bt_bap_unicast_server_register_param param = {
+	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
+	CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+};
+
 static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.location = unicast_client_location_cb,
 	.available_contexts = available_contexts_cb,
@@ -1651,6 +1656,13 @@ int btp_bap_unicast_init(void)
 	}
 
 	(void)memset(connections, 0, sizeof(connections));
+
+	err = bt_bap_unicast_server_register(&param);
+	if (err != 0) {
+		LOG_DBG("Failed to register unicast server (err %d)\n", err);
+
+		return err;
+	}
 
 	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
 	if (err != 0) {

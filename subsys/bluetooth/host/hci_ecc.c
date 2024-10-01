@@ -88,7 +88,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
 
-	LOG_DBG("opcode %x status %x", opcode, status);
+	LOG_DBG("opcode %x status 0x%02x %s", opcode, status, bt_hci_err_to_str(status));
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
 	bt_buf_set_type(buf, BT_BUF_EVT);

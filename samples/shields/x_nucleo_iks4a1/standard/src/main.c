@@ -221,6 +221,9 @@ int main(void)
 #ifdef CONFIG_LSM6DSO16IS_ENABLE_TEMP
 	struct sensor_value lsm6dso16is_temp;
 #endif
+#ifdef CONFIG_LSM6DSV16X_ENABLE_TEMP
+	struct sensor_value lsm6dsv16x_temp;
+#endif
 	struct sensor_value lsm6dsv16x_xl[3], lsm6dsv16x_gy[3];
 	const struct device *const lis2mdl = DEVICE_DT_GET_ONE(st_lis2mdl);
 	const struct device *const lsm6dso16is = DEVICE_DT_GET_ONE(st_lsm6dso16is);
@@ -286,6 +289,9 @@ int main(void)
 #ifdef CONFIG_LSM6DSO16IS_ENABLE_TEMP
 		sensor_channel_get(lsm6dso16is, SENSOR_CHAN_DIE_TEMP, &lsm6dso16is_temp);
 #endif
+#ifdef CONFIG_LSM6DSV16X_ENABLE_TEMP
+		sensor_channel_get(lsm6dsv16x, SENSOR_CHAN_DIE_TEMP, &lsm6dsv16x_temp);
+#endif
 		sensor_channel_get(lsm6dsv16x, SENSOR_CHAN_ACCEL_XYZ, lsm6dsv16x_xl);
 		sensor_channel_get(lsm6dsv16x, SENSOR_CHAN_GYRO_XYZ, lsm6dsv16x_gy);
 
@@ -333,6 +339,12 @@ int main(void)
 			sensor_value_to_double(&lsm6dsv16x_gy[0]),
 			sensor_value_to_double(&lsm6dsv16x_gy[1]),
 			sensor_value_to_double(&lsm6dsv16x_gy[2]));
+
+#ifdef CONFIG_LSM6DSV16X_ENABLE_TEMP
+		/* temperature */
+		printf("LSM6DSV16X: Temperature: %.1f C\n",
+		       sensor_value_to_double(&lsm6dsv16x_temp));
+#endif
 
 		printf("LPS22DF: Temperature: %.1f C\n", sensor_value_to_double(&lps22df_temp));
 		printf("LPS22DF: Pressure:%.3f kpa\n", sensor_value_to_double(&lps22df_press));

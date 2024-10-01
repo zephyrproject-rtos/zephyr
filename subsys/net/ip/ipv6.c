@@ -346,7 +346,8 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_ROUTING) &&
-		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt) &&
+		    !net_if_flag_is_set(net_pkt_orig_iface(pkt), NET_IF_IPV6_NO_ND)) {
 			/* If the route interface to destination is
 			 * different than the original route, then add
 			 * route to original source.
@@ -452,6 +453,18 @@ static uint8_t extension_to_bitmap(uint8_t header, uint8_t ext_bitmap)
 	}
 }
 
+static inline bool is_src_non_tentative_itself(struct in6_addr *src)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv6_addr_lookup(src, NULL);
+	if (ifaddr != NULL && ifaddr->addr_state != NET_ADDR_TENTATIVE) {
+		return true;
+	}
+
+	return false;
+}
+
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
@@ -497,8 +510,15 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		net_sprint_ipv6_addr(&hdr->dst));
 
 	if (net_ipv6_is_addr_unspecified((struct in6_addr *)hdr->src)) {
-		NET_DBG("DROP: src addr is %s", "unspecified");
-		goto drop;
+		/* If this is a possible DAD message, let it pass. Extra checks
+		 * are done in duplicate address detection code to verify that
+		 * the packet is ok.
+		 */
+		if (!(IS_ENABLED(CONFIG_NET_IPV6_DAD) &&
+		      net_ipv6_is_addr_solicited_node((struct in6_addr *)hdr->dst))) {
+			NET_DBG("DROP: src addr is %s", "unspecified");
+			goto drop;
+		}
 	}
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->src) ||
@@ -508,8 +528,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!is_loopback) {
-		struct net_if_addr *ifaddr;
-
 		if (net_ipv6_is_addr_loopback((struct in6_addr *)hdr->dst) ||
 		    net_ipv6_is_addr_loopback((struct in6_addr *)hdr->src)) {
 			NET_DBG("DROP: ::1 packet");
@@ -529,9 +547,10 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 		/* We need to pass the packet through in case our address is
 		 * tentative, as receiving a packet with a tentative address as
 		 * source means that duplicate address has been detected.
+		 * This check is done later on if routing features are enabled.
 		 */
-		ifaddr = net_if_ipv6_addr_lookup((struct in6_addr *)hdr->src, NULL);
-		if (ifaddr != NULL && ifaddr->addr_state != NET_ADDR_TENTATIVE) {
+		if (!IS_ENABLED(CONFIG_NET_ROUTING) && !IS_ENABLED(CONFIG_NET_ROUTE_MCAST) &&
+		    is_src_non_tentative_itself((struct in6_addr *)hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
 			goto drop;
 		}
@@ -573,7 +592,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (!net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst)) {
-		if (!net_ipv6_is_my_addr((struct in6_addr *)hdr->dst)) {
+		if (!net_if_ipv6_addr_lookup_by_iface(pkt_iface, (struct in6_addr *)hdr->dst)) {
 			if (ipv6_route_packet(pkt, hdr) == NET_OK) {
 				return NET_OK;
 			}
@@ -594,6 +613,12 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 					   (struct in6_addr *)hdr->dst);
 			goto drop;
 		}
+	}
+
+	if ((IS_ENABLED(CONFIG_NET_ROUTING) || IS_ENABLED(CONFIG_NET_ROUTE_MCAST)) &&
+	    !is_loopback && is_src_non_tentative_itself((struct in6_addr *)hdr->src)) {
+		NET_DBG("DROP: src addr is %s", "mine");
+		goto drop;
 	}
 
 	if (net_ipv6_is_addr_mcast((struct in6_addr *)hdr->dst) &&

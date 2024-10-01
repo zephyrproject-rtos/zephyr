@@ -7,6 +7,8 @@ config UART_EMUL
 	bool "Emulated UART driver [EXPERIMENTAL]"
 	default y
 	depends on DT_HAS_ZEPHYR_UART_EMUL_ENABLED
+	depends on EMUL
+	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select SERIAL_SUPPORT_ASYNC
 	select RING_BUFFER
@@ -15,6 +17,12 @@ config UART_EMUL
 	  Enable the emulated UART driver.
 
 if UART_EMUL
+
+config UART_EMUL_DEVICE_INIT_PRIORITY
+	int "UART emulated devices' init priority"
+	default 0
+	help
+	  The init priority of emulated driver on the UART bus.
 
 config UART_EMUL_WORK_Q_STACK_SIZE
 	int "UART emulator work queue stack size"

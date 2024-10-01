@@ -1,0 +1,12 @@
+identifier: beaglev_fire/polarfire/e51
+name: Beagleboard BeagleV-Fire
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: beagle

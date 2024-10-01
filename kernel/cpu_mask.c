@@ -66,11 +66,7 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 
 int k_thread_cpu_pin(k_tid_t thread, int cpu)
 {
-	int ret;
+	uint32_t mask = BIT(cpu);
 
-	ret = k_thread_cpu_mask_clear(thread);
-	if (ret == 0) {
-		return k_thread_cpu_mask_enable(thread, cpu);
-	}
-	return ret;
+	return cpu_mask_mod(thread, mask, ~mask);
 }

@@ -15,7 +15,7 @@
 /**
  * @brief Published Audio Capabilities Service (PACS)
  *
- * @defgroup bt_gatt_csip Coordinated Set Identification Profile (CSIP)
+ * @defgroup bt_pacs Published Audio Capabilities Service (PACS)
  *
  * @since 3.0
  * @version 0.8.0

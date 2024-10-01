@@ -1,9 +1,7 @@
-.. _userspace_prod_consumer:
+.. zephyr:code-sample:: userspace_prod_consumer
+   :name: Producer/consumer
 
-Producer/consumer
-=================
-
-This is a sample application that exercises some user mode concepts.
+   Manipulate basic user mode concepts.
 
 Overview
 ********

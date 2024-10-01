@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(ws2812_gpio);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/sys/util_macro.h>
 
 struct ws2812_gpio_cfg {
 	struct gpio_dt_spec gpio;
@@ -30,25 +31,6 @@ struct ws2812_gpio_cfg {
 	const uint8_t *color_mapping;
 	size_t length;
 };
-
-/*
- * This is hard-coded to nRF51 in two ways:
- *
- * 1. The assembly delays T1H, T0H, TxL
- * 2. GPIO set/clear
- */
-
-/*
- * T1H: 1 bit high pulse delay: 12 cycles == .75 usec
- * T0H: 0 bit high pulse delay: 4 cycles == .25 usec
- * TxL: inter-bit low pulse delay: 8 cycles == .5 usec
- *
- * We can't use k_busy_wait() here: its argument is in microseconds,
- * and we need roughly .05 microsecond resolution.
- */
-#define DELAY_T1H "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
-#define DELAY_T0H "nop\nnop\nnop\nnop\n"
-#define DELAY_TxL "nop\nnop\nnop\nnop\nnop\nnop\nnop\nnop\n"
 
 /*
  * GPIO set/clear (these make assumptions about assembly details
@@ -68,24 +50,27 @@ struct ws2812_gpio_cfg {
 #define SET_HIGH "str %[p], [%[r], #0]\n" /* OUTSET = BIT(LED_PIN) */
 #define SET_LOW "str %[p], [%[r], #4]\n"  /* OUTCLR = BIT(LED_PIN) */
 
+#define NOPS(i, _) "nop\n"
+#define NOP_N_TIMES(n) LISTIFY(n, NOPS, ())
+
 /* Send out a 1 bit's pulse */
-#define ONE_BIT(base, pin) do {			\
-	__asm volatile (SET_HIGH			\
-			DELAY_T1H			\
-			SET_LOW			\
-			DELAY_TxL			\
-			::				\
-			[r] "l" (base),		\
+#define ONE_BIT(base, pin) do {					\
+	__asm volatile (SET_HIGH				\
+			NOP_N_TIMES(CONFIG_DELAY_T1H)		\
+			SET_LOW					\
+			NOP_N_TIMES(CONFIG_DELAY_T1L)		\
+			::					\
+			[r] "l" (base),				\
 			[p] "l" (pin)); } while (false)
 
 /* Send out a 0 bit's pulse */
-#define ZERO_BIT(base, pin) do {			\
-	__asm volatile (SET_HIGH			\
-			DELAY_T0H			\
-			SET_LOW			\
-			DELAY_TxL			\
-			::				\
-			[r] "l" (base),		\
+#define ZERO_BIT(base, pin) do {				\
+	__asm volatile (SET_HIGH				\
+			NOP_N_TIMES(CONFIG_DELAY_T0H)		\
+			SET_LOW					\
+			NOP_N_TIMES(CONFIG_DELAY_T0L)		\
+			::					\
+			[r] "l" (base),				\
 			[p] "l" (pin)); } while (false)
 
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)

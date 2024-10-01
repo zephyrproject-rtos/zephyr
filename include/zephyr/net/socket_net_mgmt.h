@@ -24,7 +24,9 @@ extern "C" {
 
 /**
  * @brief Socket NET_MGMT library
- * @defgroup socket_net_mgmt Network Core Library
+ * @defgroup socket_net_mgmt Socket NET_MGMT library
+ * @since 2.0
+ * @version 0.1.0
  * @ingroup networking
  * @{
  */

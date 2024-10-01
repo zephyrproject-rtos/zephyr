@@ -117,6 +117,8 @@ features:
 +-------------+------------+-------------------------------------+
 | USB OTG FS  | on-chip    | USB device                          |
 +-------------+------------+-------------------------------------+
+| SPI         | on-chip    | spi                                 |
++-------------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -138,6 +140,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD2 : PB7
 - LD3 : PB14
 - I2C : PB8, PB9
+- SPI : PA5, PA6, PB5, PD14
 
 System Clock
 ------------
@@ -170,28 +173,37 @@ two cores. This is done in 3 ways:
 Programming and Debugging
 *************************
 
+Nucleo H745ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
+
 Applications for the ``nucleo_h745zi_q`` board should be built per core target,
-using either ``nucleo_h745zi_q_m7`` or ```nucleo_h745zi_q_m4`` as the target
-(see :ref:`build_an_application` and :ref:`application_run` for more details).
+using either ``nucleo_h745zi_q/stm32h745xx/m7`` or ``nucleo_h745zi_q/stm32h745xx/m4``
+as the target (see :ref:`build_an_application` and :ref:`application_run` for more details).
 
 .. note::
 
-   If using OpenOCD you will need a recent development version as the last
-   official release does not support H7 series and ST-LINK V3 yet.
-   Following links may be helpful: `OpenOCD installing Debug Version`_
-   and `OpenOCD installing with ST-LINK V3 support`_
-
-.. note::
-
-   Check if your ST-LINK V3 has newest FW version. It can be done with `STM32CubeIDE`_
+   Check if the board's ST-LINK V3 has the newest FW version. It can be updated
+   using `STM32CubeProgrammer`_.
 
 Flashing
 ========
 
-Nucleo H745ZI-Q board includes an ST-LINK/V3 embedded debug tool interface.
-
 Flashing operation will depend on the target to be flashed and the SoC
 option bytes configuration.
+
+The board is configured to be flashed using west `STM32CubeProgrammer`_ runner
+for both cores, so its :ref:`installation <stm32cubeprog-flash-host-tools>` is required.
+The target core is detected automatically.
+
+Alternatively, OpenOCD or JLink can also be used to flash the board using
+the ``--runner`` (or ``-r``) option:
+
+.. code-block:: console
+
+   $ west flash --runner openocd
+   $ west flash --runner jlink
+
+It is advised to use `STM32CubeProgrammer`_ to check and update option bytes
+configuration.
 
 By default:
 
@@ -208,7 +220,7 @@ Flashing an application to STM32H745ZI M7 Core
 First, connect the NUCLEO-H745ZI-Q to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your NUCLEO-H745ZI-Q board.
 
@@ -226,7 +238,7 @@ Build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h745zi_q_m7
+   :board: nucleo_h745zi_q/stm32h745xx/m7
    :goals: build flash
 
 You should see the following message on the console:
@@ -246,7 +258,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nucleo_h745zi_q_m4
+   :board: nucleo_h745zi_q/stm32h745xx/m4
    :goals: build flash
 
 .. note::
@@ -257,18 +269,17 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 Debugging
 =========
 
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+You can debug an application on Cortex M7 side in the usual way. Here is an example
+for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucleo_h745zi_q_m7
+   :board: nucleo_h745zi_q/stm32h745xx/m7
    :maybe-skip-config:
    :goals: debug
 
-Debugging with west is currently not available on Cortex M4 side.
-In order to debug a Zephyr application on Cortex M4 side, you can use
-`STM32CubeIDE`_.
+Debugging a Zephyr application on Cortex M4 side with west is currently not available.
+As a workaround, you can use `STM32CubeIDE`_.
 
 .. _Nucleo H745ZI-Q website:
    https://www.st.com/en/evaluation-tools/nucleo-h745zi-q.html
@@ -290,3 +301,6 @@ In order to debug a Zephyr application on Cortex M4 side, you can use
 
 .. _STM32CubeIDE:
    https://www.st.com/en/development-tools/stm32cubeide.html
+
+.. _STM32CubeProgrammer:
+   https://www.st.com/en/development-tools/stm32cubeprog.html

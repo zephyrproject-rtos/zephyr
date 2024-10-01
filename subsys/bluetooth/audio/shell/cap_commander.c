@@ -21,7 +21,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 static void cap_discover_cb(struct bt_conn *conn, int err,

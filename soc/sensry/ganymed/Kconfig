@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+config SOC_FAMILY_GANYMED
+	select BUILD_OUTPUT_BIN
+
+if SOC_SERIES_SY1XX
+
+rsource "*/Kconfig"
+
+endif # SOC_SERIES_SY1XX

@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/sys/sem.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/dns_resolve.h>
-#include <zephyr/net/buf.h>
+#include <zephyr/net_buf.h>
 
 #include "../../socket_helpers.h"
 

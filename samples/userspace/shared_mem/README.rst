@@ -1,7 +1,7 @@
-.. _userspace_protected_memory:
+.. zephyr:code-sample:: userspace_protected_memory
+   :name: Userspace Protected Memory
 
-Userspace Protected Memory
-##########################
+   Use memory partitioning to protect memory between threads.
 
 Overview
 ********

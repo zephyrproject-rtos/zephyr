@@ -11,6 +11,15 @@
 
 struct multiboot_info multiboot_info;
 
+#ifdef CONFIG_DYNAMIC_BOOTARGS
+__pinned_noinit char multiboot_cmdline[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
+
+const char *get_bootargs(void)
+{
+	return multiboot_cmdline;
+}
+#endif /* CONFIG_DYNAMIC_BOOTARGS */
+
 /*
  * called very early in the boot process to fetch data out of the multiboot
  * info struct. we need to grab the relevant data before any dynamic memory

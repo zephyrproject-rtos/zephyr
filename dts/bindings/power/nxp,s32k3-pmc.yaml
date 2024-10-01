@@ -1,0 +1,36 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32K3xx Power Management Controller (PMC)
+
+compatible: "nxp,s32k3-pmc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  lm-reg:
+    type: boolean
+    description: |
+      Enables the Last Mile regulator, which regulates an external 1.5V
+      voltage on V15 down to the core and logic supply (V11 power domain),
+      which is typically 1.1V.
+      When enabling PLL as system clock, the PMC Last Mile regulator should
+      be enabled.
+
+  lm-reg-auto:
+    type: boolean
+    description: |
+      Enables to turn over automatically from Boot Regulator Mode to Last Mile
+      regulator mode and vice versa, depending on the V15 voltage status.
+      When configuring system clocks higher than FIRC clock frequency,
+      lm-reg should be also enabled.
+
+  lm-reg-base-control:
+    type: boolean
+    description: |
+      Enable this if an external BJT between VDD_HV_A and V15 is used on the
+      PCB. The base of this BJT must be connected to the VRC_CTRL pin and is
+      controlled by the PMC to regulate a voltage of 1.5V on V15 pin.

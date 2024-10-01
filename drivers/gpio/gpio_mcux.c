@@ -327,6 +327,9 @@ static void gpio_mcux_port_isr(const struct device *dev)
 
 	/* Clear the gpio interrupts */
 	config->gpio_base->ISFR[0] = int_status;
+#else
+	int_status = 0U;
+	ARG_UNUSED(config);
 #endif  /* !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) */
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_status);

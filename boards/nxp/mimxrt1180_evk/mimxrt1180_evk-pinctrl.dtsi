@@ -1,0 +1,76 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/rt/mimxrt1189cvm8b-pinctrl.dtsi>
+
+&pinctrl {
+	pinmux_lpspi3: pinmux_lpspi3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_lpspi3_pcs0>,
+				<&iomuxc_gpio_sd_b1_01_lpspi3_sck>,
+				<&iomuxc_gpio_sd_b1_02_lpspi3_sout>,
+				<&iomuxc_gpio_sd_b1_03_lpspi3_sin>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_09_lpuart1_rxd>,
+				<&iomuxc_aon_gpio_aon_08_lpuart1_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1_sleep: pinmux_lpuart1_sleep {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_09_gpio1_io09>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+		group1 {
+			pinmux = <&iomuxc_aon_gpio_aon_08_lpuart1_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	/* Connected to FXLS8974 */
+	pinmux_lpi2c2: pinmux_lpi2c2 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_15_lpi2c2_sda>,
+				<&iomuxc_aon_gpio_aon_16_lpi2c2_scl>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c3_scl>,
+				<&iomuxc_gpio_ad_19_lpi2c3_sda>;
+			drive-strength = "normal";
+			drive-open-drain;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpadc1: pinmux_lpadc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_16_adc1_ch0a>,
+				<&iomuxc_gpio_ad_14_adc1_ch1a>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+	};
+};

@@ -163,6 +163,11 @@ static int dacx0508_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal channels not supported");
+		return -ENOTSUP;
+	}
+
 	data->configured |= BIT(channel_cfg->channel_id);
 
 	return 0;

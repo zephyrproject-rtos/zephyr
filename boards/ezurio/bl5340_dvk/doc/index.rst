@@ -379,7 +379,7 @@ applications as usual (:ref:`build_an_application` and
    Further information on how to install the nRF Command Line Tools can
    be found in :ref:`nordic_segger_flashing`.
 
-Here is an example for the :ref:`hello_world` application running on the
+Here is an example for the :zephyr:code-sample:`hello_world` application running on the
 BL5340's application core.
 
 First, run your favorite terminal program to listen for output.
@@ -409,9 +409,9 @@ Testing Bluetooth on the BL5340 DVK
 Many of the Bluetooth examples will work on the BL5340 DVK.
 Try them out:
 
-* :ref:`ble_peripheral`
-* :ref:`bluetooth-eddystone-sample`
-* :ref:`bluetooth-ibeacon-sample`
+* :zephyr:code-sample:`ble_peripheral`
+* :zephyr:code-sample:`bluetooth_eddystone`
+* :zephyr:code-sample:`bluetooth_ibeacon`
 
 References
 **********

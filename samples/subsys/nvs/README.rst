@@ -22,7 +22,7 @@ Building and Running
 
 This sample can be found under :zephyr_file:`samples/subsys/nvs` in the Zephyr tree.
 
-The sample can be build for several platforms, the following commands build the
+The sample can be built for several platforms, the following commands build the
 application for the nrf51dk/nrf51822 board.
 
 .. zephyr-app-commands::

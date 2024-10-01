@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2024 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra6/r7fa6m4af3cfb.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+#include "ek_ra6m4-pinctrl.dtsi"
+
+/ {
+	model = "Renesas EK-RA6M4";
+	compatible = "renesas,ra6m4", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led1 {
+			gpios = <&ioport4 15 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+		led2: led2 {
+			gpios = <&ioport4 4 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+		led3: led3 {
+			gpios = <&ioport4 0 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&ioport4 {
+	status = "okay";
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(24)>;
+	mosel = <0>;
+	#clock-cells = <0>;
+	status = "okay";
+};
+
+&subclk {
+	status = "okay";
+};
+
+&pll {
+	source = <RA_PLL_SOURCE_MAIN_OSC>;
+	div = <RA_PLL_DIV_3>;
+	mul = <25 0>;
+	status = "okay";
+};
+
+&pclka {
+	clk-src = <RA_CLOCK_SOURCE_PLL>;
+	clk-div = <RA_SYS_CLOCK_DIV_2>;
+	status = "okay";
+};

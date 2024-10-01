@@ -1,7 +1,8 @@
-.. _magn-polling-sample:
+.. zephyr:code-sample:: magn_polling
+   :name: Magnetometer Sensor
+   :relevant-api: sensor_interface
 
-BMC150 Magnetometer Sample
-##########################
+   Get magnetometer data from a magnetometer sensor (polling mode).
 
 Overview
 ********

@@ -10,10 +10,9 @@ zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATE
 
 zephyr_include_directories(.)
 
-zephyr_sources(
-  soc.c
-  flash_clock_setup.c
-  )
+zephyr_sources(soc.c)
+
+zephyr_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_XIP flash_clock_setup.c)
 
 zephyr_sources_ifdef(CONFIG_PM power.c)
 

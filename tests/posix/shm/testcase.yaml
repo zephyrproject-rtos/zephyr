@@ -3,11 +3,10 @@ common:
   tags:
     - posix
     - shm
-  integration_platforms:
-    - qemu_x86
-    - qemu_x86_64
-    - qemu_cortex_a53
-    - qemu_riscv64
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
   platform_exclude:
     # linker_zephyr_pre0.cmd:140: syntax error (??)
     - qemu_xtensa

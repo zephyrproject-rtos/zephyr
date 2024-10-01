@@ -13,7 +13,7 @@
 BUILD_ASSERT(DT_PROP(DT_NODELABEL(tlclk), clock_div) == 1,
 	"Unsupported TLCLK divider");
 
-static int fe310_clock_init(void)
+void soc_early_init_hook(void)
 {
 
 	/*
@@ -55,7 +55,4 @@ static int fe310_clock_init(void)
 	PRCI_REG(PRCI_PLLDIV) = (PLL_FINAL_DIV_BY_1(1) | PLL_FINAL_DIV(0));
 	PRCI_REG(PRCI_PLLCFG) |= PLL_SEL(1);
 	PRCI_REG(PRCI_HFROSCCFG) &= ~ROSC_EN(1);
-	return 0;
 }
-
-SYS_INIT(fe310_clock_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

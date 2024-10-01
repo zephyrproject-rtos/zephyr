@@ -41,6 +41,7 @@
  * memory.  There's no ability to change this offset, it's a magic
  * number from rimage we simply need to honor.
  */
+/* FIXME: most of these macros aren't related to the bootloader */
 #define IMR_BOOT_LDR_MANIFEST_OFFSET	0x42000
 #define IMR_BOOT_LDR_MANIFEST_SIZE	0x6000
 #define IMR_BOOT_LDR_MANIFEST_BASE	(L3_MEM_BASE_ADDR + IMR_BOOT_LDR_MANIFEST_OFFSET)
@@ -61,13 +62,14 @@
 
 #define IMR_BOOT_LDR_BSS_OFFSET		0x110000
 #define IMR_BOOT_LDR_BSS_BASE		(L3_MEM_BASE_ADDR + IMR_BOOT_LDR_BSS_OFFSET)
-#define IMR_BOOT_LDR_BSS_SIZE		0x10000
+#define IMR_BOOT_LDR_BSS_SIZE		0x40000
 
 /* stack to be used at boot, when RAM is not yet powered up */
 #define IMR_BOOT_LDR_STACK_BASE		(IMR_BOOT_LDR_BSS_BASE + IMR_BOOT_LDR_BSS_SIZE)
 #define IMR_BOOT_LDR_STACK_SIZE		0x1000
 
 /* position of L3 heap, size of L3 heap - till end of the L3 memory */
+/* !!! FIXME: L3 heap base MUST be automatically calculated. !!! */
 #define IMR_L3_HEAP_BASE		(IMR_BOOT_LDR_STACK_BASE + IMR_BOOT_LDR_STACK_SIZE)
 #define IMR_L3_HEAP_SIZE		(L3_MEM_SIZE - \
 					(IMR_L3_HEAP_BASE - L3_MEM_BASE_ADDR))

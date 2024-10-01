@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/wb0/stm32wb0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wb05", "st,stm32wb0", "simple-bus";
+	};
+};

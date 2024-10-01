@@ -1,0 +1,48 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx95_m7.dtsi>
+#include "imx95_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX95 EVK board";
+	compatible = "nxp,imx95_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+&lpi2c5 {
+	pinctrl-0 = <&lpi2c5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c7 {
+	pinctrl-0 = <&lpi2c7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};
+
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};

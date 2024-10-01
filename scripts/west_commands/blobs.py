@@ -119,19 +119,43 @@ class Blobs(WestCommand):
         self.ensure_folder(path)
         inst.fetch(url, path)
 
+    # Compare the checksum of a file we've just downloaded
+    # to the digest in blob metadata, warn user if they differ.
+    def verify_blob(self, blob):
+        log.dbg('Verifying blob {module}: {abspath}'.format(**blob))
+
+        status = zephyr_module.get_blob_status(blob['abspath'], blob['sha256'])
+        if status == zephyr_module.BLOB_OUTDATED:
+            log.err(textwrap.dedent(
+                f'''\
+                The checksum of the downloaded file does not match that
+                in the blob metadata:
+                - if it is not certain that the download was successful,
+                  try running 'west blobs fetch {blob['module']}'
+                  to re-download the file
+                - if the error persists, please consider contacting
+                  the maintainers of the module so that they can check
+                  the corresponding blob metadata
+
+                Module: {blob['module']}
+                Blob:   {blob['path']}
+                URL:    {blob['url']}
+                Info:   {blob['description']}'''))
+
     def fetch(self, args):
         blobs = self.get_blobs(args)
         for blob in blobs:
-            if blob['status'] == 'A':
+            if blob['status'] == zephyr_module.BLOB_PRESENT:
                 log.dbg('Blob {module}: {abspath} is up to date'.format(**blob))
                 continue
             log.inf('Fetching blob {module}: {abspath}'.format(**blob))
             self.fetch_blob(blob['url'], blob['abspath'])
+            self.verify_blob(blob)
 
     def clean(self, args):
         blobs = self.get_blobs(args)
         for blob in blobs:
-            if blob['status'] == 'D':
+            if blob['status'] == zephyr_module.BLOB_NOT_PRESENT:
                 log.dbg('Blob {module}: {abspath} not in filesystem'.format(**blob))
                 continue
             log.inf('Deleting blob {module}: {status} {abspath}'.format(**blob))
