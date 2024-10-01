@@ -28,9 +28,9 @@ enum bt_mesh_brg_cfg_state {
 	BT_MESH_BRG_CFG_ENABLED,
 };
 
-/* Briding from Addr1 to Addr2. */
+/* Bridging from Addr1 to Addr2. */
 #define BT_MESH_BRG_CFG_DIR_ONEWAY 1
-/* Bidirectional briging between Addr1 and Addr2. */
+/* Bidirectional bridging between Addr1 and Addr2. */
 #define BT_MESH_BRG_CFG_DIR_TWOWAY 2
 
 /** Bridging Table state entry corresponding to a entry in the Bridging Table. */
