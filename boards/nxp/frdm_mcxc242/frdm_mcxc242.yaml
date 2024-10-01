@@ -17,6 +17,8 @@ toolchain:
 supported:
   - gpio
   - i2c
+  - usb_device
+  - usbd
   - pwm
   - adc
 testing:
