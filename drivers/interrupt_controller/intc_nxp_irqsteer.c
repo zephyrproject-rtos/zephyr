@@ -228,8 +228,11 @@
 #include <fsl_irqsteer.h>
 #include <zephyr/cache.h>
 #include <zephyr/sw_isr_table.h>
+#include <zephyr/logging/log.h>
 
 #include "sw_isr_common.h"
+
+LOG_MODULE_REGISTER(nxp_irqstr);
 
 /* used for driver binding */
 #define DT_DRV_COMPAT nxp_irqsteer_intc
@@ -257,6 +260,8 @@
 
 /* utility macros */
 #define UINT_TO_IRQSTEER(x) ((IRQSTEER_Type *)(x))
+#define DISPATCHER_REGMAP(disp) \
+	(((const struct irqsteer_config *)disp->dev->config)->regmap_phys)
 
 struct irqsteer_config {
 	uint32_t regmap_phys;
@@ -270,6 +275,10 @@ struct irqsteer_dispatcher {
 	uint32_t master_index;
 	/* which interrupt line is the dispatcher tied to? */
 	uint32_t irq;
+	/* reference count for all IRQs aggregated by dispatcher */
+	uint8_t irq_refcnt[CONFIG_MAX_IRQ_PER_AGGREGATOR];
+	/* dispatcher lock */
+	struct k_spinlock lock;
 };
 
 static struct irqsteer_dispatcher dispatchers[] = {
@@ -317,11 +326,71 @@ static int from_zephyr_irq(uint32_t regmap, uint32_t irq, uint32_t master_index)
 	return idx;
 }
 
+static void _irqstr_enable_disable_irq(struct irqsteer_dispatcher *disp,
+				       uint32_t system_irq, bool enable)
+{
+	uint32_t regmap = DISPATCHER_REGMAP(disp);
+
+	if (enable) {
+		IRQSTEER_EnableInterrupt(UINT_TO_IRQSTEER(regmap), system_irq);
+	} else {
+		IRQSTEER_DisableInterrupt(UINT_TO_IRQSTEER(regmap), system_irq);
+	}
+}
+
+static void irqstr_request_irq_unlocked(struct irqsteer_dispatcher *disp,
+					uint32_t zephyr_irq)
+{
+	uint32_t system_irq = from_zephyr_irq(DISPATCHER_REGMAP(disp),
+					      zephyr_irq, disp->master_index);
+
+#ifndef CONFIG_SHARED_INTERRUPTS
+	if (disp->irq_refcnt[zephyr_irq]) {
+		LOG_WRN("irq %d already requested", system_irq);
+		return;
+	}
+#endif /* CONFIG_SHARED_INTERRUPTS */
+
+	if (disp->irq_refcnt[zephyr_irq] == UINT8_MAX) {
+		LOG_WRN("irq %d reference count reached limit", system_irq);
+		return;
+	}
+
+	if (!disp->irq_refcnt[zephyr_irq]) {
+		_irqstr_enable_disable_irq(disp, system_irq, true);
+	}
+
+	disp->irq_refcnt[zephyr_irq]++;
+
+	LOG_DBG("requested irq %d has refcount %d",
+		system_irq, disp->irq_refcnt[zephyr_irq]);
+}
+
+static void irqstr_release_irq_unlocked(struct irqsteer_dispatcher *disp,
+					uint32_t zephyr_irq)
+{
+	uint32_t system_irq = from_zephyr_irq(DISPATCHER_REGMAP(disp),
+					      zephyr_irq, disp->master_index);
+
+	if (!disp->irq_refcnt[zephyr_irq]) {
+		LOG_WRN("irq %d already released", system_irq);
+		return;
+	}
+
+	disp->irq_refcnt[zephyr_irq]--;
+
+	if (!disp->irq_refcnt[zephyr_irq]) {
+		_irqstr_enable_disable_irq(disp, system_irq, false);
+	}
+
+	LOG_DBG("released irq %d has refcount %d",
+		system_irq, disp->irq_refcnt[zephyr_irq]);
+}
+
 void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 {
 	uint32_t parent_irq;
-	int i, system_irq, level2_irq;
-	const struct irqsteer_config *cfg;
+	int i, level2_irq;
 
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
@@ -342,17 +411,12 @@ void z_soc_irq_enable_disable(uint32_t irq, bool enable)
 			continue;
 		}
 
-		cfg = dispatchers[i].dev->config;
-
-		system_irq = from_zephyr_irq(cfg->regmap_phys, level2_irq,
-					     dispatchers[i].master_index);
-
-		if (enable) {
-			IRQSTEER_EnableInterrupt(UINT_TO_IRQSTEER(cfg->regmap_phys),
-						 system_irq);
-		} else {
-			IRQSTEER_DisableInterrupt(UINT_TO_IRQSTEER(cfg->regmap_phys),
-						  system_irq);
+		K_SPINLOCK(&dispatchers[i].lock) {
+			if (enable) {
+				irqstr_request_irq_unlocked(&dispatchers[i], level2_irq);
+			} else {
+				irqstr_release_irq_unlocked(&dispatchers[i], level2_irq);
+			}
 		}
 
 		return;
@@ -372,8 +436,9 @@ void z_soc_irq_disable(uint32_t irq)
 int z_soc_irq_is_enabled(unsigned int irq)
 {
 	uint32_t parent_irq;
-	int i, system_irq, level2_irq;
+	int i;
 	const struct irqsteer_config *cfg;
+	bool enabled;
 
 	if (irq_get_level(irq) == 1) {
 		/* LEVEL 1 interrupts are DSP direct */
@@ -381,7 +446,6 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	}
 
 	parent_irq = irq_parent_level_2(irq);
-	level2_irq = irq_from_level_2(irq);
 
 	/* find dispatcher responsible for this interrupt */
 	for (i = 0; i < ARRAY_SIZE(dispatchers); i++) {
@@ -391,10 +455,11 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 		cfg = dispatchers[i].dev->config;
 
-		system_irq = from_zephyr_irq(cfg->regmap_phys, level2_irq,
-					     dispatchers[i].master_index);
+		K_SPINLOCK(&dispatchers[i].lock) {
+			enabled = dispatchers[i].irq_refcnt[irq_from_level_2(irq)];
+		}
 
-		return IRQSTEER_InterruptIsEnabled(UINT_TO_IRQSTEER(cfg->regmap_phys), system_irq);
+		return enabled;
 	}
 
 	return false;
