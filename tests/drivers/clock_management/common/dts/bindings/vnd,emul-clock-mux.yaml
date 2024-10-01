@@ -1,0 +1,26 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for emulated clock multiplexer node. This multiplexer will select
+  an input clock from the clock nodes provided in the "input" property.
+  The node accepts one specifier, the integer index (0 based) of the input
+  to select.
+
+compatible: "vnd,emul-clock-mux"
+
+include: [clock-node.yaml]
+
+properties:
+  inputs:
+    type: phandles
+    required: true
+    description: |
+      Input clock sources available for this multiplexer.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - multiplexer
