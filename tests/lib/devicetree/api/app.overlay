@@ -415,6 +415,11 @@
 			pinctrl-names = "default", "sleep", "f.o.o2";
 			mboxes = <&test_mbox 1>, <&test_mbox 2>, <&test_mbox_zero_cell>;
 			mbox-names = "tx", "rx", "zero";
+			clock-outputs = <&test_clk_output &test_fixed_clk_output>;
+			clock-output-names = "clk-output", "fixed-clk-output";
+			clock-state-0 = <&test_clk_default &test_fixed_clk_default>;
+			clock-state-1 = <&test_clk_sleep &test_fixed_clk_sleep>;
+			clock-state-names = "default", "sleep";
 		};
 
 		/* there should only be one of these */
@@ -476,11 +481,38 @@
 			compatible = "fixed-clock";
 			clock-frequency = <25000000>;
 			#clock-cells = <0>;
+
+			test_fixed_clk_output: test-fixed-clock-output {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				test_fixed_clk_default: test-fixed-clock-default-state {
+					clock-frequency = <0>;
+				};
+
+				test_fixed_clk_sleep: test-fixed-clock-sleep-state {
+					clock-frequency = <0>;
+				};
+			};
+
 		};
 
 		test_clk: test-clock {
 			compatible = "vnd,clock";
 			#clock-cells = <2>;
+
+			test_clk_output: test-clock-output {
+				compatible = "clock-output";
+				#clock-cells = <0>;
+
+				test_clk_default: test-clock-default-state {
+					clock-frequency = <0>;
+				};
+
+				test_clk_sleep: test-clock-sleep-state {
+					clock-frequency = <0>;
+				};
+			};
 		};
 
 		test_reset: test-reset@abcd1234 {
