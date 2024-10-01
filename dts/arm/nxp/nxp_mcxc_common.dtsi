@@ -213,6 +213,15 @@
 			status = "disabled";
 		};
 
+		usb: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
 		lpuart0: uart@40054000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40054000 0x1000>;
