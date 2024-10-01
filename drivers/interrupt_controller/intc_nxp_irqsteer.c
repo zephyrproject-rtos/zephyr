@@ -229,6 +229,8 @@
 #include <zephyr/cache.h>
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device.h>
 
 #include "sw_isr_common.h"
 
@@ -346,12 +348,20 @@ static void _irqstr_disp_enable_disable(struct irqsteer_dispatcher *disp,
 
 static void _irqstr_disp_get_unlocked(struct irqsteer_dispatcher *disp)
 {
+	int ret;
+
 	if (disp->refcnt == UINT8_MAX) {
 		LOG_WRN("disp for irq %d reference count reached limit", disp->irq);
 		return;
 	}
 
 	if (!disp->refcnt) {
+		ret = pm_device_runtime_get(disp->dev);
+		if (ret < 0) {
+			LOG_ERR("failed to enable PM resources: %d", ret);
+			return;
+		}
+
 		_irqstr_disp_enable_disable(disp, true);
 	}
 
@@ -363,6 +373,8 @@ static void _irqstr_disp_get_unlocked(struct irqsteer_dispatcher *disp)
 
 static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
 {
+	int ret;
+
 	if (!disp->refcnt) {
 		LOG_WRN("disp for irq %d already put", disp->irq);
 		return;
@@ -372,6 +384,12 @@ static void _irqstr_disp_put_unlocked(struct irqsteer_dispatcher *disp)
 
 	if (!disp->refcnt) {
 		_irqstr_disp_enable_disable(disp, false);
+
+		ret = pm_device_runtime_put(disp->dev);
+		if (ret < 0) {
+			LOG_ERR("failed to disable PM resources: %d", ret);
+			return;
+		}
 	}
 
 	LOG_DBG("put on disp for irq %d results in refcnt: %d",
@@ -556,11 +574,18 @@ static void irqsteer_isr_dispatcher(const void *data)
 	}
 }
 
+__maybe_unused static int irqstr_pm_action(const struct device *dev,
+					   enum pm_device_action action)
+{
+	/* nothing to be done here */
+	return 0;
+}
+
 static int irqsteer_init(const struct device *dev)
 {
 	IRQSTEER_REGISTER_DISPATCHERS(DT_NODELABEL(irqsteer));
 
-	return 0;
+	return pm_device_runtime_enable(dev);
 }
 
 
@@ -572,9 +597,10 @@ static struct irqsteer_config irqsteer_config = {
 };
 
 /* assumption: only 1 IRQ_STEER instance */
+PM_DEVICE_DT_INST_DEFINE(0, irqstr_pm_action);
 DEVICE_DT_INST_DEFINE(0,
 		      &irqsteer_init,
-		      NULL,
+		      PM_DEVICE_DT_INST_GET(0),
 		      NULL, &irqsteer_config,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
 		      NULL);
