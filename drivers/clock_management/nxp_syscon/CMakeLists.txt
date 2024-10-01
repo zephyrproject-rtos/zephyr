@@ -8,5 +8,8 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_NXP_SYSCON_MUX nxp_syscon_m
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_NXP_SYSCON_FLEXFRG nxp_syscon_flexfrg.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_NXP_SYSCON_RTCCLK nxp_syscon_rtcclk.c)
 
+# SOC specific PLL drivers
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MANAGEMENT_NXP_LPC55SXX_PLL nxp_lpc55sxx_pll.c)
+
 # Header
 add_clock_management_header_ifdef(CONFIG_CLOCK_MANAGEMENT_NXP_SYSCON nxp_syscon.h)
