@@ -1139,3 +1139,12 @@ test_i2c_scd4x: scd4x@9e {
 	reg = <0x9e>;
 	mode = <0>;
 };
+
+test_i2c_npm2100: npm2100@9f {
+	compatible = "nordic,npm2100";
+	reg = <0x9f>;
+
+	vbat {
+		compatible = "nordic,npm2100-vbat";
+	};
+};
