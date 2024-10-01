@@ -1,0 +1,10 @@
+# Copyright (c) 2024, Rapid Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PUF security IP PUFcc also contains the one time programmable
+  memory region. That region can be accessed using this driver.
+
+compatible: "pufsecurity,otp"
+
+include: [base.yaml]

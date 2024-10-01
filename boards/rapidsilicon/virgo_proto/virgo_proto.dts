@@ -51,7 +51,7 @@
 	status = "okay";
  };
 
- &otp {
+ &pufs_otp {
 	status = "okay";
  };
  

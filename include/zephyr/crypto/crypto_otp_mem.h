@@ -25,6 +25,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/internal/syscall_handler.h>
 
 /**
  * @brief Crypto OTP Mem APIs
@@ -121,6 +122,7 @@ __subsystem struct otp_driver_api {
 	int (*otp_set_lock)(
 					const struct device *dev, 
 					uint16_t otp_slot,
+                    uint16_t len,
 					enum crypto_otp_set_lock lock
 				   );
 
@@ -148,14 +150,17 @@ __subsystem struct otp_driver_api {
  *
  * @return bitmask of supported options.
  */
-__syscall int otp_query_hw_caps(const struct device *dev);
 
-static inline int z_impl_otp_query_hw_aps(const struct device *dev)
+static inline int otp_query_hw_aps(const struct device *dev)
 {
 	struct otp_driver_api *api;
 	int tmp;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_hw_caps == NULL) {
+		return -ENOSYS;
+	}
 
 	tmp = api->otp_hw_caps(dev);
 
@@ -182,20 +187,19 @@ static inline int z_impl_otp_query_hw_aps(const struct device *dev)
  *
  * @return error code.
  */	
-__syscall int otp_info(
-						const struct device *dev,
-						uint16_t *totalSlots,
-						uint16_t *bytesPerSlot
-					 );
-static inline int z_impl_otp_info(
-									const struct device *dev,
-									uint16_t *totalSlots,
-									uint16_t *bytesPerSlot
-								 )
+static inline int otp_info(
+							const struct device *dev,
+							uint16_t *totalSlots,
+							uint16_t *bytesPerSlot
+						  )
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_info == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->otp_info(dev, totalSlots, bytesPerSlot);
 }
@@ -212,22 +216,20 @@ static inline int z_impl_otp_info(
  *
  * @return error code.
  */	
-__syscall int otp_read(
-						const struct device *dev, 
-						uint16_t otp_slot, 
-						uint8_t *data, 
-						uint32_t len
-					 );
-static inline int z_impl_otp_read(
-									const struct device *dev, 
-									uint16_t otp_slot, 
-									uint8_t *data, 
-									uint32_t len
-								 )
+static inline int otp_read(
+							const struct device *dev, 
+							uint16_t otp_slot, 
+							uint8_t *data, 
+							uint32_t len
+						  )
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_read == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->otp_read(dev, otp_slot, data, len);
 }
@@ -244,22 +246,20 @@ static inline int z_impl_otp_read(
  *
  * @return error code.
  */	
-__syscall int otp_write(
-						const struct device *dev,
-						uint16_t otp_slot,
-						uint8_t *data,
-						uint32_t len
-					   );
-static inline int z_impl_otp_write(
-									const struct device *dev, 
-									uint16_t otp_slot, 
-									uint8_t *data, 
-									uint32_t len
-								  )
+static inline int otp_write(
+								const struct device *dev, 
+								uint16_t otp_slot, 
+								uint8_t *data, 
+								uint32_t len
+						   )
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_write == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->otp_write(dev, otp_slot, data, len);
 }						  
@@ -274,18 +274,18 @@ static inline int z_impl_otp_write(
  *
  * @return error code.
  */	
-__syscall int otp_zeroize(
-						  const struct device *dev,
-						  uint16_t otp_slot
-						 );
-static inline int z_impl_otp_zeoirze(
-										const struct device *dev,
-										uint16_t otp_slot
-									)	
+static inline int otp_zeoirze(
+								const struct device *dev,
+								uint16_t otp_slot
+							 )	
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_zeroize == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->otp_zeroize(dev, otp_slot);
 }														
@@ -302,22 +302,22 @@ static inline int z_impl_otp_zeoirze(
  *
  * @return error code.
  */	
-__syscall int otp_set_lock(
-							const struct device *dev,
-							uint16_t otp_slot,
-							enum crypto_otp_set_lock lock
-						  );
-static inline int z_impl_otp_set_lock(
-										const struct device *dev,
-										uint16_t otp_slot,
-										enum crypto_otp_set_lock lock
-									 )
+static inline int otp_set_lock(
+								const struct device *dev,
+								uint16_t otp_slot,
+                                uint16_t len,
+								enum crypto_otp_set_lock lock
+							 )
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
 
-	return api->otp_set_lock(dev, otp_slot, lock);
+	if (api->otp_set_lock == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->otp_set_lock(dev, otp_slot, len, lock);
 }								
 
 /**
@@ -332,20 +332,19 @@ static inline int z_impl_otp_set_lock(
  *
  * @return error code.
  */	
-__syscall int otp_get_lock(
-							const struct device *dev,
-							uint16_t otp_slot,
-							enum crypto_otp_set_lock *lock
-						  );
-static inline int z_impl_otp_get_lock(
-									const struct device *dev,
-									uint16_t otp_slot,
-									enum crypto_otp_set_lock *lock
-								)
+static inline int otp_get_lock(
+								const struct device *dev,
+								uint16_t otp_slot,
+								enum crypto_otp_set_lock *lock
+							  )
 {
 	struct otp_driver_api *api;
 
 	api = (struct otp_driver_api *) dev->api;
+
+	if (api->otp_get_lock == NULL) {
+		return -ENOSYS;
+	}
 
 	return api->otp_get_lock(dev, otp_slot, lock);
 }

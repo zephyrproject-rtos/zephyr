@@ -10,16 +10,16 @@ menuconfig PUFCC_SECURITY
 
 	if PUFCC_SECURITY
 
-		# config CRYPTO_PUF_SECURITY
-		# 	bool "PUF security Cryptographic Accelerator driver"
-		# 	default y
-		# 	depends on DT_HAS_PUFSECURITY_PUFCC_ENABLED
-		# 	help
-		# 		Enable PUF Security based Cryptographic Accelerator driver.
+		config CRYPTO_PUF_SECURITY
+			bool "PUF security Cryptographic Accelerator driver"
+			default n
+			depends on DT_HAS_PUFSECURITY_PUFCC_ENABLED
+			help
+				Enable PUF Security based Cryptographic Accelerator driver.
 
 		config CRYPTO_PUF_SECURITY_OTP
 			bool "PUF security One Time Programmable Memory"
-			default y
+			default n
 			depends on DT_HAS_PUFSECURITY_OTP_ENABLED
 			help
 				Enable PUF Security based One Time Programmable Memory.

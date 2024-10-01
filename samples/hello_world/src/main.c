@@ -280,6 +280,20 @@ int main(void)
 	const struct device *flash = DEVICE_DT_GET(DT_NODELABEL(m25p32));
 	const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma0));
 	const struct device *pit = DEVICE_DT_GET(DT_NODELABEL(pit0));
+	const struct device *pufs = DEVICE_DT_GET(DT_NODELABEL(pufs));
+	const struct device *pufs_otp = DEVICE_DT_GET(DT_NODELABEL(pufs_otp));
+
+	if((pufs == NULL) || (!device_is_ready(pufs))) {
+		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
+	} else {
+		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
+	}
+
+	if((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
+		printf("%s pufs_otp has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
+	} else {
+		printf("%s pufs_otp Object is Created %s\n", ATTR_INF, ATTR_RST);
+	}
 
 	if((pvt == NULL) || (!device_is_ready(pvt))) {
 		printf("%s pvt has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
@@ -309,7 +323,7 @@ int main(void)
 	}
 
 	if((pit == NULL) || !device_is_ready(pit)) {
-		printf("%s flash has status disabled or driver is not initialized...%s\n", ATTR_ERR,ATTR_RST);
+		printf("%s pit has status disabled or driver is not initialized...%s\n", ATTR_ERR,ATTR_RST);
 	} else {
 		CounterTest(pit);
 	}

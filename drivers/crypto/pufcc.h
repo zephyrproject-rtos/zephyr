@@ -164,6 +164,9 @@ enum pufcc_otp_slot {
   PUFCC_OTPKEY_29,  // OTP key slot 29, 256 bits
   PUFCC_OTPKEY_30,  // OTP key slot 30, 256 bits
   PUFCC_OTPKEY_31,  // OTP key slot 31, 256 bits
+#ifdef RS_RTOS_PORT
+  PUFCC_TOTAL_SLOTS // OTP Number of slots.
+#endif
 };
 
 // OTP lock types
