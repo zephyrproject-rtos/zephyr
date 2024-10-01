@@ -700,7 +700,7 @@ static void adin2111_offload_thread(void *p1, void *p2, void *p3)
 					goto continue_unlock;
 				}
 			}
-			if (status1 & ADIN2111_STATUS1_P2_RX_RDY) {
+			if ((status1 & ADIN2111_STATUS1_P2_RX_RDY ) && is_adin2111) {
 				ret = eth_adin2111_oa_data_read(dev, 1);
 				if (ret < 0) {
 					goto continue_unlock;
