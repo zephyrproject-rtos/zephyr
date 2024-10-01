@@ -93,7 +93,7 @@ struct llext_symtable {
 #define Z_LL_EXTENSION_SYMBOL(x)						\
 	static const struct llext_const_symbol					\
 			Z_GENERIC_SECTION(".exported_sym") __used		\
-			x ## _sym = {						\
+			__llext_sym_ ## x = {					\
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
 #else
@@ -124,13 +124,15 @@ struct llext_symtable {
 #define Z_EXPORT_SYMBOL(x)							\
 	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
 		x ## _sym_name[] = STRINGIFY(x);				\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
+					     __llext_sym_ ## x) = {	        \
 		.name = x ## _sym_name, .addr = (const void *)&x,		\
 	}
 #elif defined(CONFIG_LLEXT)
 /* LLEXT application: export symbols */
 #define Z_EXPORT_SYMBOL(x)							\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
+					     __llext_sym_ ## x) = {	        \
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
 #else
