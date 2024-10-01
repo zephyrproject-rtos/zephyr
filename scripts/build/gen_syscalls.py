@@ -159,11 +159,16 @@ syscall_tracer_void_template = """
 
 
 exported_template = """
-/* Export syscalls for extensions */
-static void * const no_handler = NULL;
+/*
+ * This symbol is placed at address 0 by llext-sections.ld. Its value and
+ * type is not important, we are only interested in its location
+ */
+static void * const no_syscall_impl Z_GENERIC_SECTION(llext_no_syscall_impl);
 
-/* Weak references, if something is not found by the linker, it will be NULL
- * and simply fail during extension load
+/*
+ * Weak references to all syscall implementations. Those not found by the
+ * linker outside this file will be exported as NULL and simply fail when
+ * an extension requiring them is loaded.
  */
 %s
 
@@ -495,7 +500,7 @@ def main():
     if args.syscall_export_llext:
         with open(args.syscall_export_llext, "w") as fp:
             # Export symbols for emitted syscalls
-            weak_refs = "\n".join("extern __weak ALIAS_OF(no_handler) void * const %s;"
+            weak_refs = "\n".join("extern __weak ALIAS_OF(no_syscall_impl) void * const %s;"
                                   % e for e in exported)
             exported_symbols = "\n".join("EXPORT_SYMBOL(%s);"
                                          % e for e in exported)
