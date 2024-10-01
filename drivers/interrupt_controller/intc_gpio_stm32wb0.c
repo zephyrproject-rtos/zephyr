@@ -268,11 +268,11 @@ void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t tr
 }
 
 int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
-					stm32_gpio_irq_cb_t cb, void *data)
+					stm32_gpio_irq_cb_t cb, void *user)
 {
 	struct gpio_irq_cb_wrp *cb_wrp = irq_cb_wrp_for_line(line);
 
-	if ((cb_wrp->fn == cb) && (cb_wrp->data == data)) {
+	if ((cb_wrp->fn == cb) && (cb_wrp->data == user)) {
 		return 0;
 	}
 
@@ -282,7 +282,7 @@ int stm32_gpio_intc_set_irq_callback(stm32_gpio_irq_line_t line,
 	}
 
 	cb_wrp->fn = cb;
-	cb_wrp->data = data;
+	cb_wrp->data = user;
 
 	return 0;
 }
