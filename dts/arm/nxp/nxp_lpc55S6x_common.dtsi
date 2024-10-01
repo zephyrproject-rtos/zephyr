@@ -503,3 +503,5 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+#include "nxp_lpc55Sxx_clocks.dtsi"
