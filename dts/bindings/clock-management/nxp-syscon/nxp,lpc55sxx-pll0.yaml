@@ -1,0 +1,43 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC SYSCON LPC55Sxx PLL0. The node configures PLL0 on the LPC55Sxx series,
+  which offers a spread spectrum generator. The node accepts nine specifiers,
+  which have the following meanings:
+  - frequency: output frequency (before postdiv) this PLL will generate.
+    Set to 0 to power down.
+  - ndec: PLL pre divider setting
+  - mdec: If nonzero, sets PLL0 to use provided MDEC value in normal mode
+  - selr: Bandwidth select R value. Should be 0 for normal applications
+  - seli: Bandwidth select I value. See reference manual to calculate this
+  - selp: Bandwidth select P value. See reference manual to calculate this
+  - sscg_en: If nonzero, use PLL0 in spread spectrum mode.
+  - sscg0: sets SSCG0 register directly when sscg_en is nonzero
+  - sscg1: sets SSCG1 register directly when sscg_en is nonzero
+  Note that for most applications, the PLL can be used with sscg_en set to 0.
+  In this mode, the PLL operates like a fractional PLL, with the following
+  output equation: (input_clock * (mdec / ndec))
+
+compatible: "nxp,lpc55sxx-pll0"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: PLL0CTRL register address for this block
+
+  "#clock-cells":
+    const: 9
+
+clock-cells:
+  - frequency
+  - ndec
+  - mdec
+  - selr
+  - seli
+  - selp
+  - sscg_en
+  - sscg0
+  - sscg1
