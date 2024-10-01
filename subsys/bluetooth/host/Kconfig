@@ -129,6 +129,35 @@ config BT_DRIVER_RX_HIGH_PRIO
 	int
 	default 6
 
+config BT_CONN_TX_NOTIFY_WQ
+	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
+	depends on BT_CONN_TX
+	select EXPERIMENTAL
+	help
+	  Use a separate workqueue instead of system workqueue for
+	  bt_conn_tx_notify processing. The option can be used to make Bluetooth
+	  stack more independent from the system workqueue.
+
+if BT_CONN_TX_NOTIFY_WQ
+
+config BT_CONN_TX_NOTIFY_WQ_STACK_SIZE
+	int "Stack size of workqueue for connection TX notify processing"
+	default SYSTEM_WORKQUEUE_STACK_SIZE
+
+config BT_CONN_TX_NOTIFY_WQ_PRIO
+	int "Cooperative priority of workqueue for connection TX notify processing"
+	default 8
+
+config BT_CONN_TX_NOTIFY_WQ_INIT_PRIORITY
+	int "Init priority of workqueue for connection TX notify processing"
+	default 50
+	help
+	  The connection TX notify processing workqueue is initialized during
+	  system initialization (at POST_KERNEL level). The Kconfig option
+	  controls the initialization priority within level.
+
+endif # BT_CONN_TX_NOTIFY_WQ
+
 menu "Bluetooth Host"
 
 if BT_HCI_HOST
