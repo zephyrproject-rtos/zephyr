@@ -3,7 +3,7 @@
 
 # Common fields for CPUs
 
-include: base.yaml
+include: [base.yaml, clock-device.yaml]
 
 properties:
   clock-frequency:
