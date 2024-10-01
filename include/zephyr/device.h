@@ -208,7 +208,7 @@ typedef int16_t device_handle_t;
 			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
 			__VA_ARGS__)                                           \
-	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES, (; Z_DEVICE_EXPORT(node_id)))  \
+	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES, (Z_DEVICE_EXPORT(node_id);))
 
 /**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
