@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
 # Copyright (c) 2022, CSIRO
+# Copyright 2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -79,6 +80,29 @@ class DeviceOrdinals(_Symbol):
     def ordinals(self):
         return self._ordinals_split
 
+class ClockOrdinals(_Symbol):
+    """
+    Represents information about clock children.
+    """
+    def __init__(self, elf, sym, clock_ords):
+        super().__init__(elf, sym)
+        format = "<" if self.elf.little_endian else ">"
+        format += "{:d}h".format(len(self.data) // 2)
+        self._ordinals = struct.unpack(format, self.data)
+        self._handles = []
+        for ordinal in self._ordinals:
+            # Find ordinal handle
+            try:
+                offset = clock_ords.index(ordinal)
+                self._handles.append(offset + 1)
+            except ValueError:
+                # Ordinal was not found
+                pass
+
+    @property
+    def handles(self):
+        return self._handles
+
 class Device(_Symbol):
     """
     Represents information about a device object and its references to other objects.
@@ -119,7 +143,7 @@ class Device(_Symbol):
 
 class ZephyrElf:
     """
-    Represents information about devices in an elf file.
+    Represents information about devices and clocks in an elf file.
     """
     def __init__(self, kernel, edt, device_start_symbol):
         self.elf = ELFFile(open(kernel, "rb"))
@@ -128,6 +152,7 @@ class ZephyrElf:
         self.devices = []
         self.ld_consts = self._symbols_find_value(set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts]))
         self._device_parse_and_link()
+        self._clock_parse_and_link()
 
     @property
     def little_endian(self):
@@ -286,3 +311,24 @@ class ZephyrElf:
             for sup in sorted(dev.devs_supports):
                 dot.edge(str(dev.ordinal), str(sup.ordinal))
         return dot
+
+    def _clock_parse_and_link(self):
+        """
+        Parses clock dependency definitions within Zephyr tree, and
+        resolves clock ordinal numbers to clock objects
+        """
+        # Find offsets of all linked clock objects
+        clock_offsets = {}
+        def _on_clock(sym):
+            ord_num = int(sym.name.replace('__clock_clk_dts_ord_', ''))
+            clock_offsets[sym.entry.st_value] = ord_num
+        self._object_find_named('__clock_clk_dts_ord', _on_clock)
+        # Sort clock objects by address for handle calculation
+        sorted_offsets = dict(sorted(clock_offsets.items()))
+        # Find all ordinal arrays
+        self.clock_ordinal_arrays = {}
+        def _on_ordinal(sym):
+            ord_num = int(sym.name.replace('__clock_children_clk_dts_ord_', ''))
+            self.clock_ordinal_arrays[ord_num] = ClockOrdinals(self, sym,
+                                                    list(sorted_offsets.values()))
+        self._object_find_named('__clock_children_', _on_ordinal)

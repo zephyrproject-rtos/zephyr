@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <zephyr/linker/iterable_sections.h>
+#include <zephyr/devicetree.h>
 
 #if defined(CONFIG_EC_HOST_CMD)
 	ITERABLE_SECTION_ROM(ec_host_cmd_handler, Z_LINK_ITERABLE_SUBALIGN)
@@ -71,4 +72,21 @@
 
 #if defined(CONFIG_GNSS_RTK)
 	ITERABLE_SECTION_ROM(gnss_rtk_data_callback, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_CLOCK_MANAGEMENT)
+	#define DT_CLOCK_OUTPUT_SECTION(node)                                      \
+		_CONCAT(_CONCAT(_clk_output_, DT_DEP_ORD(node)), _list_start) = .; \
+		*(SORT(_CONCAT(_CONCAT(.clock_output_, DT_DEP_ORD(node)),*)))      \
+		_CONCAT(_CONCAT(_clk_output_, DT_DEP_ORD(node)), _list_end) = .;
+	SECTION_PROLOGUE(clock_nodes,,)
+	{
+		_clk_list_start = .;
+		_clk_root_list_start = .;
+		*(SORT(.clk_node_root*))
+		_clk_root_list_end = .;
+		*(SORT(.clk_node*))
+		_clk_list_end = .;
+		DT_FOREACH_STATUS_OKAY(clock_output, DT_CLOCK_OUTPUT_SECTION)
+	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
