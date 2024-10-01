@@ -23,6 +23,7 @@
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
+#include <zephyr/drivers/clock_management.h>
 #ifdef CONFIG_GPIO_MCUX_LPC
 #include <fsl_pint.h>
 #endif
@@ -35,11 +36,10 @@
 #include <fsl_vref.h>
 #endif
 
+#define DT_DRV_COMPAT arm_cortex_m33f
+
 /* System clock frequency */
 extern uint32_t SystemCoreClock;
-
-/*Should be in the range of 12MHz to 32MHz */
-static uint32_t ExternalClockFrequency;
 
 
 #define CTIMER_CLOCK_SOURCE(node_id) \
@@ -73,23 +73,77 @@ const pll_setup_t pll1Setup = {
 #endif
 
 /**
- *
- * @brief Initialize the system clock
- *
+ * @brief Setup core clocks
  */
+#ifdef CONFIG_CLOCK_MANAGEMENT
+CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(0);
 
-static ALWAYS_INLINE void clock_init(void)
+static const struct clock_output *cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+
+static void change_core_clock(uint32_t new_rate)
 {
-	ExternalClockFrequency = 0;
+	/* Set voltage for new frequency */
+	POWER_SetVoltageForFreq(new_rate);
+	/* Set flash cycles for new clock*/
+	CLOCK_SetFLASHAccessCyclesForFreq(new_rate);
+	SystemCoreClock = new_rate;
+}
 
-#if defined(CONFIG_SOC_LPC55S36)
-	/* Power Management Controller initialization */
-	POWER_PowerInit();
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+
+static int core_clock_change_cb(const struct clock_management_event *ev, const void *data)
+{
+	ARG_UNUSED(data);
+
+	if (ev->new_rate == 0) {
+		return -ENOTSUP;
+	}
+
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	if (ev->type == CLOCK_MANAGEMENT_PRE_RATE_CHANGE &&
+	   (ev->new_rate > ev->old_rate)) {
+		/* Clock frequency will rise */
+		change_core_clock(ev->new_rate);
+	} else if (ev->type == CLOCK_MANAGEMENT_POST_RATE_CHANGE &&
+	    (ev->new_rate < ev->old_rate)) {
+		change_core_clock(ev->new_rate);
+	}
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
+	return 0;
+}
+
+#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
+
+static void core_clock_init(void)
+{
+	clock_management_state_t default_state =
+		CLOCK_MANAGEMENT_DT_INST_GET_STATE(0, default, default);
+	int new_rate;
+	/* Enable Analog Control module */
+	SYSCON->PRESETCTRLCLR[2] = (1UL << SYSCON_PRESETCTRL2_ANALOG_CTRL_RST_SHIFT);
+	SYSCON->AHBCLKCTRLSET[2] = SYSCON_AHBCLKCTRL2_ANALOG_CTRL_MASK;
+	/* Power up the FRO192M */
+	POWER_DisablePD(kPDRUNCFG_PD_FRO192M);
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	clock_management_set_callback(cpu_clock, core_clock_change_cb, NULL);
+#else
+	change_core_clock(SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
 #endif
-
+	new_rate = clock_management_apply_state(cpu_clock, default_state);
+	change_core_clock(new_rate);
+	clock_management_disable_unused();
+}
+#else /* !CONFIG_CLOCK_MANAGEMENT */
 #if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
 	defined(CONFIG_SOC_LPC55S26) || defined(CONFIG_SOC_LPC55S28) || \
 	defined(CONFIG_SOC_LPC55S36) || defined(CONFIG_SOC_LPC55S69_CPU0)
+static void core_clock_init(void)
+{
+#if defined(CONFIG_INIT_PLL0) || defined(CONFIG_INIT_PLL1)
+	/*Should be in the range of 12MHz to 32MHz */
+	uint32_t ExternalClockFrequency = 0;
+#endif
+
 	/* Set up the clock sources */
 	/* Configure FRO192M */
 	/* Ensure FRO is on  */
@@ -172,6 +226,29 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Set up dividers */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U, false);
+}
+#endif /* !CONFIG_CLOCK_MANAGEMENT */
+
+#endif
+/**
+ *
+ * @brief Initialize the system clock
+ *
+ */
+
+static ALWAYS_INLINE void clock_init(void)
+{
+
+#if defined(CONFIG_SOC_LPC55S36)
+	/* Power Management Controller initialization */
+	POWER_PowerInit();
+#endif
+
+#if defined(CONFIG_SOC_LPC55S06) || defined(CONFIG_SOC_LPC55S16) || \
+	defined(CONFIG_SOC_LPC55S28) || defined(CONFIG_SOC_LPC55S36) || \
+	defined(CONFIG_SOC_LPC55S69_CPU0)
+
+	core_clock_init();
 
 	/* Enables the clock for the I/O controller.: Enable Clock. */
 	CLOCK_EnableClock(kCLOCK_Iocon);
