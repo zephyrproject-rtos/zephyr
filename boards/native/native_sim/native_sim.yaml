@@ -12,6 +12,7 @@ toolchain:
 supported:
   - can
   - counter
+  - clock_management
   - display
   - dma
   - eeprom
