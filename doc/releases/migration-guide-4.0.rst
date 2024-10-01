@@ -312,6 +312,11 @@ Bluetooth Audio
   to use these new APIs.
   (:github:`78751`)
 
+* The Telephone Bearer Service (TBS) and Generic Telephone Bearer Service (GTBS) shall now be
+  registered dynamically at runtime with :c:func:`bt_tbs_register_bearer`. The services can also be
+  unregistered with :c:func:`bt_tbs_unregister_bearer`.
+  (:github:`76108`)
+
 Bluetooth Classic
 =================
 
