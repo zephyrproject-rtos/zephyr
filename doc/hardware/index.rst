@@ -10,6 +10,7 @@ Hardware Support
    barriers/index.rst
    cache/guide.rst
    cache/index.rst
+   clock_management/index.rst
    emulator/index.rst
    emulator/bus_emulators.rst
    peripherals/index.rst
