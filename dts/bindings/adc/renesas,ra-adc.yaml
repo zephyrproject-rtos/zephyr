@@ -24,5 +24,18 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  channel-available-mask:
+    type: int
+    required: true
+    description: Mask for ADC channels existed in each board
+
+  average-count:
+    type: int
+    default: 1
+    enum: [1, 2, 4, 8, 16]
+    description: The conversion count of the average mode
+      The ADC module will take multiple samples of an analog signal
+      and averages them to reduce noise and enhance accuracy
+
 io-channel-cells:
   - input
