@@ -19,6 +19,7 @@ supported:
   - gpio
   - i2c
   - pwm
+  - retained_mem
   - spi
   - watchdog
   - usbd
