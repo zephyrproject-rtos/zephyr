@@ -29,3 +29,7 @@ dut: &uart135 {
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&cpuapp_dma_region>;
 };
+
+&cpu {
+	/delete-property/ cpu-power-states;
+};
