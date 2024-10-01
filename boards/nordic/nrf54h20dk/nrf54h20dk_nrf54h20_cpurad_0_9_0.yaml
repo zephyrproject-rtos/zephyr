@@ -16,4 +16,5 @@ supported:
   - counter
   - gpio
   - pwm
+  - retained_mem
   - spi
