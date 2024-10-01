@@ -1309,14 +1309,13 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	free_space = 0;
-	for (uint16_t i = 1; i < fs->sector_count; i++) {
-		/*
-		 * There is always a closing ATE and a reserved ATE for
-		 * deletion in each sector
-		 */
-		free_space += (fs->sector_size - (2 * ate_size));
-	}
+	/*
+	 * There is always a closing ATE and a reserved ATE for
+	 * deletion in each sector.
+	 * Take into account one less sector because it is reserved for the
+	 * garbage collection.
+	 */
+	free_space = (fs->sector_count - 1) * (fs->sector_size - (2 * ate_size));
 
 	step_addr = fs->ate_wra;
 
