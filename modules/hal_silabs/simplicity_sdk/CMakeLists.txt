@@ -92,8 +92,6 @@ zephyr_include_directories(
   ${COMMON_DIR}/inc
   ${EMLIB_DIR}/inc
   ${PERIPHERAL_DIR}/inc
-  ${SERVICE_DIR}/device_init/config/s2
-  ${SERVICE_DIR}/device_init/config/s2/sdid${CONFIG_SOC_GECKO_SDID}
   ${SERVICE_DIR}/clock_manager/inc
   ${SERVICE_DIR}/device_init/inc
   ${SERVICE_DIR}/device_manager/inc
@@ -130,6 +128,8 @@ zephyr_library_sources(
   ${EMLIB_DIR}/src/em_system.c
   ${SERVICE_DIR}/clock_manager/src/sl_clock_manager.c
   ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_hal_s2.c
+  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init.c
+  ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
   ${SERVICE_DIR}/device_manager/devices/sl_device_peripheral_hal_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}.c
   ${SERVICE_DIR}/device_manager/gpios/sl_device_gpio_common.c
   ${SERVICE_DIR}/device_manager/src/sl_device_clock.c
@@ -153,10 +153,6 @@ zephyr_library_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES2_DCDC_ENABLED
 )
 endif()
 zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_DEV_INIT
-  ${SERVICE_DIR}/device_init/src/sl_device_init_dpll_s2.c
-  ${SERVICE_DIR}/device_init/src/sl_device_init_hfrco.c
-  ${SERVICE_DIR}/device_init/src/sl_device_init_hfxo_s2.c
-  ${SERVICE_DIR}/device_init/src/sl_device_init_nvic.c
   ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
   ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s2.c
   ${SERVICE_DIR}/hfxo_manager/src/sl_hfxo_manager.c
