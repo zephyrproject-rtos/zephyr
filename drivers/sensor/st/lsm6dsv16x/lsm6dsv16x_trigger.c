@@ -37,7 +37,7 @@ static int lsm6dsv16x_enable_xl_int(const struct device *dev, int enable)
 	}
 
 	/* set interrupt */
-	if (cfg->drdy_pin == 1) {
+	if ((cfg->drdy_pin == 1) || (ON_I3C_BUS(cfg) && (!I3C_INT_PIN(cfg)))) {
 		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
@@ -83,7 +83,7 @@ static int lsm6dsv16x_enable_g_int(const struct device *dev, int enable)
 	}
 
 	/* set interrupt */
-	if (cfg->drdy_pin == 1) {
+	if ((cfg->drdy_pin == 1) || (ON_I3C_BUS(cfg) && (!I3C_INT_PIN(cfg)))) {
 		lsm6dsv16x_pin_int_route_t val = {};
 
 		ret = lsm6dsv16x_pin_int1_route_get(ctx, &val);
@@ -174,8 +174,13 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 	const struct lsm6dsv16x_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lsm6dsv16x_data_ready_t status;
+	int ret;
 
 	while (1) {
+		if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
+			break;
+		}
+
 		if (lsm6dsv16x_flag_data_ready_get(ctx, &status) < 0) {
 			LOG_DBG("failed reading status reg");
 			return;
@@ -195,30 +200,43 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 
 	}
 
-	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
-					GPIO_INT_EDGE_TO_ACTIVE);
+	if (!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) {
+		ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
+						GPIO_INT_EDGE_TO_ACTIVE);
+		if (ret < 0) {
+			LOG_ERR("%s: Not able to configure pin_int", dev->name);
+		}
+	}
 }
 #endif /* CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD || CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD */
+
+static void lsm6dsv16x_intr_callback(struct lsm6dsv16x_data *lsm6dsv16x)
+{
+#if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
+	k_sem_give(&lsm6dsv16x->intr_sem);
+#elif defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&lsm6dsv16x->work);
+#endif /* CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD */
+	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
+		lsm6dsv16x_stream_irq_handler(lsm6dsv16x->dev);
+	}
+}
 
 static void lsm6dsv16x_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, uint32_t pins)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x =
 		CONTAINER_OF(cb, struct lsm6dsv16x_data, gpio_cb);
+	int ret;
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
-
-	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
-		lsm6dsv16x_stream_irq_handler(lsm6dsv16x->dev);
+	ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INT_DISABLE);
+	if (ret < 0) {
+		LOG_ERR("%s: Not able to configure pin_int", dev->name);
 	}
 
-#if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
-	k_sem_give(&lsm6dsv16x->gpio_sem);
-#elif defined(CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&lsm6dsv16x->work);
-#endif /* CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD */
+	lsm6dsv16x_intr_callback(lsm6dsv16x);
 }
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD
@@ -230,7 +248,7 @@ static void lsm6dsv16x_thread(void *p1, void *p2, void *p3)
 	struct lsm6dsv16x_data *lsm6dsv16x = p1;
 
 	while (1) {
-		k_sem_take(&lsm6dsv16x->gpio_sem, K_FOREVER);
+		k_sem_take(&lsm6dsv16x->intr_sem, K_FOREVER);
 		lsm6dsv16x_handle_interrupt(lsm6dsv16x->dev);
 	}
 }
@@ -246,6 +264,47 @@ static void lsm6dsv16x_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LSM6DSV16X_TRIGGER_GLOBAL_THREAD */
 
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+static int lsm6dsv16x_ibi_cb(struct i3c_device_desc *target,
+			  struct i3c_ibi_payload *payload)
+{
+	const struct device *dev = target->dev;
+	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
+
+	/*
+	 * The IBI Payload consist of the following 10 bytes :
+	 * 1st byte: MDB
+	 * - MDB[0]: FIFO interrupts (FIFO_WTM_IA, FIFO_OVR_IA, FIFO_FULL_IA, CONTER_BDR_IA)
+	 * - MDB[1]: Physical interrupts (XLDS, GDA, TDA, XLDA_OIS, GDA_OIS)
+	 * - MDB[2]: Basic interrupts (SLEEP_CHANGE_IA, D6D_IA, DOUBLE_TAP, SINGLE_TAP, WU_IA,
+	 *           FF_IA)
+	 * - MDB[3]: SHUB DRDY (SENS_HUB_ENDOP)
+	 * - MDB[4]: Advanced Function interrupt group
+	 * - MDB[7:5]: 3'b000: Vendor Definied
+	 *             3'b100: Timing Information
+	 * 2nd byte: FIFO_STATUS1
+	 * 3rd byte: FIFO_STATUS2
+	 * 4th byte: ALL_INT_SRC
+	 * 5th byte: STATUS_REG
+	 * 6th byte: STATUS_REG_OIS
+	 * 7th byte: STATUS_MASTER_MAIN
+	 * 8th byte: EMB_FUNC_STATUS
+	 * 9th byte: FSM_STATUS
+	 * 10th byte: MLC_STATUS
+	 */
+	if (payload->payload_len != sizeof(lsm6dsv16x->ibi_payload)) {
+		LOG_ERR("Invalid IBI payload length");
+		return -EINVAL;
+	}
+
+	memcpy(&lsm6dsv16x->ibi_payload, payload->payload, payload->payload_len);
+
+	lsm6dsv16x_intr_callback(lsm6dsv16x);
+
+	return 0;
+}
+#endif
+
 int lsm6dsv16x_init_interrupt(const struct device *dev)
 {
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
@@ -258,13 +317,17 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 			(struct gpio_dt_spec *)&cfg->int2_gpio;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
-	if (!gpio_is_ready_dt(lsm6dsv16x->drdy_gpio)) {
+	if ((!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) && !gpio_is_ready_dt(lsm6dsv16x->drdy_gpio)) {
 		LOG_ERR("Cannot get pointer to drdy_gpio device");
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_LSM6DSV16X_STREAM)) {
+		lsm6dsv16x_stream_irq_handler(lsm6dsv16x->dev);
+	}
+
 #if defined(CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD)
-	k_sem_init(&lsm6dsv16x->gpio_sem, 0, K_SEM_MAX_LIMIT);
+	k_sem_init(&lsm6dsv16x->intr_sem, 0, K_SEM_MAX_LIMIT);
 
 	k_thread_create(&lsm6dsv16x->thread, lsm6dsv16x->thread_stack,
 			CONFIG_LSM6DSV16X_THREAD_STACK_SIZE,
@@ -276,32 +339,82 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 	lsm6dsv16x->work.handler = lsm6dsv16x_work_cb;
 #endif /* CONFIG_LSM6DSV16X_TRIGGER_OWN_THREAD */
 
-	ret = gpio_pin_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INPUT);
-	if (ret < 0) {
-		LOG_DBG("Could not configure gpio");
-		return ret;
+	if (!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) {
+		ret = gpio_pin_configure_dt(lsm6dsv16x->drdy_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_DBG("Could not configure gpio");
+			return ret;
+		}
+
+		gpio_init_callback(&lsm6dsv16x->gpio_cb,
+				lsm6dsv16x_gpio_callback,
+				BIT(lsm6dsv16x->drdy_gpio->pin));
+
+		if (gpio_add_callback(lsm6dsv16x->drdy_gpio->port, &lsm6dsv16x->gpio_cb) < 0) {
+			LOG_DBG("Could not set gpio callback");
+			return -EIO;
+		}
+
 	}
 
-	gpio_init_callback(&lsm6dsv16x->gpio_cb,
-			   lsm6dsv16x_gpio_callback,
-			   BIT(lsm6dsv16x->drdy_gpio->pin));
-
-	if (gpio_add_callback(lsm6dsv16x->drdy_gpio->port, &lsm6dsv16x->gpio_cb) < 0) {
-		LOG_DBG("Could not set gpio callback");
-		return -EIO;
-	}
-
-
-	/* set data ready mode on int1/int2 */
+	/* set data ready mode on int1/int2/tir */
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
 	lsm6dsv16x_data_ready_mode_t mode = cfg->drdy_pulsed ? LSM6DSV16X_DRDY_PULSED :
-							     LSM6DSV16X_DRDY_LATCHED;
+								LSM6DSV16X_DRDY_LATCHED;
+
 
 	ret = lsm6dsv16x_data_ready_mode_set(ctx, mode);
 	if (ret < 0) {
 		LOG_ERR("drdy_pulsed config error %d", (int)cfg->drdy_pulsed);
 		return ret;
 	}
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
+	if (ON_I3C_BUS(cfg)) {
+		if (I3C_INT_PIN(cfg)) {
+			/* Enable INT Pins when using I3C */
+			ret = lsm6dsv16x_i3c_int_en_set(ctx, I3C_INT_PIN(cfg));
+			if (ret < 0) {
+				LOG_ERR("failed to enable int pin for I3C %d", ret);
+				return ret;
+			}
+
+			ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
+							      GPIO_INT_EDGE_TO_ACTIVE);
+			if (ret < 0) {
+				LOG_ERR("Could not configure gpio interrupt");
+				return ret;
+			}
+		} else {
+			/* I3C IBI does not utilize GPIO interrupt. */
+			lsm6dsv16x->i3c_dev->ibi_cb = lsm6dsv16x_ibi_cb;
+
+			/*
+			 * Set IBI availability time, this is the time that the sensor
+			 * will wait for inactivity before it is okay to generate an IBI TIR.
+			 *
+			 * NOTE: There is a bug in the API and the Documentation where
+			 * the defines for the values are incorrect. The correct values are:
+			 * 0 = 50us
+			 * 1 = 2us
+			 * 2 = 1ms
+			 * 3 = 25ms
+			 */
+			ret = lsm6dsv16x_i3c_ibi_time_set(ctx, cfg->bus_act_sel);
+			if (ret < 0) {
+				LOG_ERR("failed to set ibi available time %d", ret);
+				return -EIO;
+			}
+
+			if (i3c_ibi_enable(lsm6dsv16x->i3c_dev) != 0) {
+				LOG_ERR("Could not enable I3C IBI");
+				return -EIO;
+			}
+		}
+
+		return 0;
+	}
+#endif
 
 	return gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
 					       GPIO_INT_EDGE_TO_ACTIVE);
