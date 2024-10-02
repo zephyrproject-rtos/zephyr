@@ -1603,7 +1603,9 @@ static int cdns_i3c_i2c_api_configure(const struct device *dev, uint32_t config)
 		break;
 	}
 
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
 	cdns_i3c_set_prescalers(dev);
+	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
 }
@@ -1632,7 +1634,10 @@ static int cdns_i3c_configure(const struct device *dev, enum i3c_config_type typ
 
 	data->common.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
 	data->common.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
+
+	k_mutex_lock(&data->bus_lock, K_FOREVER);
 	cdns_i3c_set_prescalers(dev);
+	k_mutex_unlock(&data->bus_lock);
 
 	return 0;
 }
