@@ -10,6 +10,8 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/crypto/crypto_otp_mem.h>
+#include <zephyr/crypto/crypto.h>
+
 #include <scu.h>
 
 #define ATTR_INF	"\x1b[32;1m" // ANSI_COLOR_GREEN
@@ -241,13 +243,13 @@ void CounterTest(const struct device *pit)
 	lvCntTopCfg.ticks = 6000;
 
 	int lvErrorCode = 0;
-	/*	
+	
 	lvErrorCode = counter_set_channel_alarm(pit, 0, &lvCntAlarmCfg);
 	if(lvErrorCode < 0) {
 		printf("%s%s(%d) counter Alarm set error code:%d %s\n", \
 		ATTR_ERR,__func__,__LINE__,lvErrorCode,ATTR_RST);
 	} 
-	*/
+	/*
 	lvErrorCode = counter_set_top_value(pit, &lvCntTopCfg);
 	if(lvErrorCode < 0) {
 		printf("%s%s(%d) counter setting top error code:%d %s\n", \
@@ -259,6 +261,7 @@ void CounterTest(const struct device *pit)
 			ATTR_ERR,__func__,__LINE__,lvErrorCode,ATTR_RST);
 		}
 	}
+	*/
 }
 
 void pufs_otp_test(const struct device *pufs_otp)
@@ -318,9 +321,11 @@ void pufs_otp_test(const struct device *pufs_otp)
 	}
 }
 
-void pufs_test(const struct device *pufs)
+void pufs_hash_test(const struct device *pufs)
 {
-	static const uint8_t *pufs_sample_data = "This is Rapid Silicon'z Zephyr Port";
+	int status = 0;
+	static uint8_t *pufs_sample_data = "This is Rapid Silicon'z Zephyr Port";
+	static uint8_t pufs_sample_data_sha256_out[32] = {0};
 	static const uint8_t pufs_sample_data_sha256[] = {
 		0xfa,0x71,0xc2,0x19,0xea,0x58,0x4d,0xac,
 		0x36,0xd5,0x3e,0xca,0xe4,0x2a,0x8c,0x14,
@@ -328,10 +333,67 @@ void pufs_test(const struct device *pufs)
 		0xd9,0x30,0x96,0xc4,0xaa,0x64,0xe0,0x4c
 	};
 	const uint8_t pufs_sample_data_len = strlen(pufs_sample_data);
-	printf("%s%s(%d) Length of sample data to operate on %s\n", \
-									ATTR_INF,__func__,__LINE__,ATTR_RST);
-									
-	
+	printf("%s%s(%d) Length of sample data to operate on:%d %s\n", \
+									ATTR_INF,__func__,__LINE__,pufs_sample_data_len,ATTR_RST);
+	struct hash_ctx lvHashCtx = {
+		.device = pufs,
+		.drv_sessn_state = NULL,
+		.flags = CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+		.started = false
+	};		
+
+	struct hash_pkt lvHashPkt = {
+		.ctx = &lvHashCtx,
+		.head = true,
+		.tail = true,
+		.in_buf = pufs_sample_data,
+		.in_hash = NULL,
+		.in_len = pufs_sample_data_len,
+		.next = NULL,
+		.out_buf = pufs_sample_data_sha256_out,
+		.prev_len = 0,
+		.out_len = 0
+	};	
+
+	status = hash_begin_session(pufs, &lvHashCtx, CRYPTO_HASH_ALGO_SHA256);
+	if(status != 0) {
+		printf("%s%s(%d) hash_begin_session status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+	} else {
+		status = hash_compute(&lvHashCtx, &lvHashPkt);
+	}
+	if(status != 0) {
+		printf("%s%s(%d) hash_compute status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+	} else {
+		for(uint8_t i = 0; i < lvHashPkt.out_len; i++) {			
+			if(lvHashPkt.out_buf[i] != pufs_sample_data_sha256[i]) {
+				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", \
+				ATTR_ERR,__func__,__LINE__,\
+				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				status = -EINVAL;
+			} else {
+				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", \
+				ATTR_INF,__func__,__LINE__,\
+				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			}
+		}
+		if(status != 0) {
+			printf("%s%s(%d) hash_comparison failed%s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s%s(%d) hash_comparison Passed = %d %s\n", \
+			ATTR_INF,__func__,__LINE__,status,ATTR_RST);			
+		}
+		status = hash_free_session(pufs, &lvHashCtx);
+		if(status != 0) {
+			printf("%s%s(%d) hash_free_session status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+		} else {
+			printf("%s%s(%d) hash_free_session Passed = %d %s\n", \
+			ATTR_INF,__func__,__LINE__,status,ATTR_RST);
+		}
+	}
 }
 
 int main(void)
@@ -361,6 +423,7 @@ int main(void)
 		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
+		pufs_hash_test(pufs);
 	}
 
 	if((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
@@ -374,7 +437,7 @@ int main(void)
 		printf("%s pvt has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pvt Object is Created %s\n", ATTR_INF, ATTR_RST);
-				errorcode = sensor_channel_get(pvt, SENSOR_CHAN_DIE_TEMP, &lvTemp);
+		errorcode = sensor_channel_get(pvt, SENSOR_CHAN_DIE_TEMP, &lvTemp);
 		if(errorcode == 0) {
 			printf("%s Error fetching temperature value. Error code:%u%s\n", ATTR_ERR, errorcode,ATTR_RST);
 		}
@@ -405,7 +468,7 @@ int main(void)
 
 	while(true) {		
 		printf(
-				"%s%d - %s [CHIP_ID:0x%02x VENDOR_ID:0x%02x] Build[Date:%s Time:%s]\n", 
+				"%s%d - %s [CHIP_ID:0x%02x VENDOR_ID:0x%02x] Build[Date:%s Time:%s]\r", 
 				ATTR_RST, Cnt++, 
 				CONFIG_BOARD_TARGET, 
 				chip_id, vendor_id,

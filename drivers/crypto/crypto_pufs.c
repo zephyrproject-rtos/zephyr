@@ -34,6 +34,8 @@ static char *session_to_str(enum pufs_session_type inSession) {
 
 uint8_t __pufcc_descriptors[BUFFER_SIZE];
 
+static int pufs_query_hw_caps(const struct device *dev);
+
 static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data_addr) {
   uint8_t desc_count = 0;
 
