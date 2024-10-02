@@ -547,6 +547,14 @@ struct cdns_i3c_xfer {
 	struct cdns_i3c_cmd cmds[I3C_MAX_MSGS];
 };
 
+#ifdef CONFIG_I3C_USE_IBI
+/* IBI transferred data */
+struct cdns_i3c_ibi_buf {
+	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
+	uint8_t ibi_data_cnt;
+};
+#endif
+
 /* Driver config */
 struct cdns_i3c_config {
 	struct i3c_driver_config common;
@@ -556,12 +564,17 @@ struct cdns_i3c_config {
 	uint32_t input_frequency;
 	/** Interrupt configuration function. */
 	void (*irq_config_func)(const struct device *dev);
+	/** IBID Threshold value */
+	uint8_t ibid_thr;
 };
 
 /* Driver instance data */
 struct cdns_i3c_data {
 	struct i3c_driver_data common;
 	struct cdns_i3c_hw_config hw_cfg;
+#ifdef CONFIG_I3C_USE_IBI
+	struct cdns_i3c_ibi_buf ibi_buf;
+#endif
 	struct k_mutex bus_lock;
 	struct cdns_i3c_i2c_dev_data cdns_i3c_i2c_priv_data[I3C_MAX_DEVS];
 	struct cdns_i3c_xfer xfer;
@@ -2298,7 +2311,7 @@ static int cdns_i3c_read_ibi_fifo(const struct cdns_i3c_config *config, void *bu
 static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 {
 	const struct cdns_i3c_config *config = dev->config;
-	uint8_t ibi_data[CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE];
+	struct cdns_i3c_data *data = dev->data;
 
 	/* The slave ID returned here is the device ID in the SIR map NOT the device ID
 	 * in the RR map.
@@ -2326,20 +2339,25 @@ static void cdns_i3c_handle_ibi(const struct device *dev, uint32_t ibir)
 		return;
 	}
 	if (ibir & IBIR_ERROR) {
-		LOG_ERR("%s: Data overflow", dev->name);
-		return;
+		/* Controller issued an Abort */
+		LOG_ERR("%s: IBI Data overflow", dev->name);
 	}
 
 	/* Read out any payload bytes */
 	uint8_t ibi_len = IBIR_XFER_BYTES(ibir);
 
 	if (ibi_len > 0) {
-		if (cdns_i3c_read_ibi_fifo(config, ibi_data, ibi_len) < 0) {
-			LOG_ERR("%s: Failed to get payload", dev->name);
+		if (ibi_len - data->ibi_buf.ibi_data_cnt > 0) {
+			if (cdns_i3c_read_ibi_fifo(
+				    config, &data->ibi_buf.ibi_data[data->ibi_buf.ibi_data_cnt],
+				    ibi_len - data->ibi_buf.ibi_data_cnt) < 0) {
+				LOG_ERR("%s: Failed to get payload", dev->name);
+			}
 		}
+		data->ibi_buf.ibi_data_cnt = 0;
 	}
 
-	if (i3c_ibi_work_enqueue_target_irq(desc, ibi_data, ibi_len) != 0) {
+	if (i3c_ibi_work_enqueue_target_irq(desc, data->ibi_buf.ibi_data, ibi_len) != 0) {
 		LOG_ERR("%s: Error enqueue IBI IRQ work", dev->name);
 	}
 }
@@ -2445,40 +2463,24 @@ static void cdns_i3c_target_sdr_tx_thr_int_handler(const struct device *dev,
 static void cdns_i3c_irq_handler(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
+	struct cdns_i3c_data *data = dev->data;
 
 	if (sys_read32(config->base + MST_STATUS0) & MST_STATUS0_MASTER_MODE) {
 		uint32_t int_st = sys_read32(config->base + MST_ISR);
+		sys_write32(int_st, config->base + MST_ICR);
 
 		/* Command queue empty */
 		if (int_st & MST_INT_HALTED) {
 			LOG_WRN("Core Halted, 2 read aborts");
-			sys_write32(MST_INT_HALTED, config->base + MST_ICR);
 		}
 
 		/* Command queue empty */
 		if (int_st & MST_INT_CMDD_EMP) {
 			cdns_i3c_complete_transfer(dev);
-			sys_write32(MST_INT_CMDD_EMP, config->base + MST_ICR);
-		}
-
-		/* Command queue threshold */
-		if (int_st & MST_INT_CMDD_THR) {
-			sys_write32(MST_INT_CMDD_THR, config->base + MST_ICR);
-		}
-
-		/* Command response threshold hit */
-		if (int_st & MST_INT_CMDR_THR) {
-			sys_write32(MST_INT_CMDR_THR, config->base + MST_ICR);
-		}
-
-		/* RX data ready */
-		if (int_st & MST_INT_RX_THR) {
-			sys_write32(MST_INT_RX_THR, config->base + MST_ICR);
 		}
 
 		/* In-band interrupt */
 		if (int_st & MST_INT_IBIR_THR) {
-			sys_write32(MST_INT_IBIR_THR, config->base + MST_ICR);
 #ifdef CONFIG_I3C_USE_IBI
 			cnds_i3c_master_demux_ibis(dev);
 #else
@@ -2486,25 +2488,39 @@ static void cdns_i3c_irq_handler(const struct device *dev)
 				dev->name);
 #endif
 		}
+
+		/* In-band interrupt data threshold */
+		if (int_st & MST_INT_IBID_THR) {
+#ifdef CONFIG_I3C_USE_IBI
+			/* pop data out of the IBI FIFO */
+			while (!cdns_i3c_ibi_fifo_empty(config)) {
+				uint32_t *ptr = (uint32_t *)&data->ibi_buf
+							.ibi_data[data->ibi_buf.ibi_data_cnt];
+				*ptr = sys_le32_to_cpu(sys_read32(config->base + IBI_DATA_FIFO));
+				data->ibi_buf.ibi_data_cnt += 4;
+			}
+#else
+			LOG_ERR("%s: IBI received - Kconfig for using IBIs is not enabled",
+				dev->name);
+#endif
+		}
+
+		/* In-band interrupt response overflow */
+		if (int_st & MST_INT_IBIR_OVF) {
+			LOG_ERR("%s: controller ibir overflow,", dev->name);
+		}
+
 		/* In-band interrupt data */
 		if (int_st & MST_INT_TX_OVF) {
-			sys_write32(MST_INT_TX_OVF, config->base + MST_ICR);
 			LOG_ERR("%s: controller tx buffer overflow,", dev->name);
 		}
 
 		/* In-band interrupt data */
 		if (int_st & MST_INT_RX_UNF) {
-			sys_write32(MST_INT_RX_UNF, config->base + MST_ICR);
 			LOG_ERR("%s: controller rx buffer underflow,", dev->name);
-		}
-
-		/* In-band interrupt data */
-		if (int_st & MST_INT_IBID_THR) {
-			sys_write32(MST_INT_IBID_THR, config->base + MST_ICR);
 		}
 	} else {
 		uint32_t int_sl = sys_read32(config->base + SLV_ISR);
-		struct cdns_i3c_data *data = dev->data;
 		const struct i3c_target_callbacks *target_cb =
 			data->target_config ? data->target_config->callbacks : NULL;
 		/* Clear interrupts */
@@ -3185,7 +3201,7 @@ static int cdns_i3c_bus_init(const struct device *dev)
 
 	/* Set fifo thresholds. */
 	sys_write32(CMD_THR(I3C_CMDD_THR) | IBI_THR(I3C_IBID_THR) | CMDR_THR(I3C_CMDR_THR) |
-			    IBIR_THR(I3C_IBIR_THR),
+			    IBIR_THR(config->ibid_thr),
 		    config->base + CMD_IBI_THR_CTRL);
 
 	/* Set TX/RX interrupt thresholds. */
@@ -3197,6 +3213,7 @@ static int cdns_i3c_bus_init(const struct device *dev)
 		sys_write32(SLV_DDR_TX_THR(0) | SLV_DDR_RX_THR(1),
 			    config->base + SLV_DDR_TX_RX_THR_CTRL);
 	}
+
 	/* enable target interrupts */
 	sys_write32(SLV_INT_DA_UPD | SLV_INT_SDR_RD_COMP | SLV_INT_SDR_WR_COMP |
 			    SLV_INT_SDR_RX_THR | SLV_INT_SDR_TX_THR | SLV_INT_SDR_RX_UNF |
@@ -3205,7 +3222,8 @@ static int cdns_i3c_bus_init(const struct device *dev)
 		    config->base + SLV_IER);
 
 	/* Enable IBI interrupts. */
-	sys_write32(MST_INT_IBIR_THR | MST_INT_RX_UNF | MST_INT_HALTED | MST_INT_TX_OVF,
+	sys_write32(MST_INT_IBIR_THR | MST_INT_RX_UNF | MST_INT_HALTED | MST_INT_TX_OVF |
+			    MST_INT_IBIR_OVF | MST_INT_IBID_THR,
 		    config->base + MST_IER);
 
 	int ret = i3c_addr_slots_init(dev);
@@ -3272,6 +3290,7 @@ static struct i3c_driver_api api = {
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.input_frequency = DT_INST_PROP(n, input_clock_frequency),                         \
 		.irq_config_func = cdns_i3c_config_func_##n,                                       \
+		.ibid_thr = DT_INST_PROP(n, ibid_thr),                                             \
 		.common.dev_list.i3c = cdns_i3c_device_array_##n,                                  \
 		.common.dev_list.num_i3c = ARRAY_SIZE(cdns_i3c_device_array_##n),                  \
 		.common.dev_list.i2c = cdns_i3c_i2c_device_array_##n,                              \
