@@ -126,6 +126,7 @@ if (NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_POSIX_PRIORITY_SCHEDULING sched.c)
+zephyr_library_sources_ifdef(CONFIG_POSIX_PIPE pipe.c)
 
 if (NOT CONFIG_TC_PROVIDES_POSIX_READER_WRITER_LOCKS)
   # Note: the Option is _POSIX_READER_WRITER_LOCKS, while the Option Group is POSIX_RW_LOCKS.

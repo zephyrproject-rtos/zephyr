@@ -1,0 +1,32 @@
+# Copyright (c) 2024, Bruce Rosier
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "POSIX Pipe Options"
+
+config POSIX_PIPE
+	bool"POSIX pipe support"
+	default y
+	select PIPES
+	help
+	  For more information, please see
+	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
+
+if POSIX_PIPE
+
+config POSIX_PIPES_MAX
+	int "Number of available pipes"
+	default 2
+	help
+	  Specify the number of POSIX pipes available in the system.
+	  This value controls how many pipes can be created concurrently.
+
+config POSIX_PIPE_BUF
+	int "Size of pipe buffer"
+	default 512
+	help
+	  Specify the size of the buffe (in bytes) used by the pipe function.
+
+endif
+
+endmenu
