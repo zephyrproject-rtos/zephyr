@@ -13,12 +13,18 @@ The Server can be controlled locally, or by a remote device (when in a call). Fo
 example a remote device may initiate a call to the server,
 or the Server may initiate a call to remote device, without a client.
 
+For all commands that take an optional :code:`index`, if the index is not supplied then it defaults
+to :code:`0` which is the GTBS bearer.
+
 .. code-block:: console
 
    ccp_call_control_server --help
    ccp_call_control_server - Bluetooth CCP Call Control Server shell commands
    Subcommands:
-     init  : Initialize CCP Call Control Server
+     init             : Initialize CCP Call Control Server
+     set_bearer_name  : Set bearer name [index] <name>
+     get_bearer_name  : Get bearer name [index]
+
 
 Example Usage
 =============
@@ -33,6 +39,25 @@ Setup
    Registered GTBS bearer
    Registered bearer[1]
    uart:~$ bt connect xx:xx:xx:xx:xx:xx public
+
+Setting and getting the bearer name
+-----------------------------------
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_server get_bearer_name
+   Bearer[0] name: Generic TBS
+   uart:~$ ccp_call_control_server set_bearer_name "New name"
+   Bearer[0] name: New name
+   uart:~$ ccp_call_control_server get_bearer_name
+   Bearer[0] name: New name
+   uart:~$ ccp_call_control_server get_bearer_name 1
+   Bearer[1] name: Telephone Bearer #1
+   uart:~$ ccp_call_control_server set_bearer_name 1 "New TBS name"
+   Bearer[1] name: New TBS name
+   uart:~$ ccp_call_control_server get_bearer_name 1
+   Bearer[1] name: New TBS name
+
 
 Call Control Client
 *******************
