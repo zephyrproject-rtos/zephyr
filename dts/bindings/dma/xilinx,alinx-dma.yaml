@@ -1,0 +1,17 @@
+description: TODO
+
+compatible: "xilinx,alinx-dma"
+
+include: dma-controller.yaml
+
+# properties:
+#   reg:
+#     required: true
+
+#   interrupts:
+#     required: true
+
+#   "#dma-cells":
+#     type: int
+#     required: true
+#     const: 0

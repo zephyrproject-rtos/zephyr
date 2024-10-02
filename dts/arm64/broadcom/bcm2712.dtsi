@@ -104,6 +104,20 @@
 			ranges = <0x02000000 0x0 0x0 0x1b 0x0 0x00 0xfffffffc>,
 				 <0x43000000 0x4 0x0 0x18 0x0 0x03 0x00000000>,
 				 <0x03000000 0x0 0x0 0x10 0x0 0x10 0x00000000>;
+
+			xdma: dma@1b08000000 {
+				compatible = "xilinx,alinx-dma";
+				#dma-cells = <1>;
+				status = "okay";
+				reg = <0x0 0x0 0x0 0x0 0x0>;
+				dma-channels = <9>;
+				dma-buf-addr-alignment = <128>;
+				dma-buf-size-alignment = <32>;
+				dma-copy-alignment = <32>;
+				//power-domain = <&hst_domain>;
+				//interrupts = <13 0 0>;
+				//interrupt-parent = <&ace_intc>;
+			};
 		};
 
 		pcie2: pcie@1000120000 {
