@@ -1896,11 +1896,6 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  The number of pending callbacks can be increased with the
  *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
- *  @note By using a callback it also disable the internal flow control
- *        which would prevent sending multiple commands without waiting for
- *        their transmissions to complete, so if that is required the caller
- *        shall not submit more data until the callback is called.
- *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.
  *
