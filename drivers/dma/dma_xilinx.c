@@ -86,7 +86,7 @@ struct dma_xilinx_engine_regs {
 	uint32_t perf_dat_hi;
 	uint32_t perf_pnd_lo;
 	uint32_t perf_pnd_hi;
-} __packed; // TODO: Move these to header file
+} __packed; /* TODO: Move these to header file */
 
 struct dma_xilinx_config {
 	const struct device *pci_dev;
@@ -220,7 +220,6 @@ static int dma_xilinx_init(const struct device *dev)
 	int engine_id, channel_id;
 	bool ret;
 
-	// request_regions()
 	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(XDMA_CONFIG_BAR_NUM, 0, 0), true,
 					false, XDMA_CONFIG_BAR_SIZE, &bus_addr);
 	if (!ret) {
@@ -233,11 +232,8 @@ static int dma_xilinx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	// map_bars()
 	device_map(&data->bar, bar_addr, XDMA_CONFIG_BAR_SIZE, K_MEM_CACHE_NONE);
 
-	// probe_engines()
-	// H2C: register 0x0000
 	regs = (struct dma_xilinx_engine_regs *)(data->bar);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
@@ -245,11 +241,9 @@ static int dma_xilinx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	// engine_init()
 	engine_init_regs(regs);
 	data->regs[XDMA_H2C] = regs;
 
-	// C2H: register 0x1000
 	regs = (struct dma_xilinx_engine_regs *)(data->bar + XDMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
