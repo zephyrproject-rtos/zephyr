@@ -12,6 +12,7 @@ tests:
       - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
     extra_configs:
       - CONFIG_TEST=y
+      - CONFIG_FPU=y
     harness: console
     harness_config:
       fixture: fixture_camera
@@ -21,6 +22,7 @@ tests:
         - "Got frame \\d+"
         - "size: \\d+;"
         - "timestamp \\d+"
+        - "Pattern OK"
     platform_allow:
       - arduino_nicla_vision/stm32h747xx/m7
       - mimxrt1064_evk
