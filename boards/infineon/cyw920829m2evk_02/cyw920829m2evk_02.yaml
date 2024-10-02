@@ -20,5 +20,6 @@ supported:
   - watchdog
   - spi
   - i2c
+  - rtc
 
 vendor: infineon
