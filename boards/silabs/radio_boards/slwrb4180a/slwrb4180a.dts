@@ -61,7 +61,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <38400000>;
+	clock-frequency = <76800000>;
 };
 
 &usart0 {
