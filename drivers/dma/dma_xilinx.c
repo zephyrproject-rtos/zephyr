@@ -252,6 +252,8 @@ static int dma_xilinx_init(const struct device *dev)
 	if ((engine_id != XDMA_ID_C2H) || (channel_id != 0)) {
 		return -EINVAL;
 	}
+
+	engine_init_regs(regs);
 	data->regs[XDMA_C2H] = regs;
 
 	return 0;
