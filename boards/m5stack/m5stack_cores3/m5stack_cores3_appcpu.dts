@@ -5,11 +5,12 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
 #include <espressif/partitions_0x0_amp.dtsi>
+#include "m5stack_cores3-pinctrl.dtsi"
 
 / {
-	model = "M5Stack AtomS3 Lite APPCPU";
+	model = "M5Stack CoreS3 APPCPU";
 	compatible = "espressif,esp32s3";
 
 	chosen {
@@ -21,10 +22,10 @@
 	};
 };
 
-&trng0 {
+&ipm0 {
 	status = "okay";
 };
 
-&ipm0 {
+&trng0 {
 	status = "okay";
 };
