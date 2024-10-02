@@ -1,0 +1,14 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+device:
+  device_1:
+    init:
+      dependencies:
+        - device_0
+
+  xx_device_2:
+    init:
+      dependencies:
+        - device_1

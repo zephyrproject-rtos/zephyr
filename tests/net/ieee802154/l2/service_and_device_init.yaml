@@ -1,0 +1,5 @@
+device:
+  fake_ieee80154:
+    init:
+      dependencies:
+        - crypto_mtls

@@ -1,0 +1,45 @@
+# Copyright (c) 2024, Tomasz Bursztyka
+#
+# SPDX-License-Identifier: Apache-2.0
+
+device:
+  test_dev_a:
+    init:
+      dependencies:
+        - test_i2c
+
+  test_gpiox:
+    init:
+      dependencies:
+        - test_dev_a
+
+  test_dev_b:
+    init:
+      dependencies:
+        - test_gpiox
+
+  test_dev_c:
+    init:
+      dependencies:
+        - test_dev_b
+
+  test_p0:
+    init:
+      dependencies:
+        - test_dev_c
+
+  test_gpio_injected:
+    init:
+      dependencies:
+        - test_dev_b
+        - test_p0
+
+  manual_dev:
+    init:
+      dependencies:
+        - test_gpio_injected
+
+  test-i2c-dev@14:
+    init:
+      dependencies:
+        - manual_dev
