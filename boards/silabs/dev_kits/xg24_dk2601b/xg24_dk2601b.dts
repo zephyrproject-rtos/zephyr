@@ -8,6 +8,7 @@
 #include <silabs/efr32mg24b310f1536im48.dtsi>
 #include <silabs/efr32mg24-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	model = "Silicon Labs BRD2601B (xG24 Dev Kit)";
@@ -130,6 +131,13 @@
 
 &se {
 	status = "okay";
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <120>;
 };
 
 &flash0 {

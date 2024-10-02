@@ -59,3 +59,7 @@
 	interrupts = <12 0>;
 	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
+
+&dcdc {
+	interrupts = <61 0>;
+};

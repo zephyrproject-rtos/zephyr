@@ -231,6 +231,12 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
+
+		dcdc: dcdc@50094000 {
+			compatible = "silabs,series2-dcdc";
+			reg = <0x50094000 0x4000>;
+			status = "disabled";
+		};
 	};
 
 	bt_hci_silabs: bt_hci_silabs {
