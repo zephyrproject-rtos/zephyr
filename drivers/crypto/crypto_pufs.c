@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(crypto_puf_security);
 #endif
 
 #define PUFS_HW_CAP (CAP_RAW_KEY | CAP_INPLACE_OPS | \
-                     CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS | \
+                     CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
                      CAP_NO_IV_PREFIX | CAP_NO_ENCRYPTION | CAP_NO_SIGNING)
 
 static char *session_to_str(enum pufs_session_type inSession) {
@@ -86,19 +86,28 @@ static void pufs_irq_handler(const struct device *dev) {
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  switch(lvPufsData->pufs_session_type) {
-    case(PUFS_SESSION_SIGN_VERIFICATION): {
-      lvPufsData->pufs_session_callback.sign_cb(lvPufsData->pufs_pkt.sign_pkt, status);
-    } break;
-    case(PUFS_SESSION_HASH_CALCULATION): {
-      lvPufsData->pufs_session_callback.hash_cb(lvPufsData->pufs_pkt.hash_pkt, status);
-    } break;
-    case(PUFS_SESSION_DECRYPTION): {
-      lvPufsData->pufs_session_callback.cipher_cb(lvPufsData->pufs_pkt.cipher_pkt, status);
-    } break;
-    case(PUFS_SESSION_UNDEFINED): {
-      LOG_ERR("%s(%d) Unsupported Session %d\n", __func__, __LINE__, lvPufsData->pufs_session_type);
-    } break;
+  if((pufs_query_hw_caps(dev) & CAP_ASYNC_OPS) == CAP_ASYNC_OPS)
+  {
+    switch(lvPufsData->pufs_session_type) {
+      case(PUFS_SESSION_SIGN_VERIFICATION): {
+        if(lvPufsData->pufs_session_callback.sign_cb != NULL) {
+          lvPufsData->pufs_session_callback.sign_cb(lvPufsData->pufs_pkt.sign_pkt, status);
+        }
+      } break;
+      case(PUFS_SESSION_HASH_CALCULATION): {
+        if(lvPufsData->pufs_session_callback.hash_cb != NULL) {
+          lvPufsData->pufs_session_callback.hash_cb(lvPufsData->pufs_pkt.hash_pkt, status);
+        }
+      } break;
+      case(PUFS_SESSION_DECRYPTION): {
+        if(lvPufsData->pufs_session_callback.cipher_cb != NULL) {
+          lvPufsData->pufs_session_callback.cipher_cb(lvPufsData->pufs_pkt.cipher_pkt, status);
+        }
+      } break;
+      case(PUFS_SESSION_UNDEFINED): {
+        LOG_ERR("%s(%d) Unsupported Session %d\n", __func__, __LINE__, lvPufsData->pufs_session_type);
+      } break;
+    }
   }
 
   // After execution of a callback, the irq is disabled.
@@ -201,7 +210,7 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
 
   uint16_t lvHashFlags = (
                             CAP_NO_ENCRYPTION | CAP_SYNC_OPS | 
-                            CAP_ASYNC_OPS | CAP_NO_IV_PREFIX |
+                            CAP_NO_IV_PREFIX |
                             CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS
                          ), \
        lvHashFlagsMask = 0xFFFF;
@@ -372,7 +381,7 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
   
   if(algo != CRYPTO_HASH_ALGO_SHA256) {
     LOG_ERR("%s(%d) UnSupported Hash Algo. Only SHA256 Supported\n", __func__, __LINE__);
@@ -503,7 +512,7 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (CAP_INPLACE_OPS | CAP_SYNC_OPS | CAP_ASYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  uint16_t lvHashFlags = (CAP_INPLACE_OPS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
   
   if((algo != CRYPTO_SIGN_ALGO_ECDSA256) || (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
     LOG_ERR("%s(%d) Unupported Algo:%d. Supported Algo <ECDSA256, RSA2048>\n", __func__, __LINE__, algo);

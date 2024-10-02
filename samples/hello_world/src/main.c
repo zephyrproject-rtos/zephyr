@@ -318,6 +318,22 @@ void pufs_otp_test(const struct device *pufs_otp)
 	}
 }
 
+void pufs_test(const struct device *pufs)
+{
+	static const uint8_t *pufs_sample_data = "This is Rapid Silicon'z Zephyr Port";
+	static const uint8_t pufs_sample_data_sha256[] = {
+		0xfa,0x71,0xc2,0x19,0xea,0x58,0x4d,0xac,
+		0x36,0xd5,0x3e,0xca,0xe4,0x2a,0x8c,0x14,
+		0x4b,0xc1,0xc0,0x03,0xfd,0x36,0x3f,0x71,
+		0xd9,0x30,0x96,0xc4,0xaa,0x64,0xe0,0x4c
+	};
+	const uint8_t pufs_sample_data_len = strlen(pufs_sample_data);
+	printf("%s%s(%d) Length of sample data to operate on %s\n", \
+									ATTR_INF,__func__,__LINE__,ATTR_RST);
+									
+	
+}
+
 int main(void)
 {
 	int Cnt = 0;

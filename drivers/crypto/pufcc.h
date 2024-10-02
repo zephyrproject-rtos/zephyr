@@ -599,6 +599,9 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
   enum pufcc_status pufcc_dma_transfer(uint32_t src_addr, uint32_t dest_addr,
                                       uint32_t len, bool fixed_read,
                                       bool fixed_write);
+#else
+  bool pufcc_get_asynch_ops_flag(void);
+  void pufcc_set_asynch_ops_flag(bool Val);                                      
 #endif
 
 enum pufcc_status pufcc_otp_setup_wait(void);

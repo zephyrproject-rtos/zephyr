@@ -10,6 +10,9 @@
   #include <zephyr/sys/sys_io.h>
   #include <zephyr/kernel.h>
   #include "crypto_pufs.h"
+  static volatile bool s_Asynch_Operation = false;
+  void pufcc_set_asynch_ops_flag(bool Val) {s_Asynch_Operation = Val;}
+  bool pufcc_get_asynch_ops_flag(void) {return s_Asynch_Operation;}
 #endif
 
 /*****************************************************************************
