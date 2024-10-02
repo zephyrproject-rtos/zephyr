@@ -18,7 +18,6 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 
 #include <fmac_main.h>
 
-#ifdef CONFIG_NRF_WIFI_PATCHES_BUILTIN
 /* INCBIN macro Taken from https://gist.github.com/mmozeiko/ed9655cf50341553d282 */
 #define STR2(x) #x
 #define STR(x) STR2(x)
@@ -56,7 +55,6 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 	extern                  const char prefix ## _ ## name ## _end[];
 
 INCBIN(_bin, nrf70_fw, STR(CONFIG_NRF_WIFI_FW_BIN));
-#endif /* CONFIG_NRF_WIFI_PATCHES_BUILTIN */
 
 enum nrf_wifi_status nrf_wifi_fw_load(void *rpu_ctx)
 {
