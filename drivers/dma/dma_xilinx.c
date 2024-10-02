@@ -109,8 +109,8 @@ static int dma_xilinx_start(const struct device *dev, uint32_t channel) {
     const struct dma_xilinx_data * data = dev->data;
 
 	/* There is only one channel for each direction for now */
-	sys_write32(XDMA_ENGINE_START, &data->regs[XDMA_H2C]->control);
-	sys_write32(XDMA_ENGINE_START, &data->regs[XDMA_C2H]->control);
+	sys_write32(XDMA_ENGINE_START, (mem_addr_t)&data->regs[XDMA_H2C]->control);
+	sys_write32(XDMA_ENGINE_START, (mem_addr_t)&data->regs[XDMA_C2H]->control);
 
     return 0;
 }
@@ -119,8 +119,8 @@ static int dma_xilinx_stop(const struct device *dev, uint32_t channel) {
     const struct dma_xilinx_data * data = dev->data;
 
 	/* There is only one channel for each direction for now */
-	sys_write32(XDMA_ENGINE_STOP, &data->regs[XDMA_H2C]->control);
-	sys_write32(XDMA_ENGINE_STOP, &data->regs[XDMA_C2H]->control);
+	sys_write32(XDMA_ENGINE_STOP, (mem_addr_t)&data->regs[XDMA_H2C]->control);
+	sys_write32(XDMA_ENGINE_STOP, (mem_addr_t)&data->regs[XDMA_C2H]->control);
 
     return 0;
 }
@@ -158,12 +158,12 @@ static const struct dma_driver_api dma_xilinx_api = {
 };
 
 static int get_engine_channel_id(struct dma_xilinx_engine_regs *regs) {
-	int value = sys_read32(&regs->identifier);
+	int value = sys_read32((mem_addr_t)&regs->identifier);
 	return (value & XDMA_CHANNEL_ID_MASK) >> XDMA_CHANNEL_ID_LSB;
 }
 
 static int get_engine_id(struct dma_xilinx_engine_regs *regs) {
-	int value = sys_read32(&regs->identifier);
+	int value = sys_read32((mem_addr_t)&regs->identifier);
 	return (value & XDMA_ENGINE_ID_MASK) >> XDMA_ENGINE_ID_LSB;
 }
 
@@ -171,8 +171,8 @@ static int engine_init_regs(struct dma_xilinx_engine_regs *regs) {
 	uint32_t align_bytes, granularity_bytes, address_bits;
 	uint32_t tmp;
 
-	sys_write32(XDMA_CTRL_NON_INCR_ADDR, &regs->control_w1c);
-	tmp = sys_read32(&regs->alignments);
+	sys_write32(XDMA_CTRL_NON_INCR_ADDR, (mem_addr_t)&regs->control_w1c);
+	tmp = sys_read32((mem_addr_t)&regs->alignments);
 	if (tmp != 0) {
 		align_bytes = (tmp & XDMA_ALIGN_BYTES_MASK) >> XDMA_ALIGN_BYTES_LSB;
 		granularity_bytes = (tmp & XDMA_GRANULARITY_BYTES_MASK) >> XDMA_GRANULARITY_BYTES_LSB;
@@ -191,7 +191,7 @@ static int engine_init_regs(struct dma_xilinx_engine_regs *regs) {
 	tmp |= XDMA_CTRL_IE_DESC_STOPPED;
 	tmp |= XDMA_CTRL_IE_DESC_COMPLETED;
 
-	sys_write32(tmp, &regs->interrupt_enable_mask);
+	sys_write32(tmp, (mem_addr_t)&regs->interrupt_enable_mask);
 
 	return 0;
 }
@@ -220,7 +220,7 @@ static int dma_xilinx_init(const struct device *dev) {
 
 	// probe_engines()
 	// H2C: register 0x0000
-	regs = data->bar;
+	regs = (struct dma_xilinx_engine_regs *)(data->bar);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_H2C) || (channel_id != 0)) {
@@ -232,7 +232,7 @@ static int dma_xilinx_init(const struct device *dev) {
 	data->regs[XDMA_H2C] = regs;
 
 	// C2H: register 0x1000
-	regs = data->bar + XDMA_C2H_OFFSET;
+	regs = (struct dma_xilinx_engine_regs *)(data->bar + XDMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_C2H) || (channel_id != 0)) {
