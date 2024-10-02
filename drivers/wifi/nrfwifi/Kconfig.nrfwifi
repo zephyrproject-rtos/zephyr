@@ -131,6 +131,7 @@ config NRF_WIFI_IF_AUTO_START
 config NRF_WIFI_PATCHES_BUILTIN
 	bool "Store nRF70 FW patches as part of the driver"
 	default y
+	depends on !NRF_WIFI_BUILD_ONLY_MODE
 	help
 	  Select this option to store nRF70 FW patches as part of the driver.
 	  This option impacts the code memory footprint of the driver.
