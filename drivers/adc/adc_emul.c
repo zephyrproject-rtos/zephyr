@@ -31,6 +31,7 @@ typedef uint16_t adc_emul_res_t;
 enum adc_emul_input_source {
 	ADC_EMUL_CONST_VALUE,
 	ADC_EMUL_CUSTOM_FUNC,
+	ADC_EMUL_CONST_RAW_VALUE,
 };
 
 /**
@@ -43,7 +44,7 @@ struct adc_emul_chan_cfg {
 	adc_emul_value_func func;
 	/** Pointer to data that are passed to @a func on call */
 	void *func_data;
-	/** Constant mV input value */
+	/** Constant mV input value or raw input value */
 	uint32_t const_value;
 	/** Gain used on output value */
 	enum adc_gain gain;
@@ -127,8 +128,31 @@ int adc_emul_const_value_set(const struct device *dev, unsigned int chan,
 	return 0;
 }
 
-int adc_emul_value_func_set(const struct device *dev, unsigned int chan,
-			    adc_emul_value_func func, void *func_data)
+int adc_emul_const_raw_value_set(const struct device *dev, unsigned int chan, uint32_t raw_value)
+{
+	const struct adc_emul_config *config = dev->config;
+	struct adc_emul_data *data = dev->data;
+	struct adc_emul_chan_cfg *chan_cfg;
+
+	if (chan >= config->num_channels) {
+		LOG_ERR("unsupported channel %d", chan);
+		return -EINVAL;
+	}
+
+	chan_cfg = &data->chan_cfg[chan];
+
+	k_mutex_lock(&data->cfg_mtx, K_FOREVER);
+
+	chan_cfg->input = ADC_EMUL_CONST_RAW_VALUE;
+	chan_cfg->const_value = raw_value;
+
+	k_mutex_unlock(&data->cfg_mtx);
+
+	return 0;
+}
+
+int adc_emul_value_func_set(const struct device *dev, unsigned int chan, adc_emul_value_func func,
+			    void *func_data)
 {
 	const struct adc_emul_config *config = dev->config;
 	struct adc_emul_data *data = dev->data;
@@ -426,6 +450,10 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 		}
 		break;
 
+	case ADC_EMUL_CONST_RAW_VALUE:
+		temp = chan_cfg->const_value;
+		goto check_bound_and_out;
+
 	default:
 		LOG_ERR("unknown input source %d", chan_cfg->input);
 		err = -EINVAL;
@@ -444,6 +472,7 @@ static int adc_emul_get_chan_value(struct adc_emul_data *data,
 	/* Calculate output value */
 	temp = (uint64_t)input_mV * data->res_mask / ref_v;
 
+check_bound_and_out:
 	/* If output value is greater than resolution, it has to be trimmed */
 	if (temp > data->res_mask) {
 		temp = data->res_mask;
