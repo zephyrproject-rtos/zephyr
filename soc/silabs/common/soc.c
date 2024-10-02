@@ -21,8 +21,7 @@
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
 #include <sl_device_init_dcdc.h>
-#include <sl_device_init_dpll.h>
-#include <sl_device_init_hfxo.h>
+#include <sl_clock_manager_init.h>
 
 #ifdef CONFIG_PM
 #include <sl_hfxo_manager.h>
@@ -217,8 +216,7 @@ void soc_early_init_hook(void)
 	if (DT_HAS_COMPAT_STATUS_OKAY(silabs_series2_dcdc)) {
 		sl_device_init_dcdc();
 	}
-	sl_device_init_hfxo();
-	sl_device_init_dpll();
+	sl_clock_manager_init();
 
 #ifdef CONFIG_PM
 	sl_power_manager_init();
