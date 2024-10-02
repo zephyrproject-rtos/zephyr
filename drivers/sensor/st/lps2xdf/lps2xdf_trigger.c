@@ -179,7 +179,7 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) ||\
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
-	if (cfg->i3c.bus == NULL) {
+	if (cfg->i3c.bus != NULL) {
 		/* I3C IBI does not utilize GPIO interrupt. */
 		lps2xdf->i3c_dev->ibi_cb = lps2xdf_ibi_cb;
 
