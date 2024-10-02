@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 
-#define SAMPLE_DRIVER_NAME_0	"SAMPLE_DRIVER_0"
+#define SAMPLE_DRIVER_NAME_0	"sample_driver_foo_0"
 #define SAMPLE_DRIVER_MSG_SIZE	128
 
 typedef void (*sample_driver_callback_t)(const struct device *dev,

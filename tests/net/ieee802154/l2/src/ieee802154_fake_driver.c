@@ -169,6 +169,6 @@ static struct ieee802154_radio_api fake_radio_api = {
 	.attr_get		= fake_attr_get,
 };
 
-NET_DEVICE_INSTANCE(fake, fake_init, NULL, NULL, NULL,
+NET_DEVICE_INSTANCE(fake_ieee802154, fake_init, NULL, NULL, NULL,
 		&fake_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), IEEE802154_MTU);

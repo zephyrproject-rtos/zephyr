@@ -97,7 +97,7 @@ static struct pch_config pch_config_data = {
 	.pcie = &pcie_params,
 };
 
-DEVICE_INSTANCE(dummy_driver, &pch_smbus_init,
+DEVICE_INSTANCE(smbus_emul, &pch_smbus_init,
 	      NULL, &smbus_data, &pch_config_data, POST_KERNEL,
 	      &funcs);
 

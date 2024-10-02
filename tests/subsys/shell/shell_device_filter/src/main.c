@@ -18,13 +18,13 @@ DEVICE_INSTANCE(device_1, NULL, NULL,
 	      NULL, NULL,
 	      POST_KERNEL, NULL);
 
-DEVICE_INSTANCE(device_2, NULL, NULL,
+DEVICE_INSTANCE(xx_device_2, NULL, NULL,
 	      NULL, NULL,
 	      POST_KERNEL, NULL);
 
 static const struct device *d0 = &DEVICE_NAME_GET(device_0);
 static const struct device *d1 = &DEVICE_NAME_GET(device_1);
-static const struct device *d2 = &DEVICE_NAME_GET(device_2);
+static const struct device *d2 = &DEVICE_NAME_GET(xx_device_2);
 
 ZTEST(shell_device_filter, test_unfiltered)
 {
@@ -47,7 +47,7 @@ ZTEST(shell_device_filter, test_prefix)
 
 static bool pm_device_test_filter(const struct device *dev)
 {
-	return strstr(dev->name, "@1") != NULL;
+	return strstr(dev->name, "_1") != NULL;
 }
 
 ZTEST(shell_device_filter, test_filter)
