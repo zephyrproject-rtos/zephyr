@@ -9,6 +9,7 @@
 #include <silabs/efr32mg24b020f1536im40.dtsi>
 #include "sparkfun_thing_plus_matter_mgm240p-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	 model = "Sparkfun MGM240P (Sparkfun Thing Plus Matter)";
@@ -99,6 +100,13 @@
 
 &se {
 	status = "okay";
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
+	silabs,pfmx-peak-current-milliamp = <50>;
 };
 
 &flash0 {

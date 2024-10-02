@@ -214,7 +214,9 @@ void soc_early_init_hook(void)
 #endif
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
-	sl_device_init_dcdc();
+	if (DT_HAS_COMPAT_STATUS_OKAY(silabs_series2_dcdc)) {
+		sl_device_init_dcdc();
+	}
 	sl_device_init_hfxo();
 	sl_device_init_dpll();
 

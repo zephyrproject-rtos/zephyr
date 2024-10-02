@@ -64,3 +64,7 @@
 	interrupts = <54 0>;
 	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 };
+
+&dcdc {
+	interrupts = <8 0>;
+};
