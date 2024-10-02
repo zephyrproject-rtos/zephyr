@@ -472,11 +472,10 @@
 #define I3C_BUS_TLOW_OD_MIN_NS 200
 
 /*
- * MIPI I3C v1.1.1 Spec defines tsco max as 12ns, but the default for devices is 8ns
- * TODO: this should be configurable by the value with in maxRd from the CCC GETMXDS
- * for individual devices
+ * MIPI I3C v1.1.1 Spec defines SDA Signal Data Hold in Push Pull max as the
+ * minimum of the clock rise and fall time plus 3ns
  */
-#define I3C_TSCO_DEFAULT_NS 8
+#define I3C_HD_PP_DEFAULT_NS 10
 
 /* Interrupt thresholds. */
 /* command response fifo threshold */
@@ -3058,16 +3057,18 @@ static enum i3c_bus_mode i3c_bus_mode(const struct i3c_dev_list *dev_list)
 /**
  * Determine THD_DEL value for CTRL register
  *
+ * Should be MIN(t_cf, t_cr) + 3ns
+ *
  * @param dev Pointer to device driver instance.
  *
  * @return Value to be written to THD_DEL
  */
-static uint8_t cdns_i3c_clk_to_data_turnaround(const struct device *dev)
+static uint8_t cdns_i3c_sda_data_hold(const struct device *dev)
 {
 	const struct cdns_i3c_config *config = dev->config;
 	uint32_t input_clock_frequency = config->input_frequency;
 	uint8_t thd_delay =
-		DIV_ROUND_UP(I3C_TSCO_DEFAULT_NS, (NSEC_PER_SEC / input_clock_frequency));
+		DIV_ROUND_UP(I3C_HD_PP_DEFAULT_NS, (NSEC_PER_SEC / input_clock_frequency));
 
 	if (thd_delay > THD_DELAY_MAX) {
 		thd_delay = THD_DELAY_MAX;
@@ -3156,11 +3157,10 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	ctrl &= ~CTRL_MST_ACK;
 
 	/*
-	 * Cadence I3C release r104v1p0 and above support configuration of the clock to data
-	 * turnaround time.
+	 * Cadence I3C release r104v1p0 and above support configuration of the sda data hold time
 	 */
 	if (REV_ID_REV(data->hw_cfg.rev_id) >= REV_ID_VERSION(1, 4)) {
-		ctrl |= CTRL_THD_DELAY(cdns_i3c_clk_to_data_turnaround(dev));
+		ctrl |= CTRL_THD_DELAY(cdns_i3c_sda_data_hold(dev));
 	}
 
 	/*
