@@ -83,3 +83,10 @@ Example Usage when connected
 
    uart:~$ ccp_call_control_client discover
    Discovery completed with GTBS and 1 TBS bearers
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_client read_bearer_name
+   Bearer 0x20046254 name: Generic TBS
+   uart:~$ ccp_call_control_client read_bearer_name 1
+   Bearer 0x20046256 name: Telephone Bearer #1
