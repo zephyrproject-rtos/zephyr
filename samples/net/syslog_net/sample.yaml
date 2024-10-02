@@ -37,3 +37,9 @@ tests:
       - CONFIG_LOG_BACKEND_NET_AUTOSTART=n
       - CONFIG_LOG_BACKEND_NET_SERVER=""
       - CONFIG_NET_SAMPLE_SERVER_RUNTIME="192.0.2.2:514"
+  sample.net.syslog.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
