@@ -8,6 +8,7 @@
 #include <silabs/efr32bg27.dtsi>
 #include <silabs/efr32bg2x-pinctrl.dtsi>
 #include "thunderboard.dtsi"
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	model = "Silicon Labs xG27-DK2602A Dev Kit";
@@ -29,6 +30,12 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_silabs;
 	};
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 };
 
 &flash0 {

@@ -8,6 +8,7 @@
 #include <silabs/efr32bg22.dtsi>
 #include <silabs/efr32bg2x-pinctrl.dtsi>
 #include "thunderboard.dtsi"
+#include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
 
 / {
 	/* These aliases are provided for compatibility with samples */
@@ -25,6 +26,12 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt_hci_silabs;
 	};
+};
+
+&dcdc {
+	status = "okay";
+	regulator-boot-on;
+	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
 };
 
 &flash0 {
