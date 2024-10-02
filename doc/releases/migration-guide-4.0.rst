@@ -43,6 +43,8 @@ Devicetree
 * The :c:macro:`DT_REG_ADDR` macro and its variants are now expanding into an
   unsigned literals (i.e. with a ``U`` suffix). To use addresses as devicetree
   indexes use the :c:macro:`DT_REG_ADDR_RAW` variants.
+* The :c:macro:`DT_REG_SIZE` macro and its variants are also expanding into
+  unsigned literals, no raw variants are provided at this stage.
 
 STM32
 =====

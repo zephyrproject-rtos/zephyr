@@ -2292,7 +2292,7 @@
  * @return size of the idx-th register block
  */
 #define DT_REG_SIZE_BY_IDX(node_id, idx) \
-	DT_CAT4(node_id, _REG_IDX_, idx, _VAL_SIZE)
+	DT_U32_C(DT_CAT4(node_id, _REG_IDX_, idx, _VAL_SIZE))
 
 /**
  * @brief Get a node's (only) register block address
@@ -2367,7 +2367,7 @@
  * @return size of the register block specified by name
  */
 #define DT_REG_SIZE_BY_NAME(node_id, name) \
-	DT_CAT4(node_id, _REG_NAME_, name, _VAL_SIZE)
+	DT_U32_C(DT_CAT4(node_id, _REG_NAME_, name, _VAL_SIZE))
 
 /**
  * @brief Like DT_REG_SIZE_BY_NAME(), but with a fallback to @p default_value
