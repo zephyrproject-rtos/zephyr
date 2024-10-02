@@ -171,12 +171,14 @@ static const struct dma_driver_api dma_xilinx_api = {
 static int get_engine_channel_id(struct dma_xilinx_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
+
 	return (value & XDMA_CHANNEL_ID_MASK) >> XDMA_CHANNEL_ID_LSB;
 }
 
 static int get_engine_id(struct dma_xilinx_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
+
 	return (value & XDMA_ENGINE_ID_MASK) >> XDMA_ENGINE_ID_LSB;
 }
 
