@@ -138,9 +138,9 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				reg = <0 0x400000>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				/* Flash size is specified in SOC/SIP dtsi */
 			};
 		};
 
