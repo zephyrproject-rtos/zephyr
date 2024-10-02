@@ -14,6 +14,7 @@ struct test_nested {
 	bool nested_bool;
 	const char *nested_string;
 	int64_t nested_int64;
+	uint64_t nested_uint64;
 };
 
 struct test_struct {
@@ -22,6 +23,8 @@ struct test_struct {
 	bool some_bool;
 	int64_t some_int64;
 	int64_t another_int64;
+	int64_t some_uint64;
+	int64_t another_uint64;
 	struct test_nested some_nested_struct;
 	int some_array[16];
 	size_t some_array_len;
@@ -51,6 +54,9 @@ struct test_int_limits {
 	int64_t int64_max;
 	int64_t int64_cero;
 	int64_t int64_min;
+	uint64_t uint64_max;
+	uint64_t uint64_cero;
+	uint64_t uint64_min;
 };
 
 static const struct json_obj_descr nested_descr[] = {
@@ -60,6 +66,8 @@ static const struct json_obj_descr nested_descr[] = {
 			    JSON_TOK_STRING),
 	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_int64,
 			    JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_nested, nested_uint64,
+			    JSON_TOK_UINT64),
 };
 
 static const struct json_obj_descr test_descr[] = {
@@ -70,6 +78,10 @@ static const struct json_obj_descr test_descr[] = {
 			    JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_struct, another_int64,
 			    JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, some_uint64,
+			    JSON_TOK_UINT64),
+	JSON_OBJ_DESCR_PRIM(struct test_struct, another_uint64,
+			    JSON_TOK_UINT64),
 	JSON_OBJ_DESCR_OBJECT(struct test_struct, some_nested_struct,
 			      nested_descr),
 	JSON_OBJ_DESCR_ARRAY(struct test_struct, some_array,
@@ -104,6 +116,9 @@ static const struct json_obj_descr obj_limits_descr[] = {
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_max, JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_cero, JSON_TOK_INT64),
 	JSON_OBJ_DESCR_PRIM(struct test_int_limits, int64_min, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_max, JSON_TOK_UINT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_cero, JSON_TOK_UINT64),
+	JSON_OBJ_DESCR_PRIM(struct test_int_limits, uint64_min, JSON_TOK_UINT64),
 };
 
 struct array {
@@ -197,12 +212,15 @@ ZTEST(lib_json_test, test_json_encoding)
 		.some_int = 42,
 		.some_int64 = 1152921504606846977,
 		.another_int64 = -2305843009213693937,
+		.some_uint64 = 18446744073709551615U,
+		.another_uint64 = 0,
 		.some_bool = true,
 		.some_nested_struct = {
 			.nested_int = -1234,
 			.nested_bool = false,
 			.nested_string = "this should be escaped: \t",
 			.nested_int64 = 4503599627370496,
+			.nested_uint64 = 18446744073709551610U,
 		},
 		.some_array[0] = 1,
 		.some_array[1] = 4,
@@ -222,6 +240,7 @@ ZTEST(lib_json_test, test_json_encoding)
 			.nested_bool = true,
 			.nested_string = "no escape necessary",
 			.nested_int64 = 4503599627370496,
+			.nested_uint64 = 18446744073709551610U,
 		},
 		.nested_obj_array = {
 			{1, true, "true"},
@@ -233,10 +252,13 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"some_int\":42,\"some_bool\":true,"
 		"\"some_int64\":1152921504606846977,"
 		"\"another_int64\":-2305843009213693937,"
+		"\"some_uint64\":18446744073709551615,"
+		"\"another_uint64\":0,"
 		"\"some_nested_struct\":{\"nested_int\":-1234,"
 		"\"nested_bool\":false,\"nested_string\":"
 		"\"this should be escaped: \\t\","
-		"\"nested_int64\":4503599627370496},"
+		"\"nested_int64\":4503599627370496,"
+		"\"nested_uint64\":18446744073709551610},"
 		"\"some_array\":[1,4,8,16,32],"
 		"\"another_b!@l\":true,"
 		"\"if\":false,"
@@ -244,10 +266,11 @@ ZTEST(lib_json_test, test_json_encoding)
 		"\"4nother_ne$+\":{\"nested_int\":1234,"
 		"\"nested_bool\":true,"
 		"\"nested_string\":\"no escape necessary\","
-		"\"nested_int64\":4503599627370496},"
+		"\"nested_int64\":4503599627370496,"
+		"\"nested_uint64\":18446744073709551610},"
 		"\"nested_obj_array\":["
-		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_int64\":0},"
-		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_int64\":0}]"
+		"{\"nested_int\":1,\"nested_bool\":true,\"nested_string\":\"true\",\"nested_int64\":0,\"nested_uint64\":0},"
+		"{\"nested_int\":0,\"nested_bool\":false,\"nested_string\":\"false\",\"nested_int64\":0,\"nested_uint64\":0}]"
 		"}";
 	char buffer[sizeof(encoded)];
 	int ret;
@@ -274,6 +297,8 @@ ZTEST(lib_json_test, test_json_decoding)
 		"\r   ,"
 		"\"some_int64\":-4611686018427387904,"
 		"\"another_int64\":-2147483648,"
+		"\"some_uint64\":18446744073709551615,"
+		"\"another_uint64\":0,"
 		"\"some_nested_struct\":{    "
 		"\"nested_int\":-1234,\n\n"
 		"\"nested_bool\":false,\t"
@@ -368,7 +393,10 @@ ZTEST(lib_json_test, test_json_limits)
 			 "\"int_min\":-2147483648,"
 			 "\"int64_max\":9223372036854775807,"
 			 "\"int64_cero\":0,"
-			 "\"int64_min\":-9223372036854775808"
+			 "\"int64_min\":-9223372036854775808,"
+			 "\"uint64_max\":18446744073709551615,"
+			 "\"uint64_cero\":0,"
+			 "\"uint64_min\":0"
 			 "}";
 
 	struct test_int_limits limits = {
@@ -378,6 +406,9 @@ ZTEST(lib_json_test, test_json_limits)
 		.int64_max = INT64_MAX,
 		.int64_cero = 0,
 		.int64_min = INT64_MIN,
+		.uint64_max = UINT64_MAX,
+		.uint64_cero = 0,
+		.uint64_min = 0,
 	};
 
 	char buffer[sizeof(encoded)];
