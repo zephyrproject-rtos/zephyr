@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ */
+
+/ {
+	aliases {
+		rtc = &rtc0;
+	};
+};
+
+&rtc0 {
+	status = "okay";
+};
