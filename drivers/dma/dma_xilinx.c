@@ -189,6 +189,7 @@ static int engine_init_regs(struct dma_xilinx_engine_regs *regs)
 
 	sys_write32(XDMA_CTRL_NON_INCR_ADDR, (mem_addr_t)&regs->control_w1c);
 	tmp = sys_read32((mem_addr_t)&regs->alignments);
+	/* These values will be used in other operations */
 	if (tmp != 0) {
 		align_bytes = (tmp & XDMA_ALIGN_BYTES_MASK) >> XDMA_ALIGN_BYTES_LSB;
 		granularity_bytes =
