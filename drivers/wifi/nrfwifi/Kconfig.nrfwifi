@@ -136,10 +136,6 @@ config NRF_WIFI_PATCHES_BUILTIN
 	  Select this option to store nRF70 FW patches as part of the driver.
 	  This option impacts the code memory footprint of the driver.
 
-config CUSTOM_LINKER_SCRIPT
-	string "Custom linker script for nRF70 FW patches"
-	default "${ZEPHYR_BASE}/../nrf/drivers/wifi/nrf70/rpu_fw_patches.ld"
-
 config NRF_WIFI_LOW_POWER
 	bool "low power mode in nRF Wi-Fi chipsets"
 	default y
