@@ -63,6 +63,36 @@
 							/* GND */
 	};
 
+	pmod1_header: pmod-connector-1 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport6 12 0>,	/* IO1 */
+			   <1 0 &ioport6 9 0>,	/* IO2 */
+			   <2 0 &ioport6 10 0>,	/* IO3 */
+			   <3 0 &ioport6 11 0>,	/* IO4 */
+			   <4 0 &ioport0 6 0>,	/* IO5 */
+			   <5 0 &ioporta 8 0>,	/* IO6 */
+			   <6 0 &ioport6 14 0>,	/* IO7 */
+			   <7 0 &ioport6 15 0>;	/* IO8 */
+	};
+
+	pmod2_header: pmod-connector-2 {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioporta 5 0>,	/* IO1 */
+			   <1 0 &ioporta 3 0>,	/* IO2 */
+			   <2 0 &ioporta 2 0>,	/* IO3 */
+			   <3 0 &ioporta 4 0>,	/* IO4 */
+			   <4 0 &ioport5 8 0>,	/* IO5 */
+			   <5 0 &ioport8 9 0>,	/* IO6 */
+			   <6 0 &ioport8 10 0>,	/* IO7 */
+			   <7 0 &ioport8 11 0>;	/* IO8 */
+	};
+
 	aliases {
 		led0 = &led1;
 	};
@@ -142,8 +172,36 @@
 	status = "okay";
 };
 
+&ioport8 {
+	status = "okay";
+};
+
 &ioport9 {
 	status = "okay";
+};
+
+&ioporta {
+	status = "okay";
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci2 {
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	uart2: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
 };
 
 &sci3 {
@@ -221,3 +279,9 @@ mikrobus_serial: &uart3 {};
 		status = "okay";
 	};
 };
+
+pmod1_serial: &uart0 {};
+pmod2_serial: &uart2 {};
+
+pmod_serial: &pmod1_serial {};
+pmod_header: &pmod1_header {};
