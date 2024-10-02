@@ -23,7 +23,6 @@
 #else
 #define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
 #endif /* CONFIG_ARCH_POSIX */
-#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
 
 /* Test 'flash read' shell command */
 ZTEST(shell_flash, test_flash_read)
@@ -37,7 +36,6 @@ ZTEST(shell_flash, test_flash_read)
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 	const struct device *const flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	const char *buf;
-	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
 	const int test_size = 0x24;  /* 32-alignment required */
 	uint8_t data[test_size];
 	size_t size;
@@ -51,7 +49,7 @@ ZTEST(shell_flash, test_flash_read)
 	zassert_true(device_is_ready(flash_dev),
 		     "Simulated flash driver not ready");
 
-	ret = flash_write(flash_dev, test_base, data, test_size);
+	ret = flash_write(flash_dev, 0, data, test_size);
 	zassert_equal(0, ret, "flash_write() failed: %d", ret);
 
 	ret = shell_execute_cmd(NULL, "flash read 0 23");
