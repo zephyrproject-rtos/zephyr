@@ -140,7 +140,9 @@ static inline unsigned int irq_to_level_2(unsigned int irq)
 {
 	_z_irq_t z_irq = {
 		.bits = {
+			.l1 = 0,
 			.l2 = irq + 1,
+			.l3 = 0,
 		},
 	};
 
@@ -212,6 +214,8 @@ static inline unsigned int irq_to_level_3(unsigned int irq)
 {
 	_z_irq_t z_irq = {
 		.bits = {
+			.l1 = 0,
+			.l2 = 0,
 			.l3 = irq + 1,
 		},
 	};
