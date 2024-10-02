@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <dt-bindings/clock/silabs/xg21-clock.h>
+#include <freq.h>
 #include "gpio_gecko.h"
 
 / {
@@ -48,6 +49,15 @@
 			interrupt-names = "cmu";
 			status = "okay";
 			#clock-cells = <2>;
+		};
+
+		clk_hfxo: clk-hfxo@5000c000 {
+			#clock-cells = <0>;
+			compatible = "silabs,hfxo";
+			reg = <0x5000c000 0x4000>;
+			clock-frequency = <DT_FREQ_K(38400)>;
+			ctune = <140>;
+			precision = <50>;
 		};
 
 		msc: flash-controller@50030000 {
@@ -118,7 +128,7 @@
 		};
 
 		rtcc0: rtcc@58000000 {
-			compatible = "silabs,gecko-rtcc";
+			compatible = "silabs,gecko-stimer";
 			reg = <0x58000000 0x400>;
 			interrupts = <10 0>;
 			clock-frequency = <32768>;
