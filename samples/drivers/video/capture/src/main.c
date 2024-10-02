@@ -10,7 +10,12 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
 
+#ifdef CONFIG_TEST
+#define LOG_LEVEL LOG_LEVEL_DBG
+#else
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
