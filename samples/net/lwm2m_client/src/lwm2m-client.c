@@ -385,12 +385,9 @@ int main(void)
 			return ret;
 		}
 
-		ret = conn_mgr_if_connect(net_if_get_default());
-		/* Ignore errors from interfaces not requiring connectivity */
-		if (ret == 0) {
-			LOG_INF("Connecting to network");
-			k_sem_take(&network_connected_sem, K_FOREVER);
-		}
+		(void)conn_mgr_if_connect(net_if_get_default());
+
+		k_sem_take(&network_connected_sem, K_FOREVER);
 	}
 
 	ret = lwm2m_setup();

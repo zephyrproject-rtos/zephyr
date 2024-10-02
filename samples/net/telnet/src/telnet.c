@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(net_telnet_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_mgmt.h>
 
+#include "net_sample_common.h"
+
 #if defined(CONFIG_NET_DHCPV4)
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -139,6 +141,8 @@ int main(void)
 	struct net_if *iface = net_if_get_default();
 
 	LOG_INF("Starting Telnet sample");
+
+	wait_for_network();
 
 	setup_ipv4(iface);
 
