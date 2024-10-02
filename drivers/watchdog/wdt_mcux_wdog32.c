@@ -51,10 +51,10 @@ static int mcux_wdog32_setup(const struct device *dev, uint8_t options)
 	}
 
 	data->wdog_config.workMode.enableStop =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == WDT_OPT_PAUSE_IN_SLEEP;
 
 	data->wdog_config.workMode.enableDebug =
-		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
+		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == WDT_OPT_PAUSE_HALTED_BY_DBG;
 
 	WDOG32_Init(base, &data->wdog_config);
 	LOG_DBG("Setup the watchdog");
