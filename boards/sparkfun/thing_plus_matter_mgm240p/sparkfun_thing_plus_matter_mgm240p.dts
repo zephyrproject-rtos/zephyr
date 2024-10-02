@@ -49,6 +49,22 @@
 	clock-frequency = <78000000>;
 };
 
+&hfxo {
+	status = "okay";
+	ctune = <140>;
+	precision = <50>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(78)>;
+	clocks = <&hfxo>;
+	dpll-n = <3839>;
+	dpll-m = <1919>;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-autorecover;
+};
+
 &usart0 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart0_default>;
