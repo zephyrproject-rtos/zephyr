@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon CAT1 family RTC device
+
+compatible: "infineon,cat1-rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
