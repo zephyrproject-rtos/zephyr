@@ -1,6 +1,9 @@
-description: TODO
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
 
-compatible: "xilinx,alinx-dma"
+description: DMA driver for TSN NIC
+
+compatible: "tsnlab,tsn-nic-dma"
 
 include: dma-controller.yaml
 

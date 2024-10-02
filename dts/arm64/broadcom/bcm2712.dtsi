@@ -106,7 +106,7 @@
 				 <0x03000000 0x0 0x0 0x10 0x0 0x10 0x00000000>;
 
 			xdma: dma@1b08000000 {
-				compatible = "xilinx,alinx-dma";
+				compatible = "tsnlab,tsn-nic-dma";
 				#dma-cells = <1>;
 				status = "okay";
 				reg = <0x0 0x0 0x0 0x0 0x0>;

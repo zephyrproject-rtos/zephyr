@@ -5,10 +5,10 @@
  */
 
 /* TODO: Better name */
-#define DT_DRV_COMPAT xilinx_alinx_dma
+#define DT_DRV_COMPAT tsnlab_tsn_nic_dma
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(xilinx_dma, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(dma_tsn_nic, LOG_LEVEL_ERR);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -53,13 +53,13 @@ LOG_MODULE_REGISTER(xilinx_dma, LOG_LEVEL_ERR);
 #define XDMA_ENGINE_START 16268831
 #define XDMA_ENGINE_STOP  16268830
 
-struct dma_xilinx_config_regs {
+struct dma_tsn_nic_config_regs {
 	uint32_t identifier;
 	uint32_t reserved_1[4];
 	uint32_t msi_enable;
 };
 
-struct dma_xilinx_engine_regs {
+struct dma_tsn_nic_engine_regs {
 	uint32_t identifier;
 	uint32_t control;
 	uint32_t control_w1s;
@@ -88,29 +88,29 @@ struct dma_xilinx_engine_regs {
 	uint32_t perf_pnd_hi;
 } __packed; /* TODO: Move these to header file */
 
-struct dma_xilinx_config {
+struct dma_tsn_nic_config {
 	const struct device *pci_dev;
 };
 
-struct dma_xilinx_data {
+struct dma_tsn_nic_data {
 	mm_reg_t bar;
-	struct dma_xilinx_engine_regs *regs[2];
+	struct dma_tsn_nic_engine_regs *regs[2];
 };
 
-static int dma_xilinx_config(const struct device *dev, uint32_t channel, struct dma_config *config)
+static int dma_tsn_nic_config(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
 	return -ENOTSUP;
 }
 
-static int dma_xilinx_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
+static int dma_tsn_nic_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
 			     size_t size)
 {
 	return -ENOTSUP;
 }
 
-static int dma_xilinx_start(const struct device *dev, uint32_t channel)
+static int dma_tsn_nic_start(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xilinx_data *data = dev->data;
+	const struct dma_tsn_nic_data *data = dev->data;
 
 	/* There is only one channel for each direction for now */
 	sys_write32(XDMA_ENGINE_START, (mem_addr_t)&data->regs[XDMA_H2C]->control);
@@ -119,9 +119,9 @@ static int dma_xilinx_start(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_xilinx_stop(const struct device *dev, uint32_t channel)
+static int dma_tsn_nic_stop(const struct device *dev, uint32_t channel)
 {
-	const struct dma_xilinx_data *data = dev->data;
+	const struct dma_tsn_nic_data *data = dev->data;
 
 	/* There is only one channel for each direction for now */
 	sys_write32(XDMA_ENGINE_STOP, (mem_addr_t)&data->regs[XDMA_H2C]->control);
@@ -130,59 +130,59 @@ static int dma_xilinx_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_xilinx_suspend(const struct device *dev, uint32_t channel)
+static int dma_tsn_nic_suspend(const struct device *dev, uint32_t channel)
 {
 	return -ENOTSUP;
 }
 
-static int dma_xilinx_resume(const struct device *dev, uint32_t channel)
+static int dma_tsn_nic_resume(const struct device *dev, uint32_t channel)
 {
 	return -ENOTSUP;
 }
 
-static int dma_xilinx_get_status(const struct device *dev, uint32_t channel,
+static int dma_tsn_nic_get_status(const struct device *dev, uint32_t channel,
 				 struct dma_status *status)
 {
 	return -ENOTSUP;
 }
 
-static int dma_xilinx_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
+static int dma_tsn_nic_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
 {
 	return -ENOTSUP;
 }
 
-static bool dma_xilinx_chan_filter(const struct device *dev, int channel, void *filter_param)
+static bool dma_tsn_nic_chan_filter(const struct device *dev, int channel, void *filter_param)
 {
 	return -ENOTSUP;
 }
 
-static const struct dma_driver_api dma_xilinx_api = {
-	.config = dma_xilinx_config,
-	.reload = dma_xilinx_reload,
-	.start = dma_xilinx_start,
-	.stop = dma_xilinx_stop,
-	.suspend = dma_xilinx_suspend,
-	.resume = dma_xilinx_resume,
-	.get_status = dma_xilinx_get_status,
-	.get_attribute = dma_xilinx_get_attribute,
-	.chan_filter = dma_xilinx_chan_filter,
+static const struct dma_driver_api dma_tsn_nic_api = {
+	.config = dma_tsn_nic_config,
+	.reload = dma_tsn_nic_reload,
+	.start = dma_tsn_nic_start,
+	.stop = dma_tsn_nic_stop,
+	.suspend = dma_tsn_nic_suspend,
+	.resume = dma_tsn_nic_resume,
+	.get_status = dma_tsn_nic_get_status,
+	.get_attribute = dma_tsn_nic_get_attribute,
+	.chan_filter = dma_tsn_nic_chan_filter,
 };
 
-static int get_engine_channel_id(struct dma_xilinx_engine_regs *regs)
+static int get_engine_channel_id(struct dma_tsn_nic_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
 
 	return (value & XDMA_CHANNEL_ID_MASK) >> XDMA_CHANNEL_ID_LSB;
 }
 
-static int get_engine_id(struct dma_xilinx_engine_regs *regs)
+static int get_engine_id(struct dma_tsn_nic_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
 
 	return (value & XDMA_ENGINE_ID_MASK) >> XDMA_ENGINE_ID_LSB;
 }
 
-static int engine_init_regs(struct dma_xilinx_engine_regs *regs)
+static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 {
 	uint32_t align_bytes, granularity_bytes, address_bits;
 	uint32_t tmp;
@@ -214,11 +214,11 @@ static int engine_init_regs(struct dma_xilinx_engine_regs *regs)
 	return 0;
 }
 
-static int dma_xilinx_init(const struct device *dev)
+static int dma_tsn_nic_init(const struct device *dev)
 {
-	const struct dma_xilinx_config *config = dev->config;
-	struct dma_xilinx_data *data = dev->data;
-	struct dma_xilinx_engine_regs *regs;
+	const struct dma_tsn_nic_config *config = dev->config;
+	struct dma_tsn_nic_data *data = dev->data;
+	struct dma_tsn_nic_engine_regs *regs;
 	uintptr_t bar_addr, bus_addr;
 	int engine_id, channel_id;
 	bool ret;
@@ -237,7 +237,7 @@ static int dma_xilinx_init(const struct device *dev)
 
 	device_map(&data->bar, bar_addr, XDMA_CONFIG_BAR_SIZE, K_MEM_CACHE_NONE);
 
-	regs = (struct dma_xilinx_engine_regs *)(data->bar);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_H2C) || (channel_id != 0)) {
@@ -247,7 +247,7 @@ static int dma_xilinx_init(const struct device *dev)
 	engine_init_regs(regs);
 	data->regs[XDMA_H2C] = regs;
 
-	regs = (struct dma_xilinx_engine_regs *)(data->bar + XDMA_C2H_OFFSET);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar + XDMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_C2H) || (channel_id != 0)) {
@@ -261,14 +261,14 @@ static int dma_xilinx_init(const struct device *dev)
 }
 
 /* TODO: POST_KERNEL is set to use printk, revert this after the development is done */
-#define DMA_XILINX_INIT(n)                                                                         \
-	static struct dma_xilinx_data dma_xilinx_data_##n = {};                                    \
+#define DMA_TSN_NIC_INIT(n)                                                                         \
+	static struct dma_tsn_nic_data dma_tsn_nic_data_##n = {};                                    \
                                                                                                    \
-	static const struct dma_xilinx_config dma_xilinx_cfg_##n = {                               \
+	static const struct dma_tsn_nic_config dma_tsn_nic_cfg_##n = {                               \
 		.pci_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, dma_xilinx_init, NULL, &dma_xilinx_data_##n, &dma_xilinx_cfg_##n, \
-			      POST_KERNEL, 99, &dma_xilinx_api);
+	DEVICE_DT_INST_DEFINE(n, dma_tsn_nic_init, NULL, &dma_tsn_nic_data_##n, &dma_tsn_nic_cfg_##n, \
+			      POST_KERNEL, 99, &dma_tsn_nic_api);
 
-DT_INST_FOREACH_STATUS_OKAY(DMA_XILINX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(DMA_TSN_NIC_INIT)

@@ -1,7 +1,0 @@
-
-config DMA_XILINX
-	bool "TODO"
-	default y
-	depends on DT_HAS_XILINX_ALINX_DMA_ENABLED
-	help
-	  TODO
