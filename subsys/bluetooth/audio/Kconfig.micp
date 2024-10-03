@@ -10,7 +10,7 @@
 
 config BT_MICP_MIC_DEV
 	bool "Microphone Control Profile Microphone Device Support"
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	depends on BT_BONDABLE
 	help
 	  This option enables support for Microphone Control Profile
