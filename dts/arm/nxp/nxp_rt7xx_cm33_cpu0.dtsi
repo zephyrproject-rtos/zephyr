@@ -1,0 +1,816 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		sram: sram@10000000 {
+			ranges = <0x0 0x10000000 0x780000
+				0x20000000 0x30000000 0x780000>;
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+		};
+
+		xspi0: spi@50184000 {
+			reg = <0x50184000 0x1000>, <0x38000000 DT_SIZE_M(128)>;
+		};
+
+		xspi1: spi@50185000 {
+			reg = <0x50185000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		};
+
+		xspi2: spi@50411000 {
+			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
+		};
+
+	};
+
+	pinctrl: pinctrl {
+		compatible = "nxp,rt-iocon-pinctrl";
+	};
+};
+
+
+&sram {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	/* RT7XX SRAM partitions are shared between code and data. Boards can override
+	 *  the reg properties of either sram0 or sram_code nodes to change the balance
+	 *  of SRAM allocation.
+	 *
+	 * The SRAM region [0x000000-0x017FFF] is reserved for ROM bootloader execution.
+	 * Can be reused after boot.
+	 * The SRAM region [0x018000-0x17FFFF] is reserved for Non-cached shared memory
+	 * or application data.
+	 * The SRAM region [0x180000-0x1FFFFF] is reserved for CPU0 application, last
+	 * 2MB non-cacheable data for NPU/GPU/Display etc.
+	 * The SRAM region [0x200000-0x400000] is reserved for HiFi4 application.
+	 */
+
+	sram4rom: memory@20000000{
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(96)>;
+	};
+
+	/* This partition is shared with code in RAM */
+	sram_shared_code: memory@20018000{
+		compatible = "mmio-sram";
+		reg = <0x20018000 DT_SIZE_K(1024+512-96)>;
+	};
+
+	sram0: memory@20180000 {
+		compatible = "mmio-sram";
+		reg = <0x20180000 DT_SIZE_K(512)>;
+	};
+
+	sram1: memory@20200000 {
+		compatible =  "mmio-sram";
+		reg = <0x20200000 DT_SIZE_K(2048)>;
+	};
+};
+
+&peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	/*
+	 * Note that the offsets here are relative to the base address.
+	 * The base addresses differ between non-secure (0x40000000)
+	 * and secure modes (0x50000000).
+	 */
+
+	rstctl0: reset@0 {
+		compatible = "nxp,rstctl";
+		reg = <0x0 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl2: reset@67000 {
+		compatible = "nxp,rstctl";
+		reg = <0x67000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl3: reset@60000 {
+		compatible = "nxp,rstctl";
+		reg = <0x60000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	rstctl4: reset@a0000 {
+		compatible = "nxp,rstctl";
+		reg = <0xa0000 0x1000>;
+		#reset-cells = <1>;
+	};
+
+	clkctl0: clkctl@1000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x1000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl2: clkctl@65000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x65000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl3: clkctl@61000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x61000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	clkctl4: clkctl@a1000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0xa1000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon0: syscon@2000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x2000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon2: syscon@66000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x66000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon3: syscon@62000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0x62000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	syscon4: syscon@a2000 {
+		compatible = "nxp,lpc-syscon";
+		reg = <0xa2000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	iocon: iocon@4000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x4000 0x1000>;
+		status = "okay";
+	};
+
+	iocon1: iocon@64000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0x64000 0x1000>;
+		status = "okay";
+	};
+
+	iocon2: iocon@a5000 {
+		compatible = "nxp,lpc-iocon";
+		reg = <0xa5000 0x1000>;
+		status = "okay";
+	};
+
+	gpio0: gpio@100000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x100000 0x1000>;
+		interrupts = <91 0>,<92 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio0>;
+	};
+
+	gpio1: gpio@102000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x102000 0x1000>;
+		interrupts = <93 0>,<94 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio1>;
+	};
+
+	gpio2: gpio@104000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x104000 0x1000>;
+		interrupts = <95 0>,<96 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio2>;
+	};
+
+	gpio3: gpio@106000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x106000 0x1000>;
+		interrupts = <97 0>,<98 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio3>;
+	};
+
+	gpio4: gpio@108000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x108000 0x1000>;
+		interrupts = <99 0>,<100 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio4>;
+	};
+
+	gpio5: gpio@10a000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x10a000 0x1000>;
+		interrupts = <101 0>,<102 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio5>;
+	};
+
+	gpio6: gpio@10c000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x10c000 0x1000>;
+		interrupts = <103 0>,<104 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio6>;
+	};
+
+	gpio7: gpio@10e000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x10e000 0x1000>;
+		interrupts = <105 0>,<106 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&gpio7>;
+	};
+
+	flexcomm0: flexcomm@110000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x110000 0x1000>;
+		interrupts = <7 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm0_lpuart0: uart@110000 {
+			compatible = "nxp,lpuart";
+			reg = <0x110000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
+			status = "disabled";
+		};
+		flexcomm0_lpspi0: lpspi@110000 {
+			compatible = "nxp,lpspi";
+			reg = <0x110000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm0_lpi2c0: lpi2c@110000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x110000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm1: flexcomm@111000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x111000 0x1000>;
+		interrupts = <8 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm1_lpuart1: uart@111000 {
+			compatible = "nxp,lpuart";
+			reg = <0x111000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
+			status = "disabled";
+		};
+		flexcomm1_lpspi1: lpspi@111000 {
+			compatible = "nxp,lpspi";
+			reg = <0x111000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm1_lpi2c1: lpi2c@111000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x111000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm2: flexcomm@112000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x112000 0x1000>;
+		interrupts = <9 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm2_lpuart2: uart@112000 {
+			compatible = "nxp,lpuart";
+			reg = <0x112000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
+			status = "disabled";
+		};
+		flexcomm2_lpspi2: lpspi@112000 {
+			compatible = "nxp,lpspi";
+			reg = <0x112000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm2_lpi2c2: lpi2c@112000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x112000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm3: flexcomm@113000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x113000 0x1000>;
+		interrupts = <10 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm3_lpuart3: uart@113000 {
+			compatible = "nxp,lpuart";
+			reg = <0x113000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
+			status = "disabled";
+		};
+		flexcomm3_lpspi3: lpspi@113000 {
+			compatible = "nxp,lpspi";
+			reg = <0x113000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm3_lpi2c3: lpi2c@113000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x113000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm4: flexcomm@171000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x171000 0x1000>;
+		interrupts = <11 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm4_lpuart4: uart@171000 {
+			compatible = "nxp,lpuart";
+			reg = <0x171000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
+			status = "disabled";
+		};
+		flexcomm4_lpspi4: lpspi@171000 {
+			compatible = "nxp,lpspi";
+			reg = <0x171000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm4_lpi2c4: lpi2c@171000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x171000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm5: flexcomm@172000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x172000 0x1000>;
+		interrupts = <12 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm5_lpuart5: uart@172000 {
+			compatible = "nxp,lpuart";
+			reg = <0x172000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
+			status = "disabled";
+		};
+		flexcomm5_lpspi5: lpspi@172000 {
+			compatible = "nxp,lpspi";
+			reg = <0x172000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm5_lpi2c5: lpi2c@172000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x172000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm6: flexcomm@173000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x173000 0x1000>;
+		interrupts = <35 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm6_lpuart6: uart@173000 {
+			compatible = "nxp,lpuart";
+			reg = <0x173000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
+			status = "disabled";
+		};
+		flexcomm6_lpspi6: lpspi@173000 {
+			compatible = "nxp,lpspi";
+			reg = <0x173000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm6_lpi2c6: lpi2c@173000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x173000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm7: flexcomm@174000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x174000 0x1000>;
+		interrupts = <36 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm7_lpuart7: uart@174000 {
+			compatible = "nxp,lpuart";
+			reg = <0x174000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
+			status = "disabled";
+		};
+		flexcomm7_lpspi7: lpspi@174000 {
+			compatible = "nxp,lpspi";
+			reg = <0x174000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm7_lpi2c7: lpi2c@174000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x174000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm8: flexcomm@199000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x199000 0x1000>;
+		interrupts = <47 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm8_lpuart8: uart@199000 {
+			compatible = "nxp,lpuart";
+			reg = <0x199000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
+			status = "disabled";
+		};
+		flexcomm8_lpspi8: lpspi@199000 {
+			compatible = "nxp,lpspi";
+			reg = <0x199000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm8_lpi2c8: lpi2c@199000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x199000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm9: flexcomm@19a000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x19a000 0x1000>;
+		interrupts = <48 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm9_lpuart9: uart@19a000 {
+			compatible = "nxp,lpuart";
+			reg = <0x19a000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
+			status = "disabled";
+		};
+		flexcomm9_lpspi9: lpspi@19a000 {
+			compatible = "nxp,lpspi";
+			reg = <0x19a000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm9_lpi2c9: lpi2c@19a000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x19a000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm10: flexcomm@19b000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x19b000 0x1000>;
+		interrupts = <49 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm10_lpuart10: uart@19b000 {
+			compatible = "nxp,lpuart";
+			reg = <0x19b000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
+			status = "disabled";
+		};
+		flexcomm10_lpspi10: lpspi@19b000 {
+			compatible = "nxp,lpspi";
+			reg = <0x19b000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm10_lpi2c10: lpi2c@19b000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x19b000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm11: flexcomm@19c000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x19c000 0x1000>;
+		interrupts = <50 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm11_lpuart11: uart@19c000 {
+			compatible = "nxp,lpuart";
+			reg = <0x19c000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
+			status = "disabled";
+		};
+		flexcomm11_lpspi11: lpspi@19c000 {
+			compatible = "nxp,lpspi";
+			reg = <0x19c000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm11_lpi2c11: lpi2c@19c000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x19c000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm12: flexcomm@19d000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x19d000 0x1000>;
+		interrupts = <51 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm12_lpuart12: uart@19d000 {
+			compatible = "nxp,lpuart";
+			reg = <0x19d000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
+			status = "disabled";
+		};
+		flexcomm12_lpspi12: lpspi@19d000 {
+			compatible = "nxp,lpspi";
+			reg = <0x19d000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm12_lpi2c12: lpi2c@19d000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x19d000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	flexcomm13: flexcomm@19e000 {
+		compatible = "nxp,lp-flexcomm";
+		reg = <0x19e000 0x1000>;
+		interrupts = <52 0>;
+		status = "disabled";
+
+		/* Empty ranges property implies parent and child address space is identical */
+		ranges = <>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flexcomm13_lpuart13: uart@19e000 {
+			compatible = "nxp,lpuart";
+			reg = <0x19e000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
+			status = "disabled";
+		};
+		flexcomm13_lpspi13: lpspi@19e000 {
+			compatible = "nxp,lpspi";
+			reg = <0x19e000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+		flexcomm13_lpi2c13: lpi2c@19e000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x19e000 0x1000>;
+			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	/* LPFlexcomm14/16 only support LPSPI function  */
+	lpspi14: spi@484000 {
+		compatible = "nxp,lpspi";
+		reg = <0x484000 0x1000>;
+		interrupts = <13 0>;
+		clocks = <&clkctl4 MCUX_LPSPI14_CLK>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+
+	/* LPFlexcomm15 only support LPI2C function. */
+	lpi2c15: i2c@213000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x213000 0x1000>;
+		interrupts = <14 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		status = "disabled";
+	};
+
+	/* LPFlexcomm14/16 only support LPSPI function  */
+	lpspi16: spi@405000 {
+		compatible = "nxp,lpspi";
+		reg = <0x405000 0x1000>;
+		interrupts = <53 0>;
+		clocks = <&clkctl4 MCUX_LPSPI16_CLK>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+};
+
+&xspi0 {
+	compatible = "nxp,xspi";
+	status = "disabled";
+	interrupts = <42 0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&clkctl0 MCUX_XSPI_CLK>;
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
