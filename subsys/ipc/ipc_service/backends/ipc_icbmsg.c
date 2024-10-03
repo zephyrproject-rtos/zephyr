@@ -1045,7 +1045,11 @@ static int register_ept(const struct device *instance, void **token,
 			if (!mating_state) {
 				return -EINVAL;
 			}
+#ifdef CONFIG_MULTITHREADING
 			schedule_ept_bound_process(dev_data);
+#else
+			ept_bound_process(dev_data);
+#endif
 			return 0;
 		}
 	}
