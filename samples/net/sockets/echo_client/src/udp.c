@@ -36,7 +36,7 @@ static struct k_thread udp_tx_thread;
 static struct udp_control udp4_ctrl, udp6_ctrl;
 static struct k_poll_signal udp_kill;
 
-static int send_udp_data(struct data *data);
+static int send_udp_data(struct sample_data *data);
 static void wait_reply(struct k_timer *timer);
 static void wait_transmit(struct k_timer *timer);
 
@@ -136,7 +136,7 @@ void init_udp(void)
 	}
 }
 
-static int send_udp_data(struct data *data)
+static int send_udp_data(struct sample_data *data)
 {
 	int ret;
 
@@ -156,7 +156,7 @@ static int send_udp_data(struct data *data)
 	return ret < 0 ? -EIO : 0;
 }
 
-static int compare_udp_data(struct data *data, const char *buf, uint32_t received)
+static int compare_udp_data(struct sample_data *data, const char *buf, uint32_t received)
 {
 	if (received != data->udp.expecting) {
 		LOG_ERR("Invalid amount of data received: UDP %s", data->proto);
@@ -175,7 +175,7 @@ static void wait_reply(struct k_timer *timer)
 {
 	/* This means that we did not receive response in time. */
 	struct udp_control *ctrl = CONTAINER_OF(timer, struct udp_control, rx_timer);
-	struct data *data = (ctrl == conf.ipv4.udp.ctrl) ? &conf.ipv4 : &conf.ipv6;
+	struct sample_data *data = (ctrl == conf.ipv4.udp.ctrl) ? &conf.ipv4 : &conf.ipv6;
 
 	LOG_ERR("UDP %s: Data packet not received", data->proto);
 
@@ -190,7 +190,7 @@ static void wait_transmit(struct k_timer *timer)
 	k_poll_signal_raise(&ctrl->tx_signal, 0);
 }
 
-static int start_udp_proto(struct data *data, sa_family_t family,
+static int start_udp_proto(struct sample_data *data, sa_family_t family,
 			   struct sockaddr *addr, socklen_t addrlen)
 {
 	int optval;
@@ -251,7 +251,7 @@ static int start_udp_proto(struct data *data, sa_family_t family,
 	return ret;
 }
 
-static int process_udp_proto(struct data *data)
+static int process_udp_proto(struct sample_data *data)
 {
 	int ret, received;
 
