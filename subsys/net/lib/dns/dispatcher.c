@@ -260,6 +260,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 				goto out;
 			}
 
+			if (ctx->fds[i].fd < 0) {
+				continue;
+			}
+
 			if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
 				dispatch_table[ctx->fds[i].fd].ctx = ctx;
 			}
@@ -295,6 +299,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		if ((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
 			ret = -ERANGE;
 			goto out;
+		}
+
+		if (ctx->fds[i].fd < 0) {
+			continue;
 		}
 
 		if (dispatch_table[ctx->fds[i].fd].ctx == NULL) {
