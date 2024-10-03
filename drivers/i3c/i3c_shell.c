@@ -182,10 +182,9 @@ static int cmd_i3c_info(const struct shell *sh, size_t argc, char **argv)
 	data = (struct i3c_driver_data *)dev->data;
 
 	if (argc == 3) {
-		/* TODO: is this needed? */
 		tdev = device_get_binding(argv[ARGV_TDEV]);
 		if (!tdev) {
-			shell_error(sh, "I3C: Target Device driver %s not found.", argv[ARGV_DEV]);
+			shell_error(sh, "I3C: Target Device driver %s not found.", argv[ARGV_TDEV]);
 			return -ENODEV;
 		}
 		if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
@@ -2307,7 +2306,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Get I3C device info\n"
 		      "Usage: info <device> [<target>]",
 		      cmd_i3c_info, 2, 1),
-	SHELL_CMD_ARG(speed, &dsub_i3c_device_attached_name,
+	SHELL_CMD_ARG(speed, &dsub_i3c_device_name,
 		      "Set I3C device speed\n"
 		      "Usage: speed <device> <speed>",
 		      cmd_i3c_speed, 3, 0),
