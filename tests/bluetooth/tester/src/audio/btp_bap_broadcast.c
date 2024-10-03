@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_broadcast.h"
 
+static K_SEM_DEFINE(sem_stream_stopped, 0U, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT);
+
 static struct btp_bap_broadcast_remote_source remote_broadcast_sources[1];
 static struct btp_bap_broadcast_local_source local_source;
 /* Only one PA sync supported for now. */
@@ -132,8 +134,9 @@ static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
 
 	btp_bap_audio_stream_stopped(&b_stream->audio_stream);
-
 	b_stream->bis_synced = false;
+
+	k_sem_give(&sem_stream_stopped);
 }
 
 static void send_bis_stream_received_ev(const bt_addr_le_t *address, uint32_t broadcast_id,
@@ -327,6 +330,8 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	source->qos.pd = sys_get_le24(cp->presentation_delay);
 	source->qos.sdu = sys_le16_to_cpu(cp->max_sdu);
 
+	source->stream_count = cp->subgroups * cp->streams_per_subgroup;
+
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Unable to setup broadcast source: %d", err);
@@ -484,11 +489,22 @@ uint8_t btp_bap_broadcast_source_stop(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
+	k_sem_reset(&sem_stream_stopped);
+
 	err = bt_bap_broadcast_source_stop(source->bap_broadcast);
 	if (err != 0) {
 		LOG_DBG("Unable to stop broadcast source: %d", err);
 
 		return BTP_STATUS_FAILED;
+	}
+
+	for (int i = 0; i < source->stream_count; i++) {
+		err = k_sem_take(&sem_stream_stopped, K_MSEC(1000));
+		if (err != 0) {
+			LOG_DBG("Timed out waiting for stream nr %d to stop", i);
+
+			return BTP_STATUS_FAILED;
+		}
 	}
 
 	return BTP_STATUS_SUCCESS;
