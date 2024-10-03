@@ -3082,6 +3082,18 @@ Open AMP:
   tests:
     - sample.ipc.openamp
 
+PHYTEC Platforms:
+  status: maintained
+  maintainers:
+    - dnltz
+  collaborators:
+    - jonas-rem
+    - pefech
+  files:
+    - boards/phytec/
+  labels:
+    - "platform: PHYTEC"
+
 POSIX API layer:
   status: maintained
   maintainers:
@@ -4005,8 +4017,6 @@ TI K3 Platforms:
     - gramsay0
     - dnltz
   files:
-    - boards/phytec/phyboard_lyra/
-    - boards/phytec/phyboard_electra/
     - boards/ti/*am62*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
