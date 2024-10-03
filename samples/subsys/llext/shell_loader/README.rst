@@ -49,18 +49,21 @@ which can be seen with llext help
     call_fn       :Call extension function with prototype void fn(void). Syntax:
                    <ext_name> <function_name>
 
-A hello world C file can be found in tests/subsys/llext/hello_world/hello_world.c
+A hello world C file can be found in samples/subsys/llext/shell_loader/hello_world.c
 
 This can be built into a relocatable elf usable on arm v7 platforms. It can be
 inspected with some binutils to see symbols, sections, and relocations.
 Then using additional tools converted to a hex string usable by the llext
 load_hex shell command.
 
-On a host machine with the zephyr sdk setup and the arm toolchain in PATH
+On a host machine with the zephyr sdk setup and the arm toolchain in PATH you can
+inspect how extensions are built with this sample which has added a target for
+building hello_world.c as an LLEXT extension.
 
 .. code-block:: console
 
-  $ arm-zephyr-eabi-gcc -mlong-calls -mthumb -c -o hello_world.elf tests/subsys/llext/hello_world/hello_world.c
+  $ west build -p always -b mimxrt1010_evk samples/subsys/llext/shell_loader
+  $ cd build && ninja -vvv hello_world_ext
   $ arm-zephyr-eabi-objdump -r -d -x hello_world.elf
 
 	hello_world.elf:     file format elf32-littlearm
@@ -144,6 +147,5 @@ run (``call_fn``).
 
   uart:~$ llext call_fn hello_world hello_world
   hello world
-  A number is 42
 
 In this sample there are 3 absolute (R_ARM_ABS32) relocations, 2 of which are meant to hold addresses into the .rodata sections where the strings are located. A third is an address of where the printk function (symbol) can be found. At load time llext replaces the values in the .text section with real memory addresses so that printk works as expected with the strings included in the hello world sample.
