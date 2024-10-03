@@ -38,6 +38,7 @@ enum uart_line_ctrl {
 	UART_LINE_CTRL_DTR = BIT(2),       /**< Data Terminal Ready (DTR) */
 	UART_LINE_CTRL_DCD = BIT(3),       /**< Data Carrier Detect (DCD) */
 	UART_LINE_CTRL_DSR = BIT(4),       /**< Data Set Ready (DSR) */
+	UART_LINE_CTRL_RS485 = BIT(5),	   /**< Enable/disable rs485 mode */
 };
 
 /**
@@ -439,7 +440,6 @@ __subsystem struct uart_driver_api {
 	void (*irq_callback_set)(const struct device *dev,
 				 uart_irq_callback_user_data_t cb,
 				 void *user_data);
-
 #endif
 
 #ifdef CONFIG_UART_LINE_CTRL
