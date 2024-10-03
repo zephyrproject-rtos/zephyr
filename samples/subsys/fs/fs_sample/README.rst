@@ -58,7 +58,8 @@ and DTS overlays need to be also selected. The command would look like this:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/fs/fs_sample
    :board: nrf52840dk/nrf52840
-   :gen-args: -DEXTRA_CONF_FILE=nrf52840dk_nrf52840_qspi.conf -DDTC_OVERLAY_FILE=nrf52840dk_nrf52840_qspi.overlay
+   :extra-conf: nrf52840dk_nrf52840_qspi.conf
+   :extra-dtc-overlay: nrf52840dk_nrf52840_qspi.overlay
    :goals: build
    :compact:
 

@@ -110,7 +110,7 @@ Build and start the ``echo_server`` sample application:
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: native_sim
-   :gen-args: -DEXTRA_CONF_FILE=overlay-nsos.conf
+   :extra-conf: overlay-nsos.conf
    :goals: run
    :compact:
 

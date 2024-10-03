@@ -69,6 +69,6 @@ overlay files as follows:
 
 .. code-block:: console
 
-   west build -b nrf5340dk/nrf5340/cpuapp --sysbuild -- \
-   -DDTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay \
-   -Dremote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay
+   west build -b nrf5340dk/nrf5340/cpuapp --sysbuild \
+   --extra-dtc-overlay boards/nrf5340dk_nrf5340_cpuapp_icbmsg.overlay \
+   -- -Dremote_DTC_OVERLAY_FILE=boards/nrf5340dk_nrf5340_cpunet_icbmsg.overlay

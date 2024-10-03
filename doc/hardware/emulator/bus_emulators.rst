@@ -195,7 +195,8 @@ Here are some examples present in Zephyr:
       :zephyr-app: tests/drivers/eeprom/api
       :board: native_sim
       :goals: build
-      :gen-args: -DDTC_OVERLAY_FILE=at2x_emul.overlay -DOVERLAY_CONFIG=at2x_emul.conf
+      :extra-conf: at2x_emul.conf
+      :extra-dtc-overlay: at2x_emul.overlay
 
 API Reference
 =============

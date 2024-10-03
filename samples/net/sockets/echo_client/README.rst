@@ -73,7 +73,7 @@ Example building for the IEEE 802.15.4 RF2XX transceiver:
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
    :board: [samr21_xpro | sam4s_xplained | sam_v71_xult/samv71q21]
-   :gen-args: -DEXTRA_CONF_FILE=overlay-802154.conf
+   :extra-conf: overlay-802154.conf
    :goals: build flash
    :compact:
 
@@ -98,7 +98,7 @@ Enable TLS support in the sample by building the project with the
    :goals: build
    :compact:
 
-An alternative way is to specify ``-DEXTRA_CONF_FILE=overlay-tls.conf`` when
+An alternative way is to specify ``--extra-conf overlay-tls.conf`` when
 running ``west build`` or ``cmake``.
 
 The certificate and private key used by the sample can be found in the sample's
@@ -110,7 +110,7 @@ SOCKS5 proxy support
 ====================
 
 It is also possible to connect to the echo-server through a SOCKS5 proxy.
-To enable it, use ``-DEXTRA_CONF_FILE=overlay-socks5.conf`` when running ``west
+To enable it, use ``--extra-conf overlay-socks5.conf`` when running ``west
 build`` or  ``cmake``.
 
 By default, to make the testing easier, the proxy is expected to run on the

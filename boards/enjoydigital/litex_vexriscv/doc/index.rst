@@ -162,7 +162,7 @@ If you were generating bitstream with the official LiteX SoC builder you need to
 
 .. code-block:: bash
 
-   west build -b litex_vexriscv path/to/app -DDTC_OVERLAY_FILE=path/to/overlay.dts
+   west build -b litex_vexriscv --extra-dtc-overlay path/to/overlay.dts path/to/app
 
 Booting
 =======

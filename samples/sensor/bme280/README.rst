@@ -53,7 +53,7 @@ flash with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :gen-args: -DDTC_OVERLAY_FILE=arduino_spi.overlay
+   :extra-dtc-overlay: arduino_spi.overlay
 
 The devicetree overlay :zephyr_file:`samples/sensor/bme280/arduino_spi.overlay`
 works on any board with a properly configured Arduino pin-compatible SPI
@@ -68,7 +68,7 @@ flash with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
-   :gen-args: -DDTC_OVERLAY_FILE=arduino_i2c.overlay
+   :extra-dtc-overlay: arduino_i2c.overlay
 
 The devicetree overlay :zephyr_file:`samples/sensor/bme280/arduino_i2c.overlay`
 works on any board with a properly configured Arduino pin-compatible I2C
@@ -95,7 +95,7 @@ Build and flash with:
    :zephyr-app: samples/sensor/bme280
    :goals: build flash
    :board: rpi_pico
-   :gen-args: -DDTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay
+   :extra-dtc-overlay: rpi_pico_spi_pio.overlay
 
 Note that miso-gpios, mosi-gpios, and clk-gpios need to be assigned to the
 selected PIO device in pinctrl, while cs-gpios should not;  chip select is
@@ -110,7 +110,7 @@ a board-specific devicetree overlay adding one in the :file:`boards` directory.
 See existing overlays for examples.
 
 The build system uses these overlays by default when targeting those boards, so
-no ``DTC_OVERLAY_FILE`` setting is needed when building and running.
+no ``--extra-dtc-overlay`` setting is needed when building and running.
 
 For example, to build for the :ref:`adafruit_feather_m0_basic_proto` using the
 :zephyr_file:`samples/sensor/bme280/boards/adafruit_feather_m0_basic_proto.overlay`

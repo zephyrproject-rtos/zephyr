@@ -53,7 +53,7 @@ to the 1-Wire bus, build and flash with:
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ds18b20
    :goals: build flash
-   :gen-args: -DDTC_OVERLAY_FILE=arduino_serial.overlay
+   :extra-dtc-overlay: arduino_serial.overlay
 
 The devicetree overlay :zephyr_file:`samples/sensor/ds18b20/arduino_serial.overlay`
 should work on any board with a properly configured Arduino pin-compatible Serial

@@ -40,7 +40,7 @@ In terminal #1, type:
    :host-os: unix
    :board: qemu_x86
    :build-dir: server
-   :gen-args: -DEXTRA_CONF_FILE=overlay-qemu_802154.conf
+   :extra-conf: overlay-qemu_802154.conf
    :goals: server
    :compact:
 
@@ -51,7 +51,8 @@ If you want to capture the network traffic between the two QEMUs, type:
    :host-os: unix
    :board: qemu_x86
    :build-dir: server
-   :gen-args: -G'Unix Makefiles' -DEXTRA_CONF_FILE=overlay-qemu_802154.conf -DPCAP=capture.pcap
+   :extra-conf: overlay-qemu_802154.conf
+   :gen-args: -G'Unix Makefiles'  -DPCAP=capture.pcap
    :goals: server
    :compact:
 
@@ -69,7 +70,7 @@ In terminal #2, type:
    :host-os: unix
    :board: qemu_x86
    :build-dir: client
-   :gen-args: -DEXTRA_CONF_FILE=overlay-qemu_802154.conf
+   :extra-conf: overlay-qemu_802154.conf
    :goals: client
    :compact:
 

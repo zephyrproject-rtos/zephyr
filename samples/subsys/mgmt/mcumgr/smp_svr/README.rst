@@ -89,9 +89,8 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
          west build \
             -b nrf52dk/nrf52832 \
+            --extra-conf overlay-bt.conf \
             samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-bt.conf
 
    .. group-tab:: Serial
 
@@ -101,9 +100,10 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
          west build \
             -b frdm_k64f \
+            --extra-conf overlay-serial.conf \
+            --extra-conf overlay-fs.conf \
+            --extra-conf overlay-shell-mgmt.conf \
             samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE='overlay-serial.conf;overlay-fs.conf;overlay-shell-mgmt.conf'
 
    .. group-tab:: USB CDC_ACM
 
@@ -113,10 +113,9 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
          west build \
             -b nrf52840dk/nrf52840 \
+            --extra-conf overlay-cdc.conf \
+            --extra-dtc-overlay usb.overlay \
             samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-cdc.conf \
-            -DDTC_OVERLAY_FILE=usb.overlay
 
    .. group-tab:: Shell
 
@@ -126,9 +125,8 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
          west build \
             -b frdm_k64f \
+            --extra-conf overlay-shell.conf
             samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE='overlay-shell.conf'
 
    .. group-tab:: UDP
 
@@ -142,9 +140,8 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
          west build \
             -b frdm_k64f \
+            --extra-conf overlay-udp.conf \
             samples/subsys/mgmt/mcumgr/smp_svr \
-            -- \
-            -DEXTRA_CONF_FILE=overlay-udp.conf
 
 .. _smp_svr_sample_sign:
 

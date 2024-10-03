@@ -175,7 +175,7 @@ The ethernet depends only from base configuration.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE=overlay-prj.conf
+    :extra-conf: overlay-prj.conf
     :goals: build
     :compact:
 
@@ -190,7 +190,8 @@ for details.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nrf52840dk/nrf52840 | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-wifi.conf;overlay-prj.conf"
+    :extra-conf: overlay-wifi.conf
+    :extra-conf: overlay-prj.conf
     :shield: esp_8266_arduino
     :goals: build
     :compact:
@@ -212,7 +213,8 @@ tested with both native linux driver and ``atusb``.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: nrf52840dk/nrf52840
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
+    :extra-conf: overlay-802154.conf
+    :extra-conf: overlay-prj.conf
     :goals: build
     :compact:
 
@@ -220,7 +222,8 @@ tested with both native linux driver and ``atusb``.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: [ frdm_k64f | nucleo_f767zi ]
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-802154.conf;overlay-prj.conf"
+    :extra-conf: overlay-802154.conf
+    :extra-conf: overlay-prj.conf
     :shield: atmel_rf2xx_arduino
     :goals: build
     :compact:
@@ -239,7 +242,8 @@ gateway was tested using two boards with OpenThread 1.1.1 on NCP mode.
     :zephyr-app: samples/subsys/mgmt/updatehub
     :board: nrf52840dk/nrf52840
     :build-dir: app
-    :gen-args: -DEXTRA_CONF_FILE="overlay-ot.conf;overlay-prj.conf"
+    :extra-conf: overlay-ot.conf
+    :extra-conf: overlay-prj.conf
     :goals: build
     :compact:
 

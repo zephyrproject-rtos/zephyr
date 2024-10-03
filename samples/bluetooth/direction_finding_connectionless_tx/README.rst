@@ -33,7 +33,7 @@ To use Angle of Arrival mode only, build this application as follows, changing
    :zephyr-app: samples/bluetooth/direction_finding_connectionless_tx
    :host-os: unix
    :board: nrf52833dk/nrf52833
-   :gen-args: -DEXTRA_CONF_FILE=overlay-aoa.conf
+   :extra-conf: overlay-aoa.conf
    :goals: build flash
    :compact:
 

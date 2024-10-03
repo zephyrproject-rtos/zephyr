@@ -1,4 +1,4 @@
-﻿.. _mimxrt1170_evk:
+.. _mimxrt1170_evk:
 
 NXP MIMXRT1170-EVK/EVKB
 #######################
@@ -478,4 +478,4 @@ ENET1G Driver
 
 Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.
+the option ``--extra-dtc-overlay nxp,enet1g.overlay`` instead.

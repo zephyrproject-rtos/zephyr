@@ -128,9 +128,10 @@ Both symbols can be enabled with the :file:`overlay-permanent-download.conf` ove
 
 .. code-block:: console
 
-   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu -- \
-   -DCONFIG_BOOTLOADER_MCUBOOT=y '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"' \
-   -DEXTRA_CONF_FILE=overlay-permanent-download.conf
+   west build -b nrf52840dk/nrf52840 zephyr/samples/subsys/usb/dfu -d build-dfu \
+   --extra-conf overlay-permanent-download.conf \
+   -- -DCONFIG_BOOTLOADER_MCUBOOT=y \
+   '-DCONFIG_MCUBOOT_SIGNATURE_KEY_FILE="bootloader/mcuboot/root-rsa-2048.pem"' \
 
 
 The listing below shows the output to the console when downloading via dfu-util.
