@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 SDHC
+
+compatible: "adi,max32-sdhc"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  sd-bus-voltage:
+    type: string
+    description: |
+     - SDHC Bus Voltage Selection
+      - 1.8V
+      - 3.0V
+      - 3.3V
+    enum:
+      - 1V8
+      - 3V0
+      - 3V3
