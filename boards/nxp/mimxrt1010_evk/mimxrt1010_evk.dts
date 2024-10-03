@@ -18,6 +18,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {

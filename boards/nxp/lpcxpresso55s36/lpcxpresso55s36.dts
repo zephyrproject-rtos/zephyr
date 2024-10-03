@@ -33,6 +33,7 @@
 		sw1 = &btn_usr;
 		usart-0 = &flexcomm0;
 		pwm-0 = &flexpwm1_pwm0;
+		mcuboot-button0 = &btn_wk;
 	};
 
 	leds {

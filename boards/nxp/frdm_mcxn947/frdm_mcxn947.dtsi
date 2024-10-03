@@ -16,6 +16,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	leds {
