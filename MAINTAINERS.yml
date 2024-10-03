@@ -4168,6 +4168,8 @@ TI K3 Platforms:
     - dnltz
   files:
     - boards/ti/*am62*/
+    - drivers/*/*davinci*
+    - drivers/*/*omap*
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
     - soc/ti/k3/
