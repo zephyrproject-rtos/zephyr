@@ -63,11 +63,13 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 
 
 /* IC_CON Low count and high count default values */
-/* TODO verify values for high and fast speed */
-#define I2C_STD_HCNT			(CONFIG_I2C_DW_CLOCK_SPEED * 4)
-#define I2C_STD_LCNT			(CONFIG_I2C_DW_CLOCK_SPEED * 5)
+/* TODO verify values for high speed */
+#define I2C_STD_HCNT		(CONFIG_I2C_DW_CLOCK_SPEED * 4)
+#define I2C_STD_LCNT		(CONFIG_I2C_DW_CLOCK_SPEED * 5)
 #define I2C_FS_HCNT			((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
 #define I2C_FS_LCNT			((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
+#define I2C_FSP_HCNT		((CONFIG_I2C_DW_CLOCK_SPEED * 2) / 8)
+#define I2C_FSP_LCNT		((CONFIG_I2C_DW_CLOCK_SPEED * 2) / 8)
 #define I2C_HS_HCNT			((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
 #define I2C_HS_LCNT			((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
 
