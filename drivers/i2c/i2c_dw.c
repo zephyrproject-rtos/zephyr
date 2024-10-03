@@ -785,8 +785,6 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		dw->hcnt = value;
 		break;
 	case I2C_SPEED_FAST:
-		__fallthrough;
-	case I2C_SPEED_FAST_PLUS:
 		/*
 		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
@@ -807,6 +805,31 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 			value = read_fs_spklen(reg_base) + 6;
 		} else {
 			value = I2C_FS_HCNT;
+		}
+
+		dw->hcnt = value;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		/*
+		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
+		 * must have register values larger than IC_FS_SPKLEN + 7
+		 */
+		if (I2C_FSP_LCNT <= (read_fs_spklen(reg_base) + 7)) {
+			value = read_fs_spklen(reg_base) + 8;
+		} else {
+			value = I2C_FSP_LCNT;
+		}
+
+		dw->lcnt = value;
+
+		/*
+		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
+		 * must have register values larger than IC_FS_SPKLEN + 5
+		 */
+		if (I2C_FSP_HCNT <= (read_fs_spklen(reg_base) + 5)) {
+			value = read_fs_spklen(reg_base) + 6;
+		} else {
+			value = I2C_FSP_HCNT;
 		}
 
 		dw->hcnt = value;
