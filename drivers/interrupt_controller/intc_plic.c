@@ -164,7 +164,7 @@ static inline mem_addr_t get_context_en_addr(const struct device *dev, uint32_t 
 	/*
 	 * We want to return the irq_en address for the context of given hart.
 	 */
-#if CONFIG_SMP
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	hartid = _kernel.cpus[cpu_num].arch.hartid;
 #else
 	hartid = arch_proc_id();
@@ -188,7 +188,7 @@ static inline mem_addr_t get_threshold_priority_addr(const struct device *dev, u
 	const struct plic_config *config = dev->config;
 	uint32_t hartid;
 
-#if CONFIG_SMP
+#if CONFIG_MP_MAX_NUM_CPUS > 1
 	hartid = _kernel.cpus[cpu_num].arch.hartid;
 #else
 	hartid = arch_proc_id();
@@ -493,7 +493,7 @@ static void plic_irq_handler(const struct device *dev)
 	 *
 	 * (by RISC-V Privileged Architecture v1.10)
 	 */
-	if (IS_ENABLED(CONFIG_SMP) && (local_irq == 0U)) {
+	if ((CONFIG_MP_MAX_NUM_CPUS > 1) && (local_irq == 0U)) {
 		return;
 	}
 
