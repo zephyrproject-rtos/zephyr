@@ -19,6 +19,7 @@
 		i2c-0 = &flexcomm2;
 		watchdog0 = &wwdt;
 		dmic-dev = &dmic0;
+		mcuboot-button0 = &sw_4;
 	};
 
 	chosen {

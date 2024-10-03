@@ -31,6 +31,7 @@
 		usart-0 = &flexcomm0;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
+		mcuboot-button0 = &btn_wk;
 	};
 
 	leds {
