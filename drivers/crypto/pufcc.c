@@ -294,10 +294,12 @@ enum pufcc_status pufcc_calc_sha256_hash_sg(struct rs_crypto_addr *data_addr,
     dma_dsc_cfg_4_reg.offset = plen % 16;
 
     plen += curr_addr->len;
+    printf("%s(%d) curr_addr:%p curr_addr->next:%p\r\n", __func__, __LINE__, curr_addr, curr_addr->next);
     curr_addr = curr_addr->next;
 
     if (!desc_count && first) {
       dma_dsc_cfg_4_reg.head = 1;
+      printf("%s(%d) has head\r\n", __func__, __LINE__);
     }
 
     // Mark this descriptor as last if there is no more data
@@ -305,6 +307,7 @@ enum pufcc_status pufcc_calc_sha256_hash_sg(struct rs_crypto_addr *data_addr,
       dma_dsc_cfg_4_reg.dn_pause = 1;
       if (last) {
         dma_dsc_cfg_4_reg.tail = 1;
+        printf("%s(%d) has tail\r\n", __func__, __LINE__);
       }
     }
 

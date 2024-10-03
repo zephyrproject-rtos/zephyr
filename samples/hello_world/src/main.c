@@ -321,6 +321,106 @@ void pufs_otp_test(const struct device *pufs_otp)
 	}
 }
 
+
+void pufs_hash_sg_test(const struct device *pufs)
+{
+	int status = 0;
+	static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z Zephyr Port";
+    static uint8_t *pufs_sample_data2 = "Zephyr Port";
+	static uint8_t pufs_sample_data_sha256_out[32] = {0};
+	static const uint8_t pufs_sample_data_sha256[] = {
+		0xfa,0x71,0xc2,0x19,0xea,0x58,0x4d,0xac,
+		0x36,0xd5,0x3e,0xca,0xe4,0x2a,0x8c,0x14,
+		0x4b,0xc1,0xc0,0x03,0xfd,0x36,0x3f,0x71,
+		0xd9,0x30,0x96,0xc4,0xaa,0x64,0xe0,0x4c
+	};
+	const uint8_t pufs_sample_data1_len = strlen(pufs_sample_data1);
+	const uint8_t pufs_sample_data2_len = strlen(pufs_sample_data2);
+	printf("%s%s(%d) Length of sample data to operate on:%d %s\n", \
+									ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len,ATTR_RST);
+	struct hash_ctx lvHashCtx = {
+		.device = pufs,
+		.drv_sessn_state = NULL,
+		.flags = CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
+		.started = true
+	};		
+
+	struct hash_pkt lvHashPkt[2] = {
+		{
+			.ctx = &lvHashCtx,
+			.head = true,
+			.tail = true,
+			.in_buf = pufs_sample_data1,
+			.in_hash = NULL,
+			.in_hash_len = 0,
+			.in_len = pufs_sample_data1_len,
+			.next = NULL,//&lvHashPkt[1],
+			.out_buf = pufs_sample_data_sha256_out,
+			.prev_len = 0,
+			.out_len = 0
+		}
+		// ,
+		// {
+		// 	.ctx = &lvHashCtx,
+		// 	.head = true,
+		// 	.tail = true,
+		// 	.in_buf = pufs_sample_data2,
+		// 	.in_hash = NULL,
+		// 	.in_hash_len = 0,
+		// 	.in_len = pufs_sample_data2_len,
+		// 	.next = NULL,
+		// 	.out_buf = NULL,
+		// 	.prev_len = 0,
+		// 	.out_len = 0
+		// }
+	};	
+	// printf("AddrlvHashPkt[0]:%p AddrlvHashPkt[1]:%p Diff:%d\r\n", \
+	// &lvHashPkt[0], lvHashPkt[0].next, (((uint32_t)lvHashPkt[0].next) - ((uint32_t)&lvHashPkt[0])));
+	// printf("Size struct hash pkt:%d\r\n", sizeof(struct hash_pkt));
+	// printf("data1_size:%d data2_size:%d\r\n", pufs_sample_data1_len, pufs_sample_data2_len);
+
+	status = hash_begin_session(pufs, &lvHashCtx, CRYPTO_HASH_ALGO_SHA256);
+	if(status != 0) {
+		printf("%s%s(%d) hash_begin_session status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+	} else {
+		status = hash_compute(&lvHashCtx, lvHashPkt);
+	}
+	if(status != 0) {
+		printf("%s%s(%d) hash_compute status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+	} else {
+		for(uint8_t i = 0; i < lvHashPkt[0].out_len; i++) {			
+			if(lvHashPkt[0].out_buf[i] != pufs_sample_data_sha256[i]) {
+				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", \
+				ATTR_ERR,__func__,__LINE__,\
+				i,lvHashPkt[0].out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				status = -EINVAL;
+			} else {
+				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", \
+				ATTR_INF,__func__,__LINE__,\
+				i,lvHashPkt[0].out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+			}
+		}
+		if(status != 0) {
+			printf("%s%s(%d) hash_comparison failed%s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s%s(%d) hash_comparison Passed = %d %s\n", \
+			ATTR_INF,__func__,__LINE__,status,ATTR_RST);			
+		}
+		status = hash_free_session(pufs, &lvHashCtx);
+		if(status != 0) {
+			printf("%s%s(%d) hash_free_session status = %d %s\n", \
+			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
+		} else {
+			printf("%s%s(%d) hash_free_session Passed = %d %s\n", \
+			ATTR_INF,__func__,__LINE__,status,ATTR_RST);
+		}
+	}
+}
+
+
 void pufs_hash_test(const struct device *pufs)
 {
 	int status = 0;
@@ -354,7 +454,6 @@ void pufs_hash_test(const struct device *pufs)
 		.prev_len = 0,
 		.out_len = 0
 	};	
-
 	status = hash_begin_session(pufs, &lvHashCtx, CRYPTO_HASH_ALGO_SHA256);
 	if(status != 0) {
 		printf("%s%s(%d) hash_begin_session status = %d %s\n", \
@@ -424,6 +523,8 @@ int main(void)
 	} else {
 		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
 		pufs_hash_test(pufs);
+		pufs_hash_sg_test(pufs);
+		while(1);
 	}
 
 	if((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {

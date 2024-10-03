@@ -46,14 +46,17 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
 
   // Set SGDMA descriptors
   do {
-    data_addr->read_addr = (uint32_t)pkt->in_buf;
-    data_addr->len = pkt->in_len;
-    desc_count++;
+    data_addr[desc_count].read_addr = (uint32_t)pkt->in_buf;
+    data_addr[desc_count].len = pkt->in_len;
+    
     if((desc_count * sizeof(struct pufcc_sg_dma_desc)) < BUFFER_SIZE){
-      data_addr->next = data_addr+1;
+      data_addr[desc_count].next = &data_addr[desc_count+1];
+      printf("%s(%d) pkt:%p pkt->next:%p\r\n", __func__, __LINE__, pkt, pkt->next);
+      pkt = pkt->next;
     } else {
       break;
     }    
+    desc_count++;
   } while (pkt);
 
   if (pkt) {
@@ -61,6 +64,8 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
     LOG_ERR("%s(%d) Not More Than %d Elements Allowed. Desc_Count:%d\n", \
     __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count);
     return -ENOTEMPTY;
+  } else {
+    LOG_INF("%s(%d) Num_Desc_Elements:%d\r\n", __func__, __LINE__, desc_count);
   }
 
   return PUFCC_SUCCESS;
@@ -333,36 +338,39 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 
   } else {
 
-    struct rs_crypto_addr lvHash_Data_Addr[BUFFER_SIZE];
+    uint8_t lvHash_Data_Addr[BUFFER_SIZE] = {0};
+    struct hash_pkt *lvPkt = &pkt[0];
     
-    if(fill_rs_crypto_addr(pkt, lvHash_Data_Addr) != PUFCC_SUCCESS) {      
+    if(fill_rs_crypto_addr(pkt, (struct rs_crypto_addr*)lvHash_Data_Addr) != PUFCC_SUCCESS) {      
       return -ENOTEMPTY;
     }
 
     struct rs_crypto_hash hash_in = {0};
 
-    hash_in.len = pkt->in_len;
-    /* Copy input hash values for operating upon */
-    memcpy((void*)hash_in.val, (void*)pkt->in_buf, hash_in.len);
+    hash_in.len = lvPkt->in_hash_len;
+
+    if(lvPkt->in_hash != NULL) {
+      /* Copy input hash values for operating upon */
+      memcpy((void*)hash_in.val, (void*)lvPkt->in_hash, hash_in.len);
+    } else {
+      LOG_INF("%s(%d) in_hash_len:%d\r\n", __func__, __LINE__, hash_in.len);
+    }
 
     struct rs_crypto_hash hash_out = {0};
 
     lvStatus = pufcc_calc_sha256_hash_sg(
-                                          lvHash_Data_Addr, 
-                                          pkt->head, 
-                                          pkt->tail, 
-                                          pkt->prev_len,
+                                          (struct rs_crypto_addr*)lvHash_Data_Addr, 
+                                          lvPkt->head, 
+                                          lvPkt->tail, 
+                                          lvPkt->prev_len,
                                           &hash_in,
                                           &hash_out
                                         );
 
-    /* Copy output hash values calculated by PUFcc */
-    memcpy((void*)pkt->out_buf, (void*)hash_out.val, (size_t)hash_out.len);
-    pkt->out_len = hash_out.len; 
-
-    if(lvStatus != PUFCC_SUCCESS) {
-      LOG_ERR("%s(%d) PUFs Error Code:%d\n", __func__, __LINE__, lvStatus);
-      return -ECANCELED;
+    if(lvStatus == PUFCC_SUCCESS) {
+      /* Copy output hash values calculated by PUFcc */
+      memcpy((void*)lvPkt->out_buf, (void*)hash_out.val, (size_t)hash_out.len);
+      lvPkt->out_len = hash_out.len; 
     }                                       
   }
 
