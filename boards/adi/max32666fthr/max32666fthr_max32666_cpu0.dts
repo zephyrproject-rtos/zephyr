@@ -55,6 +55,7 @@
 		led2 = &led3;
 		sw0 = &pb1;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc0;
 	};
 
 	/* Used for accessing other pins */
@@ -133,4 +134,57 @@
 &w1 {
 	pinctrl-0 = <&owm_io_p0_12>;
 	pinctrl-names = "default";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc_dat3_p1_0 &sdhc_cmd_p1_1 &sdhc_dat0_p1_2 &sdhc_clk_p1_3
+		&sdhc_dat1_p1_4 &sdhc_dat2_p1_5	&sdhc_wp_p1_6 &sdhc_cdn_p1_7>;
+		pinctrl-names = "default";
+};
+
+&sdhc_dat3_p1_0 {
+	power-source = <MAX32_VSEL_VDDIO>;
+	drive-strength = <1>;
+};
+
+&sdhc_cmd_p1_1 {
+	power-source = <MAX32_VSEL_VDDIO>;
+	drive-strength = <1>;
+};
+
+&sdhc_dat0_p1_2 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc_clk_p1_3 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc_dat1_p1_4 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc_dat2_p1_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc_wp_p1_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc_cdn_p1_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+	drive-strength = <1>;
+};
+
+&sdhc0 {
+	status = "okay";
+	mmc {
+		status = "okay";
+	};
 };
