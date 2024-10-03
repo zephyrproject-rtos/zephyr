@@ -47,7 +47,7 @@ static ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
-static int send_tcp_data(struct data *data)
+static int send_tcp_data(struct sample_data *data)
 {
 	int ret;
 
@@ -72,7 +72,7 @@ static int send_tcp_data(struct data *data)
 	return ret;
 }
 
-static int compare_tcp_data(struct data *data, const char *buf, uint32_t received)
+static int compare_tcp_data(struct sample_data *data, const char *buf, uint32_t received)
 {
 	if (data->tcp.received + received > data->tcp.expecting) {
 		LOG_ERR("Too much data received: TCP %s", data->proto);
@@ -87,7 +87,7 @@ static int compare_tcp_data(struct data *data, const char *buf, uint32_t receive
 	return 0;
 }
 
-static int start_tcp_proto(struct data *data, sa_family_t family,
+static int start_tcp_proto(struct sample_data *data, sa_family_t family,
 			   struct sockaddr *addr, socklen_t addrlen)
 {
 	int optval;
@@ -180,7 +180,7 @@ static int start_tcp_proto(struct data *data, sa_family_t family,
 	return ret;
 }
 
-static int process_tcp_proto(struct data *data)
+static int process_tcp_proto(struct sample_data *data)
 {
 	int ret, received;
 	char buf[RECV_BUF_SIZE];
