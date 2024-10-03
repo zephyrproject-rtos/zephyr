@@ -42,7 +42,7 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,flash-controller = &sim_flash;
+		zephyr,flash-controller = &sim_flash_controller;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,canbus = &can0;
 	};
@@ -80,7 +80,7 @@
 		};
 	};
 
-	sim_flash: sim_flash {
+	sim_flash_controller: sim_flash_controller {
 		compatible = "zephyr,sim-flash";
 
 		#address-cells = <1>;
