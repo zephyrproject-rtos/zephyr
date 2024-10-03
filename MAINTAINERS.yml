@@ -3557,6 +3557,19 @@ Silabs SiM3U Platforms:
   description: >-
     SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
 
+Gardena Platforms:
+  status: maintained
+  maintainers:
+    - rettichschnidi
+  collaborators:
+    - M1cha
+  files:
+    - boards/gardena/
+  labels:
+    - "platform: Gardena"
+  description: >-
+    Gardena board(s).
+
 Intel Platforms (X86):
   status: maintained
   maintainers:
