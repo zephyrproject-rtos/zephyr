@@ -7,5 +7,5 @@ add_subdirectory(core)
 if (CONFIG_XTENSA_INSECURE_USERSPACE)
   message(WARNING "
   This userspace implementation uses the window ABI this means that the kernel
-  will spill registers on behalf of the userpsace. Use it carefully.")
+  will spill registers on behalf of the userspace. Use it carefully.")
 endif()
