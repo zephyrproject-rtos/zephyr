@@ -1300,7 +1300,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 
 try_resolve:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
-	ret = dns_cache_find(&dns_cache, query, cached_info, sizeof(cached_info));
+	ret = dns_cache_find(&dns_cache, query, cached_info, ARRAY_SIZE(cached_info));
 	if (ret > 0) {
 		/* The query was cached, no
 		 * need to continue further.
