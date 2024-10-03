@@ -6,6 +6,7 @@ config SOC_SERIES_EFR32MG21
 	select CPU_CORTEX_M33
 	select CPU_CORTEX_M_HAS_DWT
 	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
