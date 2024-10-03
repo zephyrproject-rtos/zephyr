@@ -122,6 +122,13 @@
 	pinctrl-names = "default";
 };
 
+&uart2 {
+	status = "disabled";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_uart2>;
+	pinctrl-names = "default";
+};
+
 i2c1: &i2c1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_i2c1>;
