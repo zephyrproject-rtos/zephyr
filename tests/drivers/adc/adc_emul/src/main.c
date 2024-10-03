@@ -217,6 +217,68 @@ ZTEST_USER(adc_emul, test_adc_emul_single_value)
 	start_adc_read(adc_dev, BIT(ADC_1ST_CHANNEL_ID), samples);
 
 	/* Check samples */
+	check_samples(samples, input_mv, 0 /* step */, 1 /* channels */, 0 /* first channel data */,
+		      ADC_REF_INTERNAL_MV, ADC_GAIN_1);
+
+	check_empty_samples(samples);
+}
+
+/** @brief Test setting one channel with constant raw output. */
+ZTEST_USER(adc_emul, test_adc_emul_single_raw_value_half_reference)
+{
+	const uint16_t input_raw_value = (1 << ADC_RESOLUTION) / 2;
+	const uint16_t input_mv = ADC_REF_INTERNAL_MV / 2;
+	const int samples = 4;
+	int ret, i;
+
+	for (i = 0; i < BUFFER_SIZE; ++i) {
+		m_sample_buffer[i] = INVALID_ADC_VALUE;
+	}
+
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	channel_setup(adc_dev, ADC_REF_INTERNAL, ADC_GAIN_1, ADC_1ST_CHANNEL_ID);
+
+	/* ADC emulator-specific setup */
+	ret = adc_emul_const_raw_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_raw_value);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
+
+	/* Test sampling */
+	start_adc_read(adc_dev, BIT(ADC_1ST_CHANNEL_ID), samples);
+
+	/* Check samples */
+	check_samples(samples, input_mv, 0 /* step */, 1 /* channels */, 0 /* first channel data */,
+		      ADC_REF_INTERNAL_MV, ADC_GAIN_1);
+
+	check_empty_samples(samples);
+}
+
+/** @brief Test setting one channel with constant raw output. */
+ZTEST_USER(adc_emul, test_adc_emul_single_raw_value_quarter_reference)
+{
+	const uint16_t input_raw_value = (1 << ADC_RESOLUTION) / 4;
+	const uint16_t input_mv = ADC_REF_INTERNAL_MV / 4;
+	const int samples = 4;
+	int ret, i;
+
+	for (i = 0; i < BUFFER_SIZE; ++i) {
+		m_sample_buffer[i] = INVALID_ADC_VALUE;
+	}
+
+	/* Generic ADC setup */
+	const struct device *adc_dev = get_adc_device();
+
+	channel_setup(adc_dev, ADC_REF_INTERNAL, ADC_GAIN_1, ADC_1ST_CHANNEL_ID);
+
+	/* ADC emulator-specific setup */
+	ret = adc_emul_const_raw_value_set(adc_dev, ADC_1ST_CHANNEL_ID, input_raw_value);
+	zassert_ok(ret, "adc_emul_const_value_set() failed with code %d", ret);
+
+	/* Test sampling */
+	start_adc_read(adc_dev, BIT(ADC_1ST_CHANNEL_ID), samples);
+
+	/* Check samples */
 	check_samples(samples, input_mv, 0 /* step */, 1 /* channels */,
 		      0 /* first channel data */, ADC_REF_INTERNAL_MV,
 		      ADC_GAIN_1);
