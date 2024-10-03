@@ -10,6 +10,8 @@ zephyr_sources(
   bitarray.c
   )
 
+zephyr_sources_ifdef(CONFIG_PRINTK printk_hexdump.c)
+
 zephyr_sources_ifdef(CONFIG_ONOFF onoff.c)
 zephyr_sources_ifdef(CONFIG_NOTIFY notify.c)
 
