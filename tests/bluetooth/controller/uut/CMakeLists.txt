@@ -34,6 +34,12 @@ if (CONFIG_BT_CTLR_LE_ENC)
 	  )
 endif()
 
+if (CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER OR CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+  target_sources(uut PRIVATE
+    ${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_llcp_past.c
+	  )
+endif()
+
 
 add_subdirectory(${ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl mocks)
 
