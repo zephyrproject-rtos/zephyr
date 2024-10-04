@@ -36,6 +36,7 @@ static const struct ethernet_api eth_tsn_nic_api = {
 };
 
 static int eth_tsn_nic_init(const struct device *dev) {
+    printk("Hi\n");
     return 0;
 }
 
