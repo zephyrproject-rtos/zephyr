@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 
 #include "util/mem.h"
@@ -28,14 +29,27 @@
 #include "lll_scan_aux.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
+#include "lll_conn_iso.h"
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "lll/lll_adv_pdu.h"
 
+#include "ll_sw/ull_tx_queue.h"
+
+#include "isoal.h"
 #include "ull_scan_types.h"
+#include "ull_conn_types.h"
+#include "ull_iso_types.h"
+#include "ull_conn_iso_types.h"
 #include "ull_sync_types.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
 
 #include "ull_internal.h"
 #include "ull_scan_internal.h"
+#include "ull_conn_internal.h"
 #include "ull_sync_internal.h"
 #include "ull_sync_iso_internal.h"
 #include "ull_df_internal.h"
@@ -377,10 +391,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		if (sync && (scan->periodic.state != LL_SYNC_STATE_CREATED)) {
 			/* Check address and update internal state */
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-			ull_sync_setup_addr_check(scan, pdu->tx_addr, ptr,
+			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr,
 						  ftr->rl_idx);
 #else /* !CONFIG_BT_CTLR_PRIVACY */
-			ull_sync_setup_addr_check(scan, pdu->tx_addr, ptr, 0U);
+			ull_sync_setup_addr_check(sync, scan, pdu->tx_addr, ptr, 0U);
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		}
@@ -420,7 +434,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		 * Periodic Advertiser List or with the explicitly supplied.
 		 */
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && aux && sync && adi &&
-		    ull_sync_setup_sid_match(scan, PDU_ADV_ADI_SID_GET(adi))) {
+		    ull_sync_setup_sid_match(sync, scan, PDU_ADV_ADI_SID_GET(adi))) {
 			ull_sync_setup(scan, aux, rx, si);
 		}
 	}
