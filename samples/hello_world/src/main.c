@@ -326,8 +326,8 @@ void pufs_hash_sg_test(const struct device *pufs)
 {
 	int status = 0;
 	// static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z_Zephyr_Port";
-	static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z_";	
-    static uint8_t *pufs_sample_data2 = "Zephyr_Port";
+	static uint8_t *pufs_sample_data2 = "This is Rapid Silicon'z_";	
+    static uint8_t *pufs_sample_data1 = "Zephyr_Port";
 	static uint8_t pufs_sample_data_sha256_out[32] = {0};
 	static const uint8_t pufs_sample_data_sha256[] = {
 		0x63,0xb9,0x67,0xb5,0x43,0x6e,0x4a,0xe2,
@@ -337,7 +337,7 @@ void pufs_hash_sg_test(const struct device *pufs)
 	};
 	const uint8_t pufs_sample_data1_len = strlen(pufs_sample_data1);
 	const uint8_t pufs_sample_data2_len = strlen(pufs_sample_data2);
-	
+
 	printf("%s%s(%d) Length of sample data to operate on:%d %s\n", \
 	ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len,ATTR_RST);
 
