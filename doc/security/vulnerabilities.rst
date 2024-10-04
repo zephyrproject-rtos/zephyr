@@ -1842,7 +1842,18 @@ This has been fixed in main for v3.7.0
 CVE-2024-6442
 -------------
 
-Under embargo until 2024-09-22
+Bluetooth: ASCS Unchecked tailroom of the response buffer
+
+- `Zephyr project bug tracker GHSA-m22j-ccg7-4v4h
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m22j-ccg7-4v4h>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74976 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74976>`_
+
+- `PR 77958 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77958>`_
 
 CVE-2024-6443
 -------------
