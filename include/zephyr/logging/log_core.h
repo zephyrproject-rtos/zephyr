@@ -16,19 +16,19 @@
 /* This header file keeps all macros and functions needed for creating logging
  * messages (macros like @ref LOG_ERR).
  */
-#define LOG_LEVEL_NONE 0U
-#define LOG_LEVEL_ERR  1U
-#define LOG_LEVEL_WRN  2U
-#define LOG_LEVEL_INF  3U
-#define LOG_LEVEL_DBG  4U
+#define LOG_LEVEL_NONE 0
+#define LOG_LEVEL_ERR  1
+#define LOG_LEVEL_WRN  2
+#define LOG_LEVEL_INF  3
+#define LOG_LEVEL_DBG  4
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef CONFIG_LOG
-#define CONFIG_LOG_DEFAULT_LEVEL 0U
-#define CONFIG_LOG_MAX_LEVEL 0U
+#define CONFIG_LOG_DEFAULT_LEVEL 0
+#define CONFIG_LOG_MAX_LEVEL 0
 #endif
 
 /* Id of local domain. */
@@ -54,15 +54,10 @@ extern "C" {
 	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
 
 #define _LOG_XXXX0  _LOG_YYYY,
-#define _LOG_XXXX0U _LOG_YYYY,
 #define _LOG_XXXX1  _LOG_YYYY,
-#define _LOG_XXXX1U _LOG_YYYY,
 #define _LOG_XXXX2  _LOG_YYYY,
-#define _LOG_XXXX2U _LOG_YYYY,
 #define _LOG_XXXX3  _LOG_YYYY,
-#define _LOG_XXXX3U _LOG_YYYY,
 #define _LOG_XXXX4  _LOG_YYYY,
-#define _LOG_XXXX4U _LOG_YYYY,
 
 /**
  * @brief Macro for conditional code generation if provided log level allows.
@@ -85,13 +80,9 @@ extern "C" {
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
 #define _LOG_ZZZZ1  _LOG_YYYY,
-#define _LOG_ZZZZ1U _LOG_YYYY,
 #define _LOG_ZZZZ2  _LOG_YYYY,
-#define _LOG_ZZZZ2U _LOG_YYYY,
 #define _LOG_ZZZZ3  _LOG_YYYY,
-#define _LOG_ZZZZ3U _LOG_YYYY,
 #define _LOG_ZZZZ4  _LOG_YYYY,
-#define _LOG_ZZZZ4U _LOG_YYYY,
 
 /**
  *
@@ -101,11 +92,11 @@ extern "C" {
 	log_const_source_id(__log_current_const_data) : 0U)
 
 /* Set of defines that are set to 1 if function name prefix is enabled for given level. */
-#define Z_LOG_FUNC_PREFIX_0U 0
-#define Z_LOG_FUNC_PREFIX_1U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_ERR, (1), (0))
-#define Z_LOG_FUNC_PREFIX_2U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_WRN, (1), (0))
-#define Z_LOG_FUNC_PREFIX_3U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_INF, (1), (0))
-#define Z_LOG_FUNC_PREFIX_4U COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_DBG, (1), (0))
+#define Z_LOG_FUNC_PREFIX_0 0
+#define Z_LOG_FUNC_PREFIX_1 COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_ERR, (1), (0))
+#define Z_LOG_FUNC_PREFIX_2 COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_WRN, (1), (0))
+#define Z_LOG_FUNC_PREFIX_3 COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_INF, (1), (0))
+#define Z_LOG_FUNC_PREFIX_4 COND_CODE_1(CONFIG_LOG_FUNC_NAME_PREFIX_DBG, (1), (0))
 
 /**
  * @brief Macro for optional injection of function name as first argument of
