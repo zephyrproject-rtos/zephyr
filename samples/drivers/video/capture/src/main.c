@@ -182,7 +182,11 @@ int main(void)
 #endif
 
 	/* Size to allocate for each buffer */
-	bsize = fmt.pitch * fmt.height;
+	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
+		bsize = fmt.pitch * fmt.height;
+	} else {
+		bsize = fmt.pitch * caps.min_line_count;
+	}
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {
