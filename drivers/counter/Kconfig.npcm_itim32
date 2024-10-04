@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_NPCM_ITIM32
+	bool "Nuvoton NPCM series internal 32-bit timer"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_ITIM32_ENABLED
+	help
+	  This module implements a kernel device driver for the Nuvoton NPCM
+	  series internal 32-bits counter/timer.
