@@ -108,6 +108,8 @@ Bluetooth
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
     connection (experimental).
 
+  * The host now disconnects from the peer upon ATT timeout.
+
 * HCI Drivers
 
 Boards & SoC Support
