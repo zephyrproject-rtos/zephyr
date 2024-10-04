@@ -18,6 +18,7 @@
 LOG_MODULE_REGISTER(bt_cs);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
+static struct bt_le_cs_test_cb cs_test_callbacks;
 
 void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10])
 {
@@ -241,6 +242,12 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cb)
+{
+	cs_test_callbacks = cb;
+	return 0;
+}
+
 int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 {
 	struct bt_hci_op_le_cs_test *cp;
@@ -342,6 +349,74 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 	cp->override_parameters_length = override_parameters_length;
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
+}
+
+void bt_hci_le_cs_subevent_result(struct net_buf *buf)
+{
+	struct bt_conn *conn = NULL;
+	struct bt_hci_evt_le_cs_subevent_result *evt;
+	struct bt_conn_le_cs_subevent_result result;
+	struct net_buf_simple step_data_buf;
+
+	if (buf->len < sizeof(*evt)) {
+		LOG_ERR("Unexpected end of buffer");
+		return;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	if (evt->subevent_done_status == BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_PARTIAL) {
+		LOG_WRN("Discarded incomplete CS subevent results.");
+		return;
+	}
+
+	if (sys_le16_to_cpu(evt->conn_handle) == BT_HCI_LE_CS_TEST_CONN_HANDLE) {
+		if (!cs_test_callbacks.le_cs_test_subevent_data_available) {
+			LOG_WRN("No callback registered. Discarded subevent results from CS Test.");
+			return;
+		}
+	} else {
+		conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
+		if (!conn) {
+			LOG_ERR("Unknown connection handle when processing subevent results");
+			return;
+		}
+	}
+
+	result.header.procedure_counter = sys_le16_to_cpu(evt->procedure_counter);
+	result.header.frequency_compensation = sys_le16_to_cpu(evt->frequency_compensation);
+	result.header.procedure_done_status = evt->procedure_done_status;
+	result.header.subevent_done_status = evt->subevent_done_status;
+	result.header.procedure_abort_reason = evt->procedure_abort_reason;
+	result.header.subevent_abort_reason = evt->subevent_abort_reason;
+	result.header.reference_power_level = evt->reference_power_level;
+	result.header.num_antenna_paths = evt->num_antenna_paths;
+	result.header.num_steps_reported = evt->num_steps_reported;
+
+	if (evt->num_steps_reported) {
+		net_buf_simple_init_with_data(&step_data_buf,
+					      evt->steps,
+					      buf->len);
+		result.step_data_buf = &step_data_buf;
+	} else {
+		result.step_data_buf = NULL;
+	}
+
+	if (sys_le16_to_cpu(evt->conn_handle) == BT_HCI_LE_CS_TEST_CONN_HANDLE) {
+		result.header.config_id = 0;
+		result.header.start_acl_conn_event = 0;
+
+		cs_test_callbacks.le_cs_test_subevent_data_available(&result);
+
+	} else {
+		result.header.config_id = evt->config_id;
+		result.header.start_acl_conn_event =
+			sys_le16_to_cpu(evt->start_acl_conn_event_counter);
+
+		notify_cs_subevent_result(conn, &result);
+
+		bt_conn_unref(conn);
+	}
 }
 
 void bt_hci_le_cs_config_complete_event(struct net_buf *buf)
@@ -447,4 +522,68 @@ int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_REMOVE_CONFIG, buf, NULL);
 }
+
+int bt_le_cs_stop_test(void)
+{
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CS_TEST_END, 0);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST_END, buf, NULL);
+}
+
+void bt_hci_le_cs_test_end_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_cs_test_end_complete *evt;
+
+	if (buf->len < sizeof(*evt)) {
+		LOG_ERR("Unexpected end of buffer");
+		return;
+	}
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+	if (evt->status) {
+		LOG_INF("CS Test End failed with status 0x%02X", evt->status);
+		return;
+	}
+
+	if (cs_test_callbacks.le_cs_test_end_complete) {
+		cs_test_callbacks.le_cs_test_end_complete();
+	}
+}
+
+void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
+			      bool (*func)(struct bt_le_cs_subevent_step *step, void *user_data),
+			      void *user_data)
+{
+	if (!step_data_buf) {
+		LOG_INF("Tried to parse empty step data.");
+		return;
+	}
+
+	while (step_data_buf->len > 1) {
+		struct bt_le_cs_subevent_step step;
+
+		step.mode = net_buf_simple_pull_u8(step_data_buf);
+		step.channel = net_buf_simple_pull_u8(step_data_buf);
+		step.data_len = net_buf_simple_pull_u8(step_data_buf);
+
+		if (step.data_len == 0) {
+			LOG_WRN("Encountered zero-length step data.");
+			return;
+		}
+
+		step.data = step_data_buf->data;
+
+		if (!func(&step, user_data)) {
+			return;
+		}
+
+		net_buf_simple_pull(step_data_buf, step.data_len);
+	}
+}
+
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */

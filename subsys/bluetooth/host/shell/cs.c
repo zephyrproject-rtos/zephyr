@@ -136,6 +136,52 @@ static int cmd_read_remote_fae_table(const struct shell *sh, size_t argc, char *
 	return 0;
 }
 
+static bool process_step_data(struct bt_le_cs_subevent_step *step, void *user_data)
+{
+	shell_print(ctx_shell, "Subevent results contained step data: ");
+	shell_print(ctx_shell, "- Step mode %d\n"
+		"- Step channel %d\n"
+		"- Step data hexdump:",
+		step->mode,
+		step->channel);
+	shell_hexdump(ctx_shell, step->data, step->data_len);
+
+	return true;
+}
+
+static void cs_test_subevent_data_cb(struct bt_conn_le_cs_subevent_result *result)
+{
+	shell_print(ctx_shell, "Received subevent results.");
+	shell_print(ctx_shell, "Subevent Header:\n"
+		"- Procedure Counter: %d\n"
+		"- Frequency Compensation: 0x%04x\n"
+		"- Reference Power Level: %d\n"
+		"- Procedure Done Status: 0x%02x\n"
+		"- Subevent Done Status: 0x%02x\n"
+		"- Procedure Abort Reason: 0x%02x\n"
+		"- Subevent Abort Reason: 0x%02x\n"
+		"- Number of Antenna Paths: %d\n"
+		"- Number of Steps Reported: %d",
+		result->header.procedure_counter,
+		result->header.frequency_compensation,
+		result->header.reference_power_level,
+		result->header.procedure_done_status,
+		result->header.subevent_done_status,
+		result->header.procedure_abort_reason,
+		result->header.subevent_abort_reason,
+		result->header.num_antenna_paths,
+		result->header.num_steps_reported);
+
+	if (result->step_data_buf) {
+		bt_le_cs_step_data_parse(result->step_data_buf, process_step_data, NULL);
+	}
+}
+
+static void cs_test_end_complete_cb(void)
+{
+	shell_print(ctx_shell, "CS Test End Complete.");
+}
+
 static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err = 0;
@@ -144,7 +190,7 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.main_mode = BT_CONN_LE_CS_MAIN_MODE_1;
 	params.sub_mode = BT_CONN_LE_CS_SUB_MODE_UNUSED;
 	params.main_mode_repetition = 0;
-	params.mode_0_steps = 0x1;
+	params.mode_0_steps = 2;
 
 	params.role = shell_strtoul(argv[1], 16, &err);
 
@@ -164,9 +210,9 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.rtt_type = BT_CONN_LE_CS_RTT_TYPE_AA_ONLY;
 	params.cs_sync_phy = BT_CONN_LE_CS_SYNC_1M_PHY;
 	params.cs_sync_antenna_selection = BT_LE_CS_TEST_CS_SYNC_ANTENNA_SELECTION_ONE;
-	params.subevent_len = 10000;
-	params.subevent_interval = 0;
-	params.max_num_subevents = 0;
+	params.subevent_len = 3000;
+	params.subevent_interval = 1;
+	params.max_num_subevents = 1;
 	params.transmit_power_level = BT_HCI_OP_LE_CS_TEST_MAXIMIZE_TX_POWER;
 	params.t_ip1_time = 80;
 	params.t_ip2_time = 80;
@@ -182,9 +228,22 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	memset(params.override_config_0.not_set.channel_map, 0,
 	       sizeof(params.override_config_0.not_set.channel_map));
 	params.override_config_0.not_set.channel_map[1] = 0xFF;
+	params.override_config_0.not_set.channel_map[7] = 0xFF;
+	params.override_config_0.not_set.channel_map[8] = 0xFF;
 	params.override_config_0.not_set.channel_selection_type = BT_CONN_LE_CS_CHSEL_TYPE_3B;
 	params.override_config_0.not_set.ch3c_shape = BT_CONN_LE_CS_CH3C_SHAPE_HAT;
 	params.override_config_0.not_set.ch3c_jump = 0x2;
+
+	struct bt_le_cs_test_cb cs_test_cb = {
+		.le_cs_test_subevent_data_available = cs_test_subevent_data_cb,
+		.le_cs_test_end_complete = cs_test_end_complete_cb,
+	};
+
+	err = bt_le_cs_test_cb_register(cs_test_cb);
+	if (err) {
+		shell_error(sh, "bt_le_cs_test_cb_register returned error %d", err);
+		return -ENOEXEC;
+	}
 
 	err = bt_le_cs_start_test(&params);
 	if (err) {
@@ -370,6 +429,19 @@ static int cmd_create_config(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	err = bt_le_cs_stop_test();
+	if (err) {
+		shell_error(sh, "bt_cs_stop_test returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cs_cmds,
 	SHELL_CMD_ARG(read_remote_supported_capabilities, NULL, "<None>",
@@ -382,6 +454,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(read_remote_fae_table, NULL, "<None>", cmd_read_remote_fae_table, 1, 0),
 	SHELL_CMD_ARG(start_simple_cs_test, NULL, "<Role selection (initiator, reflector): 0, 1>",
 		      cmd_cs_test_simple, 2, 0),
+	SHELL_CMD_ARG(stop_cs_test, NULL, "<None>", cmd_cs_stop_test, 1, 0),
 	SHELL_CMD_ARG(
 		create_config, NULL,
 		"<id> <context: local-only, local-remote> <role: initiator, reflector> "
