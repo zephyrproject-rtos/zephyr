@@ -320,6 +320,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	}
 
 	vbuf->bytesused = buffer_size;
+	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
