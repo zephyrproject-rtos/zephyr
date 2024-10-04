@@ -364,6 +364,11 @@ void llcp_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *
 		llcp_lp_comm_tx_ack(conn, ctx, tx);
 		break;
 #endif /* defined(CONFIG_BT_CTLR_CENTRAL_ISO) || defined(CONFIG_BT_CTLR_PERIPHERAL_ISO) */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	case PROC_PERIODIC_SYNC:
+		llcp_lp_past_tx_ack(conn, ctx, tx);
+		break;
+#endif /* defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER) */
 	default:
 		break;
 		/* Ignore tx_ack */
@@ -463,6 +468,11 @@ static void lr_act_run(struct ll_conn *conn)
 		llcp_lp_comm_run(conn, ctx, NULL);
 		break;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_REQ */
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	case PROC_PERIODIC_SYNC:
+		llcp_lp_past_run(conn, ctx, NULL);
+		break;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
