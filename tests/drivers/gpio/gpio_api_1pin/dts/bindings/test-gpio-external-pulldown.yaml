@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2024 Andrew Featherstone <andrew.featherstone@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/gpio/gpio_api_1pin test in Zephyr on certain hardware.
+
+compatible: "test-gpio-external-pulldown"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Identity of a GPIO that will be configured as both an output and input.
