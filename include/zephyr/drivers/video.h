@@ -134,6 +134,12 @@ struct video_buffer {
 	 * endpoints.
 	 */
 	uint32_t timestamp;
+	/** Line offset within frame this buffer represents, from the
+	 * beginning of the frame. This offset is given in pixels,
+	 * so `line_offset` * `pitch` provides offset from the start of
+	 * the frame in bytes.
+	 */
+	uint16_t line_offset;
 };
 
 /**
