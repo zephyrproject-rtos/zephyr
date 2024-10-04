@@ -157,9 +157,7 @@ static void process(const struct log_backend *const backend,
 	} else if (source == NULL) {
 		source_id = 0;
 	} else {
-		source_id = IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-		    log_dynamic_source_id((struct log_source_dynamic_data *)source) :
-		    log_const_source_id((const struct log_source_const_data *)source);
+		source_id = log_source_id(source);
 	}
 
 	zassert_equal(source_id, exp->source_id, "source_id:%p (exp: %d)",

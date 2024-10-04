@@ -493,6 +493,20 @@ static inline uint32_t log_dynamic_source_id(struct log_source_dynamic_data *dat
 			sizeof(struct log_source_dynamic_data);
 }
 
+/** @brief Get index of the log source based on the address of the associated data.
+ *
+ * @param source Address of the data structure (dynamic if runtime filtering is
+ * enabled and static otherwise).
+ *
+ * @return Source ID.
+ */
+static inline uint32_t log_source_id(const void *source)
+{
+	return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
+		log_dynamic_source_id((struct log_source_dynamic_data *)source) :
+		log_const_source_id((const struct log_source_const_data *)source);
+}
+
 /** @brief Dummy function to trigger log messages arguments type checking. */
 static inline __printf_like(1, 2)
 void z_log_printf_arg_checker(const char *fmt, ...)
