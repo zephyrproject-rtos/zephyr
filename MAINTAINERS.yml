@@ -1015,8 +1015,6 @@ Release Notes:
   status: maintained
   maintainers:
     - anangl
-  collaborators:
-    - decsny
   files:
     - drivers/adc/
     - include/zephyr/drivers/adc.h
