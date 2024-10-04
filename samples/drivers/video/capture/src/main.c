@@ -62,9 +62,9 @@ static inline void video_display_frame(const struct device *const display_dev,
 	buf_desc.buf_size = vbuf->bytesused;
 	buf_desc.width = fmt.width;
 	buf_desc.pitch = buf_desc.width;
-	buf_desc.height = fmt.height;
+	buf_desc.height = vbuf->bytesused / fmt.pitch;
 
-	display_write(display_dev, 0, 0, &buf_desc, vbuf->buffer);
+	display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 #endif
 
