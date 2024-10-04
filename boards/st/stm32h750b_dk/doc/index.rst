@@ -84,6 +84,7 @@ Default Zephyr Peripheral Mapping:
 - UART_3 TX/RX : PB10/PB11 (ST-Link Virtual Port Com)
 - LD1 : PJ2
 - LD2 : PI13
+- USART1 TX/RX : PB6/PB7 (Arduino D1/D0)
 
 System Clock
 ============
