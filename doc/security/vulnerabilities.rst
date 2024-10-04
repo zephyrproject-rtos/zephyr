@@ -1874,7 +1874,18 @@ This has been fixed in main for v3.7.0
 CVE-2024-6444
 -------------
 
-Under embargo until 2024-09-22
+Bluetooth: ots: missing buffer length check
+
+- `Zephyr project bug tracker GHSA-qj4r-chj6-h7qp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qj4r-chj6-h7qp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74944 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74944>`_
+
+- `PR 77954 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77954>`_
 
 CVE-2024-8798
 -------------
