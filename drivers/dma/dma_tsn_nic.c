@@ -278,6 +278,10 @@ static int dma_tsn_nic_init(const struct device *dev)
 	engine_init_regs(regs);
 	data->regs[XDMA_C2H] = regs;
 
+	sys_write32(0x1, data->bar[0] + 0x0008);
+	sys_write32(0x800f0000, data->bar[0] + 0x0610);
+	sys_write32(0x10, data->bar[0] + 0x0620);
+
 	return 0;
 }
 
