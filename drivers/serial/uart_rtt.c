@@ -10,8 +10,6 @@
 
 #define DT_DRV_COMPAT segger_rtt_uart
 
-extern struct k_mutex rtt_term_mutex;
-
 struct uart_rtt_config {
 	void *up_buffer;
 	size_t up_size;
@@ -100,21 +98,8 @@ static int uart_rtt_tx(const struct device *dev,
 
 	ARG_UNUSED(timeout);
 
-	/* RTT mutex cannot be claimed in ISRs */
-	if (k_is_in_isr()) {
-		return -ENOTSUP;
-	}
-
-	/* Claim the RTT lock */
-	if (k_mutex_lock(&rtt_term_mutex, K_NO_WAIT) != 0) {
-		return -EBUSY;
-	}
-
 	/* Output the buffer */
-	SEGGER_RTT_WriteNoLock(ch, buf, len);
-
-	/* Return RTT lock */
-	SEGGER_RTT_UNLOCK();
+	SEGGER_RTT_Write(ch, buf, len);
 
 	/* Send the TX complete callback */
 	if (data->callback) {
