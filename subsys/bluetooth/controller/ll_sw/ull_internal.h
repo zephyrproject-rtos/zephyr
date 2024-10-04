@@ -45,6 +45,9 @@ extern bool ull_handle_cpr_anchor_point_move(struct ll_conn *conn, uint16_t *off
 /* Macro to convert time in us to periodic advertising interval units */
 #define RADIO_SYNC_EVENTS(x, y) ((uint16_t)DIV_ROUND_UP(x, y))
 
+/* Macro to mark address type as identity address from RPA (0x02, 0x03) */
+#define MARK_AS_IDENTITY_ADDR(addr_type) ((addr_type) += 2U)
+
 static inline uint8_t ull_ref_get(struct ull_hdr *hdr)
 {
 	return hdr->ref;
@@ -170,3 +173,4 @@ void ull_rxfifo_alloc(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
 		      void *mem_free, void *link_free, uint8_t max);
 void *ull_rxfifo_release(uint8_t s, uint8_t n, uint8_t f, uint8_t *l, uint8_t *m,
 			 memq_link_t *link, struct node_rx_hdr *rx);
+uint32_t ull_get_wrapped_time_us(uint32_t time_now_us, int32_t time_diff_us);

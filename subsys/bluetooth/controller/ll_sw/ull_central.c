@@ -722,7 +722,7 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		ll_rl_id_addr_get(rl_idx, &cc->peer_addr_type,
 				  &cc->peer_addr[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		cc->peer_addr_type += 2;
+		MARK_AS_IDENTITY_ADDR(cc->peer_addr_type);
 
 		/* Store peer RPA */
 		memcpy(&cc->peer_rpa[0], &peer_addr[0], BDADDR_SIZE);
@@ -748,6 +748,11 @@ void ull_central_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 
 	/* Set LLCP as connection-wise connected */
 	ull_cp_state_set(conn, ULL_CP_CONNECTED);
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	/* Set default PAST parameters */
+	conn->past = ull_conn_default_past_param_get();
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
