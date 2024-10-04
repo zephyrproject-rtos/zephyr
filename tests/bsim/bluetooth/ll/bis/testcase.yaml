@@ -40,3 +40,14 @@ tests:
     harness: bsim
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_vs_dp_conf
+  bluetooth.ll.bis_past:
+    extra_args: CONF_FILE=prj_past.conf
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpunet
+    integration_platforms:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpunet
+    harness: bsim
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_ll_bis_prj_past_conf
