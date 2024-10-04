@@ -2612,6 +2612,8 @@ struct bt_hci_cp_le_cs_remove_config {
 	uint8_t config_id;
 } __packed;
 
+#define BT_HCI_OP_LE_CS_TEST_END BT_OP(BT_OGF_LE, 0x0096) /* 0x2096 */
+
 /* Event definitions */
 
 #define BT_HCI_EVT_UNKNOWN                      0x00
@@ -3463,6 +3465,182 @@ struct bt_hci_evt_le_cs_config_complete {
 	uint8_t t_pm_time;
 } __packed;
 
+#define BT_HCI_LE_CS_TEST_CONN_HANDLE 0x0FFF
+
+#define BT_HCI_LE_CS_PROCEDURE_DONE_STATUS_COMPLETE 0x0
+#define BT_HCI_LE_CS_PROCEDURE_DONE_STATUS_PARTIAL  0x1
+#define BT_HCI_LE_CS_PROCEDURE_DONE_STATUS_ABORTED  0xF
+
+#define BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_COMPLETE 0x0
+#define BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_PARTIAL  0x1
+#define BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_ABORTED  0xF
+
+#define BT_HCI_LE_CS_PROCEDURE_ABORT_REASON_NO_ABORT                     0x0
+#define BT_HCI_LE_CS_PROCEDURE_ABORT_REASON_LOCAL_HOST_OR_REMOTE_REQUEST 0x1
+#define BT_HCI_LE_CS_PROCEDURE_ABORT_REASON_TOO_FEW_CHANNELS             0x2
+#define BT_HCI_LE_CS_PROCEDURE_ABORT_REASON_CHMAP_INSTANT_PASSED         0x3
+#define BT_HCI_LE_CS_PROCEDURE_ABORT_REASON_UNSPECIFIED                  0xF
+
+#define BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_NO_ABORT                     0x0
+#define BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_LOCAL_HOST_OR_REMOTE_REQUEST 0x1
+#define BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_NO_CS_SYNC_RECEIVED          0x2
+#define BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_SCHED_CONFLICT               0x3
+#define BT_HCI_LE_CS_SUBEVENT_ABORT_REASON_UNSPECIFIED                  0xF
+
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_N_AP_IGNORED 0x00
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_N_AP_1       0x01
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_N_AP_2       0x02
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_N_AP_3       0x03
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_N_AP_4       0x04
+
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_FREQ_COMPENSATION_NOT_AVAILABLE 0xC000
+
+#define BT_HCI_LE_CS_SUBEVENT_RESULT_PCT_NOT_AVAILABLE 0xFFFFFFFF
+
+#define BT_HCI_LE_CS_REF_POWER_LEVEL_UNAVAILABLE 0x7F
+
+#define BT_HCI_LE_CS_PCT_MASK 0xFFF
+
+#define BT_HCI_LE_CS_TONE_QUALITY_HIGH        0x0
+#define BT_HCI_LE_CS_TONE_QUALITY_MED         0x1
+#define BT_HCI_LE_CS_TONE_QUALITY_LOW         0x2
+#define BT_HCI_LE_CS_TONE_QUALITY_UNAVAILABLE 0x3
+
+#define BT_HCI_LE_CS_NOT_TONE_EXT_SLOT              0x0
+#define BT_HCI_LE_CS_TONE_EXT_SLOT_EXT_NOT_EXPECTED 0x1
+#define BT_HCI_LE_CS_TONE_EXT_SLOT_EXT_EXPECTED     0x2
+
+#define BT_HCI_LE_CS_TIME_DIFFERENCE_NOT_AVAILABLE 0x8000
+
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_EXT_UNLIKELY  0x00
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_VERY_UNLIKELY 0x01
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_UNLIKELY      0x02
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_POSSIBLE      0x03
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_LIKELY        0x04
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_VERY_LIKELY   0x05
+#define BT_HCI_LE_CS_PACKET_NADM_ATTACK_EXT_LIKELY    0x06
+#define BT_HCI_LE_CS_PACKET_NADM_UNKNOWN              0xFF
+
+#define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT 0x31
+/** Subevent result step data format: Mode 0 Initiator  */
+struct bt_hci_le_cs_step_data_mode_0_initiator {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_rssi;
+	uint8_t packet_antenna;
+	uint16_t measured_freq_offset;
+} __packed;
+
+/** Subevent result step data format: Mode 0 Reflector  */
+struct bt_hci_le_cs_step_data_mode_0_reflector {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_rssi;
+	uint8_t packet_antenna;
+} __packed;
+
+/** Subevent result step data format: Mode 1  */
+struct bt_hci_le_cs_step_data_mode_1 {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_nadm;
+	uint8_t packet_rssi;
+	union {
+		uint16_t toa_tod_initiator;
+		uint16_t tod_toa_reflector;
+	};
+	uint8_t packet_antenna;
+} __packed;
+
+/** Subevent result step data format: Mode 1 with sounding sequence RTT support */
+struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_nadm;
+	uint8_t packet_rssi;
+	union {
+		uint16_t toa_tod_initiator;
+		uint16_t tod_toa_reflector;
+	};
+	uint8_t packet_antenna;
+	uint8_t packet_pct1[4];
+	uint8_t packet_pct2[4];
+} __packed;
+
+
+/** Format for per-antenna path step data in modes 2 and 3 */
+struct bt_hci_le_cs_step_data_tone_info {
+	uint8_t phase_correction_term[3];
+	uint8_t quality_indicator: 4;
+	uint8_t extension_indicator: 4;
+} __packed;
+
+/** Subevent result step data format: Mode 2 */
+struct bt_hci_le_cs_step_data_mode_2 {
+	uint8_t antenna_permutation_index;
+	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+} __packed;
+
+/** Subevent result step data format: Mode 3 */
+struct bt_hci_le_cs_step_data_mode_3 {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_nadm;
+	uint8_t packet_rssi;
+	union {
+		uint16_t toa_tod_initiator;
+		uint16_t tod_toa_reflector;
+	};
+	uint8_t packet_antenna;
+	uint8_t antenna_permutation_index;
+	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+} __packed;
+
+/** Subevent result step data format: Mode 3 with sounding sequence RTT support */
+struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
+	uint8_t packet_quality_aa_check: 4;
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_nadm;
+	uint8_t packet_rssi;
+	union {
+		uint16_t toa_tod_initiator;
+		uint16_t tod_toa_reflector;
+	};
+	uint8_t packet_antenna;
+	uint8_t packet_pct1[4];
+	uint8_t packet_pct2[4];
+	uint8_t antenna_permutation_index;
+	struct bt_hci_le_cs_step_data_tone_info tone_info[];
+} __packed;
+
+struct bt_hci_evt_le_cs_subevent_result_step {
+	uint8_t step_mode;
+	uint8_t step_channel;
+	uint8_t step_data_length;
+	uint8_t step_data[];
+} __packed;
+
+struct bt_hci_evt_le_cs_subevent_result {
+	uint16_t conn_handle;
+	uint8_t config_id;
+	uint16_t start_acl_conn_event_counter;
+	uint16_t procedure_counter;
+	uint16_t frequency_compensation;
+	uint8_t reference_power_level;
+	uint8_t procedure_done_status;
+	uint8_t subevent_done_status;
+	uint8_t procedure_abort_reason: 4;
+	uint8_t subevent_abort_reason: 4;
+	uint8_t num_antenna_paths;
+	uint8_t num_steps_reported;
+	uint8_t steps[];
+} __packed;
+
+#define BT_HCI_EVT_LE_CS_TEST_END_COMPLETE 0x33
+struct bt_hci_evt_le_cs_test_end_complete {
+	uint8_t status;
+} __packed;
+
 /* Event mask bits */
 
 #define BT_EVT_BIT(n) (1ULL << (n))
@@ -3555,6 +3733,8 @@ struct bt_hci_evt_le_cs_config_complete {
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE BT_EVT_BIT(43)
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE              BT_EVT_BIT(44)
 #define BT_EVT_MASK_LE_CS_CONFIG_COMPLETE                             BT_EVT_BIT(46)
+#define BT_EVT_MASK_LE_CS_SUBEVENT_RESULT                             BT_EVT_BIT(48)
+#define BT_EVT_MASK_LE_CS_TEST_END_COMPLETE                           BT_EVT_BIT(50)
 
 /** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00
