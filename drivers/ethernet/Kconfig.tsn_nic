@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_TSN_NIC
+	bool "TSN NIC Ethernet Driver"
+	default y
+	depends on DT_HAS_TSNLAB_TSN_NIC_ETH_ENABLED
+	help
+	  Enable Ethernet driver for TSN NIC.

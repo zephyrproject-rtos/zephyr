@@ -1,0 +1,6 @@
+
+description: TSN NIC Ethernet driver
+
+compatible: "tsnlab,tsn-nic-eth"
+
+include: ethernet-controller.yaml
