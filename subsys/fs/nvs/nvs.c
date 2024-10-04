@@ -467,11 +467,8 @@ static int nvs_flash_wrt_entry(struct nvs_fs *fs, uint16_t id, const void *data,
 	nvs_ate_crc8_update(&entry);
 
 	rc = nvs_flash_ate_wrt(fs, &entry);
-	if (rc) {
-		return rc;
-	}
 
-	return 0;
+	return rc;
 }
 /* end of flash routines */
 
@@ -744,10 +741,8 @@ gc_done:
 
 	/* Erase the gc'ed sector */
 	rc = nvs_flash_erase_sector(fs, sec_addr);
-	if (rc) {
-		return rc;
-	}
-	return 0;
+
+	return rc;
 }
 
 static int nvs_startup(struct nvs_fs *fs)
@@ -997,7 +992,6 @@ int nvs_clear(struct nvs_fs *fs)
 
 int nvs_mount(struct nvs_fs *fs)
 {
-
 	int rc;
 	struct flash_pages_info info;
 	size_t write_block_size;
@@ -1296,7 +1290,6 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 
 ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 {
-
 	int rc;
 	struct nvs_ate step_ate, wlk_ate;
 	uint32_t step_addr, wlk_addr;
