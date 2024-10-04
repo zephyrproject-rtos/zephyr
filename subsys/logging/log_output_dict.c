@@ -38,11 +38,7 @@ void log_dict_output_msg_process(const struct log_output *output,
 	output_hdr.data_len = msg->hdr.desc.data_len;
 	output_hdr.timestamp = msg->hdr.timestamp;
 
-	output_hdr.source = (source != NULL) ?
-				(IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?
-					log_dynamic_source_id(source) :
-					log_const_source_id(source)) :
-				0U;
+	output_hdr.source = (source != NULL) ? log_source_id(source) : 0U;
 
 	buffer_write(output->func, (uint8_t *)&output_hdr, sizeof(output_hdr),
 		     (void *)output->control_block->ctx);
