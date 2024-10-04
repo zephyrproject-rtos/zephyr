@@ -234,6 +234,9 @@ static int video_esp32_get_caps(const struct device *dev, enum video_endpoint_id
 		return -EINVAL;
 	}
 
+	/* ESP32 produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, ep, caps);
 }

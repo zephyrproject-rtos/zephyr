@@ -356,6 +356,9 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 		return -EINVAL;
 	}
 
+	/* DCMI produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+
 	/* Forward the message to the sensor device */
 	ret = video_get_caps(config->sensor_dev, ep, caps);
 

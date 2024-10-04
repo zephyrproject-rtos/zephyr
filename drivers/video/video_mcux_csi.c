@@ -393,6 +393,8 @@ static int video_mcux_csi_get_caps(const struct device *dev, enum video_endpoint
 
 	/* NXP MCUX CSI request at least 2 buffer before starting */
 	caps->min_vbuf_count = 2;
+	/* CSI only operates on buffers of full frame size */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* no source dev */
 	return err;
