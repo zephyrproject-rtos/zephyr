@@ -1581,7 +1581,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
 	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
-		LOG_DBG("Timeout discarded. No blocking in syswq.");
+		LOG_WRN("Timeout discarded. No blocking in syswq.");
 		timeout = K_NO_WAIT;
 	}
 
