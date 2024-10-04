@@ -595,6 +595,8 @@ int bt_le_cs_read_remote_fae_table(struct bt_conn *conn);
  * Existing callbacks can be unregistered by providing NULL function
  * pointers.
  *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
+ *
  * @param cs_test_cb Set of callbacks to be used with CS Test
  *
  * @return Zero on success or (negative) error code on failure.
@@ -615,7 +617,7 @@ int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cs_test_cb);
  * parameters of this command describe the required transmit and receive behavior
  * for the CS test.
  *
- * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
  *
  * @param params CS Test parameters
  *
@@ -661,7 +663,7 @@ int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
  * The controller is expected to finish reporting any subevent results
  * before completing this termination.
  *
- * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING_TEST} must be set.
  *
  * @return Zero on success or (negative) error code on failure.
  */
