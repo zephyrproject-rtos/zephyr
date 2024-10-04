@@ -46,7 +46,7 @@ LOG_MODULE_REGISTER(dma_tsn_nic, LOG_LEVEL_ERR);
 
 #define XDMA_C2H_OFFSET 0x1000
 
-#define XDMA_CONFIG_BAR_NUM  1
+#define XDMA_CONFIG_BAR_IDX  1
 /* Size of BAR1, it needs to be hard-coded as there is no PCIe API for this */
 #define XDMA_CONFIG_BAR_SIZE 0x10000
 
@@ -93,7 +93,7 @@ struct dma_tsn_nic_config {
 };
 
 struct dma_tsn_nic_data {
-	mm_reg_t bar;
+	mm_reg_t bar[XDMA_CONFIG_BAR_IDX + 1];
 	struct dma_tsn_nic_engine_regs *regs[2];
 };
 
@@ -214,28 +214,43 @@ static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 	return 0;
 }
 
-static int dma_tsn_nic_init(const struct device *dev)
-{
+static int map_bar(const struct device *dev, int idx, size_t size) {
 	const struct dma_tsn_nic_config *config = dev->config;
 	struct dma_tsn_nic_data *data = dev->data;
-	struct dma_tsn_nic_engine_regs *regs;
 	uintptr_t bar_addr, bus_addr;
-	int engine_id, channel_id;
 	bool ret;
 
-	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(XDMA_CONFIG_BAR_NUM, 0, 0), true,
+	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(idx, 0, 0), true,
 					false, XDMA_CONFIG_BAR_SIZE, &bus_addr);
 	if (!ret) {
 		return -EINVAL;
 	}
 
-	ret = pcie_ctrl_region_translate(config->pci_dev, PCIE_BDF(XDMA_CONFIG_BAR_NUM, 0, 0), true,
+	ret = pcie_ctrl_region_translate(config->pci_dev, PCIE_BDF(idx, 0, 0), true,
 					 false, bus_addr, &bar_addr);
 	if (!ret) {
 		return -EINVAL;
 	}
 
-	device_map(&data->bar, bar_addr, XDMA_CONFIG_BAR_SIZE, K_MEM_CACHE_NONE);
+	device_map(&data->bar[idx], bar_addr, size, K_MEM_CACHE_NONE);
+
+	return 0;
+}
+
+static int dma_tsn_nic_init(const struct device *dev)
+{
+	const struct dma_tsn_nic_config *config = dev->config;
+	struct dma_tsn_nic_data *data = dev->data;
+	struct dma_tsn_nic_engine_regs *regs;
+	int engine_id, channel_id;
+
+	if (map_bar(dev, 0, 0x1000) != 0) {
+		return -EINVAL;
+	}
+
+	if (map_bar(dev, XDMA_CONFIG_BAR_IDX, XDMA_CONFIG_BAR_SIZE) != 0) {
+		return -EINVAL;
+	}
 
 	regs = (struct dma_tsn_nic_engine_regs *)(data->bar);
 	engine_id = get_engine_id(regs);
