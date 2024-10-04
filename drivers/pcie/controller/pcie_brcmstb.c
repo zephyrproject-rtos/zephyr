@@ -288,6 +288,7 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 
 	*bar_bus_addr = addr;
 	data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
+	printk("alloc 0x%lx\n", addr);
 
 	return true;
 }
@@ -613,6 +614,11 @@ static int pcie_brcmstb_init(const struct device *dev)
 	tmp |= PCI_COMMAND_MEMORY;
 	sys_write32(tmp, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
 	k_busy_wait(500000);
+
+	mm_reg_t asdf;
+	device_map(&asdf, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
+	printk("H2C 0x%x\n", sys_read32(asdf));
+	printk("C2H 0x%x\n", sys_read32(asdf + 0x1000));
 
 	return 0;
 }
