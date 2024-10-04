@@ -25,6 +25,7 @@ app=tests/bsim/bluetooth/ll/bis compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ll_interface.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_file=prj_vs_dp.conf compile
+app=tests/bsim/bluetooth/ll/bis conf_file=prj_past.conf compile
 
 app=tests/bsim/bluetooth/ll/edtt/hci_test_app \
   conf_file=prj_dut_llcp.conf compile
