@@ -252,8 +252,9 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 }
 
 static inline enum pcie_region_type
-pcie_brcmstb_determine_region_type(struct pcie_brcmstb_data *data, bool mem, bool mem64)
+pcie_brcmstb_determine_region_type(const struct device *dev, bool mem, bool mem64)
 {
+	struct pcie_brcmstb_data *data = dev->data;
 	if (!mem) {
 		return PCIE_REGION_IO;
 	}
@@ -267,13 +268,17 @@ pcie_brcmstb_determine_region_type(struct pcie_brcmstb_data *data, bool mem, boo
 }
 
 /* Region operations are almost the same as the ones of pcie_ecam */
-static bool pcie_brcmstb_region_allocate_type(struct pcie_brcmstb_data *data, pcie_bdf_t bdf,
+static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf_t bdf,
 					      size_t bar_size, uintptr_t *bar_bus_addr,
 					      enum pcie_region_type type)
 {
+	const struct pcie_brcmstb_config *config = dev->config;
+	struct pcie_brcmstb_data *data = dev->data;
 	uintptr_t addr;
 
-	addr = (((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
+	printk("bdf 0%x\n", bdf);
+	// TODO: check bdf boundary
+	addr = (((data->regions[type].bus_start + config->regs[PCIE_BDF_TO_BUS(bdf) + 1].addr + data->regions[type].allocation_offset) - 1) |
 		((bar_size)-1)) +
 	       1;
 
@@ -306,9 +311,9 @@ static bool pcie_brcmstb_region_allocate(const struct device *dev, pcie_bdf_t bd
 		return false;
 	}
 
-	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
+	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
 
-	return pcie_brcmstb_region_allocate_type(data, bdf, bar_size, bar_bus_addr, type);
+	return pcie_brcmstb_region_allocate_type(dev, bdf, bar_size, bar_bus_addr, type);
 }
 
 static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie_bdf_t bdf,
@@ -331,7 +336,7 @@ static bool pcie_brcmstb_region_get_allocate_base(const struct device *dev, pcie
 		return false;
 	}
 
-	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
+	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
 
 	*bar_base_addr =
 		(((data->regions[type].bus_start + data->regions[type].allocation_offset) - 1) |
@@ -347,13 +352,14 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	if (bar_bus_addr == 0) {
-		return false;
-	}
+	// if (bar_bus_addr == 0) {
+	// 	return false;
+	// }
 
-	type = pcie_brcmstb_determine_region_type(data, mem, mem64);
+	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
 
 	*bar_addr = data->regions[type].phys_start + (bar_bus_addr - data->regions[type].bus_start);
+	printk("translate 0x%lx\n", *bar_addr);
 
 	return true;
 }
@@ -390,9 +396,9 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 		data->regions[type].bus_start = config->common->ranges[i].pcie_bus_addr;
 		data->regions[type].phys_start = config->common->ranges[i].host_map_addr;
 		data->regions[type].size = config->common->ranges[i].map_length;
-		if (data->regions[type].bus_start < 0x1000) {
-			data->regions[type].allocation_offset = 0x1000;
-		}
+		// if (data->regions[type].bus_start < 0x1000) {
+		// 	data->regions[type].allocation_offset = 0x1000;
+		// }
 	}
 
 	if (!data->regions[PCIE_REGION_IO].size && !data->regions[PCIE_REGION_MEM].size &&
