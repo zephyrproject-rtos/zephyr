@@ -287,7 +287,7 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 	}
 
 	*bar_bus_addr = addr;
-	data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
+	// data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
 	printk("alloc 0x%lx\n", addr);
 
 	return true;

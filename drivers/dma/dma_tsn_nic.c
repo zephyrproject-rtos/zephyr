@@ -252,7 +252,7 @@ static int dma_tsn_nic_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	regs = (struct dma_tsn_nic_engine_regs *)(data->bar);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[XDMA_CONFIG_BAR_IDX]);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_H2C) || (channel_id != 0)) {
@@ -262,7 +262,7 @@ static int dma_tsn_nic_init(const struct device *dev)
 	engine_init_regs(regs);
 	data->regs[XDMA_H2C] = regs;
 
-	regs = (struct dma_tsn_nic_engine_regs *)(data->bar + XDMA_C2H_OFFSET);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[XDMA_CONFIG_BAR_IDX] + XDMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	if ((engine_id != XDMA_ID_C2H) || (channel_id != 0)) {
