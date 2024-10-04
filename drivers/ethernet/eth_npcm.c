@@ -39,6 +39,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define NUVOTON_OUI_B1 0x00
 #define NUVOTON_OUI_B2 0x27
 
+#define DEV_CFG(dev)	((const struct eth_npcm_dev_cfg *)(dev)->config)
+
 #define ETH_NPCM_REG_BASE    ((struct emac_reg *)(DT_INST_REG_ADDR(0)))
 
 #define GET_FIRST_DMA_TX_DESC(heth)	(heth->TxDesc)
