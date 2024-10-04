@@ -138,6 +138,7 @@ static int pa_sync_past(struct bt_conn *conn,
 	struct bt_le_per_adv_sync_transfer_param param = { 0 };
 	int err;
 
+	param.options = BT_LE_PER_ADV_SYNC_TRANSFER_OPT_FILTER_DUPLICATES;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
@@ -267,6 +268,13 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 
 	if (past_avail) {
 		err = pa_sync_past(conn, state, pa_interval);
+		if (err == 0) {
+			err = bt_bap_scan_delegator_set_pa_state(state->recv_state->src_id,
+								 BT_BAP_PA_STATE_INFO_REQ);
+			if (err != 0) {
+				printk("Failed to set INFO_REQ state: %d", err);
+			}
+		}
 	} else {
 		err = pa_sync_no_past(state, pa_interval);
 	}
@@ -357,6 +365,14 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 	struct sync_state *state;
 
 	printk("PA %p synced\n", sync);
+
+	if (info->conn) { /* if from PAST */
+		for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
+			if (!sync_states[i].pa_sync) {
+				sync_states[i].pa_sync = sync;
+			}
+		}
+	}
 
 	state = sync_state_get_by_pa(sync);
 	if (state == NULL) {
