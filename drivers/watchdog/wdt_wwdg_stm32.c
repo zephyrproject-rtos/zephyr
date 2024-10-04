@@ -139,11 +139,9 @@ static void wwdg_stm32_convert_timeout(const struct device *dev,
 	float timeout_s = (float)timeout / USEC_PER_SEC;
 	float wwdg_freq;
 
-	*prescaler_exp = 0U;
 	*counter = 0;
 
-	for (*prescaler_exp = 0; *prescaler_exp <= WWDG_PRESCALER_EXPONENT_MAX;
-	     (*prescaler_exp)++) {
+	for (; *prescaler_exp <= WWDG_PRESCALER_EXPONENT_MAX; (*prescaler_exp)++) {
 		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER
 			     / (1 << *prescaler_exp);
 		/* +1 to ceil the result, which may lose from truncation */
@@ -208,40 +206,57 @@ static int wwdg_stm32_install_timeout(const struct device *dev,
 {
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
-	uint32_t timeout = config->window.max * USEC_PER_MSEC;
-	uint32_t calculated_timeout;
-	uint32_t prescaler_exp = 0U;
-	uint32_t counter = 0U;
+	uint32_t timeout_max = config->window.max * USEC_PER_MSEC;
+	uint32_t timeout_min = config->window.min * USEC_PER_MSEC;
+	uint32_t calculated_timeout_max, calculated_timeout_min;
+	uint32_t prescaler_exp_max = 0U;
+	uint32_t prescaler_exp_min = 0U;
+	uint32_t counter_max = 0U;
+	uint32_t counter_min = 0U;
 
 	if (config->callback != NULL) {
 		data->callback = config->callback;
 	}
+	if (timeout_min > timeout_max) {
+		return -EINVAL;
+	}
 
-	wwdg_stm32_convert_timeout(dev, timeout, &prescaler_exp, &counter);
-	calculated_timeout = wwdg_stm32_get_timeout(dev, prescaler_exp, counter);
+	/* calculate timings for max */
+	wwdg_stm32_convert_timeout(dev, timeout_max, &prescaler_exp_max, &counter_max);
+	calculated_timeout_max = wwdg_stm32_get_timeout(dev, prescaler_exp_max, counter_max);
+	prescaler_exp_min = prescaler_exp_max;
+	/* use the same pre-scaler (must match) for min */
+	wwdg_stm32_convert_timeout(dev, timeout_min, &prescaler_exp_min, &counter_min);
+	calculated_timeout_min = wwdg_stm32_get_timeout(dev, prescaler_exp_min, counter_min);
 
-	LOG_DBG("prescaler: %d", (1 << prescaler_exp));
-	LOG_DBG("Desired WDT: %d us", timeout);
-	LOG_DBG("Set WDT:     %d us", calculated_timeout);
+	if (prescaler_exp_min != prescaler_exp_max) {
+		return -EINVAL;
+	}
 
-	if (!(IS_WWDG_COUNTER(counter) &&
-	      IS_WWDG_TIMEOUT(timeout, calculated_timeout))) {
+	LOG_DBG("prescaler: %d", (1 << prescaler_exp_max));
+	LOG_DBG("Desired WDT: %d us", timeout_max);
+	LOG_DBG("Set WDT:     %d us", calculated_timeout_max);
+
+	if (!(IS_WWDG_COUNTER(counter_max) && IS_WWDG_WINDOW(counter_min) &&
+		IS_WWDG_TIMEOUT(timeout_max, calculated_timeout_max))) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;
 	}
 
-	data->counter = counter;
+	if (!(IS_WWDG_COUNTER(counter_min) && IS_WWDG_WINDOW(counter_min))) {
+		/* One of the parameters provided is invalid */
+		return -EINVAL;
+	}
+
+	data->counter = counter_max;
 
 	/* Configure WWDG */
 	/* Set the programmable prescaler */
 	LL_WWDG_SetPrescaler(wwdg,
-		(prescaler_exp << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
+			     (prescaler_exp_max << WWDG_PRESCALER_POS) & WWDG_PRESCALER_MASK);
 
-	/* Set window the same as the counter to be able to feed the WWDG almost
-	 * immediately
-	 */
-	LL_WWDG_SetWindow(wwdg, counter);
-	LL_WWDG_SetCounter(wwdg, counter);
+	LL_WWDG_SetWindow(wwdg, counter_max);
+	LL_WWDG_SetCounter(wwdg, counter_max);
 
 	return 0;
 }
