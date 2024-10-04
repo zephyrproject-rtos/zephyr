@@ -37,6 +37,7 @@ tests:
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
+      - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
       - CONFIG_BT_CTLR=n
     build_only: true
   bluetooth.shell.cdc_acm:
