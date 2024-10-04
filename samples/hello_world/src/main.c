@@ -325,19 +325,22 @@ void pufs_otp_test(const struct device *pufs_otp)
 void pufs_hash_sg_test(const struct device *pufs)
 {
 	int status = 0;
-	static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z Zephyr Port";
-    static uint8_t *pufs_sample_data2 = "Zephyr Port";
+	// static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z_Zephyr_Port";
+	static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z_";	
+    static uint8_t *pufs_sample_data2 = "Zephyr_Port";
 	static uint8_t pufs_sample_data_sha256_out[32] = {0};
 	static const uint8_t pufs_sample_data_sha256[] = {
-		0xfa,0x71,0xc2,0x19,0xea,0x58,0x4d,0xac,
-		0x36,0xd5,0x3e,0xca,0xe4,0x2a,0x8c,0x14,
-		0x4b,0xc1,0xc0,0x03,0xfd,0x36,0x3f,0x71,
-		0xd9,0x30,0x96,0xc4,0xaa,0x64,0xe0,0x4c
+		0x63,0xb9,0x67,0xb5,0x43,0x6e,0x4a,0xe2,
+		0x24,0x03,0x91,0xb4,0xa6,0xca,0xf2,0x22,
+		0x09,0x34,0x1c,0x6f,0x52,0x6a,0x33,0xc6,
+		0xe2,0x02,0x86,0xb9,0xd8,0x7d,0xfb,0x69		
 	};
 	const uint8_t pufs_sample_data1_len = strlen(pufs_sample_data1);
 	const uint8_t pufs_sample_data2_len = strlen(pufs_sample_data2);
+	
 	printf("%s%s(%d) Length of sample data to operate on:%d %s\n", \
-									ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len,ATTR_RST);
+	ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len,ATTR_RST);
+
 	struct hash_ctx lvHashCtx = {
 		.device = pufs,
 		.drv_sessn_state = NULL,
@@ -345,61 +348,58 @@ void pufs_hash_sg_test(const struct device *pufs)
 		.started = true
 	};		
 
-	struct hash_pkt lvHashPkt[1] = {
-		{
-			.ctx = &lvHashCtx,
-			.head = true,
-			.tail = true,
-			.in_buf = pufs_sample_data1,
-			.in_hash = NULL,
-			.in_hash_len = 0,
-			.in_len = pufs_sample_data1_len,
-			.next = NULL,//&lvHashPkt[1],
-			.out_buf = pufs_sample_data_sha256_out,
-			.prev_len = 0,
-			.out_len = 0
-		}
-		// ,
-		// {
-		// 	.ctx = &lvHashCtx,
-		// 	.head = true,
-		// 	.tail = true,
-		// 	.in_buf = pufs_sample_data2,
-		// 	.in_hash = NULL,
-		// 	.in_hash_len = 0,
-		// 	.in_len = pufs_sample_data2_len,
-		// 	.next = NULL,
-		// 	.out_buf = NULL,
-		// 	.prev_len = 0,
-		// 	.out_len = 0
-		// }
-	};	
-	// printf("AddrlvHashPkt[0]:%p AddrlvHashPkt[1]:%p Diff:%d\r\n", 
-	// &lvHashPkt[0], lvHashPkt[0].next, (((uint32_t)lvHashPkt[0].next) - ((uint32_t)&lvHashPkt[0])));
-	// printf("Size struct hash pkt:%d\r\n", sizeof(struct hash_pkt));
-	// printf("data1_size:%d data2_size:%d\r\n", pufs_sample_data1_len, pufs_sample_data2_len);
+	struct hash_pkt lvHashPkt1 = {0}, lvHashPkt2 = {0};
+
+	lvHashPkt1.ctx = &lvHashCtx;
+	lvHashPkt1.head = true;
+	lvHashPkt1.tail = true;
+	lvHashPkt1.in_buf = pufs_sample_data1;
+	lvHashPkt1.in_hash = NULL;
+	lvHashPkt1.in_hash_len = 0;
+	lvHashPkt1.in_len = pufs_sample_data1_len;
+	lvHashPkt1.next = &lvHashPkt2;
+	lvHashPkt1.out_buf = pufs_sample_data_sha256_out;
+	lvHashPkt1.out_len = 0;
+	lvHashPkt1.prev_len = 0;
+
+	lvHashPkt2.ctx = &lvHashCtx;
+	lvHashPkt2.head = true;
+	lvHashPkt2.tail = true;
+	lvHashPkt2.in_buf = pufs_sample_data2;
+	lvHashPkt2.in_hash = NULL;
+	lvHashPkt2.in_hash_len = 0;
+	lvHashPkt2.in_len = pufs_sample_data2_len;
+	lvHashPkt2.next = NULL;
+	lvHashPkt2.out_buf = pufs_sample_data_sha256_out;
+	lvHashPkt2.out_len = 0;
+	lvHashPkt2.prev_len = 0;
+
+	printf("AddrlvHashPkt1.rd_addr:0x%08x AddrlvHashPkt2.rd_addr:0x%08x\r\n", 
+	(uint32_t)lvHashPkt1.in_buf, (uint32_t)lvHashPkt2.in_buf);
+	printf("Size struct hash pkt:%d\r\n", sizeof(struct hash_pkt));
+	printf("data1_size:%d data2_size:%d\r\n", pufs_sample_data1_len, pufs_sample_data2_len);
 
 	status = hash_begin_session(pufs, &lvHashCtx, CRYPTO_HASH_ALGO_SHA256);
 	if(status != 0) {
 		printf("%s%s(%d) hash_begin_session status = %d %s\n", \
 			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
 	} else {
-		status = hash_compute(&lvHashCtx, lvHashPkt);
+		status = hash_compute(&lvHashCtx, &lvHashPkt1);
 	}
 	if(status != 0) {
 		printf("%s%s(%d) hash_compute status = %d %s\n", \
 			ATTR_ERR,__func__,__LINE__,status,ATTR_RST);
 	} else {
-		for(uint8_t i = 0; i < lvHashPkt[0].out_len; i++) {			
-			if(lvHashPkt[0].out_buf[i] != pufs_sample_data_sha256[i]) {
+		for(uint8_t i = 0; i < lvHashPkt1.out_len; i++) {			
+			if(lvHashPkt1.out_buf[i] != pufs_sample_data_sha256[i]) {
 				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", \
 				ATTR_ERR,__func__,__LINE__,\
-				i,lvHashPkt[0].out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 				status = -EINVAL;
 			} else {
 				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", \
 				ATTR_INF,__func__,__LINE__,\
-				i,lvHashPkt[0].out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 			}
 		}
 		if(status != 0) {

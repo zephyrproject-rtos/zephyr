@@ -44,9 +44,10 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
     return -EBADFD;
   }
 
-  // Set SGDMA descriptors
+  // Set SGDMA descriptors input data
   while(true) {
-    printf("%s(%d) pkt:%p pkt->next:%p\r\n", __func__, __LINE__, pkt, pkt->next);
+    printf("%s(%d) desc_count:%d pkt:%p pkt->next:%p\r\n", \
+    __func__, __LINE__, desc_count, pkt, pkt->next);
 
     data_addr[desc_count].read_addr = (uint32_t)pkt->in_buf;
     data_addr[desc_count].len = pkt->in_len;
@@ -59,8 +60,14 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
     }    
     if(pkt != NULL) {
       data_addr[desc_count].next = &data_addr[desc_count+1];
+      printf("%s(%d) data_rd_addr:0x%08x data:%p data->next:%p\r\n", \
+          __func__, __LINE__, data_addr[desc_count].read_addr, \
+          &data_addr[desc_count], data_addr[desc_count].next);
     } else {
       data_addr[desc_count].next = NULL;
+      printf("%s(%d) data_rd_addr:0x%08x data:%p data->next:%p\r\n", \
+          __func__, __LINE__, data_addr[desc_count].read_addr, \
+          &data_addr[desc_count], data_addr[desc_count].next);
       break;
     }
     desc_count++;
@@ -72,7 +79,7 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
     __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count);
     return -ENOTEMPTY;
   } else {
-    LOG_INF("%s(%d) Num_Desc_Elements:%d\r\n", __func__, __LINE__, desc_count);
+    LOG_INF("%s(%d) Num_Desc_Elements:%d\r\n", __func__, __LINE__, desc_count+1);
   }
 
   return PUFCC_SUCCESS;
@@ -329,6 +336,8 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 
   if(!ctx->started) {    // started flag indicates if chunkwise hash calculation was started
     
+    LOG_INF("%s(%d) Normal Hash Calculation\r\n", __func__, __LINE__);
+
     struct rs_crypto_addr data_addr = {
       .read_addr = (uint32_t)pkt->in_buf,
       .write_addr = (uint32_t)pkt->out_buf,
@@ -345,10 +354,12 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 
   } else {
 
-    uint8_t lvHash_Data_Addr[BUFFER_SIZE] = {0};
+    LOG_INF("%s(%d) Scatter Gather Hash Calculation\r\n", __func__, __LINE__);
+
+    struct rs_crypto_addr lvHash_Data_Addr[(BUFFER_SIZE/sizeof(struct rs_crypto_addr))] = {0};
     struct hash_pkt *lvPkt = &pkt[0];
     
-    if(fill_rs_crypto_addr(pkt, (struct rs_crypto_addr*)lvHash_Data_Addr) != PUFCC_SUCCESS) {      
+    if(fill_rs_crypto_addr(pkt, lvHash_Data_Addr) != PUFCC_SUCCESS) {      
       return -ENOTEMPTY;
     }
 
