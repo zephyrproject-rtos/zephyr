@@ -97,7 +97,7 @@ int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
  *
  * @return Number of payload bytes written to flash.
  */
-size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx);
+size_t stream_flash_bytes_written(const struct stream_flash_ctx *ctx);
 
 /**
  * @brief Process input buffers to be written to flash device in single blocks.
@@ -164,7 +164,7 @@ int stream_flash_progress_load(struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_save(struct stream_flash_ctx *ctx,
+int stream_flash_progress_save(const struct stream_flash_ctx *ctx,
 			       const char *settings_key);
 
 /**
@@ -176,7 +176,7 @@ int stream_flash_progress_save(struct stream_flash_ctx *ctx,
  *
  * @return non-negative on success, negative errno code on fail
  */
-int stream_flash_progress_clear(struct stream_flash_ctx *ctx,
+int stream_flash_progress_clear(const struct stream_flash_ctx *ctx,
 				const char *settings_key);
 
 #ifdef __cplusplus
