@@ -1520,7 +1520,7 @@ void ull_lp_past_conn_evt_done(struct ll_conn *conn, struct node_rx_event_done *
 		if (conn->lll.role == BT_HCI_ROLE_PERIPHERAL && done->extra.trx_cnt) {
 			uint32_t start_to_actual_us;
 
-			start_to_actual_us = isoal_get_wrapped_time_us(
+			start_to_actual_us = ull_get_wrapped_time_us(
 						done->extra.drift.start_to_address_actual_us,
 						(-done->extra.drift.preamble_to_addr_us));
 

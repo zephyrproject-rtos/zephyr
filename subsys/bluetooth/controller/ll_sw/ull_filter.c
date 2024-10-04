@@ -859,6 +859,20 @@ bt_addr_t *ull_filter_lll_lrpa_get(uint8_t rl_idx)
 	return rl[rl_idx].local_rpa;
 }
 
+bt_addr_t *ull_filter_lll_id_addr_get(uint8_t rl_idx, uint8_t *id_addr_type)
+{
+	struct lll_resolve_list *rl_entry;
+
+	if (rl_idx >= ARRAY_SIZE(rl)) {
+		return NULL;
+	}
+
+	rl_entry = &rl[rl_idx];
+	*id_addr_type = rl_entry->id_addr_type;
+
+	return &rl_entry->id_addr;
+}
+
 uint8_t *ull_filter_lll_irks_get(uint8_t *count)
 {
 	*count = peer_irk_count;

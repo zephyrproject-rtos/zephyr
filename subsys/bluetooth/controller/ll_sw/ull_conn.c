@@ -57,7 +57,16 @@
 #include "ull_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
-
+#include "lll/lll_adv_types.h"
+#include "lll_adv.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
+#include "lll_sync.h"
+#include "lll_sync_iso.h"
+#include "ull_sync_types.h"
+#include "lll_scan.h"
+#include "ull_scan_types.h"
+#include "ull_sync_internal.h"
 
 #include "ll.h"
 #include "ll_feat.h"
@@ -146,6 +155,10 @@ static uint16_t default_tx_time;
 static uint8_t default_phy_tx;
 static uint8_t default_phy_rx;
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+static struct past_params default_past_params;
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
 static void *conn_free;
@@ -795,6 +808,22 @@ uint8_t ull_conn_default_phy_rx_get(void)
 }
 #endif /* CONFIG_BT_CTLR_PHY */
 
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+void ull_conn_default_past_param_set(uint8_t mode, uint16_t skip, uint16_t timeout,
+				     uint8_t cte_type)
+{
+	default_past_params.mode     = mode;
+	default_past_params.skip     = skip;
+	default_past_params.timeout  = timeout;
+	default_past_params.cte_type = cte_type;
+}
+
+struct past_params ull_conn_default_past_param_get(void)
+{
+	return default_past_params;
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
+
 #if defined(CONFIG_BT_CTLR_CHECK_SAME_PEER_CONN)
 bool ull_conn_peer_connected(uint8_t const own_id_addr_type,
 			     uint8_t const *const own_id_addr,
@@ -957,6 +986,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	ull_cp_tx_ntf(conn);
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+	ull_lp_past_conn_evt_done(conn, done);
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* Check authenticated payload expiry or MIC failure */
@@ -1624,6 +1657,10 @@ static int init_reset(void)
 	default_phy_rx |= PHY_CODED;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER)
+	memset(&default_past_params, 0, sizeof(struct past_params));
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_RECEIVER */
 
 	return 0;
 }
@@ -2562,6 +2599,153 @@ void ull_conn_default_tx_time_set(uint16_t tx_time)
 	default_tx_time = tx_time;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER)
+static bool ticker_op_id_match_func(uint8_t ticker_id, uint32_t ticks_slot,
+				    uint32_t ticks_to_expire, void *op_context)
+{
+	ARG_UNUSED(ticks_slot);
+	ARG_UNUSED(ticks_to_expire);
+
+	uint8_t match_id = *(uint8_t *)op_context;
+
+	return ticker_id == match_id;
+}
+
+static void ticker_get_offset_op_cb(uint32_t status, void *param)
+{
+	*((uint32_t volatile *)param) = status;
+}
+
+static uint32_t get_ticker_offset(uint8_t ticker_id, uint16_t *lazy)
+{
+	uint32_t volatile ret_cb;
+	uint32_t ticks_to_expire;
+	uint32_t ticks_current;
+	uint32_t sync_remainder_us;
+	uint32_t remainder;
+	uint32_t start_us;
+	uint32_t ret;
+	uint8_t id;
+
+	id = TICKER_NULL;
+	ticks_to_expire = 0U;
+	ticks_current = 0U;
+
+	ret_cb = TICKER_STATUS_BUSY;
+
+	ret = ticker_next_slot_get_ext(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW,
+				       &id, &ticks_current, &ticks_to_expire, &remainder,
+				       lazy, ticker_op_id_match_func, &ticker_id,
+				       ticker_get_offset_op_cb, (void *)&ret_cb);
+
+	if (ret == TICKER_STATUS_BUSY) {
+		while (ret_cb == TICKER_STATUS_BUSY) {
+			ticker_job_sched(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_LOW);
+		}
+	}
+
+	LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
+
+	/* Reduced a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	hal_ticker_remove_jitter(&ticks_to_expire, &remainder);
+	sync_remainder_us = remainder;
+
+	/* Add a tick for negative remainder and return positive remainder
+	 * value.
+	 */
+	hal_ticker_add_jitter(&ticks_to_expire, &remainder);
+	start_us = remainder;
+
+	return ull_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_to_expire),
+					(sync_remainder_us - start_us));
+}
+
+static void mfy_past_sender_offset_get(void *param)
+{
+	uint16_t last_pa_event_counter;
+	uint32_t ticker_offset_us;
+	uint16_t pa_event_counter;
+	uint8_t adv_sync_handle;
+	uint16_t sync_handle;
+	struct ll_conn *conn;
+	uint16_t lazy;
+
+	conn = param;
+
+	/* Get handle to look for */
+	ull_lp_past_offset_get_calc_params(conn, &adv_sync_handle, &sync_handle);
+
+	if (adv_sync_handle == BT_HCI_ADV_HANDLE_INVALID &&
+	    sync_handle == BT_HCI_SYNC_HANDLE_INVALID) {
+		/* Procedure must have been aborted, do nothing */
+		return;
+	}
+
+	if (adv_sync_handle != BT_HCI_ADV_HANDLE_INVALID) {
+		const struct ll_adv_sync_set *adv_sync = ull_adv_sync_get(adv_sync_handle);
+
+		LL_ASSERT(adv_sync);
+
+		ticker_offset_us = get_ticker_offset(TICKER_ID_ADV_SYNC_BASE + adv_sync_handle,
+						     &lazy);
+
+		pa_event_counter = adv_sync->lll.event_counter;
+		last_pa_event_counter = pa_event_counter - 1;
+	} else {
+		const struct ll_sync_set *sync = ull_sync_is_enabled_get(sync_handle);
+		uint32_t interval_us = sync->interval * PERIODIC_INT_UNIT_US;
+		uint32_t window_widening_event_us;
+
+		LL_ASSERT(sync);
+
+		ticker_offset_us = get_ticker_offset(TICKER_ID_SCAN_SYNC_BASE + sync_handle,
+						     &lazy);
+
+		if (lazy && ticker_offset_us > interval_us) {
+
+			/* Figure out how many events we have actually skipped */
+			lazy = lazy - (ticker_offset_us / interval_us);
+
+			/* Correct offset to point to next event */
+			ticker_offset_us = ticker_offset_us % interval_us;
+		}
+
+		/* Calculate window widening for next event */
+		window_widening_event_us = sync->lll.window_widening_event_us +
+					   sync->lll.window_widening_periodic_us * (lazy + 1U);
+
+		/* Correct for window widening */
+		ticker_offset_us += window_widening_event_us;
+
+		pa_event_counter = sync->lll.event_counter + lazy;
+
+		last_pa_event_counter = pa_event_counter - 1 - lazy;
+
+		/* Handle unsuccessful events */
+		if (sync->timeout_expire) {
+			last_pa_event_counter -= sync->timeout_reload - sync->timeout_expire;
+		}
+	}
+
+	ull_lp_past_offset_calc_reply(conn, ticker_offset_us, pa_event_counter,
+				      last_pa_event_counter);
+}
+
+void ull_conn_past_sender_offset_request(struct ll_conn *conn)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_past_sender_offset_get};
+	uint32_t ret;
+
+	mfy.param = conn;
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_ULL_LOW, 1,
+			     &mfy);
+	LL_ASSERT(!ret);
+}
+#endif /* CONFIG_BT_CTLR_SYNC_TRANSFER_SENDER */
 
 uint8_t ull_conn_lll_phy_active(struct ll_conn *conn, uint8_t phys)
 {
