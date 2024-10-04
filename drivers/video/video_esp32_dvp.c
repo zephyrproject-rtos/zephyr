@@ -287,6 +287,7 @@ static int video_esp32_enqueue(const struct device *dev, enum video_endpoint_id 
 	}
 
 	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
+	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 

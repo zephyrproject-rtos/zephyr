@@ -293,6 +293,7 @@ static int video_mcux_csi_enqueue(const struct device *dev, enum video_endpoint_
 
 	to_read = data->csi_config.linePitch_Bytes * data->csi_config.height;
 	vbuf->bytesused = to_read;
+	vbuf->line_offset = 0;
 
 	ret = CSI_TransferSubmitEmptyBuffer(config->base, &data->csi_handle,
 					    (uint32_t)vbuf->buffer);
