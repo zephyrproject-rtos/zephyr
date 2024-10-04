@@ -239,7 +239,7 @@ static int map_bar(const struct device *dev, int idx, size_t size) {
 
 static int dma_tsn_nic_init(const struct device *dev)
 {
-	const struct dma_tsn_nic_config *config = dev->config;
+	// const struct dma_tsn_nic_config *config = dev->config;
 	struct dma_tsn_nic_data *data = dev->data;
 	struct dma_tsn_nic_engine_regs *regs;
 	int engine_id, channel_id;
