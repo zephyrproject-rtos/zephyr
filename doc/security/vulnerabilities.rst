@@ -1858,7 +1858,18 @@ This has been fixed in main for v3.7.0
 CVE-2024-6443
 -------------
 
-Under embargo until 2024-09-22
+zephyr: out-of-bound read in utf8_trunc
+
+- `Zephyr project bug tracker GHSA-gg46-3rh2-v765
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gg46-3rh2-v765>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74949 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74949>`_
+
+- `PR 78286 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/78286>`_
 
 CVE-2024-6444
 -------------
