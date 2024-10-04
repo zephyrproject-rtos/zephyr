@@ -243,4 +243,7 @@ SECTIONS
 #ifdef CONFIG_LLEXT
 	#include <zephyr/linker/llext-sections.ld>
 #endif
+
+	/* Sections generated from 'zephyr,memory-region' nodes */
+	LINKER_DT_SECTIONS()
 }
