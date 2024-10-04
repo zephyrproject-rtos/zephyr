@@ -18,7 +18,9 @@
 LOG_MODULE_REGISTER(bt_cs);
 
 #if defined(CONFIG_BT_CHANNEL_SOUNDING)
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 static struct bt_le_cs_test_cb cs_test_callbacks;
+#endif
 
 void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10])
 {
@@ -242,6 +244,7 @@ void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 int bt_le_cs_test_cb_register(struct bt_le_cs_test_cb cb)
 {
 	cs_test_callbacks = cb;
@@ -350,6 +353,7 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_TEST, buf, NULL);
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 {
@@ -370,12 +374,15 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 		return;
 	}
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	if (sys_le16_to_cpu(evt->conn_handle) == BT_HCI_LE_CS_TEST_CONN_HANDLE) {
 		if (!cs_test_callbacks.le_cs_test_subevent_data_available) {
 			LOG_WRN("No callback registered. Discarded subevent results from CS Test.");
 			return;
 		}
-	} else {
+	} else
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
+	{
 		conn = bt_conn_lookup_handle(sys_le16_to_cpu(evt->conn_handle), BT_CONN_TYPE_LE);
 		if (!conn) {
 			LOG_ERR("Unknown connection handle when processing subevent results");
@@ -402,13 +409,16 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 		result.step_data_buf = NULL;
 	}
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	if (sys_le16_to_cpu(evt->conn_handle) == BT_HCI_LE_CS_TEST_CONN_HANDLE) {
 		result.header.config_id = 0;
 		result.header.start_acl_conn_event = 0;
 
 		cs_test_callbacks.le_cs_test_subevent_data_available(&result);
 
-	} else {
+	} else
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
+	{
 		result.header.config_id = evt->config_id;
 		result.header.start_acl_conn_event =
 			sys_le16_to_cpu(evt->start_acl_conn_event_counter);
@@ -523,6 +533,7 @@ int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CS_REMOVE_CONFIG, buf, NULL);
 }
 
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 int bt_le_cs_stop_test(void)
 {
 	struct net_buf *buf;
@@ -554,6 +565,7 @@ void bt_hci_le_cs_test_end_complete(struct net_buf *buf)
 		cs_test_callbacks.le_cs_test_end_complete();
 	}
 }
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 
 void bt_le_cs_step_data_parse(struct net_buf_simple *step_data_buf,
 			      bool (*func)(struct bt_le_cs_subevent_step *step, void *user_data),

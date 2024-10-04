@@ -196,6 +196,13 @@ config BT_CHANNEL_SOUNDING
 	help
 	  Enable support for Bluetooth 6.0 Channel Sounding feature.
 
+config BT_CHANNEL_SOUNDING_TEST
+	bool "Channel Sounding Test [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_CHANNEL_SOUNDING
+	help
+	  Enable support for Channel Sounding test mode.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"

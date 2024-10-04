@@ -2833,9 +2833,11 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
 		      bt_hci_le_cs_subevent_result,
 		      sizeof(struct bt_hci_evt_le_cs_subevent_result)),
+#if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_TEST_END_COMPLETE,
 		      bt_hci_le_cs_test_end_complete,
 		      sizeof(struct bt_hci_evt_le_cs_test_end_complete)),
+#endif /* CONFIG_BT_CHANNEL_SOUNDING_TEST */
 #endif /* CONFIG_BT_CHANNEL_SOUNDING */
 
 };
