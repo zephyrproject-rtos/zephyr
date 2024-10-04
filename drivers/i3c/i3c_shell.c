@@ -146,12 +146,12 @@ static int i3c_parse_args(const struct shell *sh, char **argv, const struct devi
 			  const struct device **tdev, struct i3c_device_desc **desc)
 {
 	*dev = device_get_binding(argv[ARGV_DEV]);
-	if (!dev) {
+	if (!*dev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
 	}
 	*tdev = device_get_binding(argv[ARGV_TDEV]);
-	if (!tdev) {
+	if (!*tdev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_TDEV]);
 		return -ENODEV;
 	}
