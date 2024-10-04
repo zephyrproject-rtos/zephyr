@@ -345,7 +345,7 @@ void pufs_hash_sg_test(const struct device *pufs)
 		.started = true
 	};		
 
-	struct hash_pkt lvHashPkt[2] = {
+	struct hash_pkt lvHashPkt[1] = {
 		{
 			.ctx = &lvHashCtx,
 			.head = true,
@@ -374,7 +374,7 @@ void pufs_hash_sg_test(const struct device *pufs)
 		// 	.out_len = 0
 		// }
 	};	
-	// printf("AddrlvHashPkt[0]:%p AddrlvHashPkt[1]:%p Diff:%d\r\n", \
+	// printf("AddrlvHashPkt[0]:%p AddrlvHashPkt[1]:%p Diff:%d\r\n", 
 	// &lvHashPkt[0], lvHashPkt[0].next, (((uint32_t)lvHashPkt[0].next) - ((uint32_t)&lvHashPkt[0])));
 	// printf("Size struct hash pkt:%d\r\n", sizeof(struct hash_pkt));
 	// printf("data1_size:%d data2_size:%d\r\n", pufs_sample_data1_len, pufs_sample_data2_len);
@@ -522,7 +522,7 @@ int main(void)
 		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
-		pufs_hash_test(pufs);
+		// pufs_hash_test(pufs);
 		pufs_hash_sg_test(pufs);
 		while(1);
 	}

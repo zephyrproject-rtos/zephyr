@@ -45,19 +45,26 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
   }
 
   // Set SGDMA descriptors
-  do {
+  while(true) {
+    printf("%s(%d) pkt:%p pkt->next:%p\r\n", __func__, __LINE__, pkt, pkt->next);
+
     data_addr[desc_count].read_addr = (uint32_t)pkt->in_buf;
     data_addr[desc_count].len = pkt->in_len;
+    data_addr[desc_count].periph_rw = false;
     
-    if((desc_count * sizeof(struct pufcc_sg_dma_desc)) < BUFFER_SIZE){
-      data_addr[desc_count].next = &data_addr[desc_count+1];
-      printf("%s(%d) pkt:%p pkt->next:%p\r\n", __func__, __LINE__, pkt, pkt->next);
+    if((desc_count * sizeof(struct pufcc_sg_dma_desc)) < BUFFER_SIZE){            
       pkt = pkt->next;
     } else {
       break;
     }    
+    if(pkt != NULL) {
+      data_addr[desc_count].next = &data_addr[desc_count+1];
+    } else {
+      data_addr[desc_count].next = NULL;
+      break;
+    }
     desc_count++;
-  } while (pkt);
+  }
 
   if (pkt) {
     // No enough descriptors available
