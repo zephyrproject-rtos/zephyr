@@ -29,6 +29,7 @@ extern "C" {
  * computation.
  */
 #define CRC8_CCITT_INITIAL_VALUE 0xFF
+#define CRC8_ROHC_INITIAL_VALUE  0xFF
 
 /* Initial value expected to be used at the beginning of the OpenPGP CRC-24 computation. */
 #define CRC24_PGP_INITIAL_VALUE 0x00B704CEU
@@ -58,9 +59,10 @@ enum crc_type {
 	CRC4,        /**< Use @ref crc4 */
 	CRC4_TI,     /**< Use @ref crc4_ti */
 	CRC7_BE,     /**< Use @ref crc7_be */
-	CRC8,	     /**< Use @ref crc8 */
+	CRC8,        /**< Use @ref crc8 */
 	CRC8_CCITT,  /**< Use @ref crc8_ccitt */
-	CRC16,	     /**< Use @ref crc16 */
+	CRC8_ROHC,   /**< Use @ref crc8_rohc */
+	CRC16,       /**< Use @ref crc16 */
 	CRC16_ANSI,  /**< Use @ref crc16_ansi */
 	CRC16_CCITT, /**< Use @ref crc16_ccitt */
 	CRC16_ITU_T, /**< Use @ref crc16_itu_t */
@@ -135,7 +137,7 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
  * @return The computed CRC8 value
  */
 uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+	     bool reversed);
 
 /**
  * @brief Compute the checksum of a buffer with polynomial 0x1021, reflecting
@@ -275,6 +277,20 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
 uint8_t crc8_ccitt(uint8_t initial_value, const void *buf, size_t len);
 
 /**
+ * @brief Compute ROHC variant of CRC 8
+ *
+ * ROHC (Robust Header Compression) variant of CRC 8.
+ * Uses 0x07 as the polynomial with reflection.
+ *
+ * @param initial_value Initial value for the CRC computation
+ * @param buf Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC8 value
+ */
+uint8_t crc8_rohc(uint8_t initial_value, const void *buf, size_t len);
+
+/**
  * @brief Compute the CRC-7 checksum of a buffer.
  *
  * See JESD84-A441.  Used by the MMC protocol.  Uses 0x09 as the
@@ -322,7 +338,7 @@ uint8_t crc4_ti(uint8_t seed, const uint8_t *src, size_t len);
  * @return The computed CRC4 value
  */
 uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
-	  bool reversed);
+	     bool reversed);
 
 /**
  * @brief Generate an OpenPGP CRC-24 checksum as defined in RFC 4880 section 6.1.
@@ -384,6 +400,8 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc8(src, len, poly, seed, reflect);
 	case CRC8_CCITT:
 		return crc8_ccitt(seed, src, len);
+	case CRC8_ROHC:
+		return crc8_rohc(seed, src, len);
 	case CRC16:
 		if (reflect) {
 			return crc16_reflect(poly, seed, src, len);
