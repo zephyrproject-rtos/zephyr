@@ -181,15 +181,10 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	return 0;
 }
 
-int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
+static int sntp_query_send(struct sntp_ctx *ctx)
 {
 	struct sntp_pkt tx_pkt = { 0 };
-	int ret = 0;
 	int64_t ts_us = 0;
-
-	if (!ctx || !ts) {
-		return -EFAULT;
-	}
 
 	/* prepare request pkt */
 	tx_pkt.li = 0;
@@ -201,7 +196,18 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts.seconds);
 	tx_pkt.tx_tm_f = htonl(ctx->expected_orig_ts.fraction);
 
-	ret = zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	return zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+}
+
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
+{
+	int ret = 0;
+
+	if (!ctx || !ts) {
+		return -EFAULT;
+	}
+
+	ret = sntp_query_send(ctx);
 	if (ret < 0) {
 		NET_ERR("Failed to send over UDP socket %d", ret);
 		return ret;
