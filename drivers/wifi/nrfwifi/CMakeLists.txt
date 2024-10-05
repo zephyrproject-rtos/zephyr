@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_library()
+zephyr_library_named(nrfwifi)
 
 set(OS_AGNOSTIC_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/drivers/nrf_wifi)
 set(FW_BINS_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/zephyr/blobs/wifi_fw_bins)
@@ -169,6 +169,22 @@ else()
   zephyr_compile_definitions(
     -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
   )
+
+  # Rebuild fw_load.c whenever the firmware binary changes
+  # a bit crude way to do it, but it works
+  add_custom_command(
+    OUTPUT ${CMAKE_SOURCE_DIR}/src/fw_load.c
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_SOURCE_DIR}/src/fw_load.c
+    DEPENDS ${NRF70_PATCH}
+    COMMENT "Checking firmware blobs ${NRF70_PATCH}"
+  )
+
+  add_custom_target(
+    check_firmware_blobs ALL
+    DEPENDS ${CMAKE_SOURCE_DIR}/src/fw_load.c
+  )
+
+  add_dependencies(nrfwifi check_firmware_blobs)
 endif()
 
 
