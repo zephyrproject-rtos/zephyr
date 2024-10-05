@@ -429,6 +429,14 @@
 		io-channels = <&adc 4>;
 		status = "disabled";
 	};
+
+	boot_flash: flash@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 0x100>;
+		zephyr,memory-region = "BOOT_FLASH";
+		zephyr,memory-region-flags = "r";
+		status = "okay";
+	};
 };
 
 &nvic {
