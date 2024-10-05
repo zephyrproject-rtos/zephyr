@@ -6,11 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-MEMORY
-{
-	IMAGE_DEF_FLASH (r) : ORIGIN = 0x10000000, LENGTH = 128
-}
-
 SECTIONS
 {
 	.image_def : {
