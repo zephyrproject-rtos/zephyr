@@ -231,11 +231,11 @@ static int sntp_query_send(struct sntp_ctx *ctx)
 	return zsock_send(ctx->sock.fd, (uint8_t *)&tx_pkt, sizeof(tx_pkt), 0);
 }
 
-int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
 {
 	int ret = 0;
 
-	if (!ctx || !time) {
+	if (!ctx || !ts) {
 		return -EFAULT;
 	}
 
@@ -245,7 +245,7 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 		return ret;
 	}
 
-	return sntp_recv_response(ctx, timeout, time);
+	return sntp_recv_response(ctx, timeout, ts);
 }
 
 void sntp_close(struct sntp_ctx *ctx)
