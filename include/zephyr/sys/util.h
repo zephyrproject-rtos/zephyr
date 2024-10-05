@@ -446,6 +446,21 @@ extern "C" {
 #define IN_RANGE(val, min, max) ((val) >= (min) && (val) <= (max))
 
 /**
+ * @brief Map a value from one scale to another.
+ *
+ * A value of an input range is mappedto a value of an output range.
+ * The ranges are described by their min and max values.
+ *
+ * @param i The value to convert from the input range to the output range.
+ * @param imin The minimum value of the input range.
+ * @param imax The maximum value of the input range.
+ * @param omin The minimum value of the output range.
+ * @param omax The maximum value of the output range.
+ */
+#define MAP_VALUE(i, imin, imax, omin, omax) \
+	(((i) - (imin)) * (omin - omax) / ((imax) - (imin)) + (omin))
+
+/**
  * @brief Is @p x a power of two?
  * @param x value to check
  * @return true if @p x is a power of two, false otherwise
