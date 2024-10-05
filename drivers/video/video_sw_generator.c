@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
+ * Copyright (c) 2024, tinyVision.ai Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/dsp/print_format.h>
+#include <zephyr/dsp/types.h>
+#include <zephyr/dsp/macros.h>
+
+#include <video_common.h>
 
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -22,6 +28,15 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
  * format. 60 fps is therefore chosen as a common value in practice.
  */
 #define MAX_FRAME_RATE          60
+#define HUE(a)		        Q15f((double)(a) / 360.)
+#define SMPTE_NUM               7
+
+static const q15_t smpte_colorbar_hsv[3][SMPTE_NUM] = {
+	/* white,  yellow,   cyan,     green,    magenta,  red,      blue */
+	{HUE(0),   HUE(60),  HUE(180), HUE(120), HUE(300), HUE(0),   HUE(240)},
+	{Q15f(0.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.)},
+	{Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.), Q15f(1.)},
+};
 
 struct video_sw_generator_data {
 	const struct device *dev;
@@ -31,30 +46,27 @@ struct video_sw_generator_data {
 	struct k_work_delayable buf_work;
 	struct k_work_sync work_sync;
 	int pattern;
+	uint8_t colorbar_rgb565[SMPTE_NUM][2];
+	uint8_t colorbar_xrgb32[SMPTE_NUM][4];
+	uint8_t colorbar_yuyv[SMPTE_NUM][4];
+	q7_t ctrl_hsv_q7[3];
 	bool ctrl_hflip;
-	bool ctrl_vflip;
 	struct k_poll_signal *signal;
 	uint32_t frame_rate;
 };
 
-static const struct video_format_cap fmts[] = {{
-						       .pixelformat = VIDEO_PIX_FMT_RGB565,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       }, {
-						       .pixelformat = VIDEO_PIX_FMT_XRGB32,
-						       .width_min = 64,
-						       .width_max = 1920,
-						       .height_min = 64,
-						       .height_max = 1080,
-						       .width_step = 1,
-						       .height_step = 1,
-					       },
-					       {0}};
+#define VIDEO_SW_GENERATOR_FORMAT_CAP(fourcc)                                                      \
+	{                                                                                          \
+		.pixelformat = (fourcc), .width_min = 64, .width_max = 1920, .height_min = 1,      \
+		.height_max = 1080, .width_step = 1, .height_step = 1,                             \
+	}
+
+static const struct video_format_cap fmts[] = {
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
+	{0},
+};
 
 static int video_sw_generator_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 				      struct video_format *fmt)
@@ -116,28 +128,145 @@ static int video_sw_generator_stream_stop(const struct device *dev)
 	return 0;
 }
 
-/* Black, Blue, Red, Purple, Green, Aqua, Yellow, White */
-uint16_t rgb565_colorbar_value[] = {0x0000, 0x001F, 0xF800, 0xF81F, 0x07E0, 0x07FF, 0xFFE0, 0xFFFF};
+static void hsv_to_rgb(q15_t h, q15_t s, q15_t v, q15_t *r, q15_t *g, q15_t *b)
+{
+	q15_t chroma = MULq15(s, v);
+	q15_t x;
 
-uint32_t xrgb32_colorbar_value[] = {0xFF000000, 0xFF0000FF, 0xFFFF0000, 0xFFFF00FF,
-				    0xFF00FF00, 0xFF00FFFF, 0xFFFFFF00, 0xFFFFFFFF};
+	if (h < Q15f(1. / 6.)) {
+		x = SUBq15(h, Q15f(0. / 6.)) * 6;
+		*r = chroma;
+		*g = MULq15(chroma, x);
+		*b = Q15f(0.);
+	} else if (h < Q15f(2. / 6.)) {
+		x = SUBq15(h, Q15f(1. / 6.)) * 6;
+		*r = MULq15(chroma, SUBq15(Q15f(1.), x));
+		*g = chroma;
+		*b = Q15f(0.);
+	} else if (h < Q15f(3. / 6.)) {
+		x = SUBq15(h, Q15f(2. / 6.)) * 6;
+		*r = Q15f(0.);
+		*g = chroma;
+		*b = MULq15(chroma, x);
+	} else if (h < Q15f(4. / 6.)) {
+		x = SUBq15(h, Q15f(3. / 6.)) * 6;
+		*r = Q15f(0.);
+		*g = MULq15(chroma, SUBq15(Q15f(1), x));
+		*b = chroma;
+	} else if (h < Q15f(5. / 6.)) {
+		x = SUBq15(h, Q15f(4. / 6.)) * 6;
+		*r = MULq15(chroma, x);
+		*g = Q15f(0.);
+		*b = chroma;
+	} else {
+		x = SUBq15(h, Q15f(5. / 6.)) * 6;
+		*r = chroma;
+		*g = Q15f(0.);
+		*b = MULq15(chroma, SUBq15(Q15f(1), x));
+	}
+
+	*r = ADDq15(SUBq15(v, chroma), *r);
+	*g = ADDq15(SUBq15(v, chroma), *g);
+	*b = ADDq15(SUBq15(v, chroma), *b);
+}
+
+#define BT709_WR   0.2126
+#define BT709_WG   0.7152
+#define BT709_WB   0.0722
+#define BT709_UMAX 0.436
+#define BT709_VMAX 0.615
+
+static void rgb_to_yuv(q15_t r, q15_t g, q15_t b, q15_t *y, q15_t *u, q15_t *v)
+{
+	q15_t ux = Q15f(BT709_UMAX / (1. - BT709_WB));
+	q15_t vx = Q15f(BT709_VMAX / (1. - BT709_WR));
+
+	/* Using BT.709 coefficients */
+	*y = 0;
+	*y = ADDq15(*y, MULq15(Q15f(BT709_WR), r));
+	*y = ADDq15(*y, MULq15(Q15f(BT709_WG), g));
+	*y = ADDq15(*y, MULq15(Q15f(BT709_WB), b));
+	*u = MULq15(ux, SUBq15(b, *y));
+	*v = MULq15(vx, SUBq15(r, *y));
+}
+
+static void hsv_adjust(q15_t *hue, q15_t *sat, q15_t *val, q15_t h, q15_t s, q15_t v)
+{
+	*hue = MODq15((q31_t)MAXq15 + (q31_t)*hue + (q31_t)h, MAXq15);
+	*sat = CLAMP((q31_t)*sat + (q31_t)s, 0, MAXq15);
+	*val = CLAMP((q31_t)*val + (q31_t)v, 0, MAXq15);
+}
+
+static void init_colors(const struct device *dev)
+{
+	struct video_sw_generator_data *data = dev->data;
+
+	for (int i = 0; i < SMPTE_NUM; i++) {
+		q15_t r, g, b;
+		q15_t y, u, v;
+		q15_t hue = smpte_colorbar_hsv[0][i];
+		q15_t sat = smpte_colorbar_hsv[1][i];
+		q15_t val = smpte_colorbar_hsv[2][i];
+		uint16_t u16;
+
+		hsv_adjust(&hue, &sat, &val, Q15q7(data->ctrl_hsv_q7[0]),
+			   Q15q7(data->ctrl_hsv_q7[1]), Q15q7(data->ctrl_hsv_q7[2]));
+		hsv_to_rgb(hue, sat, val, &r, &g, &b);
+		rgb_to_yuv(r, g, b, &y, &u, &v);
+
+		LOG_DBG("H%1"PRIq(3)" S%1"PRIq(3)" V%1"PRIq(3)", "
+			"R%1"PRIq(3)" G%1"PRIq(3)" B%1"PRIq(3)", "
+			"Y%1"PRIq(3)" U%1"PRIq(3)" V%1"PRIq(3),
+			PRIq_arg(hue, 3, 0), PRIq_arg(sat, 3, 0), PRIq_arg(val, 3, 0),
+			PRIq_arg(r, 3, 0), PRIq_arg(g, 3, 0), PRIq_arg(b, 3, 0),
+			PRIq_arg(y, 3, 0), PRIq_arg(u, 3, 0), PRIq_arg(v, 3, 0));
+
+		u16 = BITSq15(r, 5) | (BITSq15(g, 6) << 5) | (BITSq15(b, 5) << 11);
+		data->colorbar_rgb565[i][0] = u16 >> 0;
+		data->colorbar_rgb565[i][1] = u16 >> 8;
+
+		data->colorbar_xrgb32[i][0] = 0x00;
+		data->colorbar_xrgb32[i][1] = BITSq15(r, 8);
+		data->colorbar_xrgb32[i][2] = BITSq15(g, 8);
+		data->colorbar_xrgb32[i][3] = BITSq15(g, 8);
+
+		data->colorbar_yuyv[i][0] = BITSq15(y, 8);
+		data->colorbar_yuyv[i][1] = BITSq15(ADDq15(Q15f(0.5), u), 8);
+		data->colorbar_yuyv[i][2] = BITSq15(y, 8);
+		data->colorbar_yuyv[i][3] = BITSq15(ADDq15(Q15f(0.5), v), 8);
+	}
+}
 
 static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct video_buffer *vbuf)
 {
-	int bw = data->fmt.width / 8;
 	int h, w, i = 0;
 
 	for (h = 0; h < data->fmt.height; h++) {
-		for (w = 0; w < data->fmt.width; w++) {
-			int color_idx = data->ctrl_vflip ? 7 - w / bw : w / bw;
-			if (data->fmt.pixelformat == VIDEO_PIX_FMT_RGB565) {
-				uint16_t *pixel = (uint16_t *)&vbuf->buffer[i];
-				*pixel = rgb565_colorbar_value[color_idx];
+		for (w = 0; w < data->fmt.width;) {
+			int color_idx = w * SMPTE_NUM / data->fmt.width;
+
+			if (data->ctrl_hflip) {
+				color_idx = SMPTE_NUM - 1 - color_idx;
+			}
+
+			switch (data->fmt.pixelformat) {
+			case VIDEO_PIX_FMT_RGB565:
+				memcpy(&vbuf->buffer[i], data->colorbar_rgb565[color_idx], 2);
 				i += 2;
-			} else if (data->fmt.pixelformat == VIDEO_PIX_FMT_XRGB32) {
-				uint32_t *pixel = (uint32_t *)&vbuf->buffer[i];
-				*pixel = xrgb32_colorbar_value[color_idx];
+				w += 1;
+				break;
+			case VIDEO_PIX_FMT_XRGB32:
+				memcpy(&vbuf->buffer[i], data->colorbar_xrgb32[color_idx], 4);
 				i += 4;
+				w += 1;
+				break;
+			case VIDEO_PIX_FMT_YUYV:
+				memcpy(&vbuf->buffer[i], data->colorbar_yuyv[color_idx], 4);
+				i += 4;
+				w += 2;
+				break;
+			default:
+				__ASSERT_NO_MSG(false);
 			}
 		}
 	}
@@ -259,10 +388,30 @@ static inline int video_sw_generator_set_ctrl(const struct device *dev, unsigned
 					      void *value)
 {
 	struct video_sw_generator_data *data = dev->data;
+	uint32_t u32 = (uint32_t)value;
+	int ret;
+
+	ret = video_check_range_u32(dev, cid, u32);
+	if (ret < 0) {
+		LOG_ERR("value %u not in range", u32);
+		return ret;
+	}
 
 	switch (cid) {
-	case VIDEO_CID_VFLIP:
-		data->ctrl_vflip = (bool)value;
+	case VIDEO_CID_HFLIP:
+		data->ctrl_hflip = (bool)value;
+		break;
+	case VIDEO_CID_HUE:
+		data->ctrl_hsv_q7[0] = u32 - MINq7;
+		init_colors(dev);
+		break;
+	case VIDEO_CID_SATURATION:
+		data->ctrl_hsv_q7[1] = u32 - MINq7;
+		init_colors(dev);
+		break;
+	case VIDEO_CID_BRIGHTNESS:
+		data->ctrl_hsv_q7[2] = u32 - MINq7;
+		init_colors(dev);
 		break;
 	default:
 		return -ENOTSUP;
@@ -350,17 +499,11 @@ static const struct video_driver_api video_sw_generator_driver_api = {
 #endif
 };
 
-static struct video_sw_generator_data video_sw_generator_data_0 = {
-	.fmt.width = 320,
-	.fmt.height = 160,
-	.fmt.pitch = 320 * 2,
-	.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,
-	.frame_rate = DEFAULT_FRAME_RATE,
-};
-
 static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
+
+	init_colors(dev);
 
 	data->dev = dev;
 	k_fifo_init(&data->fifo_in);
@@ -370,6 +513,16 @@ static int video_sw_generator_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DEFINE(video_sw_generator, "VIDEO_SW_GENERATOR", &video_sw_generator_init, NULL,
-	      &video_sw_generator_data_0, NULL, POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
-	      &video_sw_generator_driver_api);
+#define VIDEO_SW_GENERATOR_DEFINE(inst)                                                            \
+	static struct video_sw_generator_data video_sw_generator_data_##inst = {                   \
+		.fmt.width = 320,                                                                  \
+		.fmt.height = 160,                                                                 \
+		.fmt.pitch = 320 * 2,                                                              \
+		.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,                                           \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &video_sw_generator_init, NULL,                                \
+			      &video_sw_generator_data_##inst, NULL, POST_KERNEL,                  \
+			      CONFIG_VIDEO_INIT_PRIORITY, &video_sw_generator_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(VIDEO_SW_GENERATOR_DEFINE)

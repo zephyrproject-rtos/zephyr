@@ -1,0 +1,11 @@
+# Copyright 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "zephyr,sw-generator"
+
+description: |
+  Software-based video pattern generator for testing purpose.
+  This generates an image pattern in the RAM buffer passed to it,
+  at the specified dimension.
+
+include: base.yaml
