@@ -109,7 +109,7 @@ static const struct ipm_driver_api ipm_mbox_funcs = {
 			      &ipm_mbox_data_##n,			\
 			      &ipm_mbox_config_##n,			\
 			      POST_KERNEL,				\
-			      0,					\
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
 			      &ipm_mbox_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_MBOX_DEV_DEFINE)
