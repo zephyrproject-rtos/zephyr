@@ -453,6 +453,9 @@ Networking
   from :zephyr_file:`include/zephyr/net/buf.h` to :zephyr_file:`include/zephyr/net_buf.h` and the
   implementation moved to :zephyr_file:`lib/net_buf/`. (:github:`78009`)
 
+* The ``work_q`` parameter to ``NET_SOCKET_SERVICE_SYNC_DEFINE`` and
+  ``NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC`` has been removed as it was always ignored. (:github:`79446`)
+
 Other Subsystems
 ****************
 

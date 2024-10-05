@@ -68,7 +68,7 @@ static struct net_mgmt_event_callback mgmt_cb;
 static struct zsock_pollfd fds[LLMNR_MAX_POLL];
 
 static void svc_handler(struct k_work *work);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_llmnr, NULL, svc_handler, LLMNR_MAX_POLL);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_llmnr, svc_handler, LLMNR_MAX_POLL);
 
 NET_BUF_POOL_DEFINE(llmnr_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);

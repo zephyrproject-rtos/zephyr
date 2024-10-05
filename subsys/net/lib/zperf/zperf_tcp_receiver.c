@@ -41,7 +41,7 @@ static struct sockaddr sock_addr[SOCK_ID_MAX];
 
 static void tcp_svc_handler(struct k_work *work);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, NULL, tcp_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_tcp, tcp_svc_handler,
 				      SOCK_ID_MAX);
 
 static void tcp_received(const struct sockaddr *addr, size_t datalen)

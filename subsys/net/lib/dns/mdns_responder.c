@@ -58,14 +58,14 @@ extern void dns_dispatcher_svc_handler(struct k_work *work);
 #if defined(CONFIG_NET_IPV4)
 static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, dns_dispatcher_svc_handler,
 				      MDNS_MAX_IPV4_IFACE_COUNT);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, NULL, dns_dispatcher_svc_handler,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 				      MDNS_MAX_IPV6_IFACE_COUNT);
 #endif
 
