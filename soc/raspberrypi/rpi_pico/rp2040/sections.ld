@@ -12,14 +12,7 @@
  * resides at 0x100. This can be the application, or a bootloader
  * such as mcuboot.
  */
-#if CONFIG_RP2_REQUIRES_SECOND_STAGE_BOOT
 
-SECTIONS
-{
-	.boot2 : {
-		KEEP(*(.boot2))
-	} > BOOT_FLASH
-}
-#endif /* CONFIG_RP2_REQUIRES_SECOND_STAGE_BOOT */
-
-#include <zephyr/arch/arm/cortex_m/scripts/linker.ld>
+.boot2 : {
+	KEEP(*(.boot2))
+} > BOOT_FLASH
