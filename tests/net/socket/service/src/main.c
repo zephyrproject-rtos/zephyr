@@ -55,9 +55,9 @@ static void tcp_server_handler(struct k_work *work)
 	Z_SPIN_DELAY(100);
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE(udp_service_sync, NULL, server_handler, 2);
-NET_SOCKET_SERVICE_SYNC_DEFINE(tcp_service_small_sync, NULL, tcp_server_handler, 1);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(tcp_service_sync, NULL, tcp_server_handler, 2);
+NET_SOCKET_SERVICE_SYNC_DEFINE(udp_service_sync, server_handler, 2);
+NET_SOCKET_SERVICE_SYNC_DEFINE(tcp_service_small_sync, tcp_server_handler, 1);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(tcp_service_sync, tcp_server_handler, 2);
 
 
 void run_test_service(const struct net_socket_service_desc *udp_service,
