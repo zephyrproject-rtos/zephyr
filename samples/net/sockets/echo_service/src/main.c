@@ -57,8 +57,8 @@ static void udp_service_handler(struct k_work *work)
 	receive_data(true, pev, buf, sizeof(buf));
 }
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, NULL, udp_service_handler, MAX_SERVICES);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_tcp, NULL, tcp_service_handler, MAX_SERVICES);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_udp, udp_service_handler, MAX_SERVICES);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(service_tcp, tcp_service_handler, MAX_SERVICES);
 
 static void receive_data(bool is_udp, struct net_socket_service_event *pev,
 			 char *buf, size_t buflen)

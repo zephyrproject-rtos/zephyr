@@ -42,7 +42,7 @@ struct shell_telnet *sh_telnet;
 static void telnet_server_cb(struct k_work *work);
 static int telnet_init(struct shell_telnet *ctx);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, NULL, telnet_server_cb,
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(telnet_server, telnet_server_cb,
 				      SHELL_TELNET_POLLFD_COUNT);
 
 
