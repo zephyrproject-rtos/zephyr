@@ -27,9 +27,9 @@ ZTEST(sys_util, test_SCALE)
 	for (int i = 1; i < 61; i++) {
 		int o = 61 - i;
 		int64_t imin = -(1ll << i);
-		int64_t imax = +(1ll << i);
+		int64_t imax = (1ll << i);
 		int64_t omin = -(1ll << o);
-		int64_t omax = +(1ll << o);
+		int64_t omax = (1ll << o);
 
 		/* Special case: the output range can be [0, 0] */
 
@@ -43,7 +43,7 @@ ZTEST(sys_util, test_SCALE)
 		zassert_equal(SCALE(imin, imin, 0, 0, 0), 0);
 		zassert_equal(SCALE(0, imin, 0, 0, 0), 0);
 
-		/* Test the extreme of all known cases */
+		/* Test the extreme cases */
 
 		zassert_equal(SCALE(imin, imin, imax, omin, omax), omin);
 		zassert_equal(SCALE(0, imin, imax, omin, omax), 0);

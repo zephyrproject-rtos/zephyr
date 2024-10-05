@@ -1,0 +1,7 @@
+tests:
+  zdsp.macros:
+    integration_platforms:
+      - native_sim
+    tags: zdsp
+    min_flash: 64
+    min_ram: 32
