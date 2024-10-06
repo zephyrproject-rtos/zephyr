@@ -106,3 +106,6 @@ tests:
       - qemu_x86_64
     integration_platforms:
       - qemu_x86
+  sample.net.sockets.echo_client.802154.subg:
+    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    platform_allow: beagleconnect_freedom
