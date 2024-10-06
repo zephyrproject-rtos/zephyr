@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
@@ -55,13 +54,8 @@ static void arm_musca_b1_pinmux_defaults(void)
 }
 #endif
 
-static int arm_musca_pinmux_init(void)
+void board_early_init_hook(void)
 {
 
 	arm_musca_b1_pinmux_defaults();
-
-	return 0;
 }
-
-SYS_INIT(arm_musca_pinmux_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

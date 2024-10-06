@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
@@ -152,13 +151,8 @@ static void arm_mps2_pinmux_defaults(void)
 	CMSDK_AHB_GPIO2_DEV->altfuncset = gpio_2;
 }
 
-static int arm_mps2_pinmux_init(void)
+void board_early_init_hook(void)
 {
 
 	arm_mps2_pinmux_defaults();
-
-	return 0;
 }
-
-SYS_INIT(arm_mps2_pinmux_init, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
