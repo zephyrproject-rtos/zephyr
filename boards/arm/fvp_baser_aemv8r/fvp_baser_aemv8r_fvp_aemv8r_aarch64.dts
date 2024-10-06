@@ -50,9 +50,11 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+	fifo-enable;
 };
 
 &uart1 {
 	status = "okay";
 	current-speed = <115200>;
+	fifo-enable;
 };
