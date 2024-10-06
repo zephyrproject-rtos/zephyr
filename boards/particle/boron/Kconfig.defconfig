@@ -22,4 +22,7 @@ config UART_INTERRUPT_DRIVEN
 
 endif # MODEM
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 endif # BOARD_PARTICLE_BORON
