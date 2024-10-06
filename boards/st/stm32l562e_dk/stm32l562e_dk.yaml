@@ -22,6 +22,7 @@ supported:
   - usb_device
   - nvs
   - usbd
+  - lsm6dso
 ram: 192
 flash: 512
 vendor: st

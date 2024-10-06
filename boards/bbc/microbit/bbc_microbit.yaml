@@ -15,3 +15,4 @@ supported:
   - i2c
   - gpio
   - pwm
+  - lis2dh

@@ -12,3 +12,4 @@ supported:
   - i2c
   - eeprom
   - lora
+  - lis2dh
