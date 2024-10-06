@@ -6,6 +6,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
+
+#include "video_common.h"
 
 #if defined(CONFIG_VIDEO_BUFFER_USE_SHARED_MULTI_HEAP)
 #include <zephyr/multi_heap/shared_multi_heap.h>
@@ -82,4 +85,88 @@ void video_buffer_release(struct video_buffer *vbuf)
 	if (block) {
 		VIDEO_COMMON_FREE(block->data);
 	}
+}
+
+int video_get_range_int(unsigned int cid, int *value, int min, int max, int def)
+{
+	switch (cid & VIDEO_CTRL_GET_MASK) {
+	case VIDEO_CTRL_GET_MIN:
+		*value = min;
+		return 0;
+	case VIDEO_CTRL_GET_MAX:
+		*value = max;
+		return 0;
+	case VIDEO_CTRL_GET_DEF:
+		*value = def;
+		return 0;
+	case VIDEO_CTRL_GET_CUR:
+		return 1;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int video_get_range_int64(unsigned int cid, int64_t *value, int64_t min, int64_t max, int64_t def)
+{
+	switch (cid & VIDEO_CTRL_GET_MASK) {
+	case VIDEO_CTRL_GET_MIN:
+		*value = min;
+		return 0;
+	case VIDEO_CTRL_GET_MAX:
+		*value = max;
+		return 0;
+	case VIDEO_CTRL_GET_DEF:
+		*value = def;
+		return 0;
+	case VIDEO_CTRL_GET_CUR:
+		return 1;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int video_check_range_int(const struct device *dev, unsigned int cid, int value)
+{
+	int min;
+	int max;
+	int ret;
+
+	ret = video_get_ctrl(dev, cid | VIDEO_CTRL_GET_MIN, &min);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_get_ctrl(dev, cid | VIDEO_CTRL_GET_MAX, &max);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (value < min || value > max || min > max) {
+		return -ERANGE;
+	}
+
+	return 0;
+}
+
+int video_check_range_int64(const struct device *dev, unsigned int cid, int64_t value)
+{
+	int64_t min;
+	int64_t max;
+	int ret;
+
+	ret = video_get_ctrl(dev, cid | VIDEO_CTRL_GET_MIN, &min);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = video_get_ctrl(dev, cid | VIDEO_CTRL_GET_MAX, &max);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (value < min || value > max || min > max) {
+		return -ERANGE;
+	}
+
+	return 0;
 }
