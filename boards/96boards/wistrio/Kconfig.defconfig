@@ -8,4 +8,7 @@ if BOARD_96B_WISTRIO
 config REGULATOR
 	default y if LORA
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 endif # BOARD_96B_WISTRIO

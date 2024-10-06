@@ -31,5 +31,7 @@ static int rf_init(void)
 	return 0;
 }
 
-/* Need to be initialised after GPIO driver */
-SYS_INIT(rf_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+void board_late_init_hook(void)
+{
+	rf_init();
+}
