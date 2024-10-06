@@ -3,6 +3,9 @@
 
 if BOARD_LPCXPRESSO55S69
 
+config BOARD_EARLY_INIT_HOOK
+	def_bool y
+
 if FXOS8700
 
 choice FXOS8700_MODE
