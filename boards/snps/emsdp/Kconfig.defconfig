@@ -12,4 +12,7 @@ config SPI_DW
 
 endif # SPI
 
+config BOARD_EARLY_INIT_HOOK
+	def_bool y
+
 endif # BOARD_EMSDP

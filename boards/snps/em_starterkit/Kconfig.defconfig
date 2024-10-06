@@ -10,4 +10,7 @@ config I2C_DW_CLOCK_SPEED
 
 endif # I2C_DW
 
+config BOARD_EARLY_INIT_HOOK
+	def_bool y
+
 endif # BOARD_EM_STARTERKIT

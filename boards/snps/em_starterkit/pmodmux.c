@@ -123,7 +123,7 @@
 #define PM6_LR_CSS_STAT		((1 << BIT2) << PM6_OFFSET)
 
 
-static int pmod_mux_init(void)
+void board_early_init_hook(void)
 {
 	volatile uint32_t *mux_regs = (uint32_t *)(PMODMUX_BASE_ADDR);
 
@@ -147,9 +147,4 @@ static int pmod_mux_init(void)
 				| PM4_I2C_GPIO_D | PM5_UR_SPI_M1
 				| PM5_LR_GPIO_A	| PM6_UR_SPI_M0
 				| PM6_LR_GPIO_A;
-	return 0;
 }
-
-
-SYS_INIT(pmod_mux_init, PRE_KERNEL_1,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
