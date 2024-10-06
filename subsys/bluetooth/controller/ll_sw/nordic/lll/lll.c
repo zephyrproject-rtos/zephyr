@@ -787,12 +787,26 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	/* Find any short prepare */
 	if (ready) {
-		uint32_t ticks_at_preempt_min = ready->prepare_param.ticks_at_expire;
+		uint32_t ticks_at_preempt_min = prepare_param->ticks_at_expire;
+		uint32_t ticks_at_preempt_next;
+		uint8_t idx_backup = idx;
+		uint32_t diff;
+
+		ticks_at_preempt_next = ready->prepare_param.ticks_at_expire;
+		diff = ticker_ticks_diff_get(ticks_at_preempt_min,
+					     ticks_at_preempt_next);
+		if (is_resume || ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U)) {
+			ticks_at_preempt_min = ticks_at_preempt_next;
+			if (&ready->prepare_param != prepare_param) {
+				ready_short = ready;
+			}
+		} else {
+			ready = NULL;
+			idx_backup = UINT8_MAX;
+		}
 
 		do {
-			uint32_t ticks_at_preempt_next;
 			struct lll_event *ready_next;
-			uint32_t diff;
 
 			ready_next = prepare_dequeue_iter_ready_get(&idx);
 			if (!ready_next) {
@@ -809,6 +823,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			ready_short = ready_next;
 			ticks_at_preempt_min = ticks_at_preempt_next;
 		} while (true);
+
+		idx = idx_backup;
 	}
 
 	/* Current event active or another prepare is ready in the pipeline */
@@ -1190,23 +1206,49 @@ static void preempt(void *param)
 
 	/* Preemptor not in pipeline */
 	if (ready->prepare_param.param != param) {
+		uint32_t ticks_at_preempt_min = ready->prepare_param.ticks_at_expire;
+		struct lll_event *ready_short = NULL;
 		struct lll_event *ready_next = NULL;
 		struct lll_event *preemptor;
 		uint32_t ret;
 
-		/* Find if a short prepare request in the pipeline */
+		/* Find if the short prepare request in the pipeline */
 		do {
-			preemptor = ull_prepare_dequeue_iter(&idx);
-			if (!ready_next && preemptor && !preemptor->is_aborted &&
-			    !preemptor->is_resume) {
+			uint32_t ticks_at_preempt_next;
+			uint32_t diff;
+
+			preemptor = prepare_dequeue_iter_ready_get(&idx);
+			if (!preemptor) {
+				break;
+			}
+
+			if (!ready_next) {
 				ready_next = preemptor;
 			}
-		} while (preemptor && (preemptor->is_aborted || preemptor->is_resume ||
-			 (preemptor->prepare_param.param != param)));
 
-		/* No short prepare request in pipeline */
+			if (preemptor->prepare_param.param == param) {
+				break;
+			}
+
+			ticks_at_preempt_next = preemptor->prepare_param.ticks_at_expire;
+			diff = ticker_ticks_diff_get(ticks_at_preempt_next,
+						     ticks_at_preempt_min);
+			if ((diff & BIT(HAL_TICKER_CNTR_MSBIT)) == 0U) {
+				continue;
+			}
+
+			ready_short = preemptor;
+			ticks_at_preempt_min = ticks_at_preempt_next;
+		} while (true);
+
+		/* "The" short prepare we were looking for is not in pipeline */
 		if (!preemptor) {
-			/* Start the preempt timeout for ready event */
+			/* Find any short prepare */
+			if (ready_short) {
+				ready = ready_short;
+			}
+
+			/* Start the preempt timeout for (short) ready event */
 			ret = preempt_ticker_start(ready, NULL, ready);
 			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 				  (ret == TICKER_STATUS_BUSY));
