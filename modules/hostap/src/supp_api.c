@@ -1662,6 +1662,8 @@ int supplicant_ap_enable(const struct device *dev,
 
 	/* No need to check for existing network to join for SoftAP*/
 	wpa_s->conf->ap_scan = 2;
+	/* Set BSS parameter max_num_sta to default configured value */
+	wpa_s->conf->max_num_sta = CONFIG_WIFI_MGMT_AP_MAX_NUM_STA;
 
 	ret = wpas_add_and_config_network(wpa_s, params, true);
 	if (ret) {
