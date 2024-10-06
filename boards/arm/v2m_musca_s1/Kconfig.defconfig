@@ -10,4 +10,7 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
+config BOARD_EARLY_INIT_HOOK
+	def_bool y
+
 endif # BOARD_V2M_MUSCA_S1
