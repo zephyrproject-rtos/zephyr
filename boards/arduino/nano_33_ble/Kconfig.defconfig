@@ -9,4 +9,7 @@ config BT_CTLR
 config REGULATOR
 	default y if SENSOR
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 endif # BOARD_ARDUINO_NANO_33_BLE

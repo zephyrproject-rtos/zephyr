@@ -9,7 +9,6 @@
 
 static int board_init(void)
 {
-
 	int res;
 	static const struct gpio_dt_spec pull_up =
 		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), pull_up_gpios);
@@ -32,4 +31,7 @@ static int board_init(void)
 	return gpio_pin_configure_dt(&user_led, GPIO_OUTPUT_INACTIVE);
 }
 
-SYS_INIT(board_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+void board_late_init_hook(void)
+{
+	(void)board_init();
+}
