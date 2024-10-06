@@ -14,4 +14,7 @@ config I2C_MCUX_LPI2C_BUS_RECOVERY
 config HW_STACK_PROTECTION
 	default y if !USERSPACE
 
+config BOARD_EARLY_INIT_HOOK
+	def_bool y
+
 endif # BOARD_TWR_KE18F
