@@ -38,7 +38,15 @@ module.
     $ cp client.pem samples/net/wifi/test_certs/
     $ cp client-key.pem samples/net/wifi/test_certs/
     $ cp ca.pem samples/net/wifi/test_certs/
-    $ west build -p -b <board> samples/net/wifi
+    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise.conf
+
+For using variable size network buffer, the following overlay file can be used:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise-variable-bufs.conf
+
+
 
 To initiate Wi-Fi connection, the following command can be used:
 
