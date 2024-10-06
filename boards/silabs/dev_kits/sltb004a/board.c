@@ -28,7 +28,7 @@ static int enable_supply(const struct supply_cfg *cfg)
 	return rv;
 }
 
-static int efr32mg_sltb004a_init(void)
+void board_late_init_hook(void)
 {
 	struct supply_cfg cfg;
 	int rc = 0;
@@ -50,10 +50,4 @@ static int efr32mg_sltb004a_init(void)
 		printk("CCS811 supply not enabled: %d\n", rc);
 	}
 #endif
-
-	return rc;
 }
-
-/* needs to be done after GPIO driver init */
-SYS_INIT(efr32mg_sltb004a_init, POST_KERNEL,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

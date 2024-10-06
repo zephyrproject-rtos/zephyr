@@ -3,6 +3,9 @@
 
 if BOARD_XG24_DK2601B
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 config CMU_HFXO_FREQ
 	default 40000000
 

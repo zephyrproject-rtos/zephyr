@@ -1,6 +1,11 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_XG27_DK2602A
+
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 config CMU_HFXO_FREQ
 	default 38400000
 
@@ -30,3 +35,5 @@ endif # BT
 
 config REGULATOR
 	default y if SI7210
+
+endif # BOARD_XG27_DK2602A
