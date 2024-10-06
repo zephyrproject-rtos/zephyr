@@ -271,7 +271,7 @@ static int wpa_supp_supported_channels(struct wpa_supplicant *wpa_s, uint8_t ban
 	}
 
 	size = ((mode->num_channels) * CHAN_NUM_LEN) + 1;
-	_chan_list = k_malloc(size);
+	_chan_list = os_malloc(size);
 	if (!_chan_list) {
 		wpa_printf(MSG_ERROR, "Mem alloc failed for channel list");
 		return -ENOMEM;
@@ -502,11 +502,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		if (chan_list) {
 			if (!wpa_cli_cmd_v("set_network %d scan_freq%s", resp.network_id,
 					   chan_list)) {
-				k_free(chan_list);
+				os_free(chan_list);
 				goto out;
 			}
 
-			k_free(chan_list);
+			os_free(chan_list);
 		}
 	}
 
