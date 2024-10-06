@@ -874,7 +874,7 @@ struct hostapd_config *hostapd_config_read2(const char *fname)
 
 	bss                 = conf->last_bss;
 	bss->start_disabled = 1;
-	bss->max_num_sta    = 8;
+	bss->max_num_sta    = CONFIG_WIFI_MGMT_AP_MAX_NUM_STA;
 	bss->dtim_period    = 1;
 	os_strlcpy(conf->bss[0]->iface, ifname, sizeof(conf->bss[0]->iface));
 	bss->logger_stdout_level = HOSTAPD_LEVEL_INFO;
