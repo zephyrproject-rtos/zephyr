@@ -9,3 +9,5 @@ tests:
     depends_on:
       - gpio
       - sm351lt
+    integration_platforms:
+      - bt510

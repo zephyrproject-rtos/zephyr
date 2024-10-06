@@ -10,7 +10,8 @@ tests:
       - sensor
       - grove
       - temperature
-    platform_allow: nrf52dk/nrf52832
+    platform_allow:
+      - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832
     harness: grove

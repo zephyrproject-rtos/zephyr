@@ -6,6 +6,5 @@ tests:
     tags: sensors
     depends_on: i2c
     filter: dt_compat_enabled("jedec,jc-42.4-temp")
-    platform_allow: nucleo_l053r8
-    integration_platforms:
+    platform_allow:
       - nucleo_l053r8

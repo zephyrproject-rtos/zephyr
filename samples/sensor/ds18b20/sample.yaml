@@ -17,8 +17,10 @@ tests:
         - "Temp: (.*)"
       fixture: fixture_w1_serial_ds18b20
   sample.sensor.ds18b20.w1_arduino_serial:
-    platform_allow: nucleo_g071rb
-    depends_on: arduino_serial
+    platform_allow:
+      - nucleo_g071rb
+    depends_on:
+      - arduino_serial
     integration_platforms:
       - nucleo_g071rb
     extra_args: "DTC_OVERLAY_FILE=arduino_serial.overlay"
