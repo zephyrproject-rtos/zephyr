@@ -812,9 +812,22 @@ void video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwis
 void video_closest_frmival(const struct device *dev, enum video_endpoint_id ep,
 			   struct video_frmival_enum *match);
 
-/* fourcc - four-character-code */
-#define video_fourcc(a, b, c, d)                                                                   \
+/**
+ * @brief Four-character-code uniquely identifying the pixel format
+ */
+#define VIDEO_FOURCC(a, b, c, d)                                                                   \
 	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
+
+/**
+ * @brief Convert a four-character-string to a four-character-code
+ *
+ * Convert a string literal or variable into a four-character-code
+ * as defined by @ref VIDEO_FOURCC.
+ *
+ * @param str String to be converted
+ * @return Four-character-code.
+ */
+#define VIDEO_FOURCC_FROM_STR(str) VIDEO_FOURCC((str)[0], (str)[1], (str)[2], (str)[3])
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
