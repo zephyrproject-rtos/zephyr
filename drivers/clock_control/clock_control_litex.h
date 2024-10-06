@@ -7,11 +7,11 @@
 #ifndef LITEX_MMCM_H
 #define LITEX_MMCM_H
 
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 /* Common values */
-#define PICOS_IN_SEC		1000000000000
-#define BITS_PER_BYTE		8
+#define PICOS_IN_SEC 1000000000000
 
 /* MMCM specific numbers */
 #define CLKOUT_MAX		7
