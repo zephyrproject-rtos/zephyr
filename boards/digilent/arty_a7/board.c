@@ -60,7 +60,7 @@ bool board_daplink_is_fitted(void)
 	return !NVIC_GetPendingIRQ(DT_IRQN(DAPLINK_QSPI_MUX_NODE));
 }
 
-static int board_init(void)
+void board_late_init_hook(void)
 {
 
 	/*
@@ -72,9 +72,10 @@ static int board_init(void)
 		board_daplink_qspi_mux_select(
 			BOARD_DAPLINK_QSPI_MUX_MODE_NORMAL);
 	}
-
-	return 0;
 }
-
-SYS_INIT(board_init, POST_KERNEL, CONFIG_BOARD_INIT_PRIORITY);
+#else
+void board_late_init_hook(void)
+{
+	/* No DAPLink QSPI MUX GPIO device available */
+}
 #endif /* DT_NODE_HAS_STATUS_OKAY(DAPLINK_QSPI_MUX_NODE) */
