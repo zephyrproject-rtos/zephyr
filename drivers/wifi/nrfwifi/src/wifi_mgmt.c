@@ -936,6 +936,21 @@ int nrf_wifi_filter(const struct device *dev,
 
 	if (filter->oper == WIFI_MGMT_SET) {
 		/**
+		 * If promiscuous mode is enabled, filter settings
+		 * cannot be plumbed to the lower layers as that might
+		 * affect connectivity. Save the filter settings in the
+		 * driver and filter packet type on packet receive by
+		 * checking the 802.11 header in the packet
+		 */
+		if (((def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode) &
+		    (NRF_WIFI_PROMISCUOUS_MODE)) == NRF_WIFI_PROMISCUOUS_MODE) {
+			def_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->packet_filter =
+				filter->filter;
+			ret = 0;
+			goto out;
+		}
+
+		/**
 		 * In case a user sets data + management + ctrl bits
 		 * or all the filter bits. Map it to bit 0 set to
 		 * enable "all" packet filter bit setting.
