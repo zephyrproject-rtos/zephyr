@@ -117,14 +117,14 @@
 				//power-domain = <&hst_domain>;
 				//interrupts = <13 0 0>;
 				//interrupt-parent = <&ace_intc>;
-			};
 
-			eth: ethernet {
-				#address-cells = <2>;
-				#size-cells = <1>;
-				//reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
-				status = "okay";
-				compatible = "tsnlab,tsn-nic-eth";
+				eth: ethernet {
+					#address-cells = <2>;
+					#size-cells = <1>;
+					//reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
+					status = "okay";
+					compatible = "tsnlab,tsn-nic-eth";
+				};
 			};
 		};
 

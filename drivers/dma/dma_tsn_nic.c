@@ -294,6 +294,6 @@ static int dma_tsn_nic_init(const struct device *dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, dma_tsn_nic_init, NULL, &dma_tsn_nic_data_##n, &dma_tsn_nic_cfg_##n, \
-			      POST_KERNEL, 99, &dma_tsn_nic_api);
+			      POST_KERNEL, 98, &dma_tsn_nic_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_TSN_NIC_INIT)

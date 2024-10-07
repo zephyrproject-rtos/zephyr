@@ -20,7 +20,13 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #include <zephyr/kernel.h>
 #include <zephyr/sys/device_mmio.h>
 
+#include <zephyr/drivers/pcie/pcie.h>
+#include <zephyr/drivers/pcie/controller.h>
+#include <zephyr/drivers/dma.h>
+
 struct eth_tsn_nic_config {
+	const struct device *pci_dev;
+	const struct device *dma_dev;
 };
 
 struct eth_tsn_nic_data {
@@ -136,7 +142,18 @@ static const struct ethernet_api eth_tsn_nic_api = {
 
 static int eth_tsn_nic_init(const struct device *dev)
 {
+	const struct eth_tsn_nic_config *config = dev->config;
 	printk("Ethernet init\n");
+
+	/* Test logs */
+	mm_reg_t tmp;
+	device_map(&tmp, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
+	printk("H2C engine id: 0x%x\n", sys_read32(tmp));
+	printk("H2C engine status: 0x%x\n", sys_read32(tmp + 0x0004));
+	dma_start(config->dma_dev, 0);
+	printk("H2C engine start\n");
+	printk("H2C engine status: 0x%x\n", sys_read32(tmp + 0x0004));
+
 	/* TODO: sw-238 (Setup) */
 	/* Check xdma_netdev_open() */
 	return 0;
@@ -146,7 +163,10 @@ static int eth_tsn_nic_init(const struct device *dev)
 #define ETH_TSN_NIC_INIT(n)                                                                        \
 	static struct eth_tsn_nic_data eth_tsn_nic_data_##n = {};                                  \
                                                                                                    \
-	static const struct eth_tsn_nic_config eth_tsn_nic_cfg_##n = {};                           \
+	static const struct eth_tsn_nic_config eth_tsn_nic_cfg_##n = {                             \
+		.dma_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),                               \
+		.pci_dev = DEVICE_DT_GET(DT_GPARENT(DT_DRV_INST(n))),                              \
+	};                                                                                         \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_tsn_nic_init, NULL, &eth_tsn_nic_data_##n,            \
 				      &eth_tsn_nic_cfg_##n, 99, &eth_tsn_nic_api, NET_ETH_MTU);
