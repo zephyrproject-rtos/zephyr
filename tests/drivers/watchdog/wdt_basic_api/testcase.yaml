@@ -126,5 +126,5 @@ tests:
       - s32z2xxdc2/s32z270/rtu0
   drivers.watchdog.mimxrt1050_evk_ti_tps382x:
     filter: dt_compat_enabled("ti,tps382x")
-    platform_allow: mimxrt1050_evk
+    platform_allow: mimxrt1050_evk/mimxrt1052/hyperflash
     extra_args: DTC_OVERLAY_FILE="boards/mimxrt1050_evk_ti_tps382x.overlay"

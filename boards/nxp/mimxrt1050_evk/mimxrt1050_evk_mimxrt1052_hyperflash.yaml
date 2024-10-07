@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1050_evk
+identifier: mimxrt1050_evk/mimxrt1052/hyperflash
 name: NXP MIMXRT1050-EVK
 type: mcu
 arch: arm

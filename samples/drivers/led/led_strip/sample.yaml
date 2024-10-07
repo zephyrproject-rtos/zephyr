@@ -8,4 +8,4 @@ tests:
     harness_config:
       fixture: fixture_led_strip
     integration_platforms:
-      - mimxrt1050_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
