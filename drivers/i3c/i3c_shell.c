@@ -1080,7 +1080,7 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC RSTACT BC.");
+		shell_error(sh, "I3C: unable to send CCC RSTACT.");
 		return ret;
 	}
 
@@ -1133,7 +1133,7 @@ static int cmd_i3c_ccc_disec_bc(const struct shell *sh, size_t argc, char **argv
 
 	ret = i3c_ccc_do_events_all_set(dev, false, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC DISEC BC.");
 		return ret;
 	}
 
@@ -1157,7 +1157,7 @@ static int cmd_i3c_ccc_enec(const struct shell *sh, size_t argc, char **argv)
 
 	ret = i3c_ccc_do_events_set(desc, true, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC ENEC.");
 		return ret;
 	}
 
@@ -1181,7 +1181,7 @@ static int cmd_i3c_ccc_disec(const struct shell *sh, size_t argc, char **argv)
 
 	ret = i3c_ccc_do_events_set(desc, false, &events);
 	if (ret < 0) {
-		shell_error(sh, "I3C: unable to send CCC ENEC BC.");
+		shell_error(sh, "I3C: unable to send CCC DISEC.");
 		return ret;
 	}
 
