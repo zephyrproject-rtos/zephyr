@@ -138,7 +138,7 @@ already supported, which can also be re-used on this mimxrt1050_evk board:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in
-:zephyr_file:`boards/nxp/mimxrt1050_evk/mimxrt1050_evk_defconfig`
+:zephyr_file:`boards/nxp/mimxrt1050_evk/mimxrt1050_evk_hyperflash_defconfig`
 
 Other hardware features are not currently supported by the port.
 
@@ -298,6 +298,17 @@ The RT1050 SoC has two USB OTG (USBOTG) controllers that supports both
 device and host functions through its micro USB connectors.
 Only USB device function is supported in Zephyr at the moment.
 
+Board Targets
+*************
+
+This board has two variants that can be targeted,
+depending on which flash to set as ``zephyr,flash``:
+
+* ``mimxrt1050_evk/mimxrt1052/hyperflash`` is the default variant for the out of box
+  setup of the board using hyperflash.
+* ``mimxrt1050_evk/mimxrt1052/qspi`` is for a board that has been reworked to use the
+  qspi flash instead of hyperflash.
+
 Programming and Debugging
 *************************
 
@@ -364,7 +375,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evk//hyperflash
    :goals: flash
 
 Open a serial terminal, reset the board (press the SW4 button), and you should
@@ -373,7 +384,7 @@ see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1050_evk
+   Hello World! mimxrt1050_evk//hyperflash
 
 Debugging
 =========
@@ -382,7 +393,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evk//hyperflash
    :goals: debug
 
 Open a serial terminal, step through the application in your debugger, and you
@@ -391,7 +402,7 @@ should see the following message in the terminal:
 .. code-block:: console
 
    ***** Booting Zephyr OS v1.14.0-rc1 *****
-   Hello World! mimxrt1050_evk
+   Hello World! mimxrt1050_evk//hyperflash
 
 Troubleshooting
 ===============
