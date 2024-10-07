@@ -269,7 +269,8 @@ zephyr_udc0: &usbotg_hs {
 &usart3 {
 	pinctrl-0 = <&usart3_tx_pd8 &usart3_rx_pd9>;
     pinctrl-names = "default";
-	current-speed = <9600>;
+	//current-speed = <9600>;
+	current-speed = <19200>;
 	status = "okay";
 	modbus0 {
 		compatible = "zephyr,modbus-serial";

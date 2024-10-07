@@ -75,6 +75,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_RESET_ASSERTED 1
 
 #define MDM_CMD_TIMEOUT K_SECONDS(20)
+#define MDM_CMD_QFREAD_TIMEOUT K_SECONDS(60)
 #define MDM_DNS_TIMEOUT K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT K_SECONDS(240)
 #define MDM_NETWORK_REG_TIMEOUT K_SECONDS(30)
@@ -1417,6 +1418,8 @@ static void modem_rssi_query_work(struct k_work *work)
 	}
 }
 
+#define CONFIG_MODEM_QUECTEL_EG95
+
 static void modem_reset(void)
 {
 	int ret = 0, retry_count = 0, counter = 0;
@@ -1427,7 +1430,11 @@ static void modem_reset(void)
 		/* extended error numbers */
 		SETUP_CMD_NOHANDLE("AT+CFUN=0"),
 		SETUP_CMD_NOHANDLE("AT+CMEE=1"),
+#ifdef CONFIG_MODEM_QUECTEL_EG95
+		SETUP_CMD_NOHANDLE("AT+QCFG=\"nwscanmode\", 0"),
+#else
 		SETUP_CMD_NOHANDLE("AT+QCFG=\"nwscanmode\", 1"),
+#endif
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 		/* UNC messages for registration. Enable loc info as well */
 		SETUP_CMD_NOHANDLE("AT+CREG=2"),

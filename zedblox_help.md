@@ -64,6 +64,8 @@ west flash -d build-zb_actipod_app
 
 ### COPY BUILT IMAGE TO IMAGES VAULT
 cp -r build-zb_actipod_app zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION
+cp zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr.signed.bin zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr_$VERSION.signed.bin
+cp zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr.signed.hex zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr_$VERSION.signed.hex
 
 ### Rename geenric zephyr bin and hex files to version specific names
 mv zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr.signed.hex zephyr/zedblox_scripts/images/zb_tv_h743zi/$VERSION/zephyr/zephyr_$VERSION.signed.hex
@@ -85,7 +87,9 @@ all_repositories/zephyr_new/zephyrproject
 # 2) Define file to save log of minicom
 sudo minicom -D /dev/ttyUSB0 -C zephyr/logs/jun10_24_ota_debug
 
+### Zedblox app location
+~/all_repositories/zephyr_new/zephyrproject/zephyr/zb_actipod_app/src
 
 # BASE VARIANT
-export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_image/zb_ap_bv_l151c8_v1.0_no_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex
-export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_image/zb_ap_bv_l151c8_v1.1_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex
+export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_images/zb_ap_bv_l151c8_v1.0_no_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex
+export BOARD_NAME=zb_bv_l151c8;west flash --build-dir build/$BOARD_NAME/zb_ap_bv_l151c8 --hex-file zb_images/zb_ap_bv_l151c8_v1.1_offset/zb_ap_bv_l151c8/zephyr/zephyr.hex

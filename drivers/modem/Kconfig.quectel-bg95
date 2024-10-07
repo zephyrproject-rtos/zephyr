@@ -17,6 +17,10 @@ config MODEM_QUECTEL_BG95_NAME
 	string "Driver name"
 	default "MODEM_QUECTEL_BG95"
 
+config MODEM_QUECTEL_EG95
+    bool "EG95 driver"
+    default n
+
 config MODEM_QUECTEL_BG95_RX_STACK_SIZE
 	int "Stack size for the bg95 rda modem driver RX thread"
 	default 4096
