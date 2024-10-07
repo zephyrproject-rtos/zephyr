@@ -867,6 +867,24 @@ __subsystem struct i3c_driver_api {
 	 */
 	int (*target_tx_write)(const struct device *dev,
 				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+
+	/**
+	 * ACK or NACK controller handoffs
+	 *
+	 * This will tell the target to ACK or NACK controller handoffs
+	 * from the CCC GETACCCR
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_controller_handoff()
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param accept True to ACK controller handoffs, False to NACK.
+	 *
+	 * @return See i3c_target_controller_handoff()
+	 */
+	int (*target_controller_handoff)(const struct device *dev,
+				      bool accept);
 };
 
 /**
@@ -920,7 +938,8 @@ struct i3c_device_desc {
 	const struct device * const dev;
 
 	/** Device Provisioned ID */
-	const uint64_t pid:48;
+	/* TODO: bring back the bitfield */
+	const uint64_t pid;
 
 	/**
 	 * Static address for this target device.
@@ -1227,6 +1246,12 @@ struct i3c_driver_data {
 
 	/** Attached I3C/I2C devices and addresses */
 	struct i3c_dev_attached_list attached_dev;
+
+	/** Received DEFTGTS Pointer */
+	struct i3c_ccc_deftgts *deftgts;
+
+	/** DEFTGTS refreshed */
+	bool deftgts_refreshed;
 };
 
 /**
@@ -2181,6 +2206,16 @@ uint8_t i3c_odd_parity(uint8_t p);
  * @retval -EBUSY Target cannot accept Controller Handoff
  */
 int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
+
+void i3c_sec_handoffed(struct k_work *work);
+
+struct i3c_device_desc *i3c_alloc_i3c_device_desc(void);
+void i3c_free_i3c_device_desc(struct i3c_device_desc *desc);
+bool i3c_is_common_i3c_device_desc(struct i3c_device_desc *desc);
+
+struct i3c_i2c_device_desc *i3c_alloc_i3c_i2c_device_desc(void);
+void i3c_free_i3c_i2c_device_desc(struct i3c_i2c_device_desc *desc);
+bool i3c_is_common_i3c_i2c_device_desc(struct i3c_i2c_device_desc *desc);
 
 /*
  * This needs to be after declaration of struct i3c_driver_api,
