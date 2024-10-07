@@ -715,7 +715,7 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.if_carr_state_chg_callbk_fn = nrf_wifi_if_carr_state_chg;
 	callbk_fns.rx_frm_callbk_fn = nrf_wifi_if_rx_frm;
 #if defined(CONFIG_NRF70_RAW_DATA_RX) || defined(CONFIG_NRF70_PROMISC_DATA_RX)
-	callbk_fns.rx_sniffer_frm_callbk_fn = nrf_wifi_if_sniffer_rx_frm;
+	callbk_fns.sniffer_callbk_fn = nrf_wifi_if_sniffer_rx_frm;
 #endif /* CONFIG_NRF70_RAW_DATA_RX || CONFIG_NRF70_PROMISC_DATA_RX */
 #endif
 	rx_buf_pools[0].num_bufs = rx1_num_bufs;
