@@ -7,6 +7,7 @@ choice "LOG_BACKEND_$(backend)_OUTPUT"
 
 config LOG_BACKEND_$(backend)_OUTPUT_TEXT
 	bool "Text"
+	select LOG_OUTPUT
 	help
 	  Output in text.
 
