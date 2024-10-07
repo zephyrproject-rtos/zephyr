@@ -97,6 +97,7 @@ BUILD_ASSERT((DT_REG_ADDR(ETR_BUFFER_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
 
 /* Domain details and prefixes. */
 static const uint16_t stm_m_id[] = {0x21, 0x22, 0x23, 0x2c, 0x2d, 0x2e, 0x24, 0x80};
+static uint32_t source_id_buf[ARRAY_SIZE(stm_m_id) * 8];
 static const char *const stm_m_name[] = {"sec", "app", "rad", "sys", "flpr", "ppr", "mod", "hw"};
 static const char *const hw_evts[] = {
 	"CTI211_0",  /* 0 CTI211 triger out 1 */
@@ -196,17 +197,36 @@ static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
 /** @brief Process a trace point message. */
 static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *packet)
 {
-	static const uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+	static const uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP |
+				      LOG_OUTPUT_FLAG_LEVEL;
 	static const char *tp = "%d";
 	static const char *tp_d32 = "%d %08x";
 	const char *dname = stm_m_name[packet->major];
 	static const char *sname = "tp";
+	const char **lptr;
 
-	if (packet->has_data) {
+	if (packet->id >= CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE) {
+		TYPE_SECTION_GET(const char *, log_stmesp_ptr,
+				 packet->id - CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &lptr);
+		uint8_t level = (uint8_t)((*lptr)[0]) - (uint8_t)'0';
+		const char *ptr = *lptr + 1;
+		static const union cbprintf_package_hdr desc0 = {
+			.desc = {.len = 2 /* hdr + fmt */}};
+		static const union cbprintf_package_hdr desc1 = {
+			.desc = {.len = 3 /* hdr + fmt + data */}};
+		uint32_t tp_log[] = {packet->has_data ? (uint32_t)desc1.raw : (uint32_t)desc0.raw,
+				     (uint32_t)ptr, packet->data};
+		const char *source =
+			log_frontend_stmesp_demux_sname_get(packet->major, packet->source_id);
+
+		log_output_process(&log_output, packet->timestamp, dname, source, NULL, level,
+				   (const uint8_t *)tp_log, NULL, 0, flags);
+		return;
+	} else if (packet->has_data) {
+		uint32_t id = (uint32_t)packet->id - CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE;
 		static const union cbprintf_package_hdr desc = {
 			.desc = {.len = 4 /* hdr + fmt + id + data */}};
-		uint32_t tp_d32_p[] = {(uint32_t)desc.raw, (uint32_t)tp_d32, packet->id,
-				       packet->data};
+		uint32_t tp_d32_p[] = {(uint32_t)desc.raw, (uint32_t)tp_d32, id, packet->data};
 
 		log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 1,
 				   (const uint8_t *)tp_d32_p, NULL, 0, flags);
@@ -368,7 +388,16 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 		}
 		break;
 	case STP_DATA16:
-		log_frontend_stmesp_demux_data((char *)&data.data, 2);
+		if (marked) {
+			if (ts) {
+				rv = log_frontend_stmesp_demux_log0((uint16_t)data.data, ts);
+				new_msg_cnt += rv;
+			} else {
+				log_frontend_stmesp_demux_source_id((uint16_t)data.data);
+			}
+		} else {
+			log_frontend_stmesp_demux_data((char *)&data.data, 2);
+		}
 		break;
 	case STP_DATA32:
 		if (marked) {
@@ -584,8 +613,11 @@ static int decoder_init(void)
 
 	once = true;
 	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE)) {
-		static const struct log_frontend_stmesp_demux_config config = {.m_ids = stm_m_id,
-							       .m_ids_cnt = ARRAY_SIZE(stm_m_id)};
+		static const struct log_frontend_stmesp_demux_config config = {
+			.m_ids = stm_m_id,
+			.m_ids_cnt = ARRAY_SIZE(stm_m_id),
+			.source_id_buf = source_id_buf,
+			.source_id_buf_len = ARRAY_SIZE(source_id_buf)};
 
 		err = log_frontend_stmesp_demux_init(&config);
 		if (err < 0) {
