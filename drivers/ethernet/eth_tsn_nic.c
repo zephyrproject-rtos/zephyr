@@ -40,7 +40,7 @@ static int eth_tsn_nic_init(const struct device *dev) {
     return 0;
 }
 
-/* TODO: priority should be CONFIG_ETH_INIT_PRIORITY*/
+/* TODO: priority should be CONFIG_ETH_INIT_PRIORITY */
 #define ETH_TSN_NIC_INIT(n)                                                                         \
 	static struct eth_tsn_nic_data eth_tsn_nic_data_##n = {};                                    \
                                                                                                    \

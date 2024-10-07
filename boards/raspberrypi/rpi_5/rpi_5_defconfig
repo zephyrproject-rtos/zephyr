@@ -18,4 +18,6 @@ CONFIG_NETWORKING=y
 CONFIG_NET_L2_ETHERNET=y
 
 CONFIG_ENTROPY_GENERATOR=y
+
+# TODO: Find an appopriate random generator, since this casues a warning.
 CONFIG_TEST_RANDOM_GENERATOR=y
