@@ -138,6 +138,9 @@ static int sys_clock_driver_init(void)
 
 	IRQ_CONNECT(TIMER_IRQ_NUM, TIMER_IRQ_PRIO, ti_dmtimer_isr, NULL, TIMER_IRQ_FLAGS);
 
+	/* Disable prescalar */
+	TI_DM_TIMER_WRITE(0, TCLR, PRE);
+
 	/* Select autoreload mode */
 	TI_DM_TIMER_WRITE(1, TCLR, AR);
 
