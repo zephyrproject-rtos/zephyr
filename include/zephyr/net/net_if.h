@@ -2038,7 +2038,7 @@ static inline uint32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
 						   const struct in6_addr *dst);
 #else
@@ -2065,7 +2065,7 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr(
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
  */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 const struct in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *iface,
 							const struct in6_addr *dst,
 							int flags);
@@ -2090,7 +2090,7 @@ static inline const struct in6_addr *net_if_ipv6_select_src_addr_hint(
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-#if defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(CONFIG_NET_IPV6)
 struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst);
 #else
 static inline struct net_if *net_if_ipv6_select_src_iface(
