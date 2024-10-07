@@ -148,7 +148,6 @@
 		};
 
 		longpress: longpress {
-			input = <&longpress>;
 			compatible = "zephyr,input-longpress";
 			input-codes = <0>;
 			short-codes = <0>;
@@ -157,7 +156,6 @@
 		};
 
 		double_tap: doubletap {
-			input = <&double_tap>;
 			compatible = "zephyr,input-double-tap";
 			input-codes = <0>;
 			double-tap-codes = <0>;
