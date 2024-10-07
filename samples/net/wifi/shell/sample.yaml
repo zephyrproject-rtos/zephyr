@@ -58,6 +58,7 @@ tests:
       - nrf7002dk/nrf5340/cpuapp/nrf7001
   sample.net.wifi.nrf7002ek:
     extra_args:
+      - SB_CONFIG_WIFI_NRF70=y
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - SHIELD=nrf7002ek
     platform_allow:
@@ -69,6 +70,7 @@ tests:
   sample.net.wifi.nrf7002eb:
     extra_args:
       - CONFIG_NRF70_UTIL=y
+      - SB_CONFIG_WIFI_NRF70=y
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
       - SHIELD=nrf7002eb
     platform_allow:
