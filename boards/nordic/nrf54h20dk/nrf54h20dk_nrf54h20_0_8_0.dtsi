@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &suit_storage_partition;
+
+/ {
+	reserved-memory {
+		suit_storage_partition: memory@e1eb000 {
+			reg = <0xe1eb000 DT_SIZE_K(24)>;
+		};
+	};
+};
