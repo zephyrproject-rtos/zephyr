@@ -67,6 +67,28 @@ config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
 config LOG_FRONTEND_STMESP_DICT_VER
 	def_int 0
 
+config LOG_FRONTEND_STMESP_TURBO_LOG
+	bool "Optimize short_logs"
+	select LOG_CUSTOM_HEADER
+	default y if (NRF_ETR || SOC_NRF54H20_CPUPPR || SOC_NRF54H20_CPUFLPR) \
+		     && LOG_FRONTEND_STMESP_FSC
+	help
+	  When enabled, then logging messages with 0 and 1 numeric argument are
+	  optimized and handled much faster than others.
+
+config LOG_FRONTEND_STMESP_TURBO_DROP_OTHERS
+	bool "Drop all logs except turbo logs"
+	help
+	  Option can be enabled for memory constraint cases to remove all logging
+	  related code except turbo logs.
+
+config LOG_FRONTEND_STMESP_TURBO_LOG_BASE
+	def_int 32768
+
+config LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID
+	def_int 65535
+	depends on LOG_FRONTEND_STMESP_TURBO_LOG
+
 config LOG_FRONTEND_STMESP_GUARANTEED_ACCESS
 	bool "Use STMESP guaranteed access"
 	help
