@@ -4,7 +4,6 @@
 config LOG_BACKEND_EFI_CONSOLE
 	bool "EFI_CONSOLE backend"
 	depends on X86_EFI_CONSOLE
-	select LOG_OUTPUT
 	default y if !UART_CONSOLE
 	help
 	  When enabled backend is using EFI CONSOLE to output logs.
