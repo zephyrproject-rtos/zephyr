@@ -1499,6 +1499,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
 	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	uint8_t last_addr = 0;
 
 	/* DAA should not be done by secondary controllers */
 	if (ctrl_config->is_secondary) {
@@ -1509,6 +1510,23 @@ static int cdns_i3c_do_daa(const struct device *dev)
 	uint32_t olddevs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
 	/* ignore the controller register */
 	olddevs |= BIT(0);
+
+	/* Assign dynamic addressses to available RRs */
+	/* Loop through each clear bit */
+	for (uint8_t i = find_lsb_set(~olddevs); i <= data->max_devs; i++) {
+		uint8_t rr_idx = i - 1;
+
+		if (~olddevs & BIT(rr_idx)) {
+			/* Read RRx registers */
+			last_addr = i3c_addr_slots_next_free_find(
+				&data->common.attached_dev.addr_slots, last_addr + 1);
+			/* Write RRx registers */
+			sys_write32(prepare_rr0_dev_address(last_addr) | DEV_ID_RR0_IS_I3C,
+				    config->base + DEV_ID_RR0(rr_idx));
+			sys_write32(0, config->base + DEV_ID_RR1(rr_idx));
+			sys_write32(0, config->base + DEV_ID_RR2(rr_idx));
+		}
+	}
 
 	/* the Cadence I3C IP will assign an address for it from the RR */
 	struct i3c_ccc_payload entdaa_ccc;
@@ -1915,7 +1933,10 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 {
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
+	uint8_t rr_idx, i;
+	uint32_t rr, activedevs;
 
+	/* If it does not have a dynamic address, then assign it a free one */
 	if (dyn_addr == 0) {
 		if (!data->free_rr_slots) {
 			return -ENOSPC;
@@ -1924,62 +1945,70 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 		return find_lsb_set(data->free_rr_slots) - 1;
 	}
 
-	uint32_t activedevs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
-
+	/* Device already has a Dynamic Address, so assume it is already in the RRs */
+	activedevs = sys_read32(config->base + DEVS_CTRL) & DEVS_CTRL_DEVS_ACTIVE_MASK;
+	/* skip itself */
 	activedevs &= ~BIT(0);
 
 	/* loop through each set bit for new devices */
-	for (uint8_t i = find_lsb_set(activedevs); i <= find_msb_set(activedevs); i++) {
-		if (activedevs & BIT(i)) {
-			uint32_t rr = sys_read32(config->base + DEV_ID_RR0(i));
-
-			if (!(rr & DEV_ID_RR0_IS_I3C) || DEV_ID_RR0_GET_DEV_ADDR(rr) != dyn_addr) {
-				continue;
+	for (i = find_lsb_set(activedevs); i <= find_msb_set(activedevs); i++) {
+		rr_idx = i - 1;
+		if (activedevs & BIT(rr_idx)) {
+			rr = sys_read32(config->base + DEV_ID_RR0(rr_idx));
+			if ((rr & DEV_ID_RR0_IS_I3C) && DEV_ID_RR0_GET_DEV_ADDR(rr) == dyn_addr) {
+				return rr_idx;
 			}
-			return i;
 		}
 	}
 
 	return -EINVAL;
 }
 
-static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc,
-				  uint8_t addr)
+static int cdns_i3c_attach_device(const struct device *dev, struct i3c_device_desc *desc)
 {
-	const struct cdns_i3c_config *config = dev->config;
-	struct cdns_i3c_data *data = dev->data;
-	int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr);
-
-	if (slot < 0) {
-		LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
-		return slot;
-	}
-
-	k_mutex_lock(&data->bus_lock, K_FOREVER);
-
-	data->cdns_i3c_i2c_priv_data[slot].id = slot;
-	desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
-	data->free_rr_slots &= ~BIT(slot);
-
-	uint32_t dev_id_rr0 = DEV_ID_RR0_IS_I3C | prepare_rr0_dev_address(addr);
-	uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
-	uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF);
-
-	sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
-	sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(slot));
-	sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
-
-	/** Mark Devices as active, devices that will be found and marked active during DAA,
-	 * it will be given the exact DA programmed in it's RR if the PID matches and marked
-	 * as active duing ENTDAA, otherwise they get set as active here. If dynamic address
-	 * is set, then it assumed that it was already initialized by the primary controller.
+	/*
+	 * Mark Devices as active, devices that will be found and marked active during DAA,
+	 * it will be given the exact DA programmed in it's RR, otherwise they get set as active
+	 * here. If dynamic address is set, then it assumed that it was already initialized by the
+	 * primary controller. When assigned through ENTDAA, the dynamic address, bcr, dcr, and pid
+	 * are all set in the RR along with setting the device as active. If it has a static addr,
+	 * then it is assumed that it will be programmed with SETDASA and will need to be marked
+	 * as active before sending out SETDASA.
 	 */
 	if ((desc->static_addr != 0) || (desc->dynamic_addr != 0)) {
+		const struct cdns_i3c_config *config = dev->config;
+		struct cdns_i3c_data *data = dev->data;
+
+		int slot = cdns_i3c_master_get_rr_slot(dev, desc->dynamic_addr ? desc->dynamic_addr
+									       : desc->static_addr);
+
+		if (slot < 0) {
+			LOG_ERR("%s: no space for i3c device: %s", dev->name, desc->dev->name);
+			return slot;
+		}
+
+		k_mutex_lock(&data->bus_lock, K_FOREVER);
+
 		sys_write32(sys_read32(config->base + DEVS_CTRL) | DEVS_CTRL_DEV_ACTIVE(slot),
 			    config->base + DEVS_CTRL);
-	}
 
-	k_mutex_unlock(&data->bus_lock);
+		data->cdns_i3c_i2c_priv_data[slot].id = slot;
+		desc->controller_priv = &(data->cdns_i3c_i2c_priv_data[slot]);
+		data->free_rr_slots &= ~BIT(slot);
+
+		uint32_t dev_id_rr0 =
+			DEV_ID_RR0_IS_I3C |
+			prepare_rr0_dev_address(desc->dynamic_addr ? desc->dynamic_addr
+								   : desc->static_addr);
+		uint32_t dev_id_rr1 = DEV_ID_RR1_PID_MSB((desc->pid & 0xFFFFFFFF0000) >> 16);
+		uint32_t dev_id_rr2 = DEV_ID_RR2_PID_LSB(desc->pid & 0xFFFF);
+
+		sys_write32(dev_id_rr0, config->base + DEV_ID_RR0(slot));
+		sys_write32(dev_id_rr1, config->base + DEV_ID_RR1(slot));
+		sys_write32(dev_id_rr2, config->base + DEV_ID_RR2(slot));
+
+		k_mutex_unlock(&data->bus_lock);
+	}
 
 	return 0;
 }
