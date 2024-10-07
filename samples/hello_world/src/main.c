@@ -213,7 +213,7 @@ void Flash_Test(const struct device *flash, const struct device *dma, uint32_t F
 void CounterCallBack(const struct device *dev, void *UserData)
 {
 	uint32_t *lvData = ((uint32_t*)UserData);
-	printf("andestech_atcpit100 %s # %d\n", __func__, *lvData);
+	printf("\nandestech_atcpit100 %s # %d\n", __func__, *lvData);
 	*lvData += 1;
 }
 
@@ -222,7 +222,7 @@ void CounterAlarmCallBack(const struct device *dev,
 					 void *UserData)
 {
 	uint32_t *lvData = ((uint32_t*)UserData);
-	printf("andestech_atcpit100 %s # %d\n", __func__, *lvData);
+	printf("\nandestech_atcpit100 %s # %d\n", __func__, *lvData);
 }
 
 static uint32_t s_CallBackData = 0;
@@ -267,8 +267,9 @@ void CounterTest(const struct device *pit)
 void pufs_otp_test(const struct device *pufs_otp)
 {
 	uint8_t slot_data[32] = {0};
-
+	enum crypto_otp_lock lvLock = CRYPTO_OTP_RW; 
 	uint16_t totalSlots = 0, bytesPerSlot = 0;
+
 	if(otp_info(pufs_otp, &totalSlots, &bytesPerSlot) != 0) {
 		printf("%s%s(%d) OTP_Info Failed%s\n", \
 		ATTR_ERR,__func__,__LINE__,ATTR_RST);
@@ -276,18 +277,38 @@ void pufs_otp_test(const struct device *pufs_otp)
 		printf("%s%s(%d) OTP_Info... Slots:%d Bytes Per Slot:%d%s\n", \
 		ATTR_INF,__func__,__LINE__, totalSlots, bytesPerSlot, ATTR_RST);
 	}
+	
+	if(otp_get_lock(pufs_otp, 12, &lvLock) != 0) {
+		printf("%s%s(%d) otp_get_lock Failed%s\n", \
+		ATTR_ERR,__func__,__LINE__,ATTR_RST);
+	} else {
+		printf("%s%s(%d) otp_lock: %d %s\n", \
+		ATTR_INF,__func__,__LINE__,lvLock,ATTR_RST);
+	}
 
 	for(uint8_t i = 0; i < bytesPerSlot; i++) {
 		slot_data[i] = (i+i)*2;
 	}
 	if(otp_write(pufs_otp, 12, slot_data, 18) != 0) {
-		printf("%s%s(%d) otp_write Failed%s\n", \
-		ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		if(lvLock != CRYPTO_OTP_RW) {
+			printf("%s%s(%d) otp_write Failed as Expected %s\n", \
+			ATTR_RST,__func__,__LINE__,ATTR_RST);
+		} else {
+			printf("%s%s(%d) otp_write Failed unExpectedly %s\n", \
+			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+		}
 	} else {
+		printf("%s%s(%d) otp_write Passed %s\n", \
+		ATTR_RST,__func__,__LINE__,ATTR_RST);
 		memset(slot_data, 0, bytesPerSlot);
 		if(otp_read(pufs_otp, 12, slot_data, 18) != 0) {
-			printf("%s%s(%d) otp_read Failed%s\n", \
-			ATTR_ERR,__func__,__LINE__,ATTR_RST);
+			if(lvLock == CRYPTO_OTP_NA) {
+				printf("%s%s(%d) otp_read Failed as Expected %s\n", \
+				ATTR_RST,__func__,__LINE__,ATTR_RST);
+			} else {
+				printf("%s%s(%d) otp_read Failed unExpectedly %s\n", \
+				ATTR_ERR,__func__,__LINE__,ATTR_RST);
+			}
 		} else {
 			printf("%s",ATTR_INF);
 			for(uint8_t i = 0; i < bytesPerSlot; i++) {
@@ -300,7 +321,6 @@ void pufs_otp_test(const struct device *pufs_otp)
 		printf("%s%s(%d) otp_set_lock Failed%s\n", \
 		ATTR_ERR,__func__,__LINE__,ATTR_RST);
 	} else {
-		enum crypto_otp_lock lvLock = CRYPTO_OTP_RW; 
 		if(otp_get_lock(pufs_otp, 12, &lvLock) != 0) {
 			printf("%s%s(%d) otp_get_lock Failed%s\n", \
 			ATTR_ERR,__func__,__LINE__,ATTR_RST);
@@ -312,8 +332,13 @@ void pufs_otp_test(const struct device *pufs_otp)
 		slot_data[i] = (i+i)*2;
 		}
 		if(otp_write(pufs_otp, 12, slot_data, 18) != 0) {
-			printf("%s%s(%d) otp_write Failed as Expected %s\n", \
-			ATTR_RST,__func__,__LINE__,ATTR_RST);
+			if(lvLock != CRYPTO_OTP_RW) {
+				printf("%s%s(%d) otp_write Failed as Expected %s\n", \
+				ATTR_RST,__func__,__LINE__,ATTR_RST);
+			} else {
+				printf("%s%s(%d) otp_write Failed unExpectedly %s\n", \
+				ATTR_ERR,__func__,__LINE__,ATTR_RST);
+			}
 		} else {
 			printf("%s%s(%d) otp_write Passed UnExpectedly %s\n", \
 			ATTR_ERR,__func__,__LINE__,ATTR_RST);
@@ -325,21 +350,29 @@ void pufs_otp_test(const struct device *pufs_otp)
 void pufs_hash_sg_test(const struct device *pufs)
 {
 	int status = 0;
-	// static uint8_t *pufs_sample_data1 = "This is Rapid Silicon'z_Zephyr_Port";
-	static uint8_t *pufs_sample_data2 = "This is Rapid Silicon'z_";	
-    static uint8_t *pufs_sample_data1 = "Zephyr_Port";
+	static uint8_t pufs_sample_data1[] = {
+										 "My name is Junaid and I work at the Rapid Silicon and WorkFromH."
+										 };
+	static uint8_t pufs_sample_data2[] = {
+										 "My name is Junaid and I work at the Rapid Silicon and WorkFromH."
+										 };
+	static uint8_t pufs_sample_data3[] = {
+										 "123456789123456789"
+										 };										 										 
+
 	static uint8_t pufs_sample_data_sha256_out[32] = {0};
 	static const uint8_t pufs_sample_data_sha256[] = {
-		0x63,0xb9,0x67,0xb5,0x43,0x6e,0x4a,0xe2,
-		0x24,0x03,0x91,0xb4,0xa6,0xca,0xf2,0x22,
-		0x09,0x34,0x1c,0x6f,0x52,0x6a,0x33,0xc6,
-		0xe2,0x02,0x86,0xb9,0xd8,0x7d,0xfb,0x69		
+		0xb2,0x69,0xec,0xc6,0x0f,0x13,0x37,0xf3,
+		0xf3,0xf8,0x29,0xc1,0x0e,0xc5,0x83,0xa6,
+		0x82,0x25,0x97,0x32,0x71,0x78,0xd1,0xb8,
+		0xe5,0x95,0x05,0xd1,0xbe,0xe7,0x43,0xca
 	};
 	const uint8_t pufs_sample_data1_len = strlen(pufs_sample_data1);
 	const uint8_t pufs_sample_data2_len = strlen(pufs_sample_data2);
+	const uint8_t pufs_sample_data3_len = strlen(pufs_sample_data3);
 
 	printf("%s%s(%d) Length of sample data to operate on:%d %s\n", \
-	ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len,ATTR_RST);
+	ATTR_INF,__func__,__LINE__,pufs_sample_data1_len+pufs_sample_data2_len+pufs_sample_data3_len,ATTR_RST);
 
 	struct hash_ctx lvHashCtx = {
 		.device = pufs,
@@ -348,7 +381,7 @@ void pufs_hash_sg_test(const struct device *pufs)
 		.started = true
 	};		
 
-	struct hash_pkt lvHashPkt1 = {0}, lvHashPkt2 = {0};
+	struct hash_pkt lvHashPkt1 = {0}, lvHashPkt2 = {0}, lvHashPkt3 = {0};
 
 	lvHashPkt1.ctx = &lvHashCtx;
 	lvHashPkt1.head = true;
@@ -369,15 +402,28 @@ void pufs_hash_sg_test(const struct device *pufs)
 	lvHashPkt2.in_hash = NULL;
 	lvHashPkt2.in_hash_len = 0;
 	lvHashPkt2.in_len = pufs_sample_data2_len;
-	lvHashPkt2.next = NULL;
+	lvHashPkt2.next = &lvHashPkt3;
 	lvHashPkt2.out_buf = pufs_sample_data_sha256_out;
 	lvHashPkt2.out_len = 0;
 	lvHashPkt2.prev_len = 0;
 
-	printf("AddrlvHashPkt1.rd_addr:0x%08x AddrlvHashPkt2.rd_addr:0x%08x\r\n", 
-	(uint32_t)lvHashPkt1.in_buf, (uint32_t)lvHashPkt2.in_buf);
+	lvHashPkt3.ctx = &lvHashCtx;
+	lvHashPkt3.head = true;
+	lvHashPkt3.tail = true;
+	lvHashPkt3.in_buf = pufs_sample_data3;
+	lvHashPkt3.in_hash = NULL;
+	lvHashPkt3.in_hash_len = 0;
+	lvHashPkt3.in_len = pufs_sample_data3_len;
+	lvHashPkt3.next = NULL;
+	lvHashPkt3.out_buf = pufs_sample_data_sha256_out;
+	lvHashPkt3.out_len = 0;
+	lvHashPkt3.prev_len = 0;
+
+	printf("Pkt1.rd_addr:0x%08x Pkt2.rd_addr:0x%08x Pkt3.rd_addr:0x%08x\r\n", 
+	(uint32_t)lvHashPkt1.in_buf, (uint32_t)lvHashPkt2.in_buf, (uint32_t)lvHashPkt3.in_buf);
 	printf("Size struct hash pkt:%d\r\n", sizeof(struct hash_pkt));
-	printf("data1_size:%d data2_size:%d\r\n", pufs_sample_data1_len, pufs_sample_data2_len);
+	printf("data1_size:%d data2_size:%d data3_size:%d\r\n", \
+	pufs_sample_data1_len, pufs_sample_data2_len, pufs_sample_data3_len);
 
 	status = hash_begin_session(pufs, &lvHashCtx, CRYPTO_HASH_ALGO_SHA256);
 	if(status != 0) {
@@ -522,9 +568,8 @@ int main(void)
 		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
-		// pufs_hash_test(pufs);
+		pufs_hash_test(pufs);
 		pufs_hash_sg_test(pufs);
-		while(1);
 	}
 
 	if((pufs_otp == NULL) || (!device_is_ready(pufs_otp))) {
