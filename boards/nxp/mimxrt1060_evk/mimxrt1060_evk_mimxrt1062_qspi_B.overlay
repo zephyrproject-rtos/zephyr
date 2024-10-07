@@ -4,9 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mimxrt1060_evk.dts"
-#include "mimxrt1060_evk_mimxrt1062_qspi.overlay"
-
 /* FLEXPWM not routed to LED on this EVK */
 &flexpwm2_pwm3 {
 	status = "disabled";

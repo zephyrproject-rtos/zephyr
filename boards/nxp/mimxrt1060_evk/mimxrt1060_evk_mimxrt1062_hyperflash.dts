@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "mimxrt1060_evk.dtsi"
+
 / {
 	chosen {
 		zephyr,flash-controller = &s26ks512s0;
