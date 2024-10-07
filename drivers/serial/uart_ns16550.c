@@ -97,6 +97,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define REG_MDC 0x04  /* Modem control reg.             */
 #define REG_LSR 0x05  /* Line status reg.               */
 #define REG_MSR 0x06  /* Modem status reg.              */
+#define REG_USR 0x7C  /* UART status reg. (DW8250)      */
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 #define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
@@ -123,6 +124,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define IIR_LS    0x06 /* receiver line status interrupt */
 #define IIR_MASK  0x07 /* interrupt id bits mask  */
 #define IIR_ID    0x06 /* interrupt ID mask without NIP */
+#define IIR_BUSY  0x07 /* DesignWare APB busy detect */
 #define IIR_FE    0xC0 /* FIFO mode enabled */
 #define IIR_CH    0x0C /* Character timeout*/
 
@@ -254,6 +256,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define LSR(dev) (get_port(dev) + (REG_LSR * reg_interval(dev)))
 #define MSR(dev) (get_port(dev) + (REG_MSR * reg_interval(dev)))
 #define MDR1(dev) (get_port(dev) + (REG_MDR1 * reg_interval(dev)))
+#define USR(dev) (get_port(dev) + REG_USR)
 #define DLF(dev) (get_port(dev) + REG_DLF)
 #define PCP(dev) (get_port(dev) + REG_PCP)
 
@@ -1271,10 +1274,21 @@ static void uart_ns16550_irq_callback_set(const struct device *dev,
 static void uart_ns16550_isr(const struct device *dev)
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
+	} else if ((IS_ENABLED(CONFIG_UART_NS16550_DW8250_DW_APB)) &&
+	    ((ns16550_inbyte(dev_cfg, IIR(dev)) & IIR_MASK) == IIR_BUSY)) {
+		/*
+		 * The Synopsys DesignWare 8250 has an extra feature whereby
+		 * it detects if the LCR is written whilst busy.
+		 * If it is, then a busy detect interrupt is raised,
+		 * the uart status register need to be read.
+		 */
+		ns16550_inword(dev_cfg, USR(dev));
 	}
+
 #if (IS_ENABLED(CONFIG_UART_ASYNC_API))
 	if (dev_data->async.tx_dma_params.dma_dev != NULL) {
 		const struct uart_ns16550_dev_config * const config = dev->config;
@@ -1300,7 +1314,6 @@ static void uart_ns16550_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_NS16550_WA_ISR_REENABLE_INTERRUPT
-	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	uint8_t cached_ier = ns16550_inbyte(dev_cfg, IER(dev));
 
 	ns16550_outbyte(dev_cfg, IER(dev), 0U);
