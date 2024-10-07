@@ -74,6 +74,19 @@ static inline void *get_sock_vtable(int sock,
 	return ctx;
 }
 
+size_t msghdr_non_empty_iov_count(const struct msghdr *msg)
+{
+	size_t non_empty_iov_count = 0;
+
+	for (size_t i = 0; i < msg->msg_iovlen; i++) {
+		if (msg->msg_iov[i].iov_len) {
+			non_empty_iov_count++;
+		}
+	}
+
+	return non_empty_iov_count;
+}
+
 void *z_impl_zsock_get_context_object(int sock)
 {
 	const struct socket_op_vtable *ignored;
