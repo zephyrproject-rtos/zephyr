@@ -261,12 +261,53 @@ struct i3c_target_callbacks {
 	 * @return Ignored.
 	 */
 	int (*stop_cb)(struct i3c_target_config *config);
+
+	/**
+	 * @brief Function called when an active controller handoffs controlership
+	 * to this target.
+	 *
+	 * This function is invoked by the active controller when it handoffs
+	 * controllership to this target. This can happen wither the target has
+	 * requested it or if the active controller chooses to handoff to the
+	 * controller capable target.
+	 *
+	 * @param config Configuration structure associated with the
+	 *               device to which the operation is addressed.
+	 *
+	 * @return Ignored.
+	 */
+	int (*controller_handoff_cb)(struct i3c_target_config *config);
 };
 
 __subsystem struct i3c_target_driver_api {
 	int (*driver_register)(const struct device *dev);
 	int (*driver_unregister)(const struct device *dev);
 };
+
+/**
+ * @brief Accept or Decline Controller Handoffs
+ *
+ * This sets the target to ACK or NACK handoffs from the active
+ * controller from the CCC GETACCCR.
+ *
+ * @param dev Pointer to the device structure for an I3C controller
+ *            driver configured in target mode.
+ * @param accept True to ACK controller handoffs, False to NACK
+ *
+ * @retval 0 Is successful
+ */
+static inline int i3c_target_controller_handoff(const struct device *dev,
+				      bool accept)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->target_controller_handoff == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->target_controller_handoff(dev, accept);
+}
 
 /**
  * @brief Writes to the target's TX FIFO
