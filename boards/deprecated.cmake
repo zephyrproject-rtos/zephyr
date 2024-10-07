@@ -52,6 +52,9 @@ set(am62x_m4_phyboard_lyra_DEPRECATED
 set(am62x_m4_sk_DEPRECATED
     sk_am62/am6234/m4
 )
+set(acp_acp_6_0_adsp_DEPRECATED
+    acp_acp_6_0_adsp/acp_6_0
+)
 set(arduino_giga_r1_m4_DEPRECATED
     arduino_giga_r1/stm32h747xx/m4
 )

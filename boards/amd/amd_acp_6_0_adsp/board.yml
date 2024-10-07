@@ -1,0 +1,6 @@
+board:
+  name: amd_acp_6_0_adsp
+  vendor: amd
+  socs:
+    - name: acp_6_0
+  
