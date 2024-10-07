@@ -27,7 +27,7 @@ struct eth_tsn_nic_data {
 	struct net_if *iface;
 };
 
-static int eth_tsn_nic_iface_init(const struct net_if *iface)
+static void eth_tsn_nic_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct eth_tsn_nic_config *config = dev->config;
@@ -39,16 +39,18 @@ static int eth_tsn_nic_iface_init(const struct net_if *iface)
 
 	ethernet_init(iface);
 
-	/* TODO: sw-238 (Setup) */
+	ARG_UNUSED(config);
 
-	return 0;
+	/* TODO: sw-238 (Setup) */
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *get_stats(const struct device *dev)
 {
 	/* TODO: sw-257 (Misc. APIs) */
 	return -ENOTSUP;
 }
+#endif
 
 static int eth_tsn_nic_start(const struct device *dev)
 {
@@ -95,7 +97,7 @@ static int eth_tsn_nic_vlan_setup(const struct device *dev, struct net_if *iface
 static const struct device *eth_tsn_nic_get_ptp_clock(const struct device *dev)
 {
 	/* TODO: sw-290 (PTP) */
-	return -ENOTSUP;
+	return NULL;
 }
 #endif
 
@@ -103,7 +105,7 @@ static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 {
 	/* TODO: sw-257 (Misc. APIs) */
 	/* This might not be needed at all */
-	return -ENOTSUP;
+	return NULL;
 }
 
 static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
