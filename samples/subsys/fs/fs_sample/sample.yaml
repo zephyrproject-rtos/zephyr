@@ -47,13 +47,13 @@ tests:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_ram_disk.conf
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_ram_disk.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_ram_disk.overlay
   sample.filesystem.fat_fs.nrf52840dk_nrf52840_ram_disk_region:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_ram_disk.conf
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_ram_disk.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_ram_disk_region.overlay
   sample.filesystem.fat_fs.nrf54l15pdk:
     build_only: true
@@ -65,7 +65,7 @@ tests:
     build_only: true
     platform_allow: nrf52840dk/nrf52840
     extra_args:
-      - OVERLAY_CONFIG=boards/nrf52840dk_nrf52840_qspi.conf
+      - EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi.conf
       - DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840_qspi.overlay
   sample.filesystem.fat_fs.has_sdmmc_disk:
     build_only: true
