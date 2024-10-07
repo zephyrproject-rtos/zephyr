@@ -596,7 +596,7 @@ void pufs_decryption_test(const struct device *pufs)
 							CAP_NO_IV_PREFIX | 
 							CAP_NO_ENCRYPTION 
 						);						
-	lvCipherCtx.key.bit_stream =  enc32_key;
+	lvCipherCtx.key.bit_stream =  &enc32_key[0];
 	lvCipherCtx.key_source = CRYPTO_KEY_SW;
 	lvCipherCtx.keylen = 32;
 	lvCipherCtx.mode_params.ctr_info.ctr_len = 16;
@@ -605,9 +605,9 @@ void pufs_decryption_test(const struct device *pufs)
 
 	lvCipherPkt.auto_increment = true;
 	lvCipherPkt.ctx = &lvCipherCtx;
-	lvCipherPkt.in_buf = cipher_text;
-	lvCipherPkt.in_len = strlen(cipher_text);
-	lvCipherPkt.out_buf = decrypted_text;
+	lvCipherPkt.in_buf = (uint8_t*)cipher_text;
+	lvCipherPkt.in_len = (sizeof(cipher_text)/sizeof(cipher_text[0]));
+	lvCipherPkt.out_buf = (uint8_t*)&decrypted_text[0];
 	lvCipherPkt.prev_len = 0;
 
 	printf("%s Decrypting %d bytes %s\n", ATTR_INF, lvCipherPkt.in_len, ATTR_RST);
@@ -622,14 +622,24 @@ void pufs_decryption_test(const struct device *pufs)
 	if(lvStatus != 0) {
 		printf("%s cipher_begin_session Failed! %s\n", ATTR_ERR, ATTR_RST);
 	} else {
-		printf("%s cipher_begin_session Success! %s\n", ATTR_ERR, ATTR_RST);
+		printf("%s cipher_begin_session Success! %s\n", ATTR_INF, ATTR_RST);
+		
+		printf("%s(%d) outAddress:0x%08x\r\n", __func__, __LINE__, (uint32_t)decrypted_text);
+		printf("OriginalPlaintext:%s\n", plain_text);
+		printf("OriginalPlaintext:%s\n", plain_text);
 	}
 
-	lvStatus = 	cipher_ctr_op(&lvCipherCtx, &lvCipherPkt, iv);		
+	lvStatus = 	cipher_ctr_op(&lvCipherCtx, &lvCipherPkt, (uint8_t*)iv);		
 	if(lvStatus != 0) {
-		printf("%s cipher_ctr_op Failed! %s\n", ATTR_ERR, ATTR_RST);
+		printf("%s cipher_ctr_op Failed! Status:%d %s\n", ATTR_ERR, lvStatus, ATTR_RST);
 	} else {
-		printf("%s cipher_ctr_op Success! %s\n", ATTR_ERR, ATTR_RST);
+		printf("%s cipher_ctr_op Success! %s\n", ATTR_INF, ATTR_RST);
+		printf("Decrypted:%d bytes Got:%s\n", lvCipherPkt.out_len, lvCipherPkt.out_buf);
+		if(strcmp(plain_text, decrypted_text) != 0) {
+			printf("%s cipher decryption Failed! %s\n", ATTR_ERR, ATTR_RST);
+		} else {
+			printf("%s cipher decryption Passed! %s\n", ATTR_INF, ATTR_RST);
+		}
 	}
 
 	lvStatus = cipher_free_session(pufs, &lvCipherCtx);

@@ -167,7 +167,7 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
 
   ((struct pufs_data*)ctx->device->data)->pufs_pkt.cipher_pkt = pkt;
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.cipher_ctx = ctx;
-
+  
   lvStatus = pufcc_decrypt_aes(
                                 (uint32_t)pkt->out_buf, (uint32_t)pkt->in_buf,
                                 (uint32_t)pkt->in_len, pkt->prev_len, ctx->key_source,
@@ -182,31 +182,6 @@ static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *
   }
 
   return 0;
-}
-
-/* Following cipher operations (block, cbc, ccm and gcm) are not supported yet.
- */
-__unused static int pufs_block_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
-{
-  return -ENOSYS;
-}
-
-__unused static int pufs_cbc_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
-			uint8_t *iv)
-{
-  return -ENOSYS;
-}
-
-__unused static int pufs_ccm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOSYS;
-}
-
-__unused static int pufs_gcm_op(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
-			 uint8_t *nonce)
-{
-  return -ENOSYS;
 }
 
 static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx *ctx,
@@ -236,10 +211,6 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
     return -ENOTSUP;
   } else {
     ctx->ops.ctr_crypt_hndlr = pufs_ctr_op;
-    ctx->ops.block_crypt_hndlr = pufs_block_op;
-    ctx->ops.cbc_crypt_hndlr = pufs_cbc_op;
-    ctx->ops.ccm_crypt_hndlr = pufs_ccm_op;
-    ctx->ops.gcm_crypt_hndlr = pufs_gcm_op;
   }
 
   if(op_type != CRYPTO_CIPHER_OP_DECRYPT) {

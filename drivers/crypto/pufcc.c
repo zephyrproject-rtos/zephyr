@@ -392,7 +392,8 @@ enum pufcc_status pufcc_decrypt_aes(uint32_t out_addr, uint32_t in_addr,
                                     bool readback_iv) {
   enum pufcc_status status;
   uint32_t temp32;
-
+  printf("%s(%d) outAddress:0x%08x inLength:%d in_addr:0x%08x keylen:%d key_addr:0x%08x key_type:%d\r\n", \
+  __func__, __LINE__, out_addr, in_len, in_addr, key_len, key_addr, key_type);
   // Configure DMA intrpt register
   temp32 = 0;
   struct pufcc_intrpt_reg *intrpt_reg = (struct pufcc_intrpt_reg *)&temp32;

@@ -325,7 +325,6 @@ static inline int cipher_ctr_op(struct cipher_ctx *ctx,
 {
 	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CTR, "CTR mode "
 		 "session invoking a different mode handler");
-
 	pkt->ctx = ctx;
 	return ctx->ops.ctr_crypt_hndlr(ctx, pkt, iv);
 }
