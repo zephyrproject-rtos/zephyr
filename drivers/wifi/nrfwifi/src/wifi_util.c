@@ -287,7 +287,7 @@ static int nrf_wifi_util_tx_stats(const struct shell *sh,
 
 	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
 	if (!ctx->rpu_ctx) {
-		shell_fprintf(shell,
+		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "RPU context not initialized\n");
 		ret = -ENOEXEC;
@@ -482,7 +482,7 @@ static int nrf_wifi_util_dump_rpu_stats(const struct shell *sh,
 
 	k_mutex_lock(&ctx->rpu_lock, K_FOREVER);
 	if (!ctx->rpu_ctx) {
-		shell_fprintf(shell,
+		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "RPU context not initialized\n");
 		ret = -ENOEXEC;
