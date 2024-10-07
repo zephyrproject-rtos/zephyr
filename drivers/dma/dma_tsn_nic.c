@@ -102,8 +102,8 @@ static int dma_tsn_nic_config(const struct device *dev, uint32_t channel, struct
 	return -ENOTSUP;
 }
 
-static int dma_tsn_nic_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
-			     size_t size)
+static int dma_tsn_nic_reload(const struct device *dev, uint32_t channel, uint32_t src,
+			      uint32_t dst, size_t size)
 {
 	return -ENOTSUP;
 }
@@ -141,7 +141,7 @@ static int dma_tsn_nic_resume(const struct device *dev, uint32_t channel)
 }
 
 static int dma_tsn_nic_get_status(const struct device *dev, uint32_t channel,
-				 struct dma_status *status)
+				  struct dma_status *status)
 {
 	return -ENOTSUP;
 }
@@ -214,20 +214,21 @@ static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 	return 0;
 }
 
-static int map_bar(const struct device *dev, int idx, size_t size) {
+static int map_bar(const struct device *dev, int idx, size_t size)
+{
 	const struct dma_tsn_nic_config *config = dev->config;
 	struct dma_tsn_nic_data *data = dev->data;
 	uintptr_t bar_addr, bus_addr;
 	bool ret;
 
-	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(idx, 0, 0), true,
-					false, XDMA_CONFIG_BAR_SIZE, &bus_addr);
+	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(idx, 0, 0), true, false,
+					XDMA_CONFIG_BAR_SIZE, &bus_addr);
 	if (!ret) {
 		return -EINVAL;
 	}
 
-	ret = pcie_ctrl_region_translate(config->pci_dev, PCIE_BDF(idx, 0, 0), true,
-					 false, bus_addr, &bar_addr);
+	ret = pcie_ctrl_region_translate(config->pci_dev, PCIE_BDF(idx, 0, 0), true, false,
+					 bus_addr, &bar_addr);
 	if (!ret) {
 		return -EINVAL;
 	}
@@ -286,14 +287,14 @@ static int dma_tsn_nic_init(const struct device *dev)
 }
 
 /* TODO: POST_KERNEL is set to use printk, revert this after the development is done */
-#define DMA_TSN_NIC_INIT(n)                                                                         \
-	static struct dma_tsn_nic_data dma_tsn_nic_data_##n = {};                                    \
+#define DMA_TSN_NIC_INIT(n)                                                                        \
+	static struct dma_tsn_nic_data dma_tsn_nic_data_##n = {};                                  \
                                                                                                    \
-	static const struct dma_tsn_nic_config dma_tsn_nic_cfg_##n = {                               \
+	static const struct dma_tsn_nic_config dma_tsn_nic_cfg_##n = {                             \
 		.pci_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(n))),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, dma_tsn_nic_init, NULL, &dma_tsn_nic_data_##n, &dma_tsn_nic_cfg_##n, \
-			      POST_KERNEL, 98, &dma_tsn_nic_api);
+	DEVICE_DT_INST_DEFINE(n, dma_tsn_nic_init, NULL, &dma_tsn_nic_data_##n,                    \
+			      &dma_tsn_nic_cfg_##n, POST_KERNEL, 98, &dma_tsn_nic_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_TSN_NIC_INIT)

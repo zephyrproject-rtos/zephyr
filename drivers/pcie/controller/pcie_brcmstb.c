@@ -251,8 +251,8 @@ void pcie_brcmstb_conf_write(const struct device *dev, pcie_bdf_t bdf, unsigned 
 	sys_write32(data, conf_addr);
 }
 
-static inline enum pcie_region_type
-pcie_brcmstb_determine_region_type(const struct device *dev, bool mem, bool mem64)
+static inline enum pcie_region_type pcie_brcmstb_determine_region_type(const struct device *dev,
+								       bool mem, bool mem64)
 {
 	struct pcie_brcmstb_data *data = dev->data;
 	if (!mem) {
@@ -278,7 +278,9 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 
 	printk("bdf 0%x\n", bdf);
 	// TODO: check bdf boundary
-	addr = (((data->regions[type].bus_start + config->regs[PCIE_BDF_TO_BUS(bdf) + 1].addr + data->regions[type].allocation_offset) - 1) |
+	addr = (((data->regions[type].bus_start + config->regs[PCIE_BDF_TO_BUS(bdf) + 1].addr +
+		  data->regions[type].allocation_offset) -
+		 1) |
 		((bar_size)-1)) +
 	       1;
 
