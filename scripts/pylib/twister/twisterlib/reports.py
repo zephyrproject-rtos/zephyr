@@ -243,7 +243,7 @@ class Reporting:
                     classname = f"{platform}:{name}"
                     log = ts.get("log")
                     fails, passes, errors, skips = self.xunit_testcase(eleTestsuite,
-                        name, classname, ts_status, ts_status, reason, duration, runnable,
+                        name, classname, ts_status, ts_status, reason, handler_time, runnable,
                         (fails, passes, errors, skips), log, False)
 
             total = errors + passes + fails + skips
