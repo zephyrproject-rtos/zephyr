@@ -277,7 +277,7 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 	uintptr_t addr;
 
 	printk("bdf 0%x\n", bdf);
-	// TODO: check bdf boundary
+	/* TODO: check bdf boundary */
 	addr = (((data->regions[type].bus_start + config->regs[PCIE_BDF_TO_BUS(bdf) + 1].addr +
 		  data->regions[type].allocation_offset) -
 		 1) |
@@ -289,7 +289,7 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 	}
 
 	*bar_bus_addr = addr;
-	// data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
+	/* data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size; */
 	printk("alloc 0x%lx\n", addr);
 
 	return true;
@@ -355,9 +355,11 @@ static bool pcie_brcmstb_region_translate(const struct device *dev, pcie_bdf_t b
 	struct pcie_brcmstb_data *data = dev->data;
 	enum pcie_region_type type;
 
-	// if (bar_bus_addr == 0) {
-	// 	return false;
-	// }
+	/*
+	if (bar_bus_addr == 0) {
+		return false;
+	}
+	*/
 
 	type = pcie_brcmstb_determine_region_type(dev, mem, mem64);
 
@@ -399,9 +401,11 @@ static int pcie_brcmstb_parse_regions(const struct device *dev)
 		data->regions[type].bus_start = config->common->ranges[i].pcie_bus_addr;
 		data->regions[type].phys_start = config->common->ranges[i].host_map_addr;
 		data->regions[type].size = config->common->ranges[i].map_length;
-		// if (data->regions[type].bus_start < 0x1000) {
-		// 	data->regions[type].allocation_offset = 0x1000;
-		// }
+		/*
+		if (data->regions[type].bus_start < 0x1000) {
+			data->regions[type].allocation_offset = 0x1000;
+		}
+		*/
 	}
 
 	if (!data->regions[PCIE_REGION_IO].size && !data->regions[PCIE_REGION_MEM].size &&
@@ -618,6 +622,7 @@ static int pcie_brcmstb_init(const struct device *dev)
 	k_busy_wait(500000);
 
 	mm_reg_t asdf;
+
 	device_map(&asdf, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
 	printk("H2C 0x%x\n", sys_read32(asdf));
 	printk("C2H 0x%x\n", sys_read32(asdf + 0x1000));
