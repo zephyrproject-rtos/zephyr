@@ -150,28 +150,6 @@ static int print_formatted(const struct log_output *output,
 	return length;
 }
 
-static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
-			 void *ctx)
-{
-	int processed;
-
-	while (len != 0) {
-		processed = outf(buf, len, ctx);
-		len -= processed;
-		buf += processed;
-	}
-}
-
-
-void log_output_flush(const struct log_output *output)
-{
-	buffer_write(output->func, output->buf,
-		     output->control_block->offset,
-		     output->control_block->ctx);
-
-	output->control_block->offset = 0;
-}
-
 static inline bool is_leap_year(uint32_t year)
 {
 	return (((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0));
@@ -785,11 +763,9 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
-	buffer_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1,
-		     output->control_block->ctx);
-	buffer_write(outf, buf, len, output->control_block->ctx);
-	buffer_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1,
-		     output->control_block->ctx);
+	log_output_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, output->control_block->ctx);
+	log_output_write(outf, buf, len, output->control_block->ctx);
+	log_output_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, output->control_block->ctx);
 }
 
 void log_output_timestamp_freq_set(uint32_t frequency)
