@@ -5,4 +5,4 @@ tests:
   pm.system: {}
   pm.system.no.device.pm:
     extra_args:
-      - OVERLAY_CONFIG="no-device-pm.conf"
+      - EXTRA_CONF_FILE="no-device-pm.conf"
