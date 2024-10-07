@@ -11,6 +11,14 @@ zephyr_library_sources(
   i3c_common.c
 )
 
+if(CONFIG_I3C_NUM_OF_DESC_MEM_SLABS GREATER 0)
+  zephyr_library_sources(i3c_mem_slab.c)
+endif()
+
+if(CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS GREATER 0)
+  zephyr_library_sources(i3c_i2c_mem_slab.c)
+endif()
+
 zephyr_library_sources_ifdef(
   CONFIG_USERSPACE
   i3c_handlers.c

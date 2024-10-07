@@ -318,6 +318,11 @@ int i3c_detach_i3c_device(struct i3c_device_desc *target)
 	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots,
 				 target->dynamic_addr ? target->dynamic_addr : target->static_addr);
 
+	/* if it was from allocated memory, free it */
+	if (i3c_device_desc_in_pool(target)) {
+		i3c_device_desc_free(target);
+	}
+
 	return status;
 }
 
@@ -370,8 +375,170 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 
 	i3c_addr_slots_mark_free(&data->attached_dev.addr_slots, target->addr);
 
+	/* if it was from allocated memory, free it */
+	if (i3c_i2c_device_desc_in_pool(target)) {
+		i3c_i2c_device_desc_free(target);
+	}
+
 	return status;
 }
+
+int i3c_sec_get_basic_info(const struct device *dev,
+	uint8_t dynamic_addr, uint8_t static_addr, uint8_t bcr, uint8_t dcr)
+{
+	struct i3c_ccc_getpid getpid;
+	struct i3c_device_desc temp_desc;
+	struct i3c_device_desc *desc;
+	struct i3c_device_id id;
+	const struct i3c_driver_config *config = dev->config;
+	int ret;
+
+	*(const struct device **)&temp_desc.bus = dev;
+	temp_desc.dynamic_addr = dynamic_addr;
+	temp_desc.bcr = bcr;
+	temp_desc.dcr = dcr;
+	/* attach it first with a temperary value so we can at least get the pid */
+	ret = i3c_attach_i3c_device(&temp_desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* First try to look up if this is a known device in the list by PID */
+	ret = i3c_ccc_do_getpid(&temp_desc, &getpid);
+	if (ret != 0) {
+		return ret;
+	}
+
+	*(uint64_t *)&id = sys_get_be48(getpid.pid);
+
+	/* try to see if we already have a device statically allocated */
+	desc = i3c_dev_list_find(&config->dev_list, &id);
+	if (!desc) {
+		/* device was not found so allocate a descriptor */
+		desc = i3c_device_desc_alloc();
+		if (!desc) {
+			return -ENOMEM;
+		}
+		*(uint64_t *)&desc->pid = id.pid;
+		*(uint16_t *)&temp_desc.static_addr = (uint16_t)static_addr;
+	}
+	desc->dynamic_addr = dynamic_addr;
+	desc->bcr = bcr;
+	desc->dcr = dcr;
+
+	/* Detach that temporary device */
+	ret = i3c_detach_i3c_device(&temp_desc);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = i3c_attach_i3c_device(desc);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Skip reading BCR and DCR as they came from DEFTGTS */
+	ret = i3c_device_adv_info_get(desc);
+
+	return ret;
+}
+
+int i3c_sec_i2c_attach(const struct device *dev, uint8_t static_addr, uint8_t lvr)
+{
+	struct i3c_i2c_device_desc *i2c_desc;
+	int ret;
+
+	/* try to see if we already have a device statically allocated */
+	i2c_desc = i3c_dev_list_i2c_addr_find(dev, (uint16_t)static_addr);
+	if (!i2c_desc) {
+		/* device was not found so allocate a descriptor */
+		i2c_desc = i3c_i2c_device_desc_alloc();
+		if (!i2c_desc) {
+			return -ENOMEM;
+		}
+		*(const struct device **)&i2c_desc->bus = dev;
+		*(uint16_t *)&i2c_desc->addr = (uint16_t)static_addr;
+		*(uint8_t *)&i2c_desc->lvr = lvr;
+	}
+
+	ret = i3c_attach_i2c_device(i2c_desc);
+	return ret;
+}
+
+static void i3c_sec_bus_reset(const struct device *dev)
+{
+	struct i3c_device_desc *i3c_desc;
+	struct i3c_i2c_device_desc *i3c_i2c_desc;
+
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
+		i3c_detach_i3c_device(i3c_desc);
+	}
+
+	I3C_BUS_FOR_EACH_I2CDEV(dev, i3c_i2c_desc) {
+		i3c_detach_i2c_device(i3c_i2c_desc);
+	}
+}
+#ifdef CONFIG_I3C_USE_IBI
+/* call this from a workq after the interrupt from a controller */
+void i3c_sec_handoffed(struct k_work *work)
+{
+	struct i3c_ibi_work *ibi_node = CONTAINER_OF(work, struct i3c_ibi_work, work);
+	const struct device *dev = ibi_node->controller;
+	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
+	struct i3c_ccc_deftgts *deftgts = data->deftgts;
+	struct i3c_config_target config_target;
+	uint8_t n, cur_dyn_addr;
+	int ret;
+
+	if (!deftgts) {
+		LOG_ERR("Did not receive DEFTGTS before Handoff");
+		return;
+	}
+
+	if (!data->deftgts_refreshed) {
+		LOG_DBG("Already processed DEFTGTS from previous handoff");
+		return;
+	}
+
+	/* Forget all devices as another controller made changes */
+	i3c_sec_bus_reset(dev);
+
+	/*
+	 * Retrieve the active controller information
+	 */
+	ret = i3c_config_get(dev, I3C_CONFIG_TARGET, &config_target);
+	if (ret != 0) {
+		LOG_ERR("Failed to retrieve active controller info");
+		return;
+	}
+
+	cur_dyn_addr = config_target.dynamic_addr;
+
+	/* Attach the previous AC */
+	ret = i3c_sec_get_basic_info(dev, deftgts->active_controller.addr,
+				deftgts->active_controller.static_addr,
+				deftgts->active_controller.bcr,
+				deftgts->active_controller.dcr);
+
+	/* Attach all Targets */
+	for (n = 0; n < deftgts->count; n++) {
+		if (deftgts->targets[n].addr != 0) {
+			/* Must be an I3C device and skip itself */
+			if (deftgts->targets[n].addr != cur_dyn_addr) {
+				ret = i3c_sec_get_basic_info(dev, deftgts->targets[n].addr,
+					deftgts->targets[n].static_addr, deftgts->targets[n].bcr,
+					deftgts->targets[n].dcr);
+			}
+		} else {
+			/* Must be an I2C device */
+			ret = i3c_sec_i2c_attach(dev, deftgts->targets[n].static_addr,
+				deftgts->targets[n].lvr);
+		}
+	}
+
+	/* Set false, so the next handoff doesn't retrigger regathering info */
+	data->deftgts_refreshed = false;
+}
+#endif
 
 int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 				 const struct i3c_dev_list *dev_list,
@@ -388,6 +555,10 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
 
 	desc = i3c_dev_list_find(dev_list, &i3c_id);
+	/* If a device was not found, try to allocate a descriptor */
+	if (desc == NULL) {
+		desc = i3c_device_desc_alloc();
+	}
 	if (must_match && (desc == NULL)) {
 		/*
 		 * No device descriptor matching incoming PID and
@@ -975,8 +1146,6 @@ int i3c_bus_init(const struct device *dev, const struct i3c_dev_list *dev_list)
 	/*
 	 * Only re-enable Hot-Join from targets.
 	 * Target interrupts will be enabled when IBI is enabled.
-	 * And transferring controller role is not supported so not need to
-	 * enable the event.
 	 */
 	i3c_events.events = I3C_CCC_EVT_HJ;
 	ret = i3c_ccc_do_events_all_set(dev, true, &i3c_events);
