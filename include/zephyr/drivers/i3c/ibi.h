@@ -185,6 +185,21 @@ int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 				    uint8_t *payload, size_t payload_len);
 
 /**
+ * @brief Queue a controllership request IBI for future processing.
+ *
+ * This queues up a controllership request IBI in the IBI workqueue
+ * for future processing.
+ *
+ * @param target Pointer to target device descriptor.
+ *
+ * @retval 0 If work item is successfully queued.
+ * @retval -ENOMEM If no more free internal node to
+ *                 store IBI work item.
+ * @retval Others @see k_work_submit_to_queue
+ */
+int i3c_ibi_work_enqueue_controller_request(struct i3c_device_desc *target);
+
+/**
  * @brief Queue a hot join IBI for future processing.
  *
  * This queues up a hot join IBI in the IBI workqueue
