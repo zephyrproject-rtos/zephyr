@@ -12,18 +12,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-static void buffer_write(log_output_func_t outf, uint8_t *buf, size_t len,
-			 void *ctx)
-{
-	int processed;
-
-	do {
-		processed = outf(buf, len, ctx);
-		len -= processed;
-		buf += processed;
-	} while (len != 0);
-}
-
 void log_dict_output_msg_process(const struct log_output *output,
 				 struct log_msg *msg, uint32_t flags)
 {
@@ -44,19 +32,19 @@ void log_dict_output_msg_process(const struct log_output *output,
 					log_const_source_id(source)) :
 				0U;
 
-	buffer_write(output->func, (uint8_t *)&output_hdr, sizeof(output_hdr),
-		     (void *)output->control_block->ctx);
+	log_output_write(output->func, (uint8_t *)&output_hdr, sizeof(output_hdr),
+			 (void *)output->control_block->ctx);
 
 	size_t len;
 	uint8_t *data = log_msg_get_package(msg, &len);
 
 	if (len > 0U) {
-		buffer_write(output->func, data, len, (void *)output->control_block->ctx);
+		log_output_write(output->func, data, len, (void *)output->control_block->ctx);
 	}
 
 	data = log_msg_get_data(msg, &len);
 	if (len > 0U) {
-		buffer_write(output->func, data, len, (void *)output->control_block->ctx);
+		log_output_write(output->func, data, len, (void *)output->control_block->ctx);
 	}
 
 	log_output_flush(output);
@@ -69,6 +57,6 @@ void log_dict_output_dropped_process(const struct log_output *output, uint32_t c
 	msg.type = MSG_DROPPED_MSG;
 	msg.num_dropped_messages = MIN(cnt, 9999);
 
-	buffer_write(output->func, (uint8_t *)&msg, sizeof(msg),
-		     (void *)output->control_block->ctx);
+	log_output_write(output->func, (uint8_t *)&msg, sizeof(msg),
+			 (void *)output->control_block->ctx);
 }
