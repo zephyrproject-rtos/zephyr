@@ -18,7 +18,7 @@ tests:
     # Tests overwrite EEPROM content, only run on select boards
     extra_args:
       - DTC_OVERLAY_FILE=at2x_emul.overlay
-      - OVERLAY_CONFIG=at2x_emul.conf
+      - EXTRA_CONF_FILE=at2x_emul.conf
     platform_allow:
       - native_sim
       - native_sim/native/64
