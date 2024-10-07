@@ -136,39 +136,39 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
 )
 
 if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
-message(WARNING "
-------------------------------------------------------------------------
-Building only the nRF70 driver, skipping firmware patch.
-This is only for building (CI) purposes and will not work on a real device.
-------------------------------------------------------------------------
-")
+  message(WARNING "
+  ------------------------------------------------------------------------
+  Building only the nRF70 driver, skipping firmware patch.
+  This is only for building (CI) purposes and will not work on a real device.
+  ------------------------------------------------------------------------
+  ")
 else()
-# RPU FW patch binaries based on the selected configuration
-if(CONFIG_NRF70_SYSTEM_MODE)
-  set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
-elseif(CONFIG_NRF70_RADIO_TEST)
-  set(NRF70_PATCH ${FW_BINS_BASE}/radio_test/nrf70.bin)
-elseif(CONFIG_NRF70_SCAN_ONLY)
-  set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
-elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
-  set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
-else()
-  # Error
-  message(FATAL_ERROR "Unsupported nRF70 patch configuration")
-endif()
+  # RPU FW patch binaries based on the selected configuration
+  if(CONFIG_NRF70_SYSTEM_MODE)
+    set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
+  elseif(CONFIG_NRF70_RADIO_TEST)
+    set(NRF70_PATCH ${FW_BINS_BASE}/radio_test/nrf70.bin)
+  elseif(CONFIG_NRF70_SCAN_ONLY)
+    set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
+  elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
+    set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
+  else()
+    # Error
+    message(FATAL_ERROR "Unsupported nRF70 patch configuration")
+  endif()
 
-if(NOT EXISTS ${NRF70_PATCH})
-  message(FATAL_ERROR "
-    ------------------------------------------------------------------------
-    Missing blobs for nRF70 device driver, please install by running:
-        $ west update
-        $ west blobs fetch hal_nordic
-    ------------------------------------------------------------------------")
-endif()
+  if(NOT EXISTS ${NRF70_PATCH})
+    message(FATAL_ERROR "
+      ------------------------------------------------------------------------
+      Missing blobs for nRF70 device driver, please install by running:
+          $ west update
+          $ west blobs fetch hal_nordic
+      ------------------------------------------------------------------------")
+  endif()
 
-zephyr_compile_definitions(
-  -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
-)
+  zephyr_compile_definitions(
+    -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
+  )
 endif()
 
 
