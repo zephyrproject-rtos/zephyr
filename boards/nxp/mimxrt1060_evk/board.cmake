@@ -4,13 +4,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+if(NOT ("${BOARD_QUALIFIERS}" MATCHES "qspi"
+      OR "${BOARD_QUALIFIERS}" MATCHES "hyperflash"))
+  message(FATAL_ERROR "Please specify a board flash variant for the mimxrt1060_evk:\n"
+                      "mimxrt1060_evk/mimxrt1062/qspi or mimxrt1060_evk/mimxrt1062/hyperflash\n")
+endif()
+
 board_runner_args(pyocd "--target=mimxrt1060")
 board_runner_args(jlink "--device=MIMXRT1062xxx6A")
 board_runner_args(linkserver  "--device=MIMXRT1062xxxxA:EVK-MIMXRT1060")
 
-if (("${BOARD_REVISION}" STREQUAL "qspi") OR CONFIG_BOARD_MIMXRT1060_EVKB)
+if(("${BOARD_QUALIFIERS}" MATCHES "qspi") OR ("${BOARD_REVISION}" STREQUAL "B"))
   board_runner_args(jlink "--loader=BankAddr=0x60000000&Loader=QSPI")
-elseif ("${BOARD_REVISION}" STREQUAL "hyperflash")
+elseif ("${BOARD_QUALIFIERS}" MATCHES "hyperflash")
   board_runner_args(jlink "--loader=BankAddr=0x60000000&Loader=HyperFlash")
 endif()
 
