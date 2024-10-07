@@ -119,16 +119,12 @@
 				//interrupt-parent = <&ace_intc>;
 			};
 
-			eth: ethernet@1b08000000 {
+			eth: ethernet {
 				#address-cells = <2>;
 				#size-cells = <1>;
-				reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
+				//reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
 				status = "okay";
 				compatible = "tsnlab,tsn-nic-eth";
-
-				//eth_mac: ethernet {
-					//status = "okay";
-				//};
 			};
 		};
 
