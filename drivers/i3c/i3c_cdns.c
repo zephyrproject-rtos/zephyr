@@ -300,6 +300,7 @@
 #define DDR_CRC_TOKEN      (0xC << 14)
 #define DDR_CRC_TOKEN_MASK GENMASK(17, 14)
 #define DDR_CRC(t)         (((t) & (GENMASK(13, 9))) >> 9)
+#define DDR_CRC_WR_SETUP   BIT(8)
 
 #define CMD_IBI_THR_CTRL 0x90
 #define IBIR_THR(t)      ((t) << 24)
@@ -2245,7 +2246,8 @@ static int cdns_i3c_transfer(const struct device *dev, struct i3c_device_desc *t
 						crc5,
 						sys_get_be16((void *)((uintptr_t)cmd->buf + j)));
 				}
-				cmd->ddr_crc = DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN | (crc5 << 9);
+				cmd->ddr_crc = DDR_PREAMBLE_CMD_CRC | DDR_CRC_TOKEN | (crc5 << 9) |
+					       DDR_CRC_WR_SETUP;
 			}
 			/* Length of DDR Transfer is length of payload (in 16b) + header and CRC
 			 * blocks
