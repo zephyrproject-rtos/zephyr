@@ -770,8 +770,8 @@ class Property:
       if 'spec.enum_tokenizable' returns True.
 
     enum_index:
-      The index of 'val' in 'spec.enum' (which comes from the 'enum:' list
-      in the binding), or None if spec.enum is None.
+      The index of 'val' (list of indexes for array types) in 'spec.enum' (which
+      comes from the 'enum:' list in the binding), or None if spec.enum is None.
     """
 
     spec: PropertySpec
@@ -800,9 +800,11 @@ class Property:
         return str_as_token(self.val)
 
     @property
-    def enum_index(self) -> Optional[int]:
+    def enum_index(self) -> Optional[Union[int, list[int]]]:
         "See the class docstring"
         enum = self.spec.enum
+        if enum and isinstance(self.val, list):
+            return list(map(enum.index, self.val))
         return enum.index(self.val) if enum else None
 
 
@@ -1519,10 +1521,11 @@ class Node:
             return
 
         enum = prop_spec.enum
-        if enum and val not in enum:
-            _err(f"value of property '{name}' on {self.path} in "
-                 f"{self.edt.dts_path} ({val!r}) is not in 'enum' list in "
-                 f"{self.binding_path} ({enum!r})")
+        for v in val if isinstance(val, list) else [val]:
+            if enum and v not in enum:
+                _err(f"value of property '{name}' on {self.path} in "
+                     f"{self.edt.dts_path} ({v!r}) is not in 'enum' list in "
+                     f"{self.binding_path} ({enum!r})")
 
         const = prop_spec.const
         if const is not None and val != const:
