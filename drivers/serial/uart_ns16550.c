@@ -525,6 +525,18 @@ static uint32_t get_ite_uart_baudrate_divisor(const struct device *dev,
 }
 #endif
 
+static inline int ns16550_read_char(const struct device *dev, unsigned char *c)
+{
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	if ((ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_RXRDY) != 0) {
+		*c = ns16550_inbyte(dev_cfg, RDR(dev));
+		return 0;
+	}
+
+	return -1;
+}
+
 static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t pclk)
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
@@ -556,7 +568,7 @@ static int uart_ns16550_configure(const struct device *dev,
 {
 	struct uart_ns16550_dev_data * const dev_data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
-	uint8_t mdc = 0U;
+	uint8_t mdc = 0U, c;
 	uint32_t pclk = 0U;
 
 	/* temp for return value if error occurs in this locked region */
@@ -703,7 +715,7 @@ static int uart_ns16550_configure(const struct device *dev,
 	}
 
 	/* clear the port */
-	ns16550_inbyte(dev_cfg, RDR(dev));
+	(void)ns16550_read_char(dev, &c);
 
 	/* disable interrupts  */
 	ns16550_outbyte(dev_cfg, IER(dev), 0x00);
@@ -880,15 +892,10 @@ static int uart_ns16550_init(const struct device *dev)
 static int uart_ns16550_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
-	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	int ret = -1;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if ((ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_RXRDY) != 0) {
-		/* got a character */
-		*c = ns16550_inbyte(dev_cfg, RDR(dev));
-		ret = 0;
-	}
+	ret = ns16550_read_char(dev, c);
 
 	k_spin_unlock(&data->lock, key);
 
@@ -984,12 +991,10 @@ static int uart_ns16550_fifo_read(const struct device *dev, uint8_t *rx_data,
 				  const int size)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
-	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	int i;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	for (i = 0; (i < size) && (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_RXRDY) != 0; i++) {
-		rx_data[i] = ns16550_inbyte(dev_cfg, RDR(dev));
+	for (i = 0; (i < size) && (ns16550_read_char(dev, &rx_data[i]) != -1); i++) {
 	}
 
 	k_spin_unlock(&data->lock, key);
