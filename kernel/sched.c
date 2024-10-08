@@ -35,7 +35,7 @@ struct k_spinlock _sched_spinlock;
  */
 __incoherent struct k_thread _thread_dummy;
 
-static void update_cache(int preempt_ok);
+static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
@@ -320,7 +320,7 @@ static void update_metairq_preempt(struct k_thread *thread)
  */
 }
 
-static void update_cache(int preempt_ok)
+static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
 	struct k_thread *thread = next_up();
