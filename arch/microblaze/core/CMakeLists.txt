@@ -29,4 +29,8 @@ zephyr_library_sources(
 	thread.c
 )
 
+if (CONFIG_MINIMAL_LIBC)
+	zephyr_library_sources(sbrk.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
