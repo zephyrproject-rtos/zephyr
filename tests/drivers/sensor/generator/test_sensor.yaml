@@ -3,6 +3,7 @@ deps:
 compatible:
   org: "zephyr"
   part: "test-sensor"
+supported-buses: ["i2c"]
 attributes:
   - attribute: "attr0"
     channel: "foo"

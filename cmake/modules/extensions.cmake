@@ -39,6 +39,8 @@ include(CheckCXXCompilerFlag)
 # 7.2 add_llext_* build control functions
 # 7.3 llext helper functions
 # 8. Script mode handling
+# 9 Miscellaneous functions and macros
+# 9.1 Sensor Library
 
 ########################################################
 # 1. Zephyr-aware extensions
@@ -5468,6 +5470,68 @@ macro(zephyr_check_flags_exclusive function prefix)
   endif()
 endmacro()
 
+#
+# Wrapper around cmake_parse_arguments that fails with an error if any arguments
+# remained unparsed or a required argument was not provided.
+#
+# All parsed arguments are prefixed with "arg_". This helper can only be used
+# by functions, not macros.
+#
+# Required Arguments:
+#
+#   NUM_POSITIONAL_ARGS - PARSE_ARGV <N> arguments for
+#                              cmake_parse_arguments
+#
+# Optional Args:
+#
+#   OPTION_ARGS - <option> arguments for cmake_parse_arguments
+#   ONE_VALUE_ARGS - <one_value_keywords> arguments for cmake_parse_arguments
+#   MULTI_VALUE_ARGS - <multi_value_keywords> arguments for
+#                           cmake_parse_arguments
+#   REQUIRED_ARGS - required arguments which must be set, these may any
+#                        argument type (<option>, <one_value_keywords>, and/or
+#                        <multi_value_keywords>)
+#
+macro(zephyr_parse_arguments)
+  # First parse the arguments to this macro.
+  cmake_parse_arguments(
+    z_parse_arg "" "NUM_POSITIONAL_ARGS"
+    "OPTION_ARGS;ONE_VALUE_ARGS;MULTI_VALUE_ARGS;REQUIRED_ARGS"
+    ${ARGN}
+  )
+  zephyr_check_arguments_required("zephyr_parse_arguments" "z_parse_arg" NUM_POSITIONAL_ARGS)
+  if(NOT "${z_parse_arg_UNPARSED_ARGUMENTS}" STREQUAL "")
+    message(FATAL_ERROR "Unexpected arguments to zephyr_parse_arguments: "
+            "${z_parse_arg_UNPARSED_ARGUMENTS}")
+  endif()
+
+  # Now that we have the macro's arguments, process the caller's arguments.
+  zephyr_parse_arguments_strict("${CMAKE_CURRENT_FUNCTION}"
+    "${z_parse_arg_NUM_POSITIONAL_ARGS}"
+    "${z_parse_arg_OPTION_ARGS}"
+    "${z_parse_arg_ONE_VALUE_ARGS}"
+    "${z_parse_arg_MULTI_VALUE_ARGS}"
+  )
+  zephyr_check_arguments_required("${CMAKE_CURRENT_FUNCTION}" "arg"
+                  ${z_parse_arg_REQUIRED_ARGS})
+endmacro()
+
+#
+# Wrapper around cmake_parse_arguments that fails with an error if any arguments
+# remained unparsed.
+macro(zephyr_parse_arguments_strict function start_arg options one multi)
+  cmake_parse_arguments(PARSE_ARGV
+      "${start_arg}" arg "${options}" "${one}" "${multi}"
+  )
+  if(NOT "${arg_UNPARSED_ARGUMENTS}" STREQUAL "")
+    set(_all_args ${options} ${one} ${multi})
+    message(FATAL_ERROR
+        "Unexpected arguments to ${function}: ${arg_UNPARSED_ARGUMENTS}\n"
+        "Valid arguments: ${_all_args}"
+    )
+  endif()
+endmacro()
+
 ########################################################
 # 7. Linkable loadable extensions (llext)
 ########################################################
@@ -5884,3 +5948,127 @@ if(CMAKE_SCRIPT_MODE_FILE)
     #                         'Remember to create a YAML context'
   endfunction()
 endif()
+
+# 9 Miscellaneous helper functions
+
+# 9.1 Sensor Library
+# Generates a sensor library
+#
+# Args:
+#   OUT_HEADER: The path/to/header.h to generate
+#   SOURCES: YAML files defining sensors
+#   OUT_INCLUDES: [optional] The include path to expose in the final library, if
+#     not defined, the root of the 'out_header' will be used so including the
+#     header will be done via '#include "path/to/header.h"'
+#   INPUTS: [optional] YAML files included by the sensors, these will be
+#     used to optimize re-building.
+#   GENERATOR: [optional] Python generator script, if not set, the default
+#     Pigweed generator will be used.
+#   GENERATOR_ARGS: [optional] Command line arguments to pass to the generator.
+#   GENERATOR_INCLUDES: [optional] Include paths to pass to the generator. These
+#     are used to resolve the sensor dependencies.
+#   PUBLIC_DEPS: [optional] Public dependencies to pass to the final generated
+#     target.
+#
+# Example use:
+# sensor_library(my_sensors
+#   OUT_HEADER
+#     ${CMAKE_BINARY_DIR}/generated/include/my/app/sensors.h
+#   OUT_INCLUDES
+#     ${CMAKE_BINARY_DIR}/generated/include
+#   SOURCES
+#     sensors/bma4xx.yaml
+#     sensors/bmi160.yaml
+#   INPUTS
+#     sensors/attributes.yaml
+#     sensors/channels.yaml
+#     sensors/triggers.yaml
+#     sensors/units.yaml
+#   GENERATOR
+#     scripts/sensor_header_generator.py
+#   GENERATOR_ARGS
+#     -v
+#     -experimental
+#   GENERATOR_INCLUDES
+#     ${CMAKE_CURRENT_LIST_DIR}
+#   PUBLIC_DEPS
+#     pw_sensor.types
+#     pw_containers
+# )
+function(sensor_library NAME)
+  zephyr_parse_arguments(
+    NUM_POSITIONAL_ARGS
+      1
+    MULTI_VALUE_ARGS
+      INPUTS
+      GENERATOR_INCLUDES
+      SOURCES
+      GENERATOR_ARGS
+      PUBLIC_DEPS
+      OUT_INCLUDES
+    ONE_VALUE_ARGS
+      OUT_HEADER
+      GENERATOR
+    REQUIRED_ARGS
+      GENERATOR_INCLUDES
+      SOURCES
+      OUT_HEADER
+  )
+
+  if("${arg_GENERATOR}" STREQUAL "")
+    #set(arg_GENERATOR "$ENV{PW_ROOT}/pw_sensor/py/pw_sensor/constants_generator.py")
+    set(arg_GENERATOR "pw_sensor.constants_generator")
+
+    if("${arg_GENERATOR_ARGS}" STREQUAL "")
+      set(arg_GENERATOR_ARGS --package pw.sensor)
+    endif()
+  endif()
+
+  if(IS_ABSOLUTE "${arg_OUT_HEADER}")
+    if(NOT ${arg_OUT_INCLUDES})
+      message(FATAL_ERROR "Invalid absolute path OUT_HEADER=${arg_OUT_HEADER}, missing OUT_INCLUDES")
+    endif()
+
+    set(output_file "${arg_OUT_HEADER}")
+  else()
+    set(output_file "${CMAKE_CURRENT_BINARY_DIR}/${arg_OUT_HEADER}")
+    if("${arg_OUT_INCLUDES}" STREQUAL "")
+      set(arg_OUT_INCLUDES "${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+  endif()
+
+  string(REPLACE ";" " " generator_args "${arg_GENERATOR_ARGS}")
+
+  set(include_list)
+
+  foreach(item IN LISTS arg_GENERATOR_INCLUDES)
+    list(APPEND include_list "-I" "${item}")
+  endforeach()
+
+  add_custom_command(
+    OUTPUT ${output_file}
+    COMMAND python3 -m pw_sensor.sensor_desc
+      ${include_list}
+      -g "python3 ${arg_GENERATOR} ${generator_args}"
+      -o ${output_file}
+      ${arg_SOURCES}
+    DEPENDS
+      # ${arg_GENERATOR}
+      # $ENV{PW_ROOT}/pw_sensor/py/pw_sensor/sensor_desc.py
+      ${arg_INPUTS}
+      ${arg_SOURCES}
+  )
+  add_custom_target(${NAME}.__generate_constants
+    DEPENDS
+    ${output_file}
+  )
+  add_library(${NAME} STATIC
+      ${output_file}
+  )
+  target_link_libraries(${NAME} PUBLIC ${arg_PUBLIC_DEPS})
+  target_include_directories(${NAME} PUBLIC
+      ${arg_OUT_INCLUDES}
+  )
+  add_dependencies(${NAME} ${NAME}.__generate_constants)
+  set_target_properties(${NAME} PROPERTIES LINKER_LANGUAGE CXX)
+endfunction(sensor_library)

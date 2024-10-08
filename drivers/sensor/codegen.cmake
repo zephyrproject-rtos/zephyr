@@ -1,12 +1,12 @@
 set(ENV{PW_ROOT} "${ZEPHYR_PIGWEED_MODULE_DIR}")
-include(${ZEPHYR_PIGWEED_MODULE_DIR}/pw_sensor/sensor.cmake)
+# include(${ZEPHYR_PIGWEED_MODULE_DIR}/pw_sensor/sensor.cmake)
 set(sensor_yaml_search_path "${ZEPHYR_BASE}/drivers/sensor")
 file(GLOB_RECURSE sensor_yaml_files RELATIVE ${sensor_yaml_search_path}
     "${sensor_yaml_search_path}/**/sensor.yaml"
 )
 list(TRANSFORM sensor_yaml_files PREPEND "${sensor_yaml_search_path}/")
 
-pw_sensor_library(zephyr_sensor.constants
+sensor_library(zephyr_sensor.constants
   OUT_HEADER
     ${CMAKE_BINARY_DIR}/zephyr/generated/sensor_constants.h
   GENERATOR
