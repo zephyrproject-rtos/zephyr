@@ -24,7 +24,3 @@ properties:
 
       The allowed values for this property are in the range [1..256].
       Values above that range will be 8-bit-masked.
-
-  low-freq-select:
-    type: boolean
-    description: select low-frequency input clock source.

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/npcm_clock.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
@@ -35,8 +36,6 @@ struct counter_npcm_itim32_config {
 	uintptr_t base;
 	/* Clock configuration */
 	struct npcm_clk_cfg clk_cfg;
-	/* select low-frequency input source */
-	bool lf_select;
 	/* prescaler that use to divide input source frequency */
 	uint8_t prescaler;
 	void (*irq_config_func)(const struct device *dev);
@@ -277,7 +276,7 @@ static int counter_npcm_itim32_init(const struct device *dev)
 		BIT(NPCM_ITCTS_TO_STS);
 
 	/* Select low-frequency input clock source and change src freq to LF */
-	if (config->lf_select == true) {
+	if (config->clk_cfg.bus == NPCM_CLOCK_BUS_LFCLK) {
 		data->freq = LF_CYCLES_PER_SEC;
 		itcts |= BIT(NPCM_ITCTS_CKSEL);
 	}
@@ -323,7 +322,6 @@ static const struct counter_driver_api counter_npcm_itim32_driver_api = {
 		},                                                                                  \
 		.base = DT_INST_REG_ADDR(id),                                                       \
 		.clk_cfg = NPCM_DT_CLK_CFG_ITEM(id),                                                \
-		.lf_select = DT_INST_PROP_OR(id, low_freq_select, false),                           \
 		.prescaler = DT_INST_PROP(id, prescaler),				            \
 		.irq_config_func = counter_npcm_itim32_irq_config_##id,	                            \
 	};                                                                                          \

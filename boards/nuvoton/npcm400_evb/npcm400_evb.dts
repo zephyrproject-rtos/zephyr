@@ -211,7 +211,6 @@
 };
 
 &timer1 {
-	low-freq-select;
 	prescaler = <2>;
 	status = "okay";
 };
