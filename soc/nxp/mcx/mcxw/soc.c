@@ -158,6 +158,10 @@ static ALWAYS_INLINE void clock_init(void)
 	if (IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN)) {
 		CLOCK_EnableClock(kCLOCK_Can0);
 	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(vref), nxp_vref, okay)) {
+		CLOCK_EnableClock(kCLOCK_Vref0);
+	}
 }
 
 static void vbat_init(void)
