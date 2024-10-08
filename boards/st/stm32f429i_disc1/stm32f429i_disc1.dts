@@ -242,7 +242,6 @@
 	height = <320>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 	display-timings {
-		compatible = "zephyr,panel-timing";
 		de-active = <0>;
 		pixelclk-active = <0>;
 		hsync-active = <0>;

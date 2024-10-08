@@ -12,3 +12,6 @@ properties:
     description: |
       Initial Pixel format for panel attached to this controller.
       See dt-bindings/display/panel.h for a list
+
+child-binding:
+  include: panel-timing.yaml

@@ -65,7 +65,6 @@
 	 * driver IC.
 	 */
 	display-timings {
-		compatible = "zephyr,panel-timing";
 		hsync-len = <2>;
 		hfront-porch = <2>;
 		hback-porch = <3>;

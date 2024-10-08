@@ -39,7 +39,6 @@
 	width = <720>;
 	height = <1280>;
 	display-timings {
-		compatible = "zephyr,panel-timing";
 		hsync-len = <8>;
 		hfront-porch = <32>;
 		hback-porch = <32>;
