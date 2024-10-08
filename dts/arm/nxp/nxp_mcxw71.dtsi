@@ -317,6 +317,19 @@
 		clk-source = <2>;
 		status = "disabled";
 	};
+
+	vref: regulator@4a000 {
+		compatible = "nxp,vref";
+		regulator-name = "mcxw71-vref";
+		reg = <0x4a000 0x20>;
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <20>;
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <2100000>;
+		nxp,current-compensation-en;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {
