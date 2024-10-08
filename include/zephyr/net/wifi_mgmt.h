@@ -113,6 +113,8 @@ enum net_request_wifi_cmd {
 	/** Connect to APs stored using wifi_credentials library. */
 	NET_REQUEST_WIFI_CMD_CONNECT_STORED,
 #endif
+	/** AP WPS config */
+	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
