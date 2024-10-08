@@ -50,6 +50,10 @@
 	};
 };
 
+&vref {
+	status = "okay";
+};
+
 &gpioc {
 	status = "okay";
 };
