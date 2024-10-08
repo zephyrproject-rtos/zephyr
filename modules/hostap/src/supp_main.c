@@ -104,6 +104,9 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 	.iface_status = supplicant_ap_status,
+#ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
+	.wps_config = supplicant_ap_wps_config,
+#endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
