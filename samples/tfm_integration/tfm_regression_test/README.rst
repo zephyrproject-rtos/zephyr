@@ -8,9 +8,6 @@ Overview
 
 Run both the Secure and Non-secure TF-M Regression tests using the Zephyr build system.
 
-The build system will replace the Zephyr application with the Non-Secure TF-M test application,
-while the Secure tests will be included in the TF-M build itself.
-
 The TF-M regression tests are implemented in the tf-m-tests repo: https://git.trustedfirmware.org/TF-M/tf-m-tests.git/
 
 This sample is available for platforms that are supported in the trusted-firmware-m repo: https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/

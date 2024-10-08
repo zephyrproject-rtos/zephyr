@@ -5,12 +5,11 @@
  */
 
 #include <zephyr/kernel.h>
+#include "non_secure_suites.h"
 
 int main(void)
 {
-	printk("Should not be printed, expected TF-M's NS application to be run instead.\n");
-	k_panic();
+	ns_reg_test_start();
 
-	for (;;) {
-	}
+	return 0;
 }
