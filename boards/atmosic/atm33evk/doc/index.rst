@@ -179,7 +179,7 @@ BLE Link Controller Options
 ---------------------------
 When building a Bluetooth application (``CONFIG_BT``) the BLE driver component provides two link controller options. A fixed BLE link controller image and a statically linked BLE link controller library.  The BLE link controller sits at the lowest layer of the Zephyr Bluetooth protocol stack.  Zephyr provides the upper Bluetooth Host stack that can interface with BLE link controllers that conform to the standard Bluetooth Host Controller Interface specification.
 
-To review how the fixed and statically linked controllers are used, please refer to the README.rst in modules/hal/atmosic/ATM33xx-5/drivers/ble/.
+To review how the fixed and statically linked controllers are used, please refer to the README.rst in modules/hal_atmosic/ATM33xx-5/drivers/ble/.
 
 If the ATM33 entropy driver is enabled without CONFIG_BT=y (mainly for evaluation), the system still requires a minimal BLE controller stack.  Without choosing a specific stack configuration an appopriate minimal BLE controller will be selected.  This may increase the size of your application.
 
@@ -281,7 +281,7 @@ With MCUBoot::
 Using -w [flavor] and -l [flavor] Options
 -----------------------------------------
 
-The ``-w`` option selects the use of the fixed BLE controller stack image.  The flavor parameter can be ``LL`` or ``PD50LL``. The ``-l`` option selects for the statically linked BLE controller library.  The flavor can be PD50.  The ``-l`` flag is mutually exclusive with the ``-w`` option.  When using the ``-l`` option the build will recover memory resources reserved for the fixed image BLE controller and provide them to the NSPE image.  The ``-w`` option should not be used to flash the ATMWSTK when the application has already been built and installed using the ``-l`` option.  Flashing the fixed BLE controller on top of an existing install that uses the static library may corrupt the installed image.
+See modules/hal_atmosic/ATM33xx-5/drivers/ble/README.rst for an explanation of different BLE controller options. The ``-w`` option selects the use of the fixed BLE controller stack image.  The flavor parameter can be ``LL`` or ``PD50LL``. The ``-l`` option selects for the statically linked BLE controller library.  The flavor can be PD50.  The ``-l`` flag is mutually exclusive with the ``-w`` option.  When using the ``-l`` option the build will recover memory resources reserved for the fixed image BLE controller and provide them to the NSPE image.  The ``-w`` option should not be used to flash the ATMWSTK when the application has already been built and installed using the ``-l`` option.  Flashing the fixed BLE controller on top of an existing install that uses the static library may corrupt the installed image.
 
 Using the Support Script on Windows
 -----------------------------------
