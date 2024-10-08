@@ -164,16 +164,23 @@ static int pufs_query_hw_caps(const struct device *dev)
 static int pufs_ctr_op(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *ctr)
 {
   enum pufcc_status lvStatus = PUFCC_SUCCESS;
+  enum pufcc_dma_rw_type write_type;
 
   ((struct pufs_data*)ctx->device->data)->pufs_pkt.cipher_pkt = pkt;
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.cipher_ctx = ctx;
+
+  if(pkt->auto_increment) { 
+    write_type = AUTO_INCREMENT;
+  } else {
+    write_type = FIXED_RW;
+  }
   
   lvStatus = pufcc_decrypt_aes(
                                 (uint32_t)pkt->out_buf, (uint32_t)pkt->in_buf,
                                 (uint32_t)pkt->in_len, pkt->prev_len, ctx->key_source,
                                 (uint32_t)ctx->key.bit_stream, ctx->keylen, (uint32_t)ctr,
                                 (uint32_t)ctx->mode_params.ctr_info.ctr_len, 
-                                pkt->auto_increment, ctx->mode_params.ctr_info.readback_ctr
+                                write_type, ctx->mode_params.ctr_info.readback_ctr
                               );
   
   if(lvStatus != PUFCC_SUCCESS) {
