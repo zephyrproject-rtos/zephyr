@@ -59,18 +59,17 @@
 	status = "okay";
 };
 
-&clk_msis {
+&clk_hse {
 	status = "okay";
-	msi-range = <4>;
-	msi-pll-mode;
+	clock-frequency = <DT_FREQ_M(16)>;
 };
 
 &pll1 {
 	div-m = <1>;
-	mul-n = <80>;
+	mul-n = <20>;
 	div-q = <2>;
 	div-r = <2>;
-	clocks = <&clk_msis>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 
