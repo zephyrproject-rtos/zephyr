@@ -830,8 +830,6 @@
 		reg = <0x10d000 0x1000>;
 		interrupts = <45 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		power-level = <0>;
@@ -847,8 +845,6 @@
 		reg = <0x10e000 0x1000>;
 		interrupts = <46 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <0>;
 		calibration-average = <128>;
 		power-level = <1>;
