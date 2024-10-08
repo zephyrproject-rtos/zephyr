@@ -88,10 +88,6 @@ static cy_stc_syspm_callback_t _ifx_cat1_rtc_pm_cb = {
  */
 #define WCO_PULSE_SETS_TO_PPB(wps) (wps * 78125 / 72)
 
-struct ifx_cat1_rtc_config {
-	uint32_t irqn;
-};
-
 struct ifx_cat1_rtc_data {
 	struct k_spinlock lock;
 };
@@ -340,10 +336,8 @@ static const struct rtc_driver_api ifx_cat1_rtc_driver_api = {
 #define INFINEON_CAT1_RTC_INIT(n)                                                                  \
 	static struct ifx_cat1_rtc_data ifx_cat1_rtc_data##n;                                      \
                                                                                                    \
-	static const struct ifx_cat1_rtc_config ifx_cat1_rtc_cfg##n;                               \
-                                                                                                   \
 	DEVICE_DT_INST_DEFINE(n, ifx_cat1_rtc_init, NULL, &ifx_cat1_rtc_data##n,                   \
-			      &ifx_cat1_rtc_cfg##n, PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY,        \
+			      NULL, PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY,        \
 			      &ifx_cat1_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_RTC_INIT)
