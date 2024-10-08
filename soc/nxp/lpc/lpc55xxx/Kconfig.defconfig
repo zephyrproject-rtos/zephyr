@@ -74,7 +74,7 @@ endchoice
 
 endif # SOC_LPC55S36
 
-if SOC_LPC55S69
+if SOC_LPC55S69_CPU0
 
 config SOC_FLASH_MCUX
 	default y
@@ -88,7 +88,7 @@ endchoice
 config I2S_MCUX_FLEXCOMM
 	select INIT_PLL0
 
-endif # SOC_LPC55S69
+endif # SOC_LPC55S69_CPU0
 
 if SOC_LPC55S69_CPU1
 
