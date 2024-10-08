@@ -71,6 +71,8 @@ The ``frdm_mcxw71`` board target in Zephyr currently supports the following feat
 +-----------+------------+-------------------------------------+
 | FLEXCAN   | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
+| VREF      | on-chip    | regulator                           |
++-----------+------------+-------------------------------------+
 
 Fetch Binary Blobs
 ******************
