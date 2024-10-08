@@ -11,6 +11,7 @@ toolchain:
 supported:
   - can
   - counter
+  - display
   - dma
   - eeprom
   - netif:eth
