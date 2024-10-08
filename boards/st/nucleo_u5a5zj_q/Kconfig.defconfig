@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Marcin Niestroj
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault USB_DC_STM32_CLOCK_CHECK
+	default n

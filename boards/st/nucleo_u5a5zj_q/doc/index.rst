@@ -204,6 +204,8 @@ The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB high-speed host/device bus      |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.

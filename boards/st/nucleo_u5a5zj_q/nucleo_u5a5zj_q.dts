@@ -32,6 +32,14 @@
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 	};
+
+	soc {
+		usbphyc: usbphyc@40017c00 {
+			compatible = "st,stm32-usbphyc";
+			reg = <0x40017c00 0x400>;
+			#phy-cells = <0>;
+		};
+	};
 };
 
 &flash0 {
@@ -72,5 +80,14 @@
 };
 
 &gpdma1 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x0000c000>,
+		 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>;
+	phys = <&usbphyc>;
 	status = "okay";
 };
