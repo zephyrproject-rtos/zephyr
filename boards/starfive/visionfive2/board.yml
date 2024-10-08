@@ -3,6 +3,7 @@
 
 board:
   name: visionfive2
+  full_name: VisionFive 2 JH7110
   vendor: starfive
   socs:
     - name: jh7110

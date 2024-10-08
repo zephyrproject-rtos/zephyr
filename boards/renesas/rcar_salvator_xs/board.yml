@@ -1,5 +1,6 @@
 board:
   name: rcar_salvator_xs
+  full_name: R-CAR Salvator XS M3 ARM CA57 (ARMv8)
   vendor: renesas
   socs:
   - name: r8a77961

@@ -1,5 +1,6 @@
 board:
   name: az3166_iotdevkit
+  full_name: AZ3166 MXChip IoT DevKit
   vendor: mxchip
   socs:
     - name: stm32f412rx

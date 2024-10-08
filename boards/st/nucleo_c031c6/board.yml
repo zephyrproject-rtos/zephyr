@@ -1,5 +1,6 @@
 board:
   name: nucleo_c031c6
+  full_name: Nucleo C031C6
   vendor: st
   socs:
     - name: stm32c031xx

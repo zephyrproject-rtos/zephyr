@@ -1,5 +1,6 @@
 board:
   name: degu_evk
+  full_name: Degu Evaluation Kit
   vendor: atmarktechno
   socs:
   - name: nrf52840

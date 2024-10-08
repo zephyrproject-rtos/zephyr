@@ -1,5 +1,6 @@
 board:
   name: imx8ulp_evk
+  full_name: i.MX 8ULP Evaluation Kit
   vendor: nxp
   socs:
     - name: mimx8ud7

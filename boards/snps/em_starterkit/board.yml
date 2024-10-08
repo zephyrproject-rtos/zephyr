@@ -1,5 +1,6 @@
 board:
   name: em_starterkit
+  full_name: ARC EM Starter Kit
   vendor: snps
   socs:
   - name: emsk_em7d

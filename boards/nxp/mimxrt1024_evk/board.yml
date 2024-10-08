@@ -1,5 +1,6 @@
 board:
   name: mimxrt1024_evk
+  full_name: MIMXRT1024-EVK
   vendor: nxp
   socs:
     - name: mimxrt1024

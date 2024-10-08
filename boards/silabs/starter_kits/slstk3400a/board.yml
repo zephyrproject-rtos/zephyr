@@ -1,5 +1,6 @@
 board:
   name: slstk3400a
+  full_name: EFM32 Happy Gecko (SLSTK3400A)
   vendor: silabs
   socs:
   - name: efm32hg322f64

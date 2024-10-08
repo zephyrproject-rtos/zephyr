@@ -1,5 +1,6 @@
 board:
   name: nucleo_h743zi
+  full_name: Nucleo H743ZI
   vendor: st
   socs:
     - name: stm32h743xx

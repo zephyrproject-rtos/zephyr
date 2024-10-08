@@ -1,5 +1,6 @@
 board:
   name: nucleo_l053r8
+  full_name: Nucleo L053R8
   vendor: st
   socs:
     - name: stm32l053xx

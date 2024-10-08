@@ -1,5 +1,6 @@
 board:
   name: stm32h747i_disco
+  full_name: STM32H747I Discovery
   vendor: st
   socs:
     - name: stm32h747xx

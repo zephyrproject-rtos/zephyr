@@ -1,5 +1,6 @@
 board:
   name: frdm_k64f
+  full_name: FRDM-K64F
   vendor: nxp
   socs:
     - name: mk64f12

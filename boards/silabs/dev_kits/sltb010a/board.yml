@@ -1,5 +1,6 @@
 boards:
   - name: sltb010a
+    full_name: EFR32BG22 Thunderboard (SLTB010A)
     vendor: silabs
     socs:
       - name: efr32bg22c224f512im40

@@ -1,5 +1,6 @@
 board:
   name: beaglev_fire
+  full_name: BeagleV®-Fire
   vendor: beagle
   socs:
   - name: polarfire

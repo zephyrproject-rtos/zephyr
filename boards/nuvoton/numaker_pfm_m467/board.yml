@@ -1,5 +1,6 @@
 board:
   name: numaker_pfm_m467
+  full_name: NUMAKER PFM M467
   vendor: nuvoton
   socs:
   - name: m467

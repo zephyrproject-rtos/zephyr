@@ -1,5 +1,6 @@
 board:
   name: nucleo_f722ze
+  full_name: Nucleo F722ZE
   vendor: st
   socs:
     - name: stm32f722xx

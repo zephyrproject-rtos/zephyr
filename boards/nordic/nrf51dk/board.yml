@@ -1,5 +1,6 @@
 board:
   name: nrf51dk
+  full_name: nRF51 DK
   vendor: nordic
   socs:
   - name: nrf51822

@@ -1,5 +1,6 @@
 board:
   name: pico_pi
+  full_name: Pico-Pi i.MX7D - Android Things IoT Development Platform
   vendor: technexion
   socs:
     - name: mcimx7d

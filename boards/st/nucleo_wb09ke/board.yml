@@ -1,5 +1,6 @@
 board:
   name: nucleo_wb09ke
+  full_name: Nucleo WB09KE
   vendor: st
   socs:
     - name: stm32wb09

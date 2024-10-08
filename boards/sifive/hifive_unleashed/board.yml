@@ -1,5 +1,6 @@
 board:
   name: hifive_unleashed
+  full_name: HiFive Unleashed
   vendor: sifive
   socs:
     - name: fu540

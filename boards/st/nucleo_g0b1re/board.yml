@@ -1,5 +1,6 @@
 board:
   name: nucleo_g0b1re
+  full_name: Nucleo G0B1RE
   vendor: st
   socs:
     - name: stm32g0b1xx

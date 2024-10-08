@@ -1,5 +1,6 @@
 board:
   name: actinius_icarus_som
+  full_name: Icarus SoM
   vendor: actinius
   socs:
   - name: nrf9160

@@ -1,5 +1,6 @@
 board:
   name: ubx_bmd360eval
+  full_name: "EVK-BMD-360: BMD-360-EVAL"
   vendor: u-blox
   socs:
   - name: nrf52811
