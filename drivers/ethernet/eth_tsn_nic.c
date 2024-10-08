@@ -56,7 +56,7 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 	/* TODO: sw-257 (Misc. APIs) */
 	return -ENOTSUP;
 }
-#endif
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 static int eth_tsn_nic_start(const struct device *dev)
 {
@@ -97,7 +97,7 @@ static int eth_tsn_nic_vlan_setup(const struct device *dev, struct net_if *iface
 	/* TODO: sw-257 (Misc. APIs) or a new issue */
 	return -ENOTSUP;
 }
-#endif
+#endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
 static const struct device *eth_tsn_nic_get_ptp_clock(const struct device *dev)
@@ -105,7 +105,7 @@ static const struct device *eth_tsn_nic_get_ptp_clock(const struct device *dev)
 	/* TODO: sw-290 (PTP) */
 	return NULL;
 }
-#endif
+#endif /* CONFIG_PTP_CLOCK */
 
 static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 {
@@ -124,7 +124,7 @@ static const struct ethernet_api eth_tsn_nic_api = {
 	.iface_api.init = eth_tsn_nic_iface_init,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = eth_tsn_nic_get_stats,
-#endif
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 	.start = eth_tsn_nic_start,
 	.stop = eth_tsn_nic_stop,
 	.get_capabilities = eth_tsn_nic_get_capabilities,
@@ -132,10 +132,10 @@ static const struct ethernet_api eth_tsn_nic_api = {
 	.get_config = eth_tsn_nic_get_config,
 #if defined(CONFIG_NET_VLAN)
 	.vlan_setup = eth_tsn_nic_vlan_setup,
-#endif
+#endif /* CONFIG_NET_VLAN */
 #if defined(CONFIG_PTP_CLOCK)
 	.get_ptp_clock = eth_tsn_nic_get_ptp_clock,
-#endif
+#endif /* CONFIG_PTP_CLOCK */
 	.get_phy = eth_tsn_nic_get_phy,
 	.send = eth_tsn_nic_send,
 };
