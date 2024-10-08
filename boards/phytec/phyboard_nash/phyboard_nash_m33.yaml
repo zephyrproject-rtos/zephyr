@@ -1,0 +1,15 @@
+# Copyright 2024 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: phyboard_nash/mimx9352/m33
+name: PHYTEC phyBOARD Nash (i.MX93) M33
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+flash: 128
+supported:
+  - uart
+vendor: phytec
