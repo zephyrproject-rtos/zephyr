@@ -979,8 +979,6 @@
 			reg = <0x40050000 0x304>;
 			interrupts = <88 0>;
 			status = "disabled";
-			clk-divider = <8>;
-			clk-source = <0>;
 			voltage-ref= <1>;
 			calibration-average = <128>;
 			power-level = <0>;
