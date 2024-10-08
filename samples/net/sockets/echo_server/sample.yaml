@@ -142,3 +142,6 @@ tests:
       - native_sim/native/64
     extra_args:
       - OVERLAY_CONFIG="overlay-nsos.conf"
+  sample.net.sockets.echo_server.802154.subg:
+    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    platform_allow: beagleconnect_freedom
