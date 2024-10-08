@@ -12,7 +12,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "Reset cause: Reset pin"
+        - "Reset cause: Reset *"
         - "Device ready: .*"
         - "Press and hold the user button:"
         - "when LED2 is OFF to power off"

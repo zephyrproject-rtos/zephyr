@@ -100,19 +100,20 @@ int main(void)
 	hwinfo_get_reset_cause(&cause);
 	hwinfo_clear_reset_cause();
 
-	if (cause == RESET_LOW_POWER_WAKE)	{
+	if (cause == RESET_LOW_POWER_WAKE) {
 		hwinfo_clear_reset_cause();
 		printk("\nReset cause: Standby mode\n\n");
 	}
-
 	if (cause == (RESET_PIN | RESET_BROWNOUT)) {
 		printk("\nReset cause: Shutdown mode or power up\n\n");
 	}
-
 	if (cause == RESET_PIN) {
 		printk("\nReset cause: Reset pin\n\n");
 	}
-
+	/* After flashing the reset cause is  0x3 : RESET_SOFTWARE | RESET_PIN */
+	if ((cause & RESET_SOFTWARE) == RESET_SOFTWARE) {
+		printk("\nReset cause: Reset soft\n\n");
+	}
 
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 	if (!gpio_is_ready_dt(&button)) {
