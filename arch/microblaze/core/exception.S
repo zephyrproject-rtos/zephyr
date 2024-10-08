@@ -28,7 +28,7 @@
 _exception_handler_entry:
 
 	/* Make room for the context on the stack. */
-	STACK_ALLOC(__z_arch_esf_t_SIZEOF)
+	STACK_ALLOC(__struct_arch_esf_SIZEOF)
 	ASSERT_GT_ZERO(r1, _asm_stack_failed)
 
 	/* Take a copy of the stack pointer at the moment w/ context stored,

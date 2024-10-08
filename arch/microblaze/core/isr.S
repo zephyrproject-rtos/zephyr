@@ -19,7 +19,7 @@
 .global _interrupt_handler
 
 /* The context is oversized to allow functions called from the ISR to write
- * back into the caller stack. The size is defined as __z_arch_esf_t_SIZEOF in offsets.c
+ * back into the caller stack. The size is defined as __struct_arch_esf_SIZEOF in offsets.c
  */
 
 /* Offsets from the stack pointer at which saved registers are placed.
@@ -31,7 +31,7 @@
 
 _interrupt_handler:
 	/* Make room for the context on the stack. */
-	STACK_ALLOC(__z_arch_esf_t_SIZEOF)
+	STACK_ALLOC(__struct_arch_esf_SIZEOF)
 	ASSERT_GT_ZERO(r1, _asm_stack_failed)
 
 	PUSH_CONTEXT_TO_STACK(r31)
@@ -229,4 +229,4 @@ _isr_interrupt_exit:
 	/* Put the stack pointer back where it was when we entered
 	 * exception state i.e. remove the stack frame.
 	 */
-	STACK_FREE(__z_arch_esf_t_SIZEOF)
+	STACK_FREE(__struct_arch_esf_SIZEOF)

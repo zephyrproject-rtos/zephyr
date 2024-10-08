@@ -139,13 +139,13 @@ FUNC_NORETURN void _Fault(uint32_t esr, uint32_t ear, uint32_t edr)
 	 */
 
 	__ASSERT_NO_MSG(stack_pointer_on_exception_entry);
-	z_arch_esf_t *sp_ptr = (z_arch_esf_t *)stack_pointer_on_exception_entry;
+	struct arch_esf *sp_ptr = (struct arch_esf *)stack_pointer_on_exception_entry;
 
 	/* Obtain the values of registers that were stacked prior to this function
 	 * being called, and may have changed since they were stacked.
 	 */
 	microblaze_register_dump.esf = *sp_ptr;
-	microblaze_register_dump.esf.r1 = ((uint32_t)sp_ptr) + sizeof(z_arch_esf_t);
+	microblaze_register_dump.esf.r1 = ((uint32_t)sp_ptr) + sizeof(struct arch_esf);
 	microblaze_register_dump.esr = esr;
 	microblaze_register_dump.ear = ear;
 	microblaze_register_dump.edr = edr;

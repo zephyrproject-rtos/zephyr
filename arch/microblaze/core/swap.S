@@ -28,7 +28,7 @@
 SECTION_FUNC(exception.other, arch_swap)
 
 	/* Make room for the context on the stack. */
-	STACK_ALLOC(__z_arch_esf_t_SIZEOF)
+	STACK_ALLOC(__struct_arch_esf_SIZEOF)
 	ASSERT_GT_ZERO(r1, _asm_stack_failed)
 
 	/* Populate default return value */
@@ -200,7 +200,7 @@ _arch_swap_check_key:
 
 _arch_swap_unlock_irq:
 	POP_CONTEXT_FROM_STACK(TEMP_DATA_REG)
-	STACK_FREE(__z_arch_esf_t_SIZEOF)
+	STACK_FREE(__struct_arch_esf_SIZEOF)
 /* BEGIN microblaze_enable_interrupts() */
 #if CONFIG_MICROBLAZE_USE_MSR_INSTR == 1
 	/* r10 was being used as a temporary. Now restore its true value from the stack. */
@@ -225,4 +225,4 @@ _arch_swap_exit:
 	/* r10 was being used as a temporary. Now restore its true value from the stack. */
 	POP_CONTEXT_FROM_STACK(TEMP_DATA_REG)
 	rtsd r14, 0
-	STACK_FREE(__z_arch_esf_t_SIZEOF)
+	STACK_FREE(__struct_arch_esf_SIZEOF)

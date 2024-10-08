@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-struct __esf {
+struct arch_esf {
 
 	uint32_t r31; /*  Must be saved across function calls. Callee-save. */
 	uint32_t r30; /*  Must be saved across function calls. Callee-save. */
@@ -62,12 +62,10 @@ struct __esf {
 #endif
 };
 
-typedef struct __esf z_arch_esf_t;
-
 typedef struct __microblaze_register_dump {
 
 	_callee_saved_t callee_saved;
-	z_arch_esf_t esf;
+	struct arch_esf esf;
 
 	/* Other SFRs */
 	uint32_t pc;

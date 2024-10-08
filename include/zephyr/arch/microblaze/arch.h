@@ -11,7 +11,7 @@
 #define ZEPHYR_INCLUDE_ARCH_MICROBLAZE_ARCH_H_
 
 #include <zephyr/arch/common/ffs.h>
-#include <zephyr/arch/microblaze/exp.h>
+#include <zephyr/arch/microblaze/exception.h>
 #include <zephyr/arch/microblaze/sys_bitops.h>
 #include <zephyr/arch/microblaze/sys_io.h>
 #include <zephyr/arch/microblaze/thread.h>

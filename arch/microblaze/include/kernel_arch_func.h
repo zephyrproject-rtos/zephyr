@@ -33,7 +33,7 @@ static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, 
 	thread->callee_saved.retval = value;
 }
 
-FUNC_NORETURN void z_microblaze_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+FUNC_NORETURN void z_microblaze_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 static inline bool arch_is_in_isr(void)
 {

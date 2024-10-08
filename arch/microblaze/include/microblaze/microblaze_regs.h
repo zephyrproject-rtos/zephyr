@@ -24,7 +24,7 @@
 #define MSR_BIP_BIT  (31 - 28)
 #define MSR_BIP_MASK (1 << MSR_BIP_BIT)
 
-#define ESF_OFFSET(rx) __z_arch_esf_t_##rx##_OFFSET
+#define ESF_OFFSET(rx) __struct_arch_esf_##rx##_OFFSET
 
 #define XIL_EXCEPTION_ID_FIRST		   0U
 #define XIL_EXCEPTION_ID_FSL		   0U

@@ -14,11 +14,11 @@ void z_thread_entry(k_thread_entry_t thread, void *arg1, void *arg2, void *arg3)
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack, char *stack_ptr,
 				 k_thread_entry_t entry, void *arg1, void *arg2, void *arg3)
 {
-	struct __esf *stack_init;
+	struct arch_esf *stack_init;
 
 	/* Initial stack frame for thread */
 	stack_init =
-		(struct __esf *)Z_STACK_PTR_ALIGN(Z_STACK_PTR_TO_FRAME(struct __esf, stack_ptr));
+		(struct arch_esf *)Z_STACK_PTR_ALIGN(Z_STACK_PTR_TO_FRAME(struct arch_esf, stack_ptr));
 
 	/* Setup the initial stack frame */
 	stack_init->r5 = (uint32_t)entry;
