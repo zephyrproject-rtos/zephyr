@@ -1109,7 +1109,10 @@ ZTEST(libc_common, test_time_asctime)
 		.tm_year = 124, /* Year (current year - 1900) */
 	};
 
+#if !CONFIG_MICROBLAZE || CONFIG_NEWLIB_LIBC
+	/* These functions call snprintf: nothing interesting other than that */
 	zassert_not_null(asctime_r(&tp, buf));
+#endif
 	zassert_equal(strncmp("Fri Jun  1 14:30:10 2024\n", buf, sizeof(buf)), 0);
 
 	zassert_not_null(asctime(&tp));
@@ -1117,12 +1120,18 @@ ZTEST(libc_common, test_time_asctime)
 
 	if (IS_ENABLED(CONFIG_COMMON_LIBC_ASCTIME_R)) {
 		tp.tm_wday = 8;
+#if !CONFIG_MICROBLAZE || CONFIG_NEWLIB_LIBC
+	/* These functions call snprintf: nothing interesting other than that */
 		zassert_is_null(asctime_r(&tp, buf));
+#endif
 		zassert_is_null(asctime(&tp));
 
 		tp.tm_wday = 5;
 		tp.tm_mon = 12;
+#if !CONFIG_MICROBLAZE || CONFIG_NEWLIB_LIBC
+	/* These functions call snprintf: nothing interesting other than that */
 		zassert_is_null(asctime_r(&tp, buf));
+#endif
 		zassert_is_null(asctime(&tp));
 	}
 }
@@ -1162,7 +1171,10 @@ ZTEST(libc_common, test_time_ctime)
 #ifdef CONFIG_NATIVE_LIBC
 	setenv("TZ", "UTC", 1);
 #endif
+#if !CONFIG_MICROBLAZE || CONFIG_NEWLIB_LIBC
+	/* These functions call snprintf: nothing interesting other than that */
 	zassert_not_null(ctime_r(&test1, buf));
+#endif
 	zassert_equal(strncmp("Thu Jun 13 06:26:40 2024\n", buf, sizeof(buf)), 0);
 
 	zassert_not_null(ctime(&test1));
