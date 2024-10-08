@@ -372,6 +372,15 @@ void z_shell_fprintf(const struct shell *sh, enum shell_vt100_color color,
 void z_shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 		      const char *fmt, va_list args);
 
+/**
+ * @brief Flushes the shell backend receive buffer.
+ *
+ * This function repeatedly reads from the shell interface's receive buffer
+ * until it is empty or a maximum number of iterations is reached.
+ * It ensures that no additional data is left in the buffer.
+ */
+void z_shell_backend_rx_buffer_flush(const struct shell *sh);
+
 #ifdef __cplusplus
 }
 #endif

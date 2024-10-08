@@ -548,3 +548,17 @@ void z_shell_fprintf(const struct shell *sh,
 	z_shell_vfprintf(sh, color, fmt, args);
 	va_end(args);
 }
+
+void z_shell_backend_rx_buffer_flush(const struct shell *sh)
+{
+	__ASSERT_NO_MSG(sh);
+
+	int32_t max_iterations = 1000;
+	uint8_t buf[64];
+	size_t count = 0;
+	int err;
+
+	do {
+		err = sh->iface->api->read(sh->iface, buf, sizeof(buf), &count);
+	} while (count != 0 && err == 0 && --max_iterations > 0);
+}
