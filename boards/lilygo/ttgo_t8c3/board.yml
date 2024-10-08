@@ -1,5 +1,6 @@
 board:
   name: ttgo_t8c3
+  full_name: TTGO T8-C3
   vendor: lilygo
   socs:
   - name: esp32c3

@@ -1,5 +1,6 @@
 board:
   name: contextualelectronics_abc
+  full_name: Advanced BLE Cell
   vendor: contextualelectronics
   socs:
   - name: nrf52840

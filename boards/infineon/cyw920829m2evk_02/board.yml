@@ -1,5 +1,6 @@
 board:
   name: cyw920829m2evk_02
+  full_name: CYW920829M2EVK-02
   vendor: infineon
   socs:
   - name: cyw20829b0lkml

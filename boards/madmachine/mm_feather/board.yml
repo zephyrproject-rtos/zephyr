@@ -1,5 +1,6 @@
 board:
   name: mm_feather
+  full_name: SwiftIO Feather
   vendor: madmachine
   socs:
     - name: mimxrt1062

@@ -1,5 +1,6 @@
 board:
   name: innblue22
+  full_name: nRF9160 INNBLUE22
   vendor: innblue
   socs:
   - name: nrf9160

@@ -1,5 +1,6 @@
 board:
   name: nrf54h20dk
+  full_name: nRF54H20 DK
   vendor: nordic
   socs:
   - name: nrf54h20

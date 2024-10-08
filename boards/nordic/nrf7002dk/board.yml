@@ -1,5 +1,6 @@
 board:
   name: nrf7002dk
+  full_name: nRF7002 DK
   vendor: nordic
   socs:
     - name: nrf5340

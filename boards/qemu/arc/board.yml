@@ -1,5 +1,6 @@
 board:
   name: qemu_arc
+  full_name: QEMU Emulation for ARCv2 & ARCv3
   vendor: qemu
   socs:
   - name: qemu_arc_em

@@ -1,5 +1,6 @@
 board:
   name: adp_xc7k
+  full_name: ADP-XC7K AE350
   vendor: andestech
   socs:
   - name: ae350

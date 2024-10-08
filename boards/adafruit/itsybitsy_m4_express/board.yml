@@ -1,5 +1,6 @@
 board:
   name: adafruit_itsybitsy_m4_express
+  full_name: ItsyBitsy M4 Express
   vendor: adafruit
   socs:
     - name: samd51g19a

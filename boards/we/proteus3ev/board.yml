@@ -1,5 +1,6 @@
 board:
   name: we_proteus3ev
+  full_name: Proteus-III-EV
   vendor: wurth
   socs:
   - name: nrf52840

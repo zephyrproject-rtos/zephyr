@@ -1,5 +1,6 @@
 board:
   name: esp32s2_lolin_mini
+  full_name: ESP32-S2 Lolin Mini
   vendor: wemos
   socs:
   - name: esp32s2

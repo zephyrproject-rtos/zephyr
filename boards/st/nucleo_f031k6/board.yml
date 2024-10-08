@@ -1,5 +1,6 @@
 board:
   name: nucleo_f031k6
+  full_name: Nucleo F031K6
   vendor: st
   socs:
     - name: stm32f031x6

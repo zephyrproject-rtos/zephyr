@@ -1,5 +1,6 @@
 board:
   name: wio_terminal
+  full_name: Wio Terminal
   vendor: seeed
   socs:
     - name: samd51p19a

@@ -1,5 +1,6 @@
 board:
   name: nucleo_l452re
+  full_name: Nucleo L452RE
   vendor: st
   socs:
     - name: stm32l452xx
