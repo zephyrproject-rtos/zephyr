@@ -128,6 +128,10 @@ zephyr_library_sources_ifdef(CONFIG_NRF70_STA_MODE
   ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_util.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_NRF70_PROMISC_DATA_RX
+  ${OS_AGNOSTIC_BASE}/fw_if/umac_if/src/fmac_promisc.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_NRF70_ON_QSPI
   src/qspi/src/qspi_if.c
 )
