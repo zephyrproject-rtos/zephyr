@@ -574,8 +574,6 @@
 		reg = <0x13a000 0x304>;
 		interrupts = <22 0>;
 		status = "disabled";
-		clk-divider = <1>;
-		clk-source = <0>;
 		voltage-ref= <1>;
 		calibration-average = <128>;
 		power-level = <0>;
