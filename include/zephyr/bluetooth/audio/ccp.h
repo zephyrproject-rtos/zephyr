@@ -169,6 +169,17 @@ int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb 
  * @retval -EALREADY @p cb is not registered
  */
 int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_cb *cb);
+
+/**
+ * @brief Get the bearers of a client instance
+ *
+ * @param[in]  client  The client to get the bearers of.
+ * @param[out] bearers The bearers struct that will be populated with the bearers of @p inst.
+ * @retval -EINVAL @p inst or @p bearers is NULL
+ */
+int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *client,
+					   struct bt_ccp_call_control_client_bearers *bearers);
+
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus
 }
