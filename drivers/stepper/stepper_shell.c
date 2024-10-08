@@ -445,10 +445,26 @@ static void stepper_poll_thread(void *p1, void *p2, void *p3)
 	while (1) {
 		k_poll(&stepper_poll_event, 1, K_FOREVER);
 
-		if (stepper_poll_event.signal->result == STEPPER_SIGNAL_STEPS_COMPLETED) {
-			shell_print(sh, "Stepper: All steps completed");
-			k_poll_signal_reset(&stepper_signal);
+		switch (stepper_poll_event.signal->result) {
+		case STEPPER_SIGNAL_STEPS_COMPLETED:
+			shell_fprintf_info(sh, "Stepper: All steps completed.\n");
+			break;
+		case STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED:
+			shell_fprintf_info(sh, "Stepper: Sensorless stall detected.\n");
+			break;
+		case STEPPER_SIGNAL_LEFT_END_STOP_DETECTED:
+			shell_fprintf_info(sh, "Stepper: Left limit switch pressed.\n");
+			break;
+		case STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED:
+			shell_fprintf_normal(sh, "Stepper: Right limit switch pressed.\n");
+			break;
+		default:
+			shell_fprintf_error(sh, "Stepper: Unknown signal received.\n");
+			break;
 		}
+
+		k_poll_signal_reset(&stepper_signal);
+
 	}
 }
 
