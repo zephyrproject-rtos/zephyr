@@ -3,6 +3,8 @@ common:
     - native_sim
   platform_exclude:
     - qemu_cortex_m0 # settings subsystem initialization fails
+  arch_exclude:
+    - microblaze # there is no fucking filter in here...
   timeout: 120
   tags:
     - psa.secure_storage
