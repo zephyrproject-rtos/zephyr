@@ -149,11 +149,11 @@ static int eth_tsn_nic_init(const struct device *dev)
 
 	/* Test logs */
 	device_map(&test_dma_addr, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
-	printk("H2C engine id: 0x%x\n", sys_read32(tmp));
-	printk("H2C engine status: 0x%x\n", sys_read32(tmp + 0x0004));
+	printk("H2C engine id: 0x%x\n", sys_read32(test_dma_addr));
+	printk("H2C engine status: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
 	dma_start(config->dma_dev, 0);
 	printk("H2C engine start\n");
-	printk("H2C engine status: 0x%x\n", sys_read32(tmp + 0x0004));
+	printk("H2C engine status: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
 
 	/* TODO: sw-238 (Setup) */
 	/* Check xdma_netdev_open() */

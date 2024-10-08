@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* TODO: Better name */
 #define DT_DRV_COMPAT tsnlab_tsn_nic_dma
 
 #include <zephyr/logging/log.h>
@@ -16,42 +15,42 @@ LOG_MODULE_REGISTER(dma_tsn_nic, LOG_LEVEL_ERR);
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
 
-#define XDMA_ID_H2C 0x1fc0
-#define XDMA_ID_C2H 0x1fc1
+#define DMA_ID_H2C 0x1fc0
+#define DMA_ID_C2H 0x1fc1
 
-#define XDMA_CHANNEL_ID_MASK 0x00000f00
-#define XDMA_CHANNEL_ID_LSB  8
-#define XDMA_ENGINE_ID_MASK  0xffff0000
-#define XDMA_ENGINE_ID_LSB   16
+#define DMA_CHANNEL_ID_MASK 0x00000f00
+#define DMA_CHANNEL_ID_LSB  8
+#define DMA_ENGINE_ID_MASK  0xffff0000
+#define DMA_ENGINE_ID_LSB   16
 
-#define XDMA_ALIGN_BYTES_MASK       0x00ff0000
-#define XDMA_ALIGN_BYTES_LSB        16
-#define XDMA_GRANULARITY_BYTES_MASK 0x0000ff00
-#define XDMA_GRANULARITY_BYTES_LSB  8
-#define XDMA_ADDRESS_BITS_MASK      0x000000ff
-#define XDMA_ADDRESS_BITS_LSB       0
+#define DMA_ALIGN_BYTES_MASK       0x00ff0000
+#define DMA_ALIGN_BYTES_LSB        16
+#define DMA_GRANULARITY_BYTES_MASK 0x0000ff00
+#define DMA_GRANULARITY_BYTES_LSB  8
+#define DMA_ADDRESS_BITS_MASK      0x000000ff
+#define DMA_ADDRESS_BITS_LSB       0
 
-#define XDMA_CTRL_IE_DESC_STOPPED        (1UL << 1)
-#define XDMA_CTRL_IE_DESC_COMPLETED      (1UL << 2)
-#define XDMA_CTRL_IE_DESC_ALIGN_MISMATCH (1UL << 3)
-#define XDMA_CTRL_IE_MAGIC_STOPPED       (1UL << 4)
-#define XDMA_CTRL_IE_IDLE_STOPPED        (1UL << 6)
-#define XDMA_CTRL_IE_READ_ERROR          (1UL << 9)
-#define XDMA_CTRL_IE_DESC_ERROR          (1UL << 19)
+#define DMA_CTRL_IE_DESC_STOPPED        (1UL << 1)
+#define DMA_CTRL_IE_DESC_COMPLETED      (1UL << 2)
+#define DMA_CTRL_IE_DESC_ALIGN_MISMATCH (1UL << 3)
+#define DMA_CTRL_IE_MAGIC_STOPPED       (1UL << 4)
+#define DMA_CTRL_IE_IDLE_STOPPED        (1UL << 6)
+#define DMA_CTRL_IE_READ_ERROR          (1UL << 9)
+#define DMA_CTRL_IE_DESC_ERROR          (1UL << 19)
 
-#define XDMA_CTRL_NON_INCR_ADDR (1UL << 25)
+#define DMA_CTRL_NON_INCR_ADDR (1UL << 25)
 
-#define XDMA_H2C 0
-#define XDMA_C2H 1
+#define DMA_H2C 0
+#define DMA_C2H 1
 
-#define XDMA_C2H_OFFSET 0x1000
+#define DMA_C2H_OFFSET 0x1000
 
-#define XDMA_CONFIG_BAR_IDX  1
+#define DMA_CONFIG_BAR_IDX  1
 /* Size of BAR1, it needs to be hard-coded as there is no PCIe API for this */
-#define XDMA_CONFIG_BAR_SIZE 0x10000
+#define DMA_CONFIG_BAR_SIZE 0x10000
 
-#define XDMA_ENGINE_START 16268831
-#define XDMA_ENGINE_STOP  16268830
+#define DMA_ENGINE_START 16268831
+#define DMA_ENGINE_STOP  16268830
 
 struct dma_tsn_nic_config_regs {
 	uint32_t identifier;
@@ -93,7 +92,7 @@ struct dma_tsn_nic_config {
 };
 
 struct dma_tsn_nic_data {
-	mm_reg_t bar[XDMA_CONFIG_BAR_IDX + 1];
+	mm_reg_t bar[DMA_CONFIG_BAR_IDX + 1];
 	struct dma_tsn_nic_engine_regs *regs[2];
 };
 
@@ -113,8 +112,8 @@ static int dma_tsn_nic_start(const struct device *dev, uint32_t channel)
 	const struct dma_tsn_nic_data *data = dev->data;
 
 	/* There is only one channel for each direction for now */
-	sys_write32(XDMA_ENGINE_START, (mem_addr_t)&data->regs[XDMA_H2C]->control);
-	sys_write32(XDMA_ENGINE_START, (mem_addr_t)&data->regs[XDMA_C2H]->control);
+	sys_write32(DMA_ENGINE_START, (mem_addr_t)&data->regs[DMA_H2C]->control);
+	sys_write32(DMA_ENGINE_START, (mem_addr_t)&data->regs[DMA_C2H]->control);
 
 	return 0;
 }
@@ -124,8 +123,8 @@ static int dma_tsn_nic_stop(const struct device *dev, uint32_t channel)
 	const struct dma_tsn_nic_data *data = dev->data;
 
 	/* There is only one channel for each direction for now */
-	sys_write32(XDMA_ENGINE_STOP, (mem_addr_t)&data->regs[XDMA_H2C]->control);
-	sys_write32(XDMA_ENGINE_STOP, (mem_addr_t)&data->regs[XDMA_C2H]->control);
+	sys_write32(DMA_ENGINE_STOP, (mem_addr_t)&data->regs[DMA_H2C]->control);
+	sys_write32(DMA_ENGINE_STOP, (mem_addr_t)&data->regs[DMA_C2H]->control);
 
 	return 0;
 }
@@ -172,14 +171,14 @@ static int get_engine_channel_id(struct dma_tsn_nic_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
 
-	return (value & XDMA_CHANNEL_ID_MASK) >> XDMA_CHANNEL_ID_LSB;
+	return (value & DMA_CHANNEL_ID_MASK) >> DMA_CHANNEL_ID_LSB;
 }
 
 static int get_engine_id(struct dma_tsn_nic_engine_regs *regs)
 {
 	int value = sys_read32((mem_addr_t)&regs->identifier);
 
-	return (value & XDMA_ENGINE_ID_MASK) >> XDMA_ENGINE_ID_LSB;
+	return (value & DMA_ENGINE_ID_MASK) >> DMA_ENGINE_ID_LSB;
 }
 
 static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
@@ -187,27 +186,27 @@ static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 	uint32_t align_bytes, granularity_bytes, address_bits;
 	uint32_t tmp;
 
-	sys_write32(XDMA_CTRL_NON_INCR_ADDR, (mem_addr_t)&regs->control_w1c);
+	sys_write32(DMA_CTRL_NON_INCR_ADDR, (mem_addr_t)&regs->control_w1c);
 	tmp = sys_read32((mem_addr_t)&regs->alignments);
 	/* These values will be used in other operations */
 	if (tmp != 0) {
-		align_bytes = (tmp & XDMA_ALIGN_BYTES_MASK) >> XDMA_ALIGN_BYTES_LSB;
+		align_bytes = (tmp & DMA_ALIGN_BYTES_MASK) >> DMA_ALIGN_BYTES_LSB;
 		granularity_bytes =
-			(tmp & XDMA_GRANULARITY_BYTES_MASK) >> XDMA_GRANULARITY_BYTES_LSB;
-		address_bits = (tmp & XDMA_ADDRESS_BITS_MASK) >> XDMA_ADDRESS_BITS_LSB;
+			(tmp & DMA_GRANULARITY_BYTES_MASK) >> DMA_GRANULARITY_BYTES_LSB;
+		address_bits = (tmp & DMA_ADDRESS_BITS_MASK) >> DMA_ADDRESS_BITS_LSB;
 	} else {
 		align_bytes = 1;
 		granularity_bytes = 1;
 		address_bits = 64;
 	}
 
-	tmp = XDMA_CTRL_IE_DESC_ALIGN_MISMATCH;
-	tmp |= XDMA_CTRL_IE_MAGIC_STOPPED;
-	tmp |= XDMA_CTRL_IE_IDLE_STOPPED;
-	tmp |= XDMA_CTRL_IE_READ_ERROR;
-	tmp |= XDMA_CTRL_IE_DESC_ERROR;
-	tmp |= XDMA_CTRL_IE_DESC_STOPPED;
-	tmp |= XDMA_CTRL_IE_DESC_COMPLETED;
+	tmp = DMA_CTRL_IE_DESC_ALIGN_MISMATCH;
+	tmp |= DMA_CTRL_IE_MAGIC_STOPPED;
+	tmp |= DMA_CTRL_IE_IDLE_STOPPED;
+	tmp |= DMA_CTRL_IE_READ_ERROR;
+	tmp |= DMA_CTRL_IE_DESC_ERROR;
+	tmp |= DMA_CTRL_IE_DESC_STOPPED;
+	tmp |= DMA_CTRL_IE_DESC_COMPLETED;
 
 	sys_write32(tmp, (mem_addr_t)&regs->interrupt_enable_mask);
 
@@ -222,7 +221,7 @@ static int map_bar(const struct device *dev, int idx, size_t size)
 	bool ret;
 
 	ret = pcie_ctrl_region_allocate(config->pci_dev, PCIE_BDF(idx, 0, 0), true, false,
-					XDMA_CONFIG_BAR_SIZE, &bus_addr);
+					DMA_CONFIG_BAR_SIZE, &bus_addr);
 	if (!ret) {
 		return -EINVAL;
 	}
@@ -249,35 +248,35 @@ static int dma_tsn_nic_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (map_bar(dev, XDMA_CONFIG_BAR_IDX, XDMA_CONFIG_BAR_SIZE) != 0) {
+	if (map_bar(dev, DMA_CONFIG_BAR_IDX, DMA_CONFIG_BAR_SIZE) != 0) {
 		return -EINVAL;
 	}
 
-	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[XDMA_CONFIG_BAR_IDX]);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[DMA_CONFIG_BAR_IDX]);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	printk("H2C\n");
 	printk("engine_id 0x%x\n", engine_id);
 	printk("channel_id 0x%x\n", channel_id);
-	if ((engine_id != XDMA_ID_H2C) || (channel_id != 0)) {
+	if ((engine_id != DMA_ID_H2C) || (channel_id != 0)) {
 		return -EINVAL;
 	}
 
 	engine_init_regs(regs);
-	data->regs[XDMA_H2C] = regs;
+	data->regs[DMA_H2C] = regs;
 
-	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[XDMA_CONFIG_BAR_IDX] + XDMA_C2H_OFFSET);
+	regs = (struct dma_tsn_nic_engine_regs *)(data->bar[DMA_CONFIG_BAR_IDX] + DMA_C2H_OFFSET);
 	engine_id = get_engine_id(regs);
 	channel_id = get_engine_channel_id(regs);
 	printk("C2H\n");
 	printk("engine_id 0x%x\n", engine_id);
 	printk("channel_id 0x%x\n", channel_id);
-	if ((engine_id != XDMA_ID_C2H) || (channel_id != 0)) {
+	if ((engine_id != DMA_ID_C2H) || (channel_id != 0)) {
 		return -EINVAL;
 	}
 
 	engine_init_regs(regs);
-	data->regs[XDMA_C2H] = regs;
+	data->regs[DMA_C2H] = regs;
 
 	sys_write32(0x1, data->bar[0] + 0x0008);
 	sys_write32(0x800f0000, data->bar[0] + 0x0610);

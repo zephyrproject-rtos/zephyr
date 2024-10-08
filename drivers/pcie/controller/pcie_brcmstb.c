@@ -625,8 +625,8 @@ static int pcie_brcmstb_init(const struct device *dev)
 	mm_reg_t test_dma_addr;
 
 	device_map(&test_dma_addr, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
-	printk("H2C 0x%x\n", sys_read32(asdf));
-	printk("C2H 0x%x\n", sys_read32(asdf + 0x1000));
+	printk("H2C 0x%x\n", sys_read32(test_dma_addr));
+	printk("C2H 0x%x\n", sys_read32(test_dma_addr + 0x1000));
 
 	return 0;
 }
