@@ -410,7 +410,14 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	memcpy(recv_state_broadcast_code, broadcast_code, BT_AUDIO_BROADCAST_CODE_SIZE);
 }
 
+static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
+{
+	printk("Assistant scanning %s\n", is_scanning ? "started" : "stopped");
+
+}
+
 static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
+	.scanning_state = scanning_state_cb,
 	.pa_sync_req = pa_sync_req_cb,
 	.pa_sync_term_req = pa_sync_term_req_cb,
 	.bis_sync_req = bis_sync_req_cb,

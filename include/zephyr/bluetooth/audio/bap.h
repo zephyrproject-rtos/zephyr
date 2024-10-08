@@ -658,6 +658,16 @@ struct bt_bap_scan_delegator_cb {
 	int (*bis_sync_req)(struct bt_conn *conn,
 			    const struct bt_bap_scan_delegator_recv_state *recv_state,
 			    const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS]);
+	/**
+	 * @brief Broadcast Assistant scanning state callback
+	 *
+	 * Callback triggered when a Broadcast Assistant notifies the Scan Delegator about the
+	 * assistants scanning state.
+	 *
+	 * @param conn Pointer to the connection that initiated the scan.
+	 * @param is_scanning true if scanning started, false if scanning stopped.
+	 */
+	void (*scanning_state)(struct bt_conn *conn, bool is_scanning);
 };
 
 /** Structure holding information of audio stream endpoint */
