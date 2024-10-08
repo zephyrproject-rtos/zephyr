@@ -266,7 +266,7 @@ static int sys_clock_driver_init(void)
 		return status;
 	}
 
-#if !defined(CONFIG_TICKLESS_KERNEL)
+#ifdef CONFIG_TICKLESS_KERNEL
 	xlnx_tmrctr_set_reset_value(TICK_TIMER_COUNTER_NUMBER, CYCLES_NEXT_MAX);
 	xlnx_tmrctr_set_options(TICK_TIMER_COUNTER_NUMBER, XTC_CSR_ENABLE_INT_MASK |
 									 XTC_CSR_DOWN_COUNT_MASK);
