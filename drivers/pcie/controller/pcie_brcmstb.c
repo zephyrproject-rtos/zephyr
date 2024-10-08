@@ -82,8 +82,8 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO 0x400c
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI 0x4010
-#define PCIE_MEM_WIN0_LO(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO + (win) * 8)
-#define PCIE_MEM_WIN0_HI(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI + (win) * 8)
+#define PCIE_MEM_WIN0_LO(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LO + (win)*8)
+#define PCIE_MEM_WIN0_HI(win)            (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_HI + (win)*8)
 
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT            0x4070
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_LIMIT_MASK 0xfff00000
@@ -91,7 +91,7 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK  0xfff0
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_LSB   4
 
-#define PCIE_MEM_WIN0_BASE_LIMIT(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT + (win) * 4)
+#define PCIE_MEM_WIN0_BASE_LIMIT(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT + (win)*4)
 
 /* Hamming weight of PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_LIMIT_BASE_MASK */
 #define HIGH_ADDR_SHIFT 12
@@ -100,13 +100,13 @@ LOG_MODULE_REGISTER(pcie_brcmstb, LOG_LEVEL_ERR);
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_MASK 0xff
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI_BASE_LSB  0
 
-#define PCIE_MEM_WIN0_BASE_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI + (win) * 8)
+#define PCIE_MEM_WIN0_BASE_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_BASE_HI + (win)*8)
 
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI            0x4084
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_MASK 0xff
 #define PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI_LIMIT_LSB  0
 
-#define PCIE_MEM_WIN0_LIMIT_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + (win) * 8)
+#define PCIE_MEM_WIN0_LIMIT_HI(win) (PCIE_MISC_CPU_2_PCIE_MEM_WIN0_LIMIT_HI + (win)*8)
 
 #define PCIE_EXT_CFG_DATA  0x8000
 #define PCIE_EXT_CFG_INDEX 0x9000
@@ -289,7 +289,8 @@ static bool pcie_brcmstb_region_allocate_type(const struct device *dev, pcie_bdf
 	}
 
 	*bar_bus_addr = addr;
-	/* data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size; */
+	/* data->regions[type].allocation_offset = addr - data->regions[type].bus_start + bar_size;
+	 */
 	printk("alloc 0x%lx\n", addr);
 
 	return true;
