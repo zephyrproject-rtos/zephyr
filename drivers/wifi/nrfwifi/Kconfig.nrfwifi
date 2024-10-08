@@ -496,8 +496,8 @@ config WIFI_FIXED_MAC_ADDRESS
 
 choice
 	prompt "Wi-Fi MAC address type"
-	default WIFI_OTP_MAC_ADDRESS if WIFI_FIXED_MAC_ADDRESS = ""
 	default WIFI_FIXED_MAC_ADDRESS_ENABLED if WIFI_FIXED_MAC_ADDRESS != ""
+	default WIFI_OTP_MAC_ADDRESS
 	help
 	  Select the type of MAC address to be used by the Wi-Fi driver
 
