@@ -317,7 +317,7 @@ static int usb_dc_stm32_clock_enable(void)
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 #endif
 
-#if USB_OTG_HS_EMB_PHY
+#if USB_OTG_HS_EMB_PHY && defined(CONFIG_SOC_SERIES_STM32F7X)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #endif
 #endif /* USB_OTG_HS_ULPI_PHY */
