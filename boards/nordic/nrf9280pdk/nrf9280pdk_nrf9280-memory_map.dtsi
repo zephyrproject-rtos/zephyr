@@ -98,27 +98,20 @@
 			};
 		};
 
-		shared_ram20_region: memory@2f88f000 {
-			reg = <0x2f88f000 DT_SIZE_K(4)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x2f88f000 0x1000>;
+		cpuapp_cpusys_ipc_shm: memory@2f88fce0 {
+			reg = <0x2f88fce0 0x80>;
+		};
 
-			cpuapp_cpusys_ipc_shm: memory@ce0 {
-				reg = <0xce0 0x80>;
-			};
+		cpusys_cpuapp_ipc_shm: memory@2f88fd60 {
+			reg = <0x2f88fd60 0x80>;
+		};
 
-			cpusys_cpuapp_ipc_shm: memory@d60 {
-				reg = <0xd60 0x80>;
-			};
+		cpurad_cpusys_ipc_shm: memory@2f88fe00 {
+			reg = <0x2f88fe00 0x80>;
+		};
 
-			cpurad_cpusys_ipc_shm: memory@e00 {
-				reg = <0xe00 0x80>;
-			};
-
-			cpusys_cpurad_ipc_shm: memory@e80 {
-				reg = <0xe80 0x80>;
-			};
+		cpusys_cpurad_ipc_shm: memory@2f88fe80 {
+			reg = <0x2f88fe80 0x80>;
 		};
 
 		ram21_region: memory@2f890000 {
@@ -162,31 +155,24 @@
 			};
 		};
 
-		shared_ram3x_region: memory@2fc06000 {
-			reg = <0x2fc06000 DT_SIZE_K(8)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x2fc06000 0x4000>;
+		cpuapp_dma_region: memory@2fc06000 {
+			compatible = "nordic,owned-memory", "zephyr,memory-region";
+			reg = <0x2fc06000 DT_SIZE_K(4)>;
+			status = "disabled";
+			#memory-region-cells = <0>;
+			nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>;
+			zephyr,memory-region = "DMA_RAM3x_APP";
+			zephyr,memory-attr = <( DT_MEM_DMA )>;
+		};
 
-			cpuapp_dma_region: memory@0 {
-				compatible = "nordic,owned-memory", "zephyr,memory-region";
-				reg = <0x0 DT_SIZE_K(4)>;
-				status = "disabled";
-				#memory-region-cells = <0>;
-				nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RW>;
-				zephyr,memory-region = "DMA_RAM3x_APP";
-				zephyr,memory-attr = <( DT_MEM_DMA )>;
-			};
-
-			cpurad_dma_region: memory@1000 {
-				compatible = "nordic,owned-memory", "zephyr,memory-region";
-				reg = <0x1000 DT_SIZE_K(1)>;
-				status = "disabled";
-				#memory-region-cells = <0>;
-				nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
-				zephyr,memory-region = "DMA_RAM3x_RAD";
-				zephyr,memory-attr = <( DT_MEM_DMA )>;
-			};
+		cpurad_dma_region: memory@2fc07000 {
+			compatible = "nordic,owned-memory", "zephyr,memory-region";
+			reg = <0x2fc07000 DT_SIZE_K(1)>;
+			status = "disabled";
+			#memory-region-cells = <0>;
+			nordic,access = <NRF_OWNER_ID_RADIOCORE NRF_PERM_RW>;
+			zephyr,memory-region = "DMA_RAM3x_RAD";
+			zephyr,memory-attr = <( DT_MEM_DMA )>;
 		};
 	};
 };
