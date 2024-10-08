@@ -29,6 +29,12 @@ board:
 - Two push-buttons: USER and RESET
 - USB Type-C |reg| connector for the ST-LINK
 
+.. image:: img/nucleo_u031r8.jpg
+   :align: center
+   :alt: Nucleo U031R8
+
+More information about the board can be found at the `NUCLEO_U031R8 website`_.
+
 Hardware
 ********
 
