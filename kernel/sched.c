@@ -749,10 +749,6 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 				dequeue_thread(thread);
 				thread->base.prio = prio;
 				queue_thread(thread);
-
-				if (old_prio > prio) {
-					flag_ipi(ipi_mask_create(thread));
-				}
 			} else {
 				/*
 				 * This is a running thread on SMP. Update its
