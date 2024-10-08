@@ -1,19 +1,18 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nrf54h20dk/nrf54h20/cpurad
-name: nRF54H20-DK-nRF54H20-Radio
+identifier: nrf54h20dk@0.8.0/nrf54h20/cpuppr
+name: nRF54H20-DK-nRF54H20-PPR (revision 0.8.0)
 type: mcu
-arch: arm
+arch: riscv
 toolchain:
-  - gnuarmemb
-  - xtools
   - zephyr
 sysbuild: true
-ram: 192
-flash: 256
+ram: 62
+flash: 62
 supported:
   - counter
   - gpio
+  - i2c
   - pwm
   - spi

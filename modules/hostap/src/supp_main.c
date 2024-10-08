@@ -81,7 +81,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 #endif /* CONFIG_AP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
@@ -374,7 +376,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	if (!wpa_s) {
 		ret = -ENOENT;
 		LOG_ERR("Failed to get wpa_s handle for %s", ifname);
-		goto out;
+		goto free;
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVING, 0);
@@ -382,7 +384,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 	if (sizeof(event->interface_status.ifname) < strlen(ifname)) {
 		wpa_printf(MSG_ERROR, "Interface name too long: %s (max: %d)",
 			ifname, sizeof(event->interface_status.ifname));
-		goto out;
+		goto free;
 	}
 
 	os_memcpy(event->interface_status.ifname, ifname, strlen(ifname));
@@ -400,7 +402,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		 * with WPA supplicant so we cannot unregister NM etc.
 		 */
 		wpa_printf(MSG_ERROR, "Failed to send event: %d", ret);
-		goto out;
+		goto free;
 	}
 
 	while (retry++ < count && wpa_s->wpa_state != WPA_INTERFACE_DISABLED) {
@@ -423,7 +425,7 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wpa_supplicant"), iface);
+	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("wifi_supplicant"), iface);
 	if (ret) {
 		LOG_ERR("Failed to unregister mgd iface %s with native stack (%d)",
 			ifname, ret);
@@ -436,11 +438,13 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_REMOVED, 0);
 
-out:
+	return 0;
+
+free:
 	if (event) {
 		os_free(event);
 	}
-
+out:
 	return ret;
 }
 #endif
@@ -473,9 +477,6 @@ static void submit_iface_work(struct supplicant_context *ctx,
 static void interface_handler(struct net_mgmt_event_callback *cb,
 			      uint32_t mgmt_event, struct net_if *iface)
 {
-	struct supplicant_context *ctx = CONTAINER_OF(cb, struct supplicant_context,
-						      cb);
-
 	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
 		return;
 	}
@@ -488,13 +489,13 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
 		LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-		submit_iface_work(ctx, iface, add_interface);
+		add_interface(get_default_context(), iface);
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 		LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface), iface);
-		submit_iface_work(ctx, iface, del_interface);
+		del_interface(get_default_context(), iface);
 		return;
 	}
 }

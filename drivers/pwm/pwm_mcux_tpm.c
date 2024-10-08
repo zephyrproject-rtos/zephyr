@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020 NXP
+ * Copyright 2020, 2024 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -22,7 +22,11 @@
 
 LOG_MODULE_REGISTER(pwm_mcux_tpm, CONFIG_PWM_LOG_LEVEL);
 
+#if defined(TPM0)
 #define MAX_CHANNELS ARRAY_SIZE(TPM0->CONTROLS)
+#else
+#define MAX_CHANNELS ARRAY_SIZE(TPM1->CONTROLS)
+#endif
 
 struct mcux_tpm_config {
 	TPM_Type *base;

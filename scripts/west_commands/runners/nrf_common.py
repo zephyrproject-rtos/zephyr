@@ -259,8 +259,16 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family in ('NRF54H_FAMILY', 'NRF92_FAMILY'):
             erase_arg = 'ERASE_NONE'
 
-            cpuapp = self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
-            cpurad = self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
+            cpuapp = (
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPUAPP') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')
+            )
+            cpurad = (
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_ENGB_CPURAD') or
+                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')
+            )
 
             if self.erase:
                 self.exec_op('erase', core='NRFDL_DEVICE_CORE_APPLICATION')

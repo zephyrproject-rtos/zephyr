@@ -1640,6 +1640,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
 #endif
 
+/* Macro to check if the ADC instance clock setup is correct */
+#define ADC_STM32_CHECK_DT_CLOCK(x)								\
+	BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || (DT_INST_NUM_CLOCKS(x) > 1),		\
+		     "ASYNC clock mode defined without ASYNC clock defined in device tree")
+
 #if defined(CONFIG_ADC_STM32_DMA)
 
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
@@ -1781,6 +1786,8 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 			(/* Required for other adc instances without dma */))
 
 #define ADC_STM32_INIT(index)						\
+									\
+ADC_STM32_CHECK_DT_CLOCK(index);					\
 									\
 PINCTRL_DT_INST_DEFINE(index);						\
 									\

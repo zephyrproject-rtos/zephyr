@@ -118,6 +118,12 @@ Device Drivers and Devicetree
   their driver API, users of these devices should ensure they pass appropriate values to
   :c:func:`gpio_pin_set`. (:github:`65797`)
 
+Analog Digital Converter (ADC)
+==============================
+
+* For all STM32 ADC that selects an asynchronous clock through ``st,adc-clock-source`` property,
+  it is now mandatory to also explicitly define a domain clock source using the ``clock`` property.
+
 Clock control
 =============
 

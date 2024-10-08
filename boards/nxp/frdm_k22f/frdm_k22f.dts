@@ -28,6 +28,7 @@
 		red-pwm-led = &red_pwm_led;
 		magn0 = &fxos8700;
 		accel0 = &fxos8700;
+		mcuboot-button0 = &user_button_3;
 	};
 
 	chosen {

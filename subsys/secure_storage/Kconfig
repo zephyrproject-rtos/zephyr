@@ -1,0 +1,102 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SECURE_STORAGE
+	bool "Secure storage subsystem"
+	depends on !BUILD_WITH_TFM
+	select EXPERIMENTAL
+	help
+	  The secure storage subsystem provides an implementation of the PSA Secure Storage API
+	  functions on board targets that don't already have one.
+	  It allows making use of the PSA Secure Storage API and persistent keys in the PSA Crypto
+	  API in a standard and portable way.
+	  It is configurable and different implementations can be used to accommodate the varying
+	  capabilities of different devices.
+	  In addition to providing functional support for the PSA Secure Storage API, depending on
+	  the device-specific security features that are available and used, the subsystem may
+	  secure the data stored through it at rest.
+	  This is however highly dependent on the device and configuration in use, and not a
+	  guarantee of the subsystem.
+
+if SECURE_STORAGE
+
+module = SECURE_STORAGE
+module-str = secure_storage
+source "subsys/logging/Kconfig.template.log_config"
+
+choice SECURE_STORAGE_ITS_IMPLEMENTATION
+	prompt "Internal Trusted Storage (ITS) API implementation"
+
+config SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR
+	bool "Zephyr's ITS implementation"
+	select SECURE_STORAGE_ITS_TRANSFORM_MODULE
+	select SECURE_STORAGE_ITS_STORE_MODULE
+	help
+	  Use Zephyr's implementation of the ITS API.
+	  It calls into the transform and store modules, which
+	  can be configured and have custom implementations.
+
+config SECURE_STORAGE_ITS_IMPLEMENTATION_CUSTOM
+	bool "Custom ITS implementation"
+	help
+	  A custom implementation of the ITS API is present.
+	  Implement the functions declared in <zephyr/secure_storage/its.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_ITS_IMPLEMENTATION
+
+config SECURE_STORAGE_ITS_MAX_DATA_SIZE
+	int "Maximum data size of an ITS entry in bytes"
+	default 128
+	help
+	  The maximum size, in bytes, that the data of an ITS entry can be.
+	  Increasing this value increases the stack usage when serving PSA ITS API calls.
+
+menuconfig SECURE_STORAGE_ITS_TRANSFORM_MODULE
+	bool "ITS transform module"
+	help
+	  The module that handles the transformation and validation of the
+	  ITS data before it's written to and after it's read from NVM.
+	  Zephyr's ITS implementation calls into it.
+
+if SECURE_STORAGE_ITS_TRANSFORM_MODULE
+rsource "Kconfig.its_transform"
+endif
+
+menuconfig SECURE_STORAGE_ITS_STORE_MODULE
+	bool "ITS store module"
+	imply FLASH # for FLASH_HAS_DRIVER_ENABLED
+	help
+	  The module that handles the storage/retrieval of the ITS data to/from NVM.
+	  Zephyr's ITS implementation calls into it.
+
+if SECURE_STORAGE_ITS_STORE_MODULE
+rsource "Kconfig.its_store"
+endif
+
+choice SECURE_STORAGE_PS_IMPLEMENTATION
+	prompt "Protected Storage (PS) API implementation"
+	default SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_ITS
+	bool "PS calls directly into the ITS"
+	help
+	  The PS API doesn't have an implementation of its own, and directly calls into the ITS API.
+	  This means that the implementation of the PS API will be identical to that of the ITS API.
+
+config SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	bool "Custom PS implementation"
+	help
+	  A custom implementation of the PS API is present.
+	  Implement the functions declared in <zephyr/secure_storage/ps.h>.
+	  The header is made available when this Kconfig option is enabled.
+
+endchoice # SECURE_STORAGE_PS_IMPLEMENTATION
+
+config SECURE_STORAGE_PS_SUPPORTS_SET_EXTENDED
+	bool "PS API implementation supports psa_ps_create() and psa_ps_set_extended()"
+	depends on SECURE_STORAGE_PS_IMPLEMENTATION_CUSTOM
+	help
+	  Whether the psa_ps_create() and psa_ps_set_extended() functions are implemented.
+
+endif # SECURE_STORAGE

@@ -805,6 +805,11 @@ static int isr_rx(struct lll_sync *lll, uint8_t node_type, uint8_t crc_ok,
 		 * again a node_rx for periodic report incomplete.
 		 */
 		if (node_type != NODE_RX_TYPE_EXT_AUX_REPORT) {
+			/* Reset Sync context association with any Aux context
+			 * as a new chain is being setup for reception here.
+			 */
+			lll->lll_aux = NULL;
+
 			node_rx = ull_pdu_rx_alloc_peek(4);
 		} else {
 			node_rx = ull_pdu_rx_alloc_peek(3);

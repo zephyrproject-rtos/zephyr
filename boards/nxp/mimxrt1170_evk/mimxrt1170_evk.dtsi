@@ -17,6 +17,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc1;
 		pwm-led0 = &green_pwm_led;
+		mcuboot-button0 = &user_button;
 	};
 
 	leds {

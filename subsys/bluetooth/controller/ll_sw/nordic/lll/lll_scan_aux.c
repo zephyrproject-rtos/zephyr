@@ -1241,17 +1241,32 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 
 		ftr = &(node_rx->rx_ftr);
 		if (lll_aux) {
+			/* Auxiliary context was used in ULL scheduling in the
+			 * reception of this current PDU.
+			 */
 			ftr->param = lll_aux;
 			ftr->scan_rsp = lll_aux->state;
 
 			/* Further auxiliary PDU reception will be chain PDUs */
 			lll_aux->is_chain_sched = 1U;
+
+			/* Reset auxiliary context association with scan context
+			 * as ULL scheduling has been used and may switch to
+			 * using LLL scheduling if the next auxiliary PDU in
+			 * chain is below the threshold to use ULL scheduling.
+			 */
+			lll->lll_aux = NULL;
+
 		} else if (lll->lll_aux) {
+			/* Auxiliary context was allocated to Scan context in
+			 * LLL scheduling in the reception of this current PDU.
+			 */
 			ftr->param = lll;
 			ftr->scan_rsp = lll->lll_aux->state;
 
 			/* Further auxiliary PDU reception will be chain PDUs */
 			lll->lll_aux->is_chain_sched = 1U;
+
 		} else {
 			/* Return -ECHILD, as ULL execution has not yet assigned
 			 * an aux context. This can happen only under LLL
