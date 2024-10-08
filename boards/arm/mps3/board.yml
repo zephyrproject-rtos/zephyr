@@ -1,5 +1,6 @@
 board:
   name: mps3
+  full_name: MPS3 AN547
   vendor: arm
   socs:
   - name: 'an547'

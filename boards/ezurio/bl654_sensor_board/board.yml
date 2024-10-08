@@ -1,5 +1,6 @@
 board:
   name: bl654_sensor_board
+  full_name: BL654 Sensor Board
   vendor: ezurio
   socs:
   - name: nrf52840

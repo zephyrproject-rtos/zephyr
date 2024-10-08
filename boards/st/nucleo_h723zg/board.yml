@@ -1,5 +1,6 @@
 board:
   name: nucleo_h723zg
+  full_name: Nucleo H723ZG
   vendor: st
   socs:
     - name: stm32h723xx

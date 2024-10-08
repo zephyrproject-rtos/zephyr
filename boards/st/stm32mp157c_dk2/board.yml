@@ -1,5 +1,6 @@
 board:
   name: stm32mp157c_dk2
+  full_name: STM32MP157C-DK2 Discovery
   vendor: st
   socs:
     - name: stm32mp157cxx

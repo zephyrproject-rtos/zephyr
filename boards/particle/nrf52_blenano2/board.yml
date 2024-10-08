@@ -1,5 +1,6 @@
 board:
   name: nrf52_blenano2
+  full_name: Redbear Labs Nano v2
   vendor: particle
   socs:
   - name: nrf52832

@@ -1,5 +1,6 @@
 board:
   name: stm32vl_disco
+  full_name: STM32VL Discovery
   vendor: st
   socs:
     - name: stm32f100xb

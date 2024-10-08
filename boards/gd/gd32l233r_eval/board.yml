@@ -1,5 +1,6 @@
 board:
   name: gd32l233r_eval
+  full_name: GD32L233R-EVA
   vendor: gd
   socs:
     - name: gd32l233

@@ -1,5 +1,6 @@
 board:
   name: b_l4s5i_iot01a
+  full_name: B-L4S5I-IOT01A Discovery kit
   vendor: st
   socs:
     - name: stm32l4s5xx

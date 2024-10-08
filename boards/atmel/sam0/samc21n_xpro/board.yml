@@ -1,5 +1,6 @@
 board:
   name: samc21n_xpro
+  full_name: SAM C21N Xplained Pro Evaluation Kit
   vendor: atmel
   socs:
     - name: samc21n18a

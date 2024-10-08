@@ -1,5 +1,6 @@
 board:
   name: nucleo_l476rg
+  full_name: Nucleo L476RG
   vendor: st
   socs:
     - name: stm32l476xx

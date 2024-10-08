@@ -1,5 +1,6 @@
 board:
   name: esp32c3_luatos_core
+  full_name: ESP32C3_LUATOS_CORE
   vendor: luatos
   socs:
   - name: esp32c3

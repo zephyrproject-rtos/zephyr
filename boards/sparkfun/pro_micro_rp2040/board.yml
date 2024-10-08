@@ -1,5 +1,6 @@
 board:
   name: sparkfun_pro_micro_rp2040
+  full_name: Pro Micro RP2040
   vendor: sparkfun
   socs:
   - name: rp2040

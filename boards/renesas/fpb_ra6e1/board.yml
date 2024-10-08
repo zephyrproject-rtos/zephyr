@@ -1,5 +1,6 @@
 board:
   name: fpb_ra6e1
+  full_name: RA6E1 Fast Prototyping Board
   vendor: renesas
   socs:
   - name: r7fa6e10f2cfp

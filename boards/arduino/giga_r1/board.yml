@@ -1,5 +1,6 @@
 board:
   name: arduino_giga_r1
+  full_name: Arduino GIGA R1 WiFi
   vendor: arduino
   socs:
     - name: stm32h747xx

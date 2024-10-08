@@ -3,6 +3,7 @@
 
 board:
   name: esp32c3_rust
+  full_name: ESP32-C3-DevKit-RUST
   vendor: espressif
   socs:
   - name: esp32c3

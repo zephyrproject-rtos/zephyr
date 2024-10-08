@@ -1,5 +1,6 @@
 board:
   name: udoo_neo_full
+  full_name: Neo Full
   vendor: udoo
   socs:
     - name: mcimx6x

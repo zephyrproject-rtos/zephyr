@@ -1,5 +1,6 @@
 board:
   name: adafruit_itsybitsy
+  full_name: ItsyBitsy nRF52840
   vendor: adafruit
   socs:
   - name: nrf52840

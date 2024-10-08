@@ -1,5 +1,6 @@
 board:
   name: stm32u5a9j_dk
+  full_name: STM32U5A9J Discovery Kit
   vendor: st
   socs:
     - name: stm32u5a9xx

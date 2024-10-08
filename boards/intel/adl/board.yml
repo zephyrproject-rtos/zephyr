@@ -1,9 +1,11 @@
 boards:
   - name: intel_adl_crb
+    full_name: Alder Lake CRB
     vendor: intel
     socs:
       - name: alder_lake
   - name: intel_adl_rvp
+    full_name: Alder Lake RVP
     vendor: intel
     socs:
       - name: alder_lake

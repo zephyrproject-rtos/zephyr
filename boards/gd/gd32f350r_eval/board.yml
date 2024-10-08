@@ -1,5 +1,6 @@
 board:
   name: gd32f350r_eval
+  full_name: GD32F350R-EVAL
   vendor: gd
   socs:
     - name: gd32f350

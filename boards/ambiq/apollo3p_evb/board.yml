@@ -1,5 +1,6 @@
 board:
   name: apollo3p_evb
+  full_name: Apollo3 Blue Plus EVB
   vendor: ambiq
   socs:
   - name: apollo3p_blue

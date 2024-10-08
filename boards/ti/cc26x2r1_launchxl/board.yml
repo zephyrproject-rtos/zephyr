@@ -1,5 +1,6 @@
 board:
   name: cc26x2r1_launchxl
+  full_name: CC26x2R1 LaunchXL
   vendor: ti
   socs:
   - name: cc2652r

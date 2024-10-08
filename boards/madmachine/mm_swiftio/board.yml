@@ -1,5 +1,6 @@
 board:
   name: mm_swiftio
+  full_name: SwiftIO
   vendor: madmachine
   socs:
     - name: mimxrt1052

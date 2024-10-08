@@ -1,5 +1,6 @@
 board:
   name: frdm_k22f
+  full_name: FRDM-K22F
   vendor: nxp
   socs:
     - name: mk22f51212

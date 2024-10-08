@@ -1,5 +1,6 @@
 board:
   name: nucleo_f401re
+  full_name: Nucleo F401RE
   vendor: st
   socs:
     - name: stm32f401xe

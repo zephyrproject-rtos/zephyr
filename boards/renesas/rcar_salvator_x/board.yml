@@ -1,5 +1,6 @@
 board:
   name: rcar_salvator_x
+  full_name: R-Car H3 Salvator-X
   vendor: renesas
   socs:
   - name: r8a77951

@@ -1,5 +1,6 @@
 board:
   name: slstk3401a
+  full_name: EFM32 Pearl Gecko (SLSTK3401A)
   vendor: silabs
   socs:
   - name: efm32pg1b200f256gm48

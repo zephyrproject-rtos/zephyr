@@ -1,5 +1,6 @@
 board:
   name: 96b_argonkey
+  full_name: Argonkey
   vendor: 96boards
   socs:
     - name: stm32f412cx

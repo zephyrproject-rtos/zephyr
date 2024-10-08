@@ -1,5 +1,6 @@
 board:
   name: mpfs_icicle
+  full_name: mpfs_icicle
   vendor: microchip
   socs:
   - name: polarfire

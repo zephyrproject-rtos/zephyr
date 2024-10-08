@@ -1,5 +1,6 @@
 board:
   name: frdm_ke15z
+  full_name: FRDM-KE15Z
   vendor: nxp
   socs:
     - name: mke15z7

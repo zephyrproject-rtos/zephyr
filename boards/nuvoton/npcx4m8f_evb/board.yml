@@ -1,5 +1,6 @@
 board:
   name: npcx4m8f_evb
+  full_name: NPCX4M8F_EVB
   vendor: nuvoton
   socs:
   - name: npcx4m8f

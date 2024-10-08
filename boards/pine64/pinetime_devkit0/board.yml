@@ -1,5 +1,6 @@
 board:
   name: pinetime_devkit0
+  full_name: PineTime DevKit0
   vendor: pine64
   socs:
   - name: nrf52832

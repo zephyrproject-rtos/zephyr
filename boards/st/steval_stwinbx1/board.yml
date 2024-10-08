@@ -1,5 +1,6 @@
 board:
   name: steval_stwinbx1
+  full_name: STEVAL STWINBX1 Development kit
   vendor: st
   socs:
     - name: stm32u585xx

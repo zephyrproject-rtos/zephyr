@@ -1,5 +1,6 @@
 board:
   name: stm32h750b_dk
+  full_name: STM32H750B Discovery Kit
   vendor: st
   socs:
     - name: stm32h750xx

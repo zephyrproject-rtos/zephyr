@@ -1,5 +1,6 @@
 board:
   name: google_twinkie_v2
+  full_name: Twinkie V2
   vendor: google
   socs:
     - name: stm32g0b1xx

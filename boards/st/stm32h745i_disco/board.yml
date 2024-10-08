@@ -1,5 +1,6 @@
 board:
   name: stm32h745i_disco
+  full_name: STM32H745I Discovery
   vendor: st
   socs:
     - name: stm32h745xx

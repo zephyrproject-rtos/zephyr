@@ -1,5 +1,6 @@
 board:
   name: hsdk4xd
+  full_name: ARC HS4x/HS4xD Development Kit
   vendor: snps
   socs:
   - name: arc_hsdk4xd

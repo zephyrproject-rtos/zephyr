@@ -4,6 +4,7 @@
 
 board:
   name: sim3u1xx_dk
+  full_name: SiM3U1xx 32-bit MCU USB Development Kit
   vendor: silabs
   socs:
     - name: sim3u167

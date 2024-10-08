@@ -1,5 +1,6 @@
 board:
   name: nucleo_h745zi_q
+  full_name: Nucleo H745ZI-Q
   vendor: st
   socs:
     - name: stm32h745xx

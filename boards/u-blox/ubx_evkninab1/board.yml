@@ -1,5 +1,6 @@
 board:
   name: ubx_evkninab1
+  full_name: EVK NINA-B11x
   vendor: u-blox
   socs:
   - name: nrf52832

@@ -1,5 +1,6 @@
 board:
   name: mimxrt1062_fmurt6
+  full_name: FMURT6
   vendor: nxp
   socs:
     - name: mimxrt1062

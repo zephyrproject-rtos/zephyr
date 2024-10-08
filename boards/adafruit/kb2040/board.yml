@@ -1,5 +1,6 @@
 board:
   name: adafruit_kb2040
+  full_name: KB2040
   vendor: adafruit
   socs:
   - name: rp2040

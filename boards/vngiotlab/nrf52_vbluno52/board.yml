@@ -1,5 +1,6 @@
 board:
   name: nrf52_vbluno52
+  full_name: nRF52-VBLUno52
   vendor: vngiotlab
   socs:
   - name: nrf52832

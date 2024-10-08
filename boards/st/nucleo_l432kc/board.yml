@@ -1,5 +1,6 @@
 board:
   name: nucleo_l432kc
+  full_name: Nucleo L432KC
   vendor: st
   socs:
     - name: stm32l432xx

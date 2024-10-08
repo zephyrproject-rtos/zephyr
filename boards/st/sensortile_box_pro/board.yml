@@ -1,5 +1,6 @@
 board:
   name: sensortile_box_pro
+  full_name: SensorTile.box PRO
   vendor: st
   socs:
     - name: stm32u585xx
