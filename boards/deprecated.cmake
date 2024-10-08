@@ -913,3 +913,6 @@ set(xiao_esp32s3_DEPRECATED
 set(yd_esp32_DEPRECATED
     yd_esp32/esp32/procpu
 )
+set(mimx8mp_phyboard_pollux/mimx8ml8/m7_DEPRECATED
+    phyboard_pollux/mimx8ml8/m7
+)

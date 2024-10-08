@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimx8mp_phyboard_pollux/mimx8ml8/m7
+identifier: phyboard_pollux/mimx8ml8/m7
 name: PhyBOARD Pollux (i.MX8MP)
 type: mcu
 arch: arm
