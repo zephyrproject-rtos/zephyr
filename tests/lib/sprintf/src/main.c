@@ -902,17 +902,22 @@ ZTEST(sprintf, test_put)
 ZTEST(sprintf, test_fwrite)
 {
 	int ret;
+	FILE *stream;
 
-	ret = fwrite("This 3", 0, 0, stdout);
+	stream = stdout;
+	ret = fwrite("This 3", 0, 0, stream);
 	zassert_equal(ret, 0, "fwrite failed!");
 
-	ret = fwrite("This 3", 0, 4, stdout);
+	stream = stdout;
+	ret = fwrite("This 3", 0, 4, stream);
 	zassert_equal(ret, 0, "fwrite failed!");
 
-	ret = fwrite("This 3", 1, 4, stdout);
+	stream = stdout;
+	ret = fwrite("This 3", 1, 4, stream);
 	zassert_equal(ret, 4, "fwrite failed!");
 
-	ret = fwrite("This 3", 1, 4, stdin);
+	stream = stdin;
+	ret = fwrite("This 3", 1, 4, stream);
 	zassert_equal(ret, 0, "fwrite failed!");
 }
 
