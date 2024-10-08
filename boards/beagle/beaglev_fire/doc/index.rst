@@ -22,11 +22,19 @@ hobbyists, and researchers to explore and experiment with RISC-V technology.
 Building
 ========
 
-Applications for the ``beaglev_fire`` board configuration can be built as usual:
+BeagleV-Fire supports 3 board targets in Zephyr:
+
+1. ``beaglev_fire/polarfire/e51``
+2. ``beaglev_fire/polarfire/u54``
+3. ``beaglev_fire/polarfire/u54/smp``
+
+More information regarding the differences between the cores can be found in the `datasheet <https://ww1.microchip.com/downloads/aemDocuments/documents/FPGA/ProductDocuments/ProductBrief/PolarFire-SoC-Product-Overview-60001656.pdf>`_.
+
+Here is an example of building :zephyr:code-sample:`hello_world` for E51 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: beaglev_fire
+   :board: beaglev_fire/polarfire/e51
    :goals: build
 
 Debugging
