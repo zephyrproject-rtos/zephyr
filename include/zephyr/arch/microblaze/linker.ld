@@ -20,16 +20,17 @@
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-#if CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE != 0
-	_HEAP_SIZE = CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE;
-#else
-	_HEAP_SIZE = 32K;
-#endif
-
 SECTIONS
 {
 
 #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+#include <zephyr/linker/llext-sections.ld>
+#endif
+
+	GROUP_START(ROMABLE_REGION)
+
 	SECTION_PROLOGUE(.text,,)
 	{
 		/* microblaze vectors from 0x0 to 0x50 */
@@ -55,7 +56,7 @@ SECTIONS
 	__text_region_end = .;
 	__text_region_size = __text_region_end - __text_region_start;
 
-	SECTION_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
+	SECTION_DATA_PROLOGUE(_EXCEPTION_SECTION_NAME,,)
 	{
 		KEEP(*(".exception.entry.*"))
 		*(".exception.other.*")
@@ -80,8 +81,11 @@ SECTIONS
 	__rodata_region_start = .;
 
 #include <zephyr/linker/common-rom.ld>
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
+ */
+#include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
-#include <zephyr/linker/cplusplus-rom.ld>
 
 	SECTION_PROLOGUE(.rodata,,)
 	{
@@ -91,14 +95,40 @@ SECTIONS
 		*(.rodata.*)
 		*(.gnu.linkonce.r.*)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
 #include <snippets-rodata.ld>
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <zephyr/linker/cplusplus-rom.ld>
 
+	__rodata_end = .;
+	__rodata_region_end = .;
+	__rodata_region_size = __rodata_region_end - __rodata_region_start;
+
+	GROUP_END(ROMABLE_REGION)
+
+	GROUP_START(RAMABLE_REGION)
+
+	_image_ram_start = .;
+
 #ifdef CONFIG_CPP
-	.dtors : {
+	/* These exist to keep Vitis Microblaze toolchain happy */
+	SECTION_PROLOGUE(.ctors,,)
+	{
+		__CTOR_LIST__ = .;
+		___CTORS_LIST___ = .;
+		KEEP (*crtbegin.o(.ctors))
+		KEEP (*(EXCLUDE_FILE(*crtend.o) .ctors))
+		KEEP (*(SORT(.ctors.*)))
+		KEEP (*(.ctors))
+		__CTOR_END__ = .;
+		___CTORS_END___ = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+	SECTION_PROLOGUE(.dtors,,)
+	{
 		__DTOR_LIST__ = .;
 		___DTORS_LIST___ = .;
 		KEEP (*crtbegin.o(.dtors))
@@ -107,14 +137,10 @@ SECTIONS
 		KEEP (*(.dtors))
 		PROVIDE(__DTOR_END__ = .);
 		PROVIDE(___DTORS_END___ = .);
-	} > app_ram
+	} GROUP_LINK_IN(RAMABLE_REGION)
 #endif
 
-	__rodata_end = .;
-	__rodata_region_end = .;
-	__rodata_region_size = __rodata_region_end - __rodata_region_start;
-
-	SECTION_PROLOGUE(.sdata2,,)
+	SECTION_DATA_PROLOGUE(.sdata2,,)
 	{
 		. = ALIGN(4);
 		__sdata2_start = .;
@@ -126,8 +152,10 @@ SECTIONS
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 #include <zephyr/linker/common-ram.ld>
+#include <zephyr/linker/kobject-data.ld>
+#include <zephyr/linker/cplusplus-ram.ld>
 
-	SECTION_PROLOGUE(.data,,)
+	SECTION_DATA_PROLOGUE(.data,,)
 	{
 		. = ALIGN(4);
 		__data_start = .;
@@ -142,12 +170,13 @@ SECTIONS
 #include <snippets-ram-sections.ld>
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
 #include <snippets-data-sections.ld>
 
 	__data_end = .;
 	__data_size = __data_end - __data_start;
-
-#include <zephyr/linker/cplusplus-ram.ld>
 
 	SECTION_PROLOGUE(.got,,)
 	{
@@ -173,7 +202,7 @@ SECTIONS
 		*(.jcr)
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-	SECTION_PROLOGUE(.sdata,,)
+	SECTION_DATA_PROLOGUE(.sdata,,)
 	{
 		. = ALIGN(4);
 		__sdata_start = .;
@@ -198,7 +227,7 @@ SECTIONS
 	_gp = (__sbss_end + __sdata_start) / 2;
 	PROVIDE(gp = _gp);
 
-	SECTION_PROLOGUE(.tdata,,)
+	SECTION_DATA_PROLOGUE(.tdata,,)
 	{
 		. = ALIGN(4);
 		__tdata_start = .;
@@ -243,14 +272,29 @@ SECTIONS
 
 #include <snippets-sections.ld>
 
-#include <zephyr/linker/debug-sections.ld>
-
+	/* Vitis Microblaze toolchain may moan without these sections,
+	 * but we won't give them any space. Zephyr creates its malloc arena
+	 * after _end. These are in case someone tries to use Vitis GCC with
+	 * its _HEAP_SIZE and _STACK_SIZE definitions. e.g. during migration
+	 * I'm making the linker moan so that you now know better than to rely
+	 * on those values in Zephyr world.
+	 */
+	_HEAP_SIZE = DEFINED(_HEAP_SIZE) ? -_HEAP_SIZE : 0;
+	_STACK_SIZE = DEFINED(_STACK_SIZE) ? -_STACK_SIZE : 0;
 	SECTION_PROLOGUE(.heap (NOLOAD),,)
 	{
 		. += _HEAP_SIZE;
-		. = ALIGN(4);
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
-	_end = .;
+	SECTION_PROLOGUE(.stack (NOLOAD),,)
+	{
+		. += _STACK_SIZE;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+
+#include <zephyr/linker/ram-end.ld>
+
+    GROUP_END(RAMABLE_REGION)
+
+#include <zephyr/linker/debug-sections.ld>
 
 }
