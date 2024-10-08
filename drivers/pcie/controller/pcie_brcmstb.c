@@ -621,9 +621,9 @@ static int pcie_brcmstb_init(const struct device *dev)
 	sys_write32(tmp, data->cfg_addr + PCIE_EXT_CFG_DATA + PCI_COMMAND);
 	k_busy_wait(500000);
 
-	mm_reg_t asdf;
+	mm_reg_t test_dma_addr;
 
-	device_map(&asdf, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
+	device_map(&test_dma_addr, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
 	printk("H2C 0x%x\n", sys_read32(asdf));
 	printk("C2H 0x%x\n", sys_read32(asdf + 0x1000));
 
