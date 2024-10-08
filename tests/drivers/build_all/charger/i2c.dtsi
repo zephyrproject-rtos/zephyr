@@ -39,3 +39,8 @@ bq25180@2 {
 	constant-charge-current-max-microamp = <500000>;
 	constant-charge-voltage-max-microvolt = <4200000>;
 };
+
+sbs-charger@3 {
+	compatible = "sbs,sbs-charger";
+	reg = <0x3>;
+};

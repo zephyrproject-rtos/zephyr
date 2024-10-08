@@ -54,6 +54,20 @@ config I2C_CALLBACK
 	help
 	  API and implementations of i2c_transfer_cb.
 
+config I2C_ALLOW_NO_STOP_TRANSACTIONS
+	bool "Allows I2C transfers with no STOP on the last transaction [DEPRECATED]"
+	depends on !I2C_NRFX_TWI
+	depends on !I2C_NRFX_TWIM
+	depends on !I2C_STM32
+	depends on !I2C_GD32
+	depends on !I2C_ESP32
+	depends on !I2C_DW
+	select DEPRECATED
+	help
+	  Allow I2C transactions with no STOP on the last message. This is
+	  unsupported and can leave the bus in an unexpected state. The option
+	  will be removed in Zephyr 4.1.
+
 config I2C_RTIO
 	bool "I2C RTIO API"
 	select EXPERIMENTAL

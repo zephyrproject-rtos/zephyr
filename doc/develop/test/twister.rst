@@ -188,6 +188,8 @@ testing:
 
 .. _twister_default_testing_board:
 
+  binaries:
+    A list of custom binaries to be kept for device testing.
   default: [True|False]:
     This is a default board, it will tested with the highest priority and is
     covered when invoking the simplified twister without any additional

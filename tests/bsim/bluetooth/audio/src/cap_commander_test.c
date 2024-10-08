@@ -982,7 +982,7 @@ static void test_broadcast_reception_stop(size_t acceptor_count)
 
 	/* reception stop is not implemented yet, for now the following command will fail*/
 	reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
-	reception_stop_param.members = NULL;
+	reception_stop_param.param = NULL;
 	reception_stop_param.count = 0U;
 	err = bt_cap_commander_broadcast_reception_stop(&reception_stop_param);
 	if (err != 0) {

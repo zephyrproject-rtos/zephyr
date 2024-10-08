@@ -45,15 +45,14 @@ LOG_MODULE_REGISTER(bt_bap_stream, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT) || defined(CONFIG_BT_BAP_BROADCAST_SOURCE) ||            \
 	defined(CONFIG_BT_BAP_BROADCAST_SINK)
-void bt_audio_codec_qos_to_iso_qos(struct bt_iso_chan_io_qos *io,
-				   const struct bt_audio_codec_qos *codec_qos)
+void bt_bap_qos_cfg_to_iso_qos(struct bt_iso_chan_io_qos *io, const struct bt_bap_qos_cfg *qos_cfg)
 {
-	io->sdu = codec_qos->sdu;
-	io->phy = codec_qos->phy;
-	io->rtn = codec_qos->rtn;
+	io->sdu = qos_cfg->sdu;
+	io->phy = qos_cfg->phy;
+	io->rtn = qos_cfg->rtn;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
-	io->burst_number = codec_qos->burst_number;
-	io->max_pdu = codec_qos->max_pdu;
+	io->burst_number = qos_cfg->burst_number;
+	io->max_pdu = qos_cfg->max_pdu;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT ||                                                          \
@@ -167,7 +166,7 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	return 0;
 }
 
-enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos)
+enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_bap_qos_cfg *qos)
 {
 	if (qos->interval < BT_ISO_SDU_INTERVAL_MIN ||
 	    qos->interval > BT_ISO_SDU_INTERVAL_MAX) {
@@ -176,14 +175,13 @@ enum bt_bap_ascs_reason bt_audio_verify_qos(const struct bt_audio_codec_qos *qos
 		return BT_BAP_ASCS_REASON_INTERVAL;
 	}
 
-	if (qos->framing > BT_AUDIO_CODEC_QOS_FRAMING_FRAMED) {
+	if (qos->framing > BT_BAP_QOS_CFG_FRAMING_FRAMED) {
 		LOG_DBG("Invalid Framing 0x%02x", qos->framing);
 		return BT_BAP_ASCS_REASON_FRAMING;
 	}
 
-	if (qos->phy != BT_AUDIO_CODEC_QOS_1M &&
-	    qos->phy != BT_AUDIO_CODEC_QOS_2M &&
-	    qos->phy != BT_AUDIO_CODEC_QOS_CODED) {
+	if (qos->phy != BT_BAP_QOS_CFG_1M && qos->phy != BT_BAP_QOS_CFG_2M &&
+	    qos->phy != BT_BAP_QOS_CFG_CODED) {
 		LOG_DBG("Invalid PHY 0x%02x", qos->phy);
 		return BT_BAP_ASCS_REASON_PHY;
 	}
@@ -265,7 +263,7 @@ bool bt_audio_valid_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 	return true;
 }
 
-bool bt_audio_valid_qos_pref(const struct bt_audio_codec_qos_pref *qos_pref)
+bool bt_bap_valid_qos_pref(const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	const uint8_t phy_mask = BT_GAP_LE_PHY_1M | BT_GAP_LE_PHY_2M | BT_GAP_LE_PHY_CODED;
 
@@ -487,9 +485,9 @@ static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
 }
 
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
-						 const struct bt_audio_codec_qos *qos)
+						 const struct bt_bap_qos_cfg *qos)
 {
-	const struct bt_audio_codec_qos_pref *qos_pref = &stream->ep->qos_pref;
+	const struct bt_bap_qos_cfg_pref *qos_pref = &stream->ep->qos_pref;
 
 	if (qos_pref->latency < qos->latency) {
 		/* Latency is a preferred value. Print debug info but do not fail. */
@@ -509,7 +507,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
 	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
 
-	LOG_DBG("stream %p", stream);
+	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
 		bt_conn_unref(stream->conn);
@@ -587,7 +585,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	       codec_cfg, codec_cfg ? codec_cfg->id : 0, codec_cfg ? codec_cfg->cid : 0,
 	       codec_cfg ? codec_cfg->vid : 0);
 
-	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL) {
+	CHECKIF(conn == NULL || stream == NULL || codec_cfg == NULL || ep == NULL) {
 		LOG_DBG("NULL value(s) supplied)");
 		return -EINVAL;
 	}

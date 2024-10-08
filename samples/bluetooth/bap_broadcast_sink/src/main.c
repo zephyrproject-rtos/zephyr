@@ -1,22 +1,43 @@
 /*
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
 #include <strings.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_types.h>
+#include <zephyr/bluetooth/iso.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
+#include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
+
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 #endif /* defined(CONFIG_LIBLC3) */
 #if defined(CONFIG_USB_DEVICE_AUDIO)
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/class/usb_audio.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -1287,8 +1308,13 @@ static int init(void)
 		return err;
 	}
 
+	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+	if (err) {
+		printk("Scan delegator register failed (err %d)\n", err);
+		return err;
+	}
+
 	bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
-	bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 	bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 	bt_le_scan_cb_register(&bap_scan_cb);
 

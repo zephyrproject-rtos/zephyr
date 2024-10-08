@@ -6,6 +6,7 @@
 /dts-v1/;
 #include <renesas/smartbond/da14699.dtsi>
 #include "da1469x_dk_pro-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "DA1469x series Development Kit Pro";
@@ -30,6 +31,15 @@
 		compatible = "gpio-leds";
 		red_led: led_0 {
 			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User (K1)";
+			gpios = <&gpio0 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
@@ -66,6 +76,7 @@
 	aliases {
 		led0 = &red_led;
 		watchdog0 = &wdog;
+		sw0 = &user_button;
 	};
 
 	sysclk: system-clock {
@@ -96,7 +107,7 @@
 			label = "image-0";
 			reg = <0x0000c000 0x00076000>;
 		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@82000 {
 			label = "image-1";
 			reg = <0x00082000 0x00076000>;
 		};

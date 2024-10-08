@@ -7,6 +7,7 @@ config UDC_DWC2
 	depends on DT_HAS_SNPS_DWC2_ENABLED
 	select NRFS if NRFS_HAS_VBUS_DETECTOR_SERVICE
 	select NRFS_VBUS_DETECTOR_SERVICE_ENABLED if NRFS_HAS_VBUS_DETECTOR_SERVICE
+	select EVENTS
 	help
 	  DWC2 USB device controller driver.
 
@@ -37,11 +38,3 @@ config UDC_DWC2_THREAD_PRIORITY
 	default 8
 	help
 	  DWC2 driver thread priority.
-
-config UDC_DWC2_MAX_QMESSAGES
-	int "UDC DWC2 maximum number of ISR event messages"
-	depends on UDC_DWC2
-	range 4 64
-	default 8
-	help
-	  DWC2 maximum number of ISR event messages.

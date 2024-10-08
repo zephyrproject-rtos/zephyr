@@ -5,7 +5,7 @@ common:
   harness: ztest
   platform_allow:
     - nrf52840dk/nrf52840
-    - nrf54l15pdk/nrf54l15/cpuapp
+    - nrf54l15dk/nrf54l15/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf52_bsim
   harness_config:
@@ -27,7 +27,7 @@ tests:
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     extra_args: DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840.overlay;nrf_rx_disable.overlay"
     platform_exclude:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.enhanced_poll:
@@ -37,7 +37,7 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.int_driven:
@@ -56,7 +56,7 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
 
   drivers.uart.pm.async:
@@ -81,5 +81,5 @@ tests:
       - CONFIG_UART_0_ENHANCED_POLL_OUT=y
       - CONFIG_UART_NRFX_UARTE_LEGACY_SHIM=y
     platform_exclude:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp

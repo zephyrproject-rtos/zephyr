@@ -202,8 +202,8 @@ static void tester_setup(void)
 static void bridge_entry_add(uint16_t src, uint16_t dst, uint16_t net_idx1, uint16_t net_idx2,
 			     uint8_t dir)
 {
-	struct bt_mesh_bridging_table_entry entry;
-	struct bt_mesh_bridging_table_status rsp;
+	struct bt_mesh_brg_cfg_table_entry entry;
+	struct bt_mesh_brg_cfg_table_status rsp;
 	int err;
 
 	entry.directions = dir;
@@ -212,7 +212,7 @@ static void bridge_entry_add(uint16_t src, uint16_t dst, uint16_t net_idx1, uint
 	entry.addr1 = src;
 	entry.addr2 = dst;
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_add(0, BRIDGE_ADDR, &entry, &rsp);
+	err = bt_mesh_brg_cfg_cli_table_add(0, BRIDGE_ADDR, &entry, &rsp);
 	if (err || rsp.status || rsp.entry.directions != dir || rsp.entry.net_idx1 != net_idx1 ||
 	    rsp.entry.net_idx2 != net_idx2 || rsp.entry.addr1 != src || rsp.entry.addr2 != dst) {
 		FAIL("Bridging table add failed (err %d) (status %u)", err, rsp.status);
@@ -222,10 +222,10 @@ static void bridge_entry_add(uint16_t src, uint16_t dst, uint16_t net_idx1, uint
 
 static void bridge_entry_remove(uint16_t src, uint16_t dst, uint16_t net_idx1, uint16_t net_idx2)
 {
-	struct bt_mesh_bridging_table_status rsp;
+	struct bt_mesh_brg_cfg_table_status rsp;
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_remove(0, BRIDGE_ADDR, net_idx1, net_idx2, src,
-							    dst, &rsp));
+	ASSERT_OK(bt_mesh_brg_cfg_cli_table_remove(0, BRIDGE_ADDR, net_idx1, net_idx2, src, dst,
+						   &rsp));
 	if (rsp.status) {
 		FAIL("Bridging table remove failed (status %u)", rsp.status);
 		return;
@@ -247,9 +247,8 @@ static void tester_bridge_configure(int subnets)
 		}
 	}
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_subnet_bridge_set(0, BRIDGE_ADDR,
-							BT_MESH_SUBNET_BRIDGE_ENABLED, &status));
-	if (status != BT_MESH_SUBNET_BRIDGE_ENABLED) {
+	ASSERT_OK(bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_ENABLED, &status));
+	if (status != BT_MESH_BRG_CFG_ENABLED) {
 		FAIL("Subnet bridge set failed (status %u)", status);
 		return;
 	}
@@ -333,14 +332,14 @@ struct bridged_addresses_entry {
 static void bridge_table_verify(uint16_t net_idx1, uint16_t net_idx2, uint16_t start_idx,
 				struct bridged_addresses_entry *list, size_t list_len)
 {
-	struct bt_mesh_bridging_table_list rsp = {
+	struct bt_mesh_brg_cfg_table_list rsp = {
 		.list = NET_BUF_SIMPLE(BT_MESH_RX_SDU_MAX),
 	};
 
 	net_buf_simple_init(rsp.list, 0);
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_get(0, BRIDGE_ADDR, net_idx1, net_idx2,
-							 start_idx, &rsp));
+	ASSERT_OK(
+		bt_mesh_brg_cfg_cli_table_get(0, BRIDGE_ADDR, net_idx1, net_idx2, start_idx, &rsp));
 	ASSERT_EQUAL(rsp.status, 0);
 	ASSERT_EQUAL(rsp.net_idx1, net_idx1);
 	ASSERT_EQUAL(rsp.net_idx2, net_idx2);
@@ -472,7 +471,7 @@ static void test_tester_simple(void)
 	/* Adding devices to bridge table */
 	for (int i = 0; i < REMOTE_NODES; i++) {
 		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
+				 BT_MESH_BRG_CFG_DIR_TWOWAY);
 	}
 
 	for (int i = 0; i < REMOTE_NODES; i++) {
@@ -489,9 +488,8 @@ static void test_tester_simple(void)
 
 	LOG_INF("Step 2: Disabling bridging...");
 
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_set(0, BRIDGE_ADDR, BT_MESH_SUBNET_BRIDGE_DISABLED,
-						    &status);
-	if (err || status != BT_MESH_SUBNET_BRIDGE_DISABLED) {
+	err = bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_DISABLED, &status);
+	if (err || status != BT_MESH_BRG_CFG_DISABLED) {
 		FAIL("Subnet bridge set failed (err %d) (status %u)", err, status);
 		return;
 	}
@@ -506,9 +504,8 @@ static void test_tester_simple(void)
 	}
 
 	LOG_INF("Step3: Enabling bridging...");
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_set(0, BRIDGE_ADDR, BT_MESH_SUBNET_BRIDGE_ENABLED,
-						    &status);
-	if (err || status != BT_MESH_SUBNET_BRIDGE_ENABLED) {
+	err = bt_mesh_brg_cfg_cli_set(0, BRIDGE_ADDR, BT_MESH_BRG_CFG_ENABLED, &status);
+	if (err || status != BT_MESH_BRG_CFG_ENABLED) {
 		FAIL("Subnet bridge set failed (err %d) (status %u)", err, status);
 		return;
 	}
@@ -554,7 +551,7 @@ static void test_tester_table_state_change(void)
 	ASSERT_EQUAL(err, -EAGAIN);
 
 	/* DATA and GET messages should reach Device 1, but STATUS message won't be received. */
-	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY);
+	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_BRG_CFG_DIR_ONEWAY);
 
 	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA));
 
@@ -569,19 +566,17 @@ static void test_tester_table_state_change(void)
 	/* Adding a reverse entry. This should be added to the bridge table as a separate entry as
 	 * the addresses and net keys indexs are provided in the opposite order.
 	 */
-	bridge_entry_add(DEVICE_ADDR_START, PROV_ADDR, 1, 0, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY);
-	bridge_table_verify(
-		0, 1, 0,
-		(struct bridged_addresses_entry[]){
-			{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
-		},
-		1);
-	bridge_table_verify(
-		1, 0, 0,
-		(struct bridged_addresses_entry[]){
-			{DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
-		},
-		1);
+	bridge_entry_add(DEVICE_ADDR_START, PROV_ADDR, 1, 0, BT_MESH_BRG_CFG_DIR_ONEWAY);
+	bridge_table_verify(0, 1, 0,
+			    (struct bridged_addresses_entry[]){
+				    {PROV_ADDR, DEVICE_ADDR_START, BT_MESH_BRG_CFG_DIR_ONEWAY},
+			    },
+			    1);
+	bridge_table_verify(1, 0, 0,
+			    (struct bridged_addresses_entry[]){
+				    {DEVICE_ADDR_START, PROV_ADDR, BT_MESH_BRG_CFG_DIR_ONEWAY},
+			    },
+			    1);
 
 	k_sleep(K_SECONDS(1));
 
@@ -596,13 +591,12 @@ static void test_tester_table_state_change(void)
 	 * tester should still receive STATUS message.
 	 */
 	bridge_entry_remove(DEVICE_ADDR_START, PROV_ADDR, 1, 0);
-	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
-	bridge_table_verify(
-		0, 1, 0,
-		(struct bridged_addresses_entry[]){
-			{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
-		},
-		1);
+	bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START, 0, 1, BT_MESH_BRG_CFG_DIR_TWOWAY);
+	bridge_table_verify(0, 1, 0,
+			    (struct bridged_addresses_entry[]){
+				    {PROV_ADDR, DEVICE_ADDR_START, BT_MESH_BRG_CFG_DIR_TWOWAY},
+			    },
+			    1);
 	bridge_table_verify(1, 0, 0, NULL, 0);
 
 	ASSERT_OK(send_get(DEVICE_ADDR_START));
@@ -651,7 +645,7 @@ static void test_tester_net_key_remove(void)
 	/* Adding devices to bridge table */
 	for (int i = 0; i < REMOTE_NODES; i++) {
 		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
+				 BT_MESH_BRG_CFG_DIR_TWOWAY);
 	}
 
 	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA));
@@ -667,21 +661,20 @@ static void test_tester_net_key_remove(void)
 	err = k_sem_take(&status_msg_recvd_sem, K_SECONDS(5));
 	ASSERT_EQUAL(err, -EAGAIN);
 
-	bridge_table_verify(
-		0, 2, 0,
-		(struct bridged_addresses_entry[]){
-			{PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
-		},
-		1);
+	bridge_table_verify(0, 2, 0,
+			    (struct bridged_addresses_entry[]){
+				    {PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_BRG_CFG_DIR_TWOWAY},
+			    },
+			    1);
 
 	/* Bridging Table Get message will return Invalid NetKey Index error because Subnet 1 is
 	 * removed.
 	 */
-	struct bt_mesh_bridging_table_list rsp = {
+	struct bt_mesh_brg_cfg_table_list rsp = {
 		.list = NULL,
 	};
 
-	ASSERT_OK(bt_mesh_brg_cfg_cli_bridging_table_get(0, BRIDGE_ADDR, 0, 1, 0, &rsp));
+	ASSERT_OK(bt_mesh_brg_cfg_cli_table_get(0, BRIDGE_ADDR, 0, 1, 0, &rsp));
 	ASSERT_EQUAL(rsp.status, 4);
 
 	PASS();
@@ -699,8 +692,8 @@ static void test_tester_persistence(void)
 
 		LOG_INF("Already provisioned, skipping provisioning");
 
-		ASSERT_OK(bt_mesh_brg_cfg_cli_subnet_bridge_get(0, BRIDGE_ADDR, &status));
-		if (status != BT_MESH_SUBNET_BRIDGE_ENABLED) {
+		ASSERT_OK(bt_mesh_brg_cfg_cli_get(0, BRIDGE_ADDR, &status));
+		if (status != BT_MESH_BRG_CFG_ENABLED) {
 			FAIL("Subnet bridge set failed (status %u)", status);
 			return;
 		}
@@ -708,30 +701,30 @@ static void test_tester_persistence(void)
 		bridge_table_verify(
 			0, 1, 0,
 			(struct bridged_addresses_entry[]){
-				{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
+				{PROV_ADDR, DEVICE_ADDR_START, BT_MESH_BRG_CFG_DIR_TWOWAY},
 			},
 			1);
 
-		bridge_table_verify(0, 2, 0,
-				    (struct bridged_addresses_entry[]){
-					    {PROV_ADDR, DEVICE_ADDR_START + 1,
-					     BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY},
-				    },
-				    1);
+		bridge_table_verify(
+			0, 2, 0,
+			(struct bridged_addresses_entry[]){
+				{PROV_ADDR, DEVICE_ADDR_START + 1, BT_MESH_BRG_CFG_DIR_TWOWAY},
+			},
+			1);
 
 		bridge_table_verify(
 			1, 0, 0,
 			(struct bridged_addresses_entry[]){
-				{DEVICE_ADDR_START, PROV_ADDR, BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
+				{DEVICE_ADDR_START, PROV_ADDR, BT_MESH_BRG_CFG_DIR_ONEWAY},
 			},
 			1);
 
-		bridge_table_verify(2, 0, 0,
-				    (struct bridged_addresses_entry[]){
-					    {DEVICE_ADDR_START + 1, PROV_ADDR,
-					     BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY},
-				    },
-				    1);
+		bridge_table_verify(
+			2, 0, 0,
+			(struct bridged_addresses_entry[]){
+				{DEVICE_ADDR_START + 1, PROV_ADDR, BT_MESH_BRG_CFG_DIR_ONEWAY},
+			},
+			1);
 	} else {
 		tester_setup();
 
@@ -744,9 +737,9 @@ static void test_tester_persistence(void)
 		/* Adding devices to bridge table */
 		for (int i = 0; i < REMOTE_NODES; i++) {
 			bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-					 BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
+					 BT_MESH_BRG_CFG_DIR_TWOWAY);
 			bridge_entry_add(DEVICE_ADDR_START + i, PROV_ADDR, i + 1, 0,
-					 BT_MESH_SUBNET_BRIDGE_DIR_ONEWAY);
+					 BT_MESH_BRG_CFG_DIR_ONEWAY);
 		}
 
 		k_sleep(K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT));
@@ -839,7 +832,7 @@ static void test_tester_ivu(void)
 	/* Adding devices to bridge table */
 	for (int i = 0; i < REMOTE_NODES; i++) {
 		bridge_entry_add(PROV_ADDR, DEVICE_ADDR_START + i, 0, i + 1,
-				 BT_MESH_SUBNET_BRIDGE_DIR_TWOWAY);
+				 BT_MESH_BRG_CFG_DIR_TWOWAY);
 	}
 
 	for (int i = 0; i < REMOTE_NODES; i++) {

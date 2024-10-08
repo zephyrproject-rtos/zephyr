@@ -35,7 +35,9 @@ static struct wifi_connect_req_params last_wifi_conn_params;
 
 enum requested_ops {
 	CONNECT = 0,
-	DISCONNECT
+	DISCONNECT,
+	WPS_PBC,
+	WPS_PIN,
 };
 
 enum status_thread_state {
@@ -360,6 +362,10 @@ static inline enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_
 static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto)
 {
 	switch (key_mgmt) {
+	case WPA_KEY_MGMT_IEEE8021X:
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B:
+	case WPA_KEY_MGMT_IEEE8021X_SUITE_B_192:
+		return WIFI_SECURITY_TYPE_EAP_TLS;
 	case WPA_KEY_MGMT_NONE:
 		return WIFI_SECURITY_TYPE_NONE;
 	case WPA_KEY_MGMT_PSK:
@@ -1255,6 +1261,91 @@ out:
 	return ret;
 }
 
+static int supplicant_wps_pbc(const struct device *dev)
+{
+	struct wpa_supplicant *wpa_s;
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (!wpa_cli_cmd_v("wps_pbc")) {
+		goto out;
+	}
+
+	wpas_api_ctrl.dev = dev;
+	wpas_api_ctrl.requested_op = WPS_PBC;
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+
+static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_params *params)
+{
+	struct wpa_supplicant *wpa_s;
+	char *get_pin_cmd = "WPS_PIN get";
+	int ret = -1;
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(dev);
+	if (!wpa_s) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	if (params->oper == WIFI_WPS_PIN_GET) {
+		if (zephyr_wpa_cli_cmd_resp(get_pin_cmd, params->pin)) {
+			goto out;
+		}
+	} else if (params->oper == WIFI_WPS_PIN_SET) {
+		if (!wpa_cli_cmd_v("wps_check_pin %s", params->pin)) {
+			goto out;
+		}
+
+		if (!wpa_cli_cmd_v("wps_pin any %s", params->pin)) {
+			goto out;
+		}
+
+		wpas_api_ctrl.dev = dev;
+		wpas_api_ctrl.requested_op = WPS_PIN;
+	} else {
+		wpa_printf(MSG_ERROR, "Error wps pin operation : %d", params->oper);
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+
+	return ret;
+}
+
+int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_params *params)
+{
+	int ret = 0;
+
+	if (params->oper == WIFI_WPS_PBC) {
+		ret = supplicant_wps_pbc(dev);
+	} else if (params->oper == WIFI_WPS_PIN_GET || params->oper == WIFI_WPS_PIN_SET) {
+		ret = supplicant_wps_pin(dev, params);
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_AP
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 int hapd_state(const struct device *dev, int *state)
@@ -1404,6 +1495,57 @@ int hapd_config_network(struct hostapd_iface *iface,
 		goto out;
 	}
 out:
+	return ret;
+}
+
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
+{
+	struct hostapd_iface *iface;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+	int ret = 0;
+
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_INACTIVITY) {
+		if (!wifi_mgmt_api || !wifi_mgmt_api->ap_config_params) {
+			wpa_printf(MSG_ERROR, "ap_config_params not supported");
+			return -ENOTSUP;
+		}
+
+		ret = wifi_mgmt_api->ap_config_params(dev, params);
+		if (ret) {
+			wpa_printf(MSG_ERROR,
+				   "Failed to set maximum inactivity duration for stations");
+		} else {
+			wpa_printf(MSG_INFO, "Set maximum inactivity duration for stations: %d (s)",
+				   params->max_inactivity);
+		}
+	}
+	if (params->type & WIFI_AP_CONFIG_PARAM_MAX_NUM_STA) {
+		k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+		iface = get_hostapd_handle(dev);
+		if (!iface) {
+			ret = -ENOENT;
+			wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+			goto out;
+		}
+
+		if (iface->state > HAPD_IFACE_DISABLED) {
+			ret = -EBUSY;
+			wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
+			goto out;
+		}
+
+		if (!hostapd_cli_cmd_v("set max_num_sta %d", params->max_num_sta)) {
+			ret = -EINVAL;
+			wpa_printf(MSG_ERROR, "Failed to set maximum number of stations");
+			goto out;
+		}
+		wpa_printf(MSG_INFO, "Set maximum number of stations: %d", params->max_num_sta);
+
+out:
+		k_mutex_unlock(&wpa_supplicant_mutex);
+	}
+
 	return ret;
 }
 #endif
@@ -1626,6 +1768,7 @@ out:
 }
 #endif /* CONFIG_AP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static const char *dpp_params_to_args_curve(int curve)
 {
 	switch (curve) {
@@ -1915,6 +2058,7 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
 	os_free(cmd);
 	return 0;
 }
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)

@@ -26,6 +26,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/types.h>
@@ -65,6 +66,8 @@ struct tbs_inst {
 	const struct bt_gatt_attr *attrs;
 	/** Service Attribute count */
 	size_t attr_count;
+
+	bool authorization_required;
 };
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
@@ -81,6 +84,11 @@ static struct bt_tbs_call *held_calls[CONFIG_BT_TBS_MAX_CALLS];
 static uint8_t held_calls_cnt;
 
 static struct bt_tbs_cb *tbs_cbs;
+
+static bool inst_is_registered(const struct tbs_inst *inst)
+{
+	return inst->attrs != NULL;
+}
 
 static bool inst_is_gtbs(const struct tbs_inst *inst)
 {
@@ -109,15 +117,19 @@ static uint8_t inst_index(const struct tbs_inst *inst)
 
 static struct tbs_inst *inst_lookup_index(uint8_t index)
 {
+	struct tbs_inst *inst = NULL;
+
 	if (index == BT_TBS_GTBS_INDEX) {
-		return &gtbs_inst;
+		inst = &gtbs_inst;
+	} else if (ARRAY_SIZE(svc_insts) > 0U && index < ARRAY_SIZE(svc_insts)) {
+		inst = &svc_insts[index];
 	}
 
-	if (ARRAY_SIZE(svc_insts) > 0U && index < ARRAY_SIZE(svc_insts)) {
-		return &svc_insts[index];
+	if (inst == NULL || !inst_is_registered(inst)) {
+		return NULL;
 	}
 
-	return NULL;
+	return inst;
 }
 
 static struct bt_tbs_call *lookup_call_in_inst(struct tbs_inst *inst, uint8_t call_index)
@@ -213,9 +225,9 @@ static struct tbs_inst *lookup_inst_by_call_index(uint8_t call_index)
 	return NULL;
 }
 
-static bool is_authorized(struct bt_conn *conn)
+static bool is_authorized(const struct tbs_inst *inst, struct bt_conn *conn)
 {
-	if (IS_ENABLED(CONFIG_BT_TBS_AUTHORIZATION)) {
+	if (inst->authorization_required) {
 		if (tbs_cbs != NULL && tbs_cbs->authorize != NULL) {
 			return tbs_cbs->authorize(conn);
 		} else {
@@ -636,12 +648,8 @@ static ssize_t read_signal_strength_interval(struct bt_conn *conn, const struct 
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
-	if (!is_authorized(conn)) {
-		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
-	}
-
-	LOG_DBG("Index %u: Signal strength interval 0x%02x", inst_index(inst),
-		inst->signal_strength_interval);
+	LOG_DBG("Index %u: Signal strength interval 0x%02x",
+		inst_index(inst), inst->signal_strength_interval);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->signal_strength_interval,
 				 sizeof(inst->signal_strength_interval));
@@ -655,7 +663,7 @@ static ssize_t write_signal_strength_interval(struct bt_conn *conn, const struct
 	struct net_buf_simple net_buf;
 	uint8_t signal_strength_interval;
 
-	if (!is_authorized(conn)) {
+	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 	}
 
@@ -1115,7 +1123,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	uint8_t call_index = 0;
 	const bool is_gtbs = inst_is_gtbs(inst);
 
-	if (!is_authorized(conn)) {
+	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
 	}
 
@@ -1474,7 +1482,8 @@ static void in_call_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 		BT_TBS_SERVICE_DEFINE(BT_UUID_TBS, &(_inst))                                       \
 	}
 
-BT_GATT_SERVICE_DEFINE(gtbs_svc, BT_TBS_SERVICE_DEFINE(BT_UUID_GTBS, &gtbs_inst));
+static struct bt_gatt_service gtbs_svc =
+	BT_GATT_SERVICE(((struct bt_gatt_attr[]){BT_TBS_SERVICE_DEFINE(BT_UUID_GTBS, &gtbs_inst)}));
 
 BT_GATT_SERVICE_INSTANCE_DEFINE(tbs_service_list, svc_insts, CONFIG_BT_TBS_BEARER_COUNT,
 				BT_TBS_SERVICE_DEFINITION);
@@ -1499,58 +1508,220 @@ static void signal_interval_timeout(struct k_work *work)
 	inst->pending_signal_strength_notification = false;
 }
 
-static void tbs_inst_init(struct tbs_inst *inst, const struct bt_gatt_attr *attrs,
-			  size_t attr_count, const char *provider_name)
+static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_service *svc,
+				      const struct bt_tbs_register_param *param)
 {
-	LOG_DBG("inst %p index 0x%02x provider_name %s", inst, inst_index(inst), provider_name);
+	int err;
+
+	LOG_DBG("inst %p index 0x%02x", inst, inst_index(inst));
 
 	inst->ccid = bt_ccid_get_value();
-	(void)utf8_lcpy(inst->provider_name, provider_name, sizeof(inst->provider_name));
-	(void)utf8_lcpy(inst->uci, CONFIG_BT_TBS_UCI, sizeof(inst->uci));
-	inst->optional_opcodes = CONFIG_BT_TBS_SUPPORTED_FEATURES;
-	inst->technology = CONFIG_BT_TBS_TECHNOLOGY;
-	inst->signal_strength_interval = CONFIG_BT_TBS_SIGNAL_STRENGTH_INTERVAL;
-	inst->status_flags = CONFIG_BT_TBS_STATUS_FLAGS;
-	inst->attrs = attrs;
-	inst->attr_count = attr_count;
+	(void)utf8_lcpy(inst->provider_name, param->provider_name, sizeof(inst->provider_name));
+	(void)utf8_lcpy(inst->uci, param->uci, sizeof(inst->uci));
+	(void)utf8_lcpy(inst->uri_scheme_list, param->uri_schemes_supported,
+			sizeof(inst->uri_scheme_list));
+	inst->optional_opcodes = param->supported_features;
+	inst->technology = param->technology;
+	inst->attrs = svc->attrs;
+	inst->attr_count = svc->attr_count;
+	inst->authorization_required = param->authorization_required;
 
 	k_work_init_delayable(&inst->reporting_interval_work, signal_interval_timeout);
+
+	err = bt_gatt_service_register(svc);
+	if (err != 0) {
+		LOG_DBG("Could not register %sTBS: %d", param->gtbs ? "G" : "", err);
+		memset(inst, 0, sizeof(*inst));
+
+		return err;
+	}
+
+	return inst_index(inst);
 }
 
-static void gtbs_service_inst_init(struct tbs_inst *inst,
-				   const struct bt_gatt_service_static *service)
+static int gtbs_service_inst_register(const struct bt_tbs_register_param *param)
 {
-	tbs_inst_init(inst, service->attrs, service->attr_count, "Generic TBS");
+	return tbs_inst_init_and_register(&gtbs_inst, &gtbs_svc, param);
 }
 
-static void tbs_service_inst_init(struct tbs_inst *inst, struct bt_gatt_service *service)
+static int tbs_service_inst_register(const struct bt_tbs_register_param *param)
 {
-	tbs_inst_init(inst, service->attrs, service->attr_count, CONFIG_BT_TBS_PROVIDER_NAME);
-	(void)utf8_lcpy(inst->uri_scheme_list, CONFIG_BT_TBS_URI_SCHEMES_LIST,
-			sizeof(inst->uri_scheme_list));
-}
-
-static int bt_tbs_init(void)
-{
-	gtbs_service_inst_init(&gtbs_inst, &gtbs_svc);
-
 	for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
-		int err;
+		struct tbs_inst *inst = &svc_insts[i];
 
-		err = bt_gatt_service_register(&tbs_service_list[i]);
-		if (err != 0) {
-			LOG_ERR("Could not register TBS[%d]: %d", i, err);
+		if (!(inst_is_registered(inst))) {
+			return tbs_inst_init_and_register(inst, &tbs_service_list[i], param);
+		}
+	}
+
+	return -ENOMEM;
+}
+
+static bool valid_register_param(const struct bt_tbs_register_param *param)
+{
+	size_t str_len;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+
+		return false;
+	}
+
+	if (param->provider_name == NULL) {
+		LOG_DBG("provider_name is NULL");
+
+		return false;
+	}
+
+	str_len = strlen(param->provider_name);
+	if (str_len > CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH) {
+		LOG_DBG("Provider name length (%zu) larger than "
+			"CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH %d",
+			str_len, CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+
+		return false;
+	}
+
+	if (param->uci == NULL) {
+		LOG_DBG("uci is NULL");
+
+		return false;
+	}
+
+	if (param->uri_schemes_supported == NULL) {
+		LOG_DBG("uri_schemes_supported is NULL");
+
+		return false;
+	}
+
+	if (!IN_RANGE(param->technology, BT_TBS_TECHNOLOGY_3G, BT_TBS_TECHNOLOGY_WCDMA)) {
+		LOG_DBG("Invalid technology: %u", param->technology);
+
+		return false;
+	}
+
+	if (param->supported_features > BT_TBS_FEATURE_ALL) {
+		LOG_DBG("Invalid supported_features: %u", param->supported_features);
+
+		return false;
+	}
+
+	if (CONFIG_BT_TBS_BEARER_COUNT == 0 && !param->gtbs) {
+		LOG_DBG("Cannot register TBS when CONFIG_BT_TBS_BEARER_COUNT=0");
+
+		return false;
+	}
+
+	return true;
+}
+
+int bt_tbs_register_bearer(const struct bt_tbs_register_param *param)
+{
+	int ret;
+
+	CHECKIF(!valid_register_param(param)) {
+		LOG_DBG("Invalid parameters");
+
+		return -EINVAL;
+	}
+
+	if (param->gtbs && inst_is_registered(&gtbs_inst)) {
+		LOG_DBG("GTBS already registered");
+
+		return -EALREADY;
+	}
+
+	if (!param->gtbs && !inst_is_registered(&gtbs_inst)) {
+		LOG_DBG("GTBS not yet registered");
+
+		return -EAGAIN;
+	}
+
+	if (param->gtbs) {
+		ret = gtbs_service_inst_register(param);
+		if (ret < 0) {
+			LOG_DBG("Failed to register GTBS: %d", ret);
+
+			return -ENOEXEC;
+		}
+	} else if (CONFIG_BT_TBS_BEARER_COUNT > 0) {
+		ret = tbs_service_inst_register(param);
+		if (ret < 0) {
+			LOG_DBG("Failed to register GTBS: %d", ret);
+
+			if (ret == -ENOMEM) {
+				return -ENOMEM;
+			}
+
+			return -ENOEXEC;
+		}
+	}
+
+	/* ret will contain the index of the registered service */
+	return ret;
+}
+
+int bt_tbs_unregister_bearer(uint8_t bearer_index)
+{
+	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	struct bt_gatt_service *svc;
+	struct k_work_sync sync;
+	bool restart_reporting_interval;
+	int err;
+
+	if (inst == NULL) {
+		LOG_DBG("Could not find inst by index %u", bearer_index);
+
+		return -EINVAL;
+	}
+
+	if (!inst_is_registered(inst)) {
+		LOG_DBG("Instance from index %u is not registered", bearer_index);
+
+		return -EALREADY;
+	}
+
+	if (inst_is_gtbs(inst)) {
+		for (size_t i = 0; i < ARRAY_SIZE(svc_insts); i++) {
+			struct tbs_inst *tbs = &svc_insts[i];
+
+			if (inst_is_registered(tbs)) {
+				LOG_DBG("TBS[%u] is registered, please unregister all TBS first",
+					bearer_index);
+				return -EAGAIN;
+			}
+		}
+		svc = &gtbs_svc;
+	} else {
+		svc = &tbs_service_list[bearer_index];
+	}
+
+	restart_reporting_interval =
+		k_work_cancel_delayable_sync(&inst->reporting_interval_work, &sync);
+
+	err = bt_gatt_service_unregister(svc);
+	if (err != 0) {
+		LOG_DBG("Failed to unregister service %p: %d", svc, err);
+
+		if (restart_reporting_interval && inst->signal_strength_interval != 0U) {
+			/* In this unlikely scenario we may report interval later than expected if
+			 * the k_work was cancelled right before it was set to trigger. It is not a
+			 * big deal and not worth trying to reschedule in a way that it would
+			 * trigger at the same time again, as specific timing over GATT is a wishful
+			 * dream anyways
+			 */
+			k_work_schedule(&inst->reporting_interval_work,
+					K_SECONDS(inst->signal_strength_interval));
 		}
 
-		tbs_service_inst_init(&svc_insts[i], &tbs_service_list[i]);
+		return -ENOEXEC;
 	}
+
+	memset(inst, 0, sizeof(*inst));
 
 	return 0;
 }
 
-SYS_INIT(bt_tbs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-/***************************** Profile API *****************************/
 int bt_tbs_accept(uint8_t call_index)
 {
 	struct tbs_inst *inst = lookup_inst_by_call_index(call_index);

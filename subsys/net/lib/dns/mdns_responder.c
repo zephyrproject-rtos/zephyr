@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include "dns_sd.h"
 #include "dns_pack.h"
 #include "ipv6.h"
+#include "../../ip/net_stats.h"
 
 #include "net_private.h"
 
@@ -336,6 +337,8 @@ static int send_response(int sock,
 			   (struct sockaddr *)&dst, dst_len);
 	if (ret < 0) {
 		NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
+	} else {
+		net_stats_update_dns_sent(iface);
 	}
 
 	return ret;
@@ -496,6 +499,8 @@ static void send_sd_response(int sock,
 			if (ret < 0) {
 				NET_DBG("Cannot send %s reply (%d)", "mDNS", ret);
 				continue;
+			} else {
+				net_stats_update_dns_sent(iface);
 			}
 		}
 	}
@@ -533,7 +538,6 @@ static int dns_read(int sock,
 
 	ret = mdns_unpack_query_header(&dns_msg, NULL);
 	if (ret < 0) {
-		ret = -EINVAL;
 		goto quit;
 	}
 
@@ -670,7 +674,7 @@ static int dispatcher_cb(void *my_ctx, int sock,
 	ARG_UNUSED(my_ctx);
 
 	ret = dns_read(sock, dns_data, len, addr, addrlen);
-	if (ret < 0 && ret != -EINVAL) {
+	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
 
@@ -722,17 +726,15 @@ static int init_listener(void)
 	NET_DBG("Setting %s listener to %d interface%s", "mDNS", iface_count,
 		iface_count > 1 ? "s" : "");
 
-	if ((iface_count > MAX_IPV6_IFACE_COUNT && MAX_IPV6_IFACE_COUNT > 0) ||
-	    (iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
-		NET_WARN("You have %d interfaces configured but there "
-			 "are %d network interfaces in the system.",
-			 MAX(MAX_IPV4_IFACE_COUNT,
-			     MAX_IPV6_IFACE_COUNT), iface_count);
-	}
-
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6;
 	int v6;
+
+	if ((iface_count > MAX_IPV6_IFACE_COUNT && MAX_IPV6_IFACE_COUNT > 0)) {
+		NET_WARN("You have %d %s interfaces configured but there "
+			 "are %d network interfaces in the system.",
+			 MAX_IPV6_IFACE_COUNT, "IPv6", iface_count);
+	}
 
 	setup_ipv6_addr(&local_addr6);
 
@@ -810,6 +812,12 @@ static int init_listener(void)
 #if defined(CONFIG_NET_IPV4)
 	struct sockaddr_in local_addr4;
 	int v4;
+
+	if ((iface_count > MAX_IPV4_IFACE_COUNT && MAX_IPV4_IFACE_COUNT > 0)) {
+		NET_WARN("You have %d %s interfaces configured but there "
+			 "are %d network interfaces in the system.",
+			 MAX_IPV4_IFACE_COUNT, "IPv4", iface_count);
+	}
 
 	setup_ipv4_addr(&local_addr4);
 

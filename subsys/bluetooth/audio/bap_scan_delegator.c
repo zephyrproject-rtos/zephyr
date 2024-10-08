@@ -87,7 +87,16 @@ struct bt_bap_scan_delegator_inst {
 		[CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT];
 };
 
-static bool conn_cb_registered;
+enum scan_delegator_flag {
+	SCAN_DELEGATOR_FLAG_REGISTERED_CONN_CB,
+	SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR,
+	SCAN_DELEGATOR_FLAG_REGISTERED_PA_SYNC_CB,
+
+	SCAN_DELEGATOR_FLAG_NUM,
+};
+
+static ATOMIC_DEFINE(scan_delegator_flags, SCAN_DELEGATOR_FLAG_NUM);
+
 static struct bt_bap_scan_delegator_inst scan_delegator;
 static struct bt_bap_scan_delegator_cb *scan_delegator_cbs;
 
@@ -325,9 +334,9 @@ static struct broadcast_assistant *get_bap_broadcast_assistant(struct bt_conn *c
 		}
 	}
 
-	if (!conn_cb_registered) {
+	if (!atomic_test_and_set_bit(scan_delegator_flags,
+				     SCAN_DELEGATOR_FLAG_REGISTERED_CONN_CB)) {
 		bt_conn_cb_register(&conn_cb);
-		conn_cb_registered = true;
 	}
 
 	return new;
@@ -1157,7 +1166,7 @@ static ssize_t read_recv_state(struct bt_conn *conn,
 		      read_recv_state, NULL, UINT_TO_POINTER(idx)), \
 	BT_AUDIO_CCC(recv_state_cfg_changed)
 
-BT_GATT_SERVICE_DEFINE(bass_svc,
+static struct bt_gatt_attr attr_bass_svc[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_BASS),
 	BT_AUDIO_CHRC(BT_UUID_BASS_CONTROL_POINT,
 		      BT_GATT_CHRC_WRITE_WITHOUT_RESP | BT_GATT_CHRC_WRITE,
@@ -1170,10 +1179,58 @@ BT_GATT_SERVICE_DEFINE(bass_svc,
 	RECEIVE_STATE_CHARACTERISTIC(2)
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
-);
+};
 
-static int bt_bap_scan_delegator_init(void)
+static struct bt_gatt_service bass_svc = BT_GATT_SERVICE(attr_bass_svc);
+
+static int bass_register(void)
 {
+	int err;
+
+	err = bt_gatt_service_register(&bass_svc);
+	if (err) {
+		LOG_DBG("Failed to register BASS service (err %d)", err);
+		return err;
+	}
+
+	LOG_DBG("BASS service registered");
+
+	return 0;
+}
+
+static int bass_unregister(void)
+{
+	int err;
+
+	err = bt_gatt_service_unregister(&bass_svc);
+	if (err) {
+		LOG_DBG("Failed to unregister BASS service (err %d)", err);
+		return err;
+	}
+
+	LOG_DBG("BASS service unregistered");
+
+	return 0;
+}
+
+/****************************** PUBLIC API ******************************/
+int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
+{
+	int err;
+
+	if (atomic_test_and_set_bit(scan_delegator_flags,
+				    SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR)) {
+		LOG_DBG("Scan delegator already registered");
+		return -EALREADY;
+	}
+
+	err = bass_register();
+	if (err) {
+		atomic_clear_bit(scan_delegator_flags,
+				 SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR);
+		return err;
+	}
+
 	/* Store the pointer to the first characteristic in each receive state */
 	scan_delegator.recv_states[0].attr = &bass_svc.attrs[3];
 	scan_delegator.recv_states[0].index = 0;
@@ -1186,17 +1243,43 @@ static int bt_bap_scan_delegator_init(void)
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
 
-	bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+	if (!atomic_test_and_set_bit(scan_delegator_flags,
+				     SCAN_DELEGATOR_FLAG_REGISTERED_PA_SYNC_CB)) {
+		err = bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+		if (err) {
+			atomic_clear_bit(scan_delegator_flags,
+					 SCAN_DELEGATOR_FLAG_REGISTERED_PA_SYNC_CB);
+			atomic_clear_bit(scan_delegator_flags,
+					 SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR);
+			return err;
+		}
+	}
+
+	scan_delegator_cbs = cb;
 
 	return 0;
 }
 
-SYS_INIT(bt_bap_scan_delegator_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-
-/****************************** PUBLIC API ******************************/
-void bt_bap_scan_delegator_register_cb(struct bt_bap_scan_delegator_cb *cb)
+int bt_bap_scan_delegator_unregister(void)
 {
-	scan_delegator_cbs = cb;
+	int err;
+
+	if (!atomic_test_and_clear_bit(scan_delegator_flags,
+				       SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR)) {
+		LOG_DBG("Scan delegator not yet registered");
+		return -EALREADY;
+	}
+
+	err = bass_unregister();
+	if (err) {
+		atomic_set_bit(scan_delegator_flags,
+			       SCAN_DELEGATOR_FLAG_REGISTERED_SCAN_DELIGATOR);
+		return err;
+	}
+
+	scan_delegator_cbs = NULL;
+
+	return 0;
 }
 
 int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,

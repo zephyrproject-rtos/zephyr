@@ -681,7 +681,7 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 				DT_INST_PROP(0, dldh),			\
 				DT_INST_PROP(0, dcsda))
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, microchip_xec_qmspi))
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -708,4 +708,4 @@ DEVICE_DT_INST_DEFINE(0,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 
-#endif /* DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_INST(0, microchip_xec_qmspi)) */

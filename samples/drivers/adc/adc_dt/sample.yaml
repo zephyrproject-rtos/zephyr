@@ -15,7 +15,7 @@ tests:
       - stm32h735g_disco
       - nrf51dk/nrf51822
       - nrf52840dk/nrf52840
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - mec172xevb_assy6906
       - gd32f350r_eval
@@ -33,6 +33,7 @@ tests:
       - longan_nano/gd32vf103/lite
       - rd_rw612_bga
       - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxc242
       - ucans32k1sic
     integration_platforms:
       - nucleo_l073rz

@@ -35,6 +35,17 @@ Boards
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   ``west blobs fetch hal_stm32`` instead of ``west blobs fetch stm32``.
 
+* Board ``qemu_xtensa`` is deprecated. Use ``qemu_xtensa/dc233c`` instead.
+
+Devicetree
+**********
+
+* The :c:macro:`DT_REG_ADDR` macro and its variants are now expanding into an
+  unsigned literals (i.e. with a ``U`` suffix). To use addresses as devicetree
+  indexes use the :c:macro:`DT_REG_ADDR_RAW` variants.
+* The :c:macro:`DT_REG_SIZE` macro and its variants are also expanding into
+  unsigned literals, no raw variants are provided at this stage.
+
 STM32
 =====
 
@@ -60,6 +71,11 @@ Mbed TLS
 
 Trusted Firmware-M
 ==================
+
+* The security counter used for the hardware rollback protection now comes explicitly from
+  :kconfig:option:`CONFIG_TFM_IMAGE_SECURITY_COUNTER`, instead of being automatically determined from
+  the image version. This has been changed as the implicit counter calculation is incompatible with
+  versions larger than ``0.0.1024`` (:github:`78128`).
 
 LVGL
 ====
@@ -101,6 +117,12 @@ Device Drivers and Devicetree
   Chip variants with open-drain outputs (``mcp23x09``, ``mcp23x18``) now correctly reflect this in
   their driver API, users of these devices should ensure they pass appropriate values to
   :c:func:`gpio_pin_set`. (:github:`65797`)
+
+Analog Digital Converter (ADC)
+==============================
+
+* For all STM32 ADC that selects an asynchronous clock through ``st,adc-clock-source`` property,
+  it is now mandatory to also explicitly define a domain clock source using the ``clock`` property.
 
 Clock control
 =============
@@ -203,6 +225,10 @@ Sensors
 Serial
 ======
 
+ * Users of :c:func:`uart_irq_tx_ready` now need to check for ``ret > 0`` to ensure that the FIFO
+   can accept data bytes, instead of ``ret == 1``. The function now returns a lower bound on the
+   number of bytes that can be provided to :c:func:`uart_fifo_fill` without truncation.
+
 Regulator
 =========
 
@@ -277,6 +303,32 @@ Bluetooth Audio
   time. It does not need to be called again until the new function
   :c:func:`bt_bap_unicast_server_unregister` has been called.
   (:github:`76632`)
+
+* The Coordinated Set Coordinator functions :c:func:`bt_csip_set_coordinator_lock` and
+  :c:func:`bt_csip_set_coordinator_release` now require that :kconfig:option:`CONFIG_BT_BONDABLE`
+  is enabled and that all members are bonded, to comply with the requirements from the CSIP spec.
+  (:github:`78877`)
+
+* The Broadcast Audio Scan Service (BASS) shall now be registered and unregistered dynamically
+  at runtime within the scan delegator. Two new APIs, :c:func:`bt_bap_scan_delegator_register()`
+  and :c:func:`bt_bap_scan_delegator_unregister()`, have been introduced to manage both BASS and
+  scan delegator registration and initialization dynamically. It should also be mentioned that
+  the previous callback registration function, :c:func:`bt_bap_scan_delegator_register_cb()` has
+  now been removed and merged with :c:func:`bt_bap_scan_delegator_register()`.
+  This change allows more flexibility when registering or unregistering scan delegator and BASS
+  related functionality without requiring build-time configuration. Existing need to be updated
+  to use these new APIs.
+  (:github:`78751`)
+
+* The Telephone Bearer Service (TBS) and Generic Telephone Bearer Service (GTBS) shall now be
+  registered dynamically at runtime with :c:func:`bt_tbs_register_bearer`. The services can also be
+  unregistered with :c:func:`bt_tbs_unregister_bearer`.
+  (:github:`76108`)
+
+* There has been a rename from ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg``. This effects all
+  structs, enums and defines that used the ``bt_audio_codec_qos`` name. To use the new naming simply
+  do a search-and-replace for ``bt_audio_codec_qos`` to ``bt_bap_qos_cfg`` and
+  ``BT_AUDIO_CODEC_QOS`` to ``BT_BAP_QOS_CFG``. (:github:`76633`)
 
 Bluetooth Classic
 =================

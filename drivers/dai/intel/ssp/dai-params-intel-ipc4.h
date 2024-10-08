@@ -269,7 +269,7 @@ struct dai_intel_ipc4_ssp_mclk_config_2 {
 } __packed;
 
 struct dai_intel_ipc4_ssp_driver_config {
-#ifdef CONFIG_SOC_INTEL_ACE30_PTL
+#ifdef CONFIG_SOC_INTEL_ACE30
 	struct dai_intel_ipc4_ssp_config_ver_3_0 i2s_config;
 #else
 	struct dai_intel_ipc4_ssp_config i2s_config;

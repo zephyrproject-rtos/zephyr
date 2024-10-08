@@ -321,7 +321,7 @@ struct adc_dt_spec {
 	DT_FOREACH_CHILD_VARGS(ctlr, ADC_FOREACH_INPUT, input)
 
 #define ADC_FOREACH_INPUT(node, input) \
-	IF_ENABLED(IS_EQ(DT_REG_ADDR(node), input), (node))
+	IF_ENABLED(IS_EQ(DT_REG_ADDR_RAW(node), input), (node))
 
 #define ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	IF_ENABLED(DT_NODE_EXISTS(node_id), \

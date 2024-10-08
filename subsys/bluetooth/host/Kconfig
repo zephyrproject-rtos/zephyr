@@ -632,9 +632,13 @@ config BT_BONDABLE
 	bool "Bondable Mode"
 	default y
 	help
-	  This option enables support for Bondable Mode. In this mode,
-	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
-	  indicating the support for this mode.
+	  This option is the default value of the bonding flag for any ACL connection.
+	  If the option is true, the default bonding flag is true. Or, the default
+	  bonding flag is false.
+	  After a connection is established, the bonding flag of the connection
+	  can also be changed by calling `bt_conn_set_bondable()` if the configuration
+	  `the bonding flag per-connection` (BT_BONDABLE_PER_CONNECTION) is
+	  enabled. Please see the BT_BONDABLE_PER_CONNECTION configuration.
 
 config BT_BONDING_REQUIRED
 	bool "Always require bonding"

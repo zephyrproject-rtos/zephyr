@@ -32,7 +32,7 @@
 #define MPU_RASR_B_Pos                  0
 #define MPU_RASR_B_Msk                  (1UL << MPU_RASR_B_Pos)
 
-#if defined(CONFIG_CPU_CORTEX_R4) || defined(CONFIG_CPU_CORTEX_R5)
+#if defined(CONFIG_CPU_CORTEX_R4) || defined(CONFIG_CPU_CORTEX_R5) || defined(CONFIG_CPU_CORTEX_R8)
 #define ARM_MPU_REGION_SIZE_32B         ((uint8_t)0x04U)
 #define ARM_MPU_REGION_SIZE_64B         ((uint8_t)0x05U)
 #define ARM_MPU_REGION_SIZE_128B        ((uint8_t)0x06U)

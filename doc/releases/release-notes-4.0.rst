@@ -9,6 +9,10 @@ We are pleased to announce the release of Zephyr version 4.0.0.
 
 Major enhancements with this release include:
 
+* The introduction of the :ref:`secure storage<secure_storage>` subsystem. It allows the use of the
+  PSA Secure Storage API and of persistent keys in the PSA Crypto API on all board targets. It
+  is now the standard way to provide device-specific protection to data at rest. (:github:`76222`)
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v3.7.0 to Zephyr v4.0.0 can be found in the separate :ref:`migration guide<migration_4.0>`.
 
@@ -133,6 +137,17 @@ Build system and Infrastructure
 
 * Added support for .elf files to the west flash command for jlink, pyocd and linkserver runners.
 
+* Extracted pickled EDT generation from gen_defines.py into gen_edt.py. This moved the following
+  parameters from the cmake variable ``EXTRA_GEN_DEFINES_ARGS`` to ``EXTRA_GEN_EDT_ARGS``:
+
+   * ``--dts``
+   * ``--dtc-flags``
+   * ``--bindings-dirs``
+   * ``--dts-out``
+   * ``--edt-pickle-out``
+   * ``--vendor-prefixes``
+   * ``--edtlib-Werror``
+
 Documentation
 *************
 
@@ -236,6 +251,8 @@ Drivers and Sensors
 * Serial
 
   * LiteX: Renamed the ``compatible`` from ``litex,uart0`` to :dtcompatible:`litex,uart`.
+  * Nordic: Removed ``CONFIG_UART_n_GPIO_MANAGEMENT`` Kconfig options (where n is an instance
+    index) which had no use after pinctrl driver was introduced.
 
 * SPI
 
@@ -332,6 +349,8 @@ Libraries / Subsystems
     * Added support for custom os mgmt bootloader info responses using notification hooks, this
       can be enabled witbh :kconfig:option:`CONFIG_MCUMGR_GRP_OS_BOOTLOADER_INFO_HOOK`, the data
       structure is :c:struct:`os_mgmt_bootloader_info_data`.
+    * Added support for img mgmt slot info command, which allows for listing information on
+      images and slots on the device.
 
 * Logging
 
@@ -375,6 +394,8 @@ Libraries / Subsystems
     L1 ``kernel thread`` shell command as ``kernel thread list`` & ``kernel thread stacks``
   * Added multiple shell command to configure the CPU mask affinity / pinning a thread in
     runtime, do ``kernel thread -h`` for more info.
+  * ``kernel reboot`` shell command without any additional arguments will now do a cold reboot
+    instead of requiring you to type ``kernel reboot cold``.
 
 * State Machine Framework
 

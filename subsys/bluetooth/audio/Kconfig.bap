@@ -211,6 +211,7 @@ config BT_BAP_SCAN_DELEGATOR
 	select BT_EXT_ADV
 	select BT_PER_ADV_SYNC
 	select BT_ISO_SYNC_RECEIVER
+	select BT_GATT_DYNAMIC_DB
 	depends on BT_BONDABLE
 	help
 	  This option enables support for the Scan Delegator role and the

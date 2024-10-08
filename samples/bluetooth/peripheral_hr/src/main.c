@@ -123,7 +123,7 @@ static void hrs_notify(void)
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
 #include <zephyr/drivers/gpio.h>
 #define HAS_LED     1
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);

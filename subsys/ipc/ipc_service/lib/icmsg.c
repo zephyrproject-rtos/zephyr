@@ -270,16 +270,19 @@ int icmsg_open(const struct icmsg_config_t *conf,
 	k_mutex_init(&dev_data->tx_lock);
 #endif
 
-	int ret = pbuf_init(dev_data->tx_pb);
+	int ret = pbuf_tx_init(dev_data->tx_pb);
 
 	if (ret < 0) {
-		__ASSERT(false, "Incorrect configuration");
+		__ASSERT(false, "Incorrect Tx configuration");
 		return ret;
 	}
 
-	/* Initialize local copies of rx_pb. */
-	dev_data->rx_pb->data.wr_idx = 0;
-	dev_data->rx_pb->data.rd_idx = 0;
+	ret = pbuf_rx_init(dev_data->rx_pb);
+
+	if (ret < 0) {
+		__ASSERT(false, "Incorrect Rx configuration");
+		return ret;
+	}
 
 	ret = pbuf_write(dev_data->tx_pb, magic, sizeof(magic));
 

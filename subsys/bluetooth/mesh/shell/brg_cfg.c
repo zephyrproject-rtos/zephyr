@@ -14,43 +14,43 @@
 
 static int cmd_subnet_bridge_get(const struct shell *sh, size_t argc, char *argv[])
 {
-	enum bt_mesh_subnet_bridge_state rsp;
+	enum bt_mesh_brg_cfg_state rsp;
 	int err;
 
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_get(bt_mesh_shell_target_ctx.net_idx,
-						    bt_mesh_shell_target_ctx.dst, &rsp);
+	err = bt_mesh_brg_cfg_cli_get(bt_mesh_shell_target_ctx.net_idx,
+				      bt_mesh_shell_target_ctx.dst, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Subnet Bridge Get (err %d)", err);
 		return -ENOEXEC;
 	}
 
 	shell_print(sh, "Subnet Bridge State: %s",
-		    (rsp == BT_MESH_SUBNET_BRIDGE_ENABLED) ? "Enabled" : "Disabled");
+		    (rsp == BT_MESH_BRG_CFG_ENABLED) ? "Enabled" : "Disabled");
 	return 0;
 }
 
 static int cmd_subnet_bridge_set(const struct shell *sh, size_t argc, char *argv[])
 {
-	enum bt_mesh_subnet_bridge_state set, rsp;
+	enum bt_mesh_brg_cfg_state set, rsp;
 	int err = 0;
 
-	set = shell_strtobool(argv[1], 0, &err) ? BT_MESH_SUBNET_BRIDGE_ENABLED
-						: BT_MESH_SUBNET_BRIDGE_DISABLED;
+	set = shell_strtobool(argv[1], 0, &err) ? BT_MESH_BRG_CFG_ENABLED
+						: BT_MESH_BRG_CFG_DISABLED;
 
 	if (err) {
 		shell_warn(sh, "Unable to parse input string argument");
 		return err;
 	}
 
-	err = bt_mesh_brg_cfg_cli_subnet_bridge_set(bt_mesh_shell_target_ctx.net_idx,
-						    bt_mesh_shell_target_ctx.dst, set, &rsp);
+	err = bt_mesh_brg_cfg_cli_set(bt_mesh_shell_target_ctx.net_idx,
+				      bt_mesh_shell_target_ctx.dst, set, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Subnet Bridge Set (err %d)", err);
 		return -ENOEXEC;
 	}
 
 	shell_print(sh, "Subnet Bridge State: %s",
-		    (rsp == BT_MESH_SUBNET_BRIDGE_ENABLED) ? "Enabled" : "Disabled");
+		    (rsp == BT_MESH_BRG_CFG_ENABLED) ? "Enabled" : "Disabled");
 	return 0;
 }
 
@@ -59,8 +59,8 @@ static int cmd_bridging_table_size_get(const struct shell *sh, size_t argc, char
 	uint16_t rsp;
 	int err;
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_size_get(bt_mesh_shell_target_ctx.net_idx,
-							  bt_mesh_shell_target_ctx.dst, &rsp);
+	err = bt_mesh_brg_cfg_cli_table_size_get(bt_mesh_shell_target_ctx.net_idx,
+						 bt_mesh_shell_target_ctx.dst, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Bridging Table Size Get (err %d)", err);
 		return -ENOEXEC;
@@ -72,8 +72,8 @@ static int cmd_bridging_table_size_get(const struct shell *sh, size_t argc, char
 
 static int cmd_bridging_table_add(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_mesh_bridging_table_entry entry;
-	struct bt_mesh_bridging_table_status rsp;
+	struct bt_mesh_brg_cfg_table_entry entry;
+	struct bt_mesh_brg_cfg_table_status rsp;
 	int err = 0;
 
 	entry.directions = shell_strtoul(argv[1], 0, &err);
@@ -86,8 +86,8 @@ static int cmd_bridging_table_add(const struct shell *sh, size_t argc, char *arg
 		return err;
 	}
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_add(bt_mesh_shell_target_ctx.net_idx,
-						     bt_mesh_shell_target_ctx.dst, &entry, &rsp);
+	err = bt_mesh_brg_cfg_cli_table_add(bt_mesh_shell_target_ctx.net_idx,
+					    bt_mesh_shell_target_ctx.dst, &entry, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Bridging Table Add (err %d)", err);
 		return -ENOEXEC;
@@ -104,7 +104,7 @@ static int cmd_bridging_table_add(const struct shell *sh, size_t argc, char *arg
 static int cmd_bridging_table_remove(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t net_idx1, net_idx2, addr1, addr2;
-	struct bt_mesh_bridging_table_status rsp;
+	struct bt_mesh_brg_cfg_table_status rsp;
 	int err = 0;
 
 	net_idx1 = shell_strtoul(argv[1], 0, &err);
@@ -116,9 +116,9 @@ static int cmd_bridging_table_remove(const struct shell *sh, size_t argc, char *
 		return err;
 	}
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_remove(bt_mesh_shell_target_ctx.net_idx,
-							bt_mesh_shell_target_ctx.dst, net_idx1,
-							net_idx2, addr1, addr2, &rsp);
+	err = bt_mesh_brg_cfg_cli_table_remove(bt_mesh_shell_target_ctx.net_idx,
+					       bt_mesh_shell_target_ctx.dst, net_idx1, net_idx2,
+					       addr1, addr2, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Bridging Table Remove (err %d)", err);
 		return -ENOEXEC;
@@ -134,9 +134,9 @@ static int cmd_bridging_table_remove(const struct shell *sh, size_t argc, char *
 
 static int cmd_bridged_subnets_get(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_mesh_filter_netkey filter_net_idx;
+	struct bt_mesh_brg_cfg_filter_netkey filter_net_idx;
 	uint8_t start_idx;
-	struct bt_mesh_bridged_subnets_list rsp = {
+	struct bt_mesh_brg_cfg_subnets_list rsp = {
 		.list = NET_BUF_SIMPLE(CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX * 3),
 	};
 	int err = 0;
@@ -151,9 +151,9 @@ static int cmd_bridged_subnets_get(const struct shell *sh, size_t argc, char *ar
 		return err;
 	}
 
-	err = bt_mesh_brg_cfg_cli_bridged_subnets_get(bt_mesh_shell_target_ctx.net_idx,
-						      bt_mesh_shell_target_ctx.dst, filter_net_idx,
-						      start_idx, &rsp);
+	err = bt_mesh_brg_cfg_cli_subnets_get(bt_mesh_shell_target_ctx.net_idx,
+					      bt_mesh_shell_target_ctx.dst, filter_net_idx,
+					      start_idx, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Bridged Subnets Get (err %d)", err);
 		return -ENOEXEC;
@@ -180,7 +180,7 @@ static int cmd_bridged_subnets_get(const struct shell *sh, size_t argc, char *ar
 static int cmd_bridging_table_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	uint16_t net_idx1, net_idx2, start_idx;
-	struct bt_mesh_bridging_table_list rsp = {
+	struct bt_mesh_brg_cfg_table_list rsp = {
 		.list = NET_BUF_SIMPLE(CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX * 5),
 	};
 	int err = 0;
@@ -195,9 +195,9 @@ static int cmd_bridging_table_get(const struct shell *sh, size_t argc, char *arg
 		return err;
 	}
 
-	err = bt_mesh_brg_cfg_cli_bridging_table_get(bt_mesh_shell_target_ctx.net_idx,
-						     bt_mesh_shell_target_ctx.dst, net_idx1,
-						     net_idx2, start_idx, &rsp);
+	err = bt_mesh_brg_cfg_cli_table_get(bt_mesh_shell_target_ctx.net_idx,
+					    bt_mesh_shell_target_ctx.dst, net_idx1, net_idx2,
+					    start_idx, &rsp);
 	if (err) {
 		shell_error(sh, "Failed to send Bridging Table Get (err %d)", err);
 		return -ENOEXEC;

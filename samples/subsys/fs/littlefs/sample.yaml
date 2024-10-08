@@ -15,7 +15,6 @@ tests:
       - mimxrt1060_evk
       - mimxrt1064_evk
       - qemu_x86
-      - native_posix
       - native_sim
       - mimxrt1160_evk/mimxrt1166/cm7
       - lpcxpresso55s69/lpc55s69/cpu0
@@ -24,6 +23,7 @@ tests:
       - stm32f746g_disco
       - stm32h747i_disco/stm32h747xx/m7
       - stm32h750b_dk
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512

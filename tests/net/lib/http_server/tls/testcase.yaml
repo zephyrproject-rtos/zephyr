@@ -1,4 +1,5 @@
 common:
+  depends_on: netif
   min_ram: 192
   tags:
     - http

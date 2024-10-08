@@ -3,9 +3,6 @@
 
    Print "Hello World" to the console.
 
-Hello World
-###########
-
 Overview
 ********
 

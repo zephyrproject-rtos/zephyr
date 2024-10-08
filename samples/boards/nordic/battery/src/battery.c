@@ -51,7 +51,7 @@ struct divider_config {
 };
 
 static const struct divider_config divider_config = {
-#if DT_NODE_HAS_STATUS(VBATT, okay)
+#if DT_NODE_HAS_STATUS_OKAY(VBATT)
 	.io_channel = {
 		DT_IO_CHANNELS_INPUT(VBATT),
 	},
@@ -72,7 +72,7 @@ struct divider_data {
 	int16_t raw;
 };
 static struct divider_data divider_data = {
-#if DT_NODE_HAS_STATUS(VBATT, okay)
+#if DT_NODE_HAS_STATUS_OKAY(VBATT)
 	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(VBATT)),
 #else
 	.adc = DEVICE_DT_GET(DT_IO_CHANNELS_CTLR(ZEPHYR_USER)),

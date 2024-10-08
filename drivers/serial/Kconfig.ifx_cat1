@@ -11,5 +11,6 @@ config UART_INFINEON_CAT1
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select USE_INFINEON_UART
+	select PINCTRL
 	help
 	  This option enables the UART driver for Infineon CAT1 family.

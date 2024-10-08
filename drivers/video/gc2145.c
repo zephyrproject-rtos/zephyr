@@ -876,7 +876,7 @@ static int gc2145_set_window(const struct device *dev, uint16_t reg, uint16_t x,
 		return ret;
 	}
 
-	return ret;
+	return 0;
 }
 
 static int gc2145_set_output_format(const struct device *dev, int output_format)
@@ -1023,7 +1023,7 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 			  struct video_format *fmt)
 {
 	struct gc2145_data *drv_data = dev->data;
-	uint16_t width, height;
+	enum resolutions res = RESOLUTIONS_MAX;
 	int ret;
 
 	/* We only support RGB565 formats */
@@ -1032,12 +1032,22 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		return -ENOTSUP;
 	}
 
-	width = fmt->width;
-	height = fmt->height;
-
 	if (memcmp(&drv_data->fmt, fmt, sizeof(drv_data->fmt)) == 0) {
 		/* nothing to do */
 		return 0;
+	}
+
+	/* Check if camera is capable of handling given format */
+	for (int i = 0; i == ARRAY_SIZE(fmts); i++) {
+		if (fmts[i].width_min == fmt->width && fmts[i].height_min == fmt->height &&
+		    fmts[i].pixelformat == fmt->pixelformat) {
+			res = (enum resolutions)i;
+			break;
+		}
+	}
+	if (res == RESOLUTIONS_MAX) {
+		LOG_ERR("Image format not supported");
+		return -ENOTSUP;
 	}
 
 	drv_data->fmt = *fmt;
@@ -1049,22 +1059,14 @@ static int gc2145_set_fmt(const struct device *dev, enum video_endpoint_id ep,
 		return ret;
 	}
 
-	/* Check if camera is capable of handling given format */
-	for (int i = 0; i < ARRAY_SIZE(fmts); i++) {
-		if (fmts[i].width_min == width && fmts[i].height_min == height &&
-		    fmts[i].pixelformat == fmt->pixelformat) {
-			/* Set window size */
-			ret = gc2145_set_resolution(dev, (enum resolutions)i);
-			if (ret < 0) {
-				LOG_ERR("Failed to set the resolution");
-			}
-			return ret;
-		}
+	/* Set window size */
+	ret = gc2145_set_resolution(dev, res);
+	if (ret < 0) {
+		LOG_ERR("Failed to set the resolution");
+		return ret;
 	}
 
-	/* Camera is not capable of handling given format */
-	LOG_ERR("Image format not supported\n");
-	return -ENOTSUP;
+	return 0;
 }
 
 static int gc2145_get_fmt(const struct device *dev, enum video_endpoint_id ep,
@@ -1154,9 +1156,10 @@ static int gc2145_init(const struct device *dev)
 	ret = gc2145_set_fmt(dev, VIDEO_EP_OUT, &fmt);
 	if (ret) {
 		LOG_ERR("Unable to configure default format");
-		return -EIO;
+		return ret;
 	}
-	return ret;
+
+	return 0;
 }
 
 /* Unique Instance */

@@ -36,18 +36,16 @@ static inline void hal_lna_ppi_setup(void)
 
 static inline void hal_fem_ppi_setup(void)
 {
-	nrf_ppi_channel_and_fork_endpoint_setup(
+	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_ENABLE_FEM_PPI,
 		(uint32_t)&(EVENT_TIMER->EVENTS_COMPARE[3]),
-		(uint32_t)&(gpiote_pdn.p_reg->TASKS_OUT[gpiote_ch_pdn]),
-		(uint32_t)&(gpiote_csn.p_reg->TASKS_OUT[gpiote_ch_csn]));
-	nrf_ppi_channel_and_fork_endpoint_setup(
+		(uint32_t)&(gpiote_pdn.p_reg->TASKS_OUT[gpiote_ch_pdn]));
+	nrf_ppi_channel_endpoint_setup(
 		NRF_PPI,
 		HAL_DISABLE_FEM_PPI,
 		(uint32_t)&(NRF_RADIO->EVENTS_DISABLED),
-		(uint32_t)&(gpiote_pdn.p_reg->TASKS_OUT[gpiote_ch_pdn]),
-		(uint32_t)&(gpiote_csn.p_reg->TASKS_OUT[gpiote_ch_csn]));
+		(uint32_t)&(gpiote_pdn.p_reg->TASKS_OUT[gpiote_ch_pdn]));
 }
 
 #endif /* HAL_RADIO_FEM_IS_NRF21540 */

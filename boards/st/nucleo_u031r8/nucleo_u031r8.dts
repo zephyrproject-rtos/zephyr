@@ -102,6 +102,15 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+	vref-mv = <3300>;
+};
+
 &timers1 {
 	st,prescaler = <10000>;
 	status = "okay";

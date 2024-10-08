@@ -143,6 +143,17 @@ the log.
 Programming and Debugging (A55)
 *******************************
 
+U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
+it is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
+xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
+"uboot_v2023.04-2.9.0" branch is U-Boot v2023.04 used in Real-Time Edge Software release
+v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Software`_.
+
+.. _Real-Time Edge U-Boot:
+   https://github.com/nxp-real-time-edge-sw/real-time-edge-uboot
+.. _Real-Time Edge Software:
+   https://www.nxp.com/rtedge
+
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
 prompt.
@@ -151,14 +162,14 @@ Use U-Boot to load and kick zephyr.bin to Cortex-A55 Core1:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 1 release 0xd0000000
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; cpu 1 release 0xd0000000
 
 
 Or use the following command to kick zephyr.bin to Cortex-A55 Core0:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0xd0000000
+    fatload mmc 1:1 0xd0000000 zephyr.bin; dcache flush; icache flush; go 0xd0000000
 
 
 Use this configuration to run basic Zephyr applications and kernel tests,

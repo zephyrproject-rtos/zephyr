@@ -107,25 +107,25 @@ static void SOC_ClockInit(void)
 	CLOCK_SetRootMux(kCLOCK_RootAhb, kCLOCK_AhbRootmuxSysPll1Div6);
 
 #if defined(CONFIG_UART_MCUX_IUART)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart1, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart1, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart2, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart2, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart3, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart3, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
@@ -134,21 +134,21 @@ static void SOC_ClockInit(void)
 #endif
 
 #if defined(CONFIG_SPI_MCUX_ECSPI)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ecspi1))
 	/* Set ECSPI1 source to SYSTEM PLL1 800MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootEcspi1, kCLOCK_EcspiRootmuxSysPll1);
 	/* Set root clock to 800MHZ / 10 = 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootEcspi1, 2U, 5U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ecspi2))
 	/* Set ECSPI2 source to SYSTEM PLL1 800MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootEcspi2, kCLOCK_EcspiRootmuxSysPll1);
 	/* Set root clock to 800MHZ / 10 = 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootEcspi2, 2U, 5U);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ecspi3))
 	/* Set ECSPI3 source to SYSTEM PLL1 800MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootEcspi3, kCLOCK_EcspiRootmuxSysPll1);
 	/* Set root clock to 800MHZ / 10 = 80MHZ */
@@ -175,27 +175,27 @@ static void gpio_init(void)
 {
 
 #if defined(CONFIG_GPIO_MCUX_IGPIO)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 
 	CLOCK_EnableClock(kCLOCK_Gpio1);
 
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio2))
 
 	CLOCK_EnableClock(kCLOCK_Gpio2);
 
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio3))
 
 	CLOCK_EnableClock(kCLOCK_Gpio3);
 
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
 
 	CLOCK_EnableClock(kCLOCK_Gpio4);
 
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio5))
 
 	CLOCK_EnableClock(kCLOCK_Gpio5);
 

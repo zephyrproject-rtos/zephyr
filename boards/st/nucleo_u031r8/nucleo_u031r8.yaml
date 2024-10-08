@@ -6,6 +6,7 @@ toolchain:
   - zephyr
 supported:
   - arduino_gpio
+  - adc
   - dac
   - gpio
   - i2c

@@ -193,7 +193,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hs_lspi))
 	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 #endif

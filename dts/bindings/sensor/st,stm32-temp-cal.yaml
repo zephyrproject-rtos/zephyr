@@ -2,22 +2,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    STM32 family TEMP node for production calibrated sensors like L5/U5
-    with two calibration temperatures.
+    STM32 family TEMP node for production calibrated sensors with two calibration temperatures.
 
 compatible: "st,stm32-temp-cal"
 
-include: "st,stm32-temp-cal-common.yaml"
+include:
+  - name: st,stm32-temp-cal-common.yaml
+    property-blocklist:
+      - avgslope
+      - ntc
 
 properties:
   ts-cal2-addr:
     type: int
     required: true
-    description: address of parameter TS_CAL2
+    description: Address of TS_CAL2 calibration parameter
 
   ts-cal2-temp:
     type: int
     required: true
-    description: |
-      temperature at which temperature sensor has been
-      calibrated in production for data into ts-cal2-addr
+    description: Temperature at which TS_CAL2 has been measured (TS_CAL2_TEMP)

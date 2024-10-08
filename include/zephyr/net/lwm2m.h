@@ -245,8 +245,6 @@ struct lwm2m_ctx {
 	char *desthostname;
 	/** Destination hostname length */
 	uint16_t desthostnamelen;
-	/** Flag to indicate if hostname verification is enabled */
-	bool hostname_verify;
 
 	/** Custom load_credentials function.
 	 *  Client can set load_credentials function as a way of overriding

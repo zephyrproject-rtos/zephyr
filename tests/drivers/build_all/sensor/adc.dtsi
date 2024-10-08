@@ -116,3 +116,13 @@ test_seeed_grove_temperature: seeed-grove-temperature {
 	compatible = "seeed,grove-temperature";
 	io-channels = <&test_adc 0>;
 };
+
+test_veaa_x_3: test_veaa_x_3 {
+	status = "okay";
+	compatible = "festo,veaa-x-3";
+	io-channels = <&test_adc 3>;
+	dac = <&test_dac>;
+	dac-channel-id = <2>;
+	dac-resolution = <12>;
+	pressure-range-type = "D2";
+};

@@ -143,7 +143,7 @@ static int nordicsemi_nrf54h_init(void)
 		return err;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(ccm030), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ccm030))
 	/* DMASEC is set to non-secure by default, which prevents CCM from
 	 * accessing secure memory. Change DMASEC to secure.
 	 */

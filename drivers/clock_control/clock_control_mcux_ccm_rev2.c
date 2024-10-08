@@ -198,10 +198,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 	case IMX_CCM_FLEXSPI_CLK:
-		clock_root = kCLOCK_Root_Flexspi1;
-		break;
 	case IMX_CCM_FLEXSPI2_CLK:
-		clock_root = kCLOCK_Root_Flexspi2;
+		clock_root = kCLOCK_Root_Flexspi1 + instance;
 		break;
 #endif
 #ifdef CONFIG_COUNTER_NXP_PIT

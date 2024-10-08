@@ -188,21 +188,18 @@ config TFM_BL2_NOT_SUPPORTED
 
 config TFM_IMAGE_VERSION_S
 	string "Version of the Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 1
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the secure firmware's version for rollback prevention. This version is
-	  also used for merged secure + non-secure builds
-	  (TFM_MCUBOOT_IMAGE_NUMBER == 1).
+	  Version of the secure image. This version is also used for merged
+	  secure + non-secure builds (TFM_MCUBOOT_IMAGE_NUMBER == 1).
 
 config TFM_IMAGE_VERSION_NS
 	string "Version of the Non-Secure Image"
+	default "$(APP_VERSION_TWEAK_STRING)" if "$(VERSION_MAJOR)" != "" && TFM_MCUBOOT_IMAGE_NUMBER = 2
 	default "0.0.0+0"
 	help
-	  MCUBoot may be configured to prevent rollback prevention based on image
-	  versions of both the secure firmware and non-secure firmware. This sets
-	  the non-secure firmware's version for rollback prevention.
+	  Version of the non-secure image.
 
 config TFM_BL2
 	bool "Add MCUboot to TFM"
@@ -239,6 +236,16 @@ config TFM_CONNECTION_BASED_SERVICE_API
 	  will result in compilation error.
 
 if TFM_BL2
+
+config TFM_IMAGE_SECURITY_COUNTER
+	int "Security counter value used for hardware rollback protection"
+	range 1 1024
+	default 1
+	help
+	  By default, TFM enables hardware rollback protection, which requires a security counter
+	  to be embedded in the image trailer. As per "Hardware-based downgrade prevention" in
+	  mcuboot/docs/design.md, this does not need to be incremented on every firmware update,
+	  but hardware rollback protection will only apply when this value is incremented.
 
 config TFM_MCUBOOT_SIGNATURE_TYPE
 	string "The signature type used to sign the secure and non-secure firmware images."

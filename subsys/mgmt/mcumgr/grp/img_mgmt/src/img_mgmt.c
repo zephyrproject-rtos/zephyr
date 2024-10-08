@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
@@ -31,6 +32,7 @@
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
+#include <mgmt/mcumgr/transport/smp_internal.h>
 #endif
 
 #ifndef CONFIG_FLASH_LOAD_OFFSET
@@ -73,6 +75,8 @@ BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 #define ACTIVE_IMAGE_IS 0
 #endif
 
+#define SLOTS_PER_IMAGE 2
+
 LOG_MODULE_REGISTER(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 
 struct img_mgmt_state g_img_mgmt_state;
@@ -108,6 +112,62 @@ void img_mgmt_release_lock(void)
 	k_mutex_unlock(&img_mgmt_mutex);
 #endif
 }
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+static bool img_mgmt_reset_zse(struct smp_streamer *ctxt)
+{
+	zcbor_state_t *zse = ctxt->writer->zs;
+
+	/* Because there is already data in the buffer, it must be cleared first */
+	net_buf_reset(ctxt->writer->nb);
+	ctxt->writer->nb->len = sizeof(struct smp_hdr);
+	zcbor_new_encode_state(zse, ARRAY_SIZE(ctxt->writer->zs),
+			       ctxt->writer->nb->data + sizeof(struct smp_hdr),
+			       net_buf_tailroom(ctxt->writer->nb), 0);
+
+	return zcbor_map_start_encode(zse, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+}
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD)
+static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
+{
+	bool ok = true;
+
+	if (area_sizes[0] > 0 && area_sizes[1] > 0) {
+		/* Calculate maximum image size */
+		size_t area_size_difference = (size_t)abs((ssize_t)area_sizes[1] -
+							  (ssize_t)area_sizes[0]);
+
+		if (CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE >= area_size_difference) {
+			ok = zcbor_tstr_put_lit(zse, "max_image_size") &&
+			     zcbor_uint32_put(zse, (uint32_t)(area_sizes[0] -
+					      CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE));		}
+	}
+
+	return ok;
+}
+#elif defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO)
+static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
+{
+	bool ok = true;
+	int rc;
+	int max_app_size;
+
+	ARG_UNUSED(area_sizes);
+
+	rc = blinfo_lookup(BLINFO_MAX_APPLICATION_SIZE, &max_app_size, sizeof(max_app_size))
+
+	if (rc < 0) {
+		LOG_ERR("Failed to lookup max application size: %d", rc);
+	} else if (rc > 0) {
+		ok = zcbor_tstr_put_lit(zse, "max_image_size") &&
+		     zcbor_uint32_put(zse, (uint32_t)max_app_size);
+	}
+
+	return ok;
+}
+#endif
+#endif
 
 /**
  * Finds the TLVs in the specified image slot, if any.
@@ -387,6 +447,194 @@ end:
 
 	return MGMT_ERR_EOK;
 }
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO)
+/**
+ * Command handler: image slot info
+ */
+static int img_mgmt_slot_info(struct smp_streamer *ctxt)
+{
+	int rc;
+	zcbor_state_t *zse = ctxt->writer->zs;
+	bool ok;
+	uint8_t i = 0;
+	size_t area_sizes[SLOTS_PER_IMAGE];
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+	int32_t err_rc;
+	uint16_t err_group;
+	enum mgmt_cb_return status;
+#endif
+
+	img_mgmt_take_lock();
+
+	ok = zcbor_tstr_put_lit(zse, "images") &&
+	     zcbor_list_start_encode(zse, 10);
+
+	while (i < CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER * SLOTS_PER_IMAGE) {
+		const struct flash_area *fa;
+		int area_id = img_mgmt_flash_area_id(i);
+
+		if ((i % SLOTS_PER_IMAGE) == 0) {
+			memset(area_sizes, 0, sizeof(area_sizes));
+
+			ok = zcbor_map_start_encode(zse, 4) &&
+			     zcbor_tstr_put_lit(zse, "image") &&
+			     zcbor_uint32_put(zse, (uint32_t)(i / SLOTS_PER_IMAGE)) &&
+			     zcbor_tstr_put_lit(zse, "slots") &&
+			     zcbor_list_start_encode(zse, 4);
+
+			if (!ok) {
+				goto finish;
+			}
+		}
+
+		ok = zcbor_map_start_encode(zse, 4) &&
+		     zcbor_tstr_put_lit(zse, "slot") &&
+		     zcbor_uint32_put(zse, (uint32_t)(i % SLOTS_PER_IMAGE));
+
+		if (!ok) {
+			goto finish;
+		}
+
+		rc = flash_area_open(area_id, &fa);
+
+		if (rc) {
+			/* Failed opening slot, mark as error */
+			ok = zcbor_tstr_put_lit(zse, "rc") &&
+			     zcbor_int32_put(zse, rc);
+
+			LOG_ERR("Failed to open slot %d for information fetching: %d", area_id, rc);
+		} else {
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+			struct img_mgmt_slot_info_slot slot_info_data = {
+				.image = (i / SLOTS_PER_IMAGE),
+				.slot = (i % SLOTS_PER_IMAGE),
+				.fa = fa,
+				.zse = zse,
+			};
+#endif
+
+			if (sizeof(fa->fa_size) == sizeof(uint64_t)) {
+				ok = zcbor_tstr_put_lit(zse, "size") &&
+				     zcbor_uint64_put(zse, fa->fa_size);
+			} else {
+				ok = zcbor_tstr_put_lit(zse, "size") &&
+				     zcbor_uint32_put(zse, fa->fa_size);
+			}
+
+			area_sizes[(i % SLOTS_PER_IMAGE)] = fa->fa_size;
+
+			if (!ok) {
+				goto finish;
+			}
+
+			/*
+			 * Check if we support uploading to this slot and if so, return the
+			 * image ID
+			 */
+#if defined(CONFIG_MCUMGR_GRP_IMG_DIRECT_UPLOAD)
+			ok = zcbor_tstr_put_lit(zse, "upload_image_id") &&
+			     zcbor_uint32_put(zse, (i + 1));
+#else
+			if (img_mgmt_active_slot((i / SLOTS_PER_IMAGE)) != i) {
+				ok = zcbor_tstr_put_lit(zse, "upload_image_id") &&
+				     zcbor_uint32_put(zse, (i / SLOTS_PER_IMAGE));
+			}
+#endif
+
+			if (!ok) {
+				goto finish;
+			}
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+			status = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_SLOT,
+						      &slot_info_data, sizeof(slot_info_data),
+						      &err_rc, &err_group);
+#endif
+
+			flash_area_close(fa);
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+			if (status != MGMT_CB_OK) {
+				if (status == MGMT_CB_ERROR_RC) {
+					img_mgmt_release_lock();
+					return err_rc;
+				}
+
+				ok = img_mgmt_reset_zse(ctxt) &&
+				     smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+
+				goto finish;
+			}
+#endif
+		}
+
+		ok &= zcbor_map_end_encode(zse, 4);
+
+		if (!ok) {
+			goto finish;
+		}
+
+		if ((i % SLOTS_PER_IMAGE) == (SLOTS_PER_IMAGE - 1)) {
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+			struct img_mgmt_slot_info_image image_info_data = {
+				.image = (i / SLOTS_PER_IMAGE),
+				.zse = zse,
+			};
+#endif
+
+			ok = zcbor_list_end_encode(zse, 4);
+
+			if (!ok) {
+				goto finish;
+			}
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) || \
+	defined(MCUMGR_GRP_IMG_TOO_LARGE_BOOTLOADER_INFO)
+			ok = img_mgmt_slot_max_size(area_sizes, zse);
+
+			if (!ok) {
+				goto finish;
+			}
+#endif
+
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO_HOOKS)
+			status = mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_SLOT_INFO_IMAGE,
+						      &image_info_data, sizeof(image_info_data),
+						      &err_rc, &err_group);
+
+			if (status != MGMT_CB_OK) {
+				if (status == MGMT_CB_ERROR_RC) {
+					img_mgmt_release_lock();
+					return err_rc;
+				}
+
+				ok = img_mgmt_reset_zse(ctxt) &&
+				     smp_add_cmd_err(zse, err_group, (uint16_t)err_rc);
+
+				goto finish;
+			}
+#endif
+
+			ok = zcbor_map_end_encode(zse, 4);
+
+			if (!ok) {
+				goto finish;
+			}
+		}
+
+		++i;
+	}
+
+	ok = zcbor_list_end_encode(zse, 10);
+
+finish:
+	img_mgmt_release_lock();
+
+	return ok ? MGMT_ERR_EOK : MGMT_ERR_EMSGSIZE;
+}
+#endif
 
 static int
 img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
@@ -822,6 +1070,12 @@ static const struct mgmt_handler img_mgmt_handlers[] = {
 		.mh_read = NULL,
 		.mh_write = img_mgmt_erase
 	},
+#if defined(CONFIG_MCUMGR_GRP_IMG_SLOT_INFO)
+	[IMG_MGMT_ID_SLOT_INFO] = {
+		.mh_read = img_mgmt_slot_info,
+		.mh_write = NULL
+	},
+#endif
 };
 
 static const struct mgmt_handler img_mgmt_handlers[];

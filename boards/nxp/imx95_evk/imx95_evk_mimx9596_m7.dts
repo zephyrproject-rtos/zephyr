@@ -23,9 +23,32 @@
 	};
 };
 
+&lpi2c5 {
+	pinctrl-0 = <&lpi2c5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&lpi2c7 {
+	pinctrl-0 = <&lpi2c7_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &lpuart3 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart3_default>;
 	pinctrl-names = "default";
+};
+
+&sai3 {
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+};
+
+&tpm2 {
+	pinctrl-0 = <&tpm2_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };

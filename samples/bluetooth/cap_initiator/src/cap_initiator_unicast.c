@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -91,7 +92,7 @@ static bool is_tx_stream(struct bt_bap_stream *stream)
 }
 
 static void unicast_stream_configured_cb(struct bt_bap_stream *stream,
-					 const struct bt_audio_codec_qos_pref *pref)
+					 const struct bt_bap_qos_cfg_pref *pref)
 {
 	LOG_INF("Configured stream %p", stream);
 

@@ -85,8 +85,8 @@ extern "C" {
 #endif
 
 #if CONFIG_IMX_USDHC &&					\
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) ||	\
-	 DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay))
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) ||	\
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)))
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc,
 	bool init, uint32_t speed, uint32_t strength);

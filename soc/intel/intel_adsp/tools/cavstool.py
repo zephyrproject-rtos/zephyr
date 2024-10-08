@@ -210,7 +210,7 @@ def adsp_mem_window_config():
 
     return (base, stride)
 
-def map_regs():
+def map_regs(log_only):
     p = runx(f"grep -iEl 'PCI_CLASS=40(10|38)0' /sys/bus/pci/devices/*/uevent")
     pcidir = os.path.dirname(p)
 
@@ -226,7 +226,7 @@ def map_regs():
     if os.path.exists(f"{pcidir}/driver"):
         mod = os.path.basename(os.readlink(f"{pcidir}/driver/module"))
         found_msg = f"Existing driver \"{mod}\" found"
-        if args.log_only:
+        if log_only:
             log.info(found_msg)
         else:
             log.warning(found_msg + ", unloading module")
@@ -482,7 +482,7 @@ def load_firmware(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.SRAM_FW_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -604,7 +604,7 @@ def load_firmware_ace(fw_file):
     log.info(f"Starting DMA, FW_STATUS = 0x{dsp.ROM_STATUS:x}")
     sd.CTL |= 2 # START flag
 
-    wait_fw_entered()
+    wait_fw_entered(dsp, timeout_s=None)
 
     # Turn DMA off and reset the stream.  Clearing START first is a
     # noop per the spec, but absolutely required for stability.
@@ -618,17 +618,17 @@ def load_firmware_ace(fw_file):
     sd.CTL |= 1
     log.info(f"ACE firmware load complete")
 
-def fw_is_alive():
+def fw_is_alive(dsp):
     return dsp.ROM_STATUS & ((1 << 28) - 1) == 5 # "FW_ENTERED"
 
-def wait_fw_entered(timeout_s=2):
+def wait_fw_entered(dsp, timeout_s):
     log.info("Waiting %s for firmware handoff, ROM_STATUS = 0x%x",
              "forever" if timeout_s is None else f"{timeout_s} seconds",
              dsp.ROM_STATUS)
     hertz = 100
     attempts = None if timeout_s is None else timeout_s * hertz
     while True:
-        alive = fw_is_alive()
+        alive = fw_is_alive(dsp)
         if alive:
             break
         if attempts is not None:
@@ -744,6 +744,29 @@ def winstream_write(base, msg):
 def debug_offset():
     ( base, stride ) = adsp_mem_window_config()
     return base + stride * 2
+
+def debug_slot_offset(num):
+    return debug_offset() + DEBUG_SLOT_SIZE * (1 + num)
+
+def debug_slot_offset_by_type(the_type, timeout_s=0.2):
+    ADSP_DW_SLOT_COUNT=15
+    hertz = 100
+    attempts = timeout_s * hertz
+    while attempts > 0:
+        data = win_read(debug_offset(), 0, ADSP_DW_SLOT_COUNT * 3 * 4)
+        for i in range(ADSP_DW_SLOT_COUNT):
+            start_index = i * (3 * 4)
+            end_index = (i + 1) * (3 * 4)
+            desc = data[start_index:end_index]
+            resource_id, type_id, vma = struct.unpack('<III', desc)
+            if type_id == the_type:
+                log.info("found desc %u resource_id 0x%08x type_id 0x%08x vma 0x%08x",
+                         i, resource_id, type_id, vma)
+                return debug_slot_offset(i)
+        log.debug("not found, %u attempts left", attempts)
+        attempts -= 1
+        time.sleep(1 / hertz)
+    return None
 
 def shell_base_offset():
     return debug_offset() + DEBUG_SLOT_SIZE * (1 + DEBUG_SLOT_SHELL)
@@ -875,10 +898,10 @@ def ipc_command(data, ext_data):
         sys.stdout.flush()
     else:
         log.warning(f"cavstool: Unrecognized IPC command 0x{data:x} ext 0x{ext_data:x}")
-        if not fw_is_alive():
+        if not fw_is_alive(dsp):
             if args.log_only:
                 log.info("DSP power seems off")
-                wait_fw_entered(timeout_s=None)
+                wait_fw_entered(dsp, timeout_s=None)
             else:
                 log.warning("DSP power seems off?!")
                 time.sleep(2) # potential spam reduction
@@ -920,7 +943,7 @@ async def main():
     global hda, sd, dsp, hda_ostream_id, hda_streams
 
     try:
-        (hda, sd, dsp, hda_ostream_id) = map_regs()
+        (hda, sd, dsp, hda_ostream_id) = map_regs(args.log_only)
     except Exception as e:
         log.error("Could not map device in sysfs; run as root?")
         log.error(e)
@@ -929,7 +952,7 @@ async def main():
     log.info(f"Detected cAVS 1.8+ hardware")
 
     if args.log_only:
-        wait_fw_entered(timeout_s=None)
+        wait_fw_entered(dsp, timeout_s=None)
     else:
         if not args.fw_file:
             log.error("Firmware file argument missing")
@@ -962,28 +985,30 @@ async def main():
         if not args.log_only:
             handle_ipc()
 
+def args_parse():
+    global args
+    ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
+    ap.add_argument("-q", "--quiet", action="store_true",
+                    help="No loader output, just DSP logging")
+    ap.add_argument("-v", "--verbose", action="store_true",
+                    help="More loader output, DEBUG logging level")
+    ap.add_argument("-l", "--log-only", action="store_true",
+                    help="Don't load firmware, just show log output")
+    ap.add_argument("-p", "--shell-pty", action="store_true",
+                    help="Create a Zephyr shell pty if enabled in firmware")
+    ap.add_argument("-n", "--no-history", action="store_true",
+                    help="No current log buffer at start, just new output")
+    ap.add_argument("fw_file", nargs="?", help="Firmware file")
 
-ap = argparse.ArgumentParser(description="DSP loader/logger tool", allow_abbrev=False)
-ap.add_argument("-q", "--quiet", action="store_true",
-                help="No loader output, just DSP logging")
-ap.add_argument("-v", "--verbose", action="store_true",
-                help="More loader output, DEBUG logging level")
-ap.add_argument("-l", "--log-only", action="store_true",
-                help="Don't load firmware, just show log output")
-ap.add_argument("-p", "--shell-pty", action="store_true",
-                help="Create a Zephyr shell pty if enabled in firmware")
-ap.add_argument("-n", "--no-history", action="store_true",
-                help="No current log buffer at start, just new output")
-ap.add_argument("fw_file", nargs="?", help="Firmware file")
+    args = ap.parse_args()
 
-args = ap.parse_args()
-
-if args.quiet:
-    log.setLevel(logging.WARN)
-elif args.verbose:
-    log.setLevel(logging.DEBUG)
+    if args.quiet:
+        log.setLevel(logging.WARN)
+    elif args.verbose:
+        log.setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
+    args_parse()
     try:
         asyncio.run(main())
     except KeyboardInterrupt:

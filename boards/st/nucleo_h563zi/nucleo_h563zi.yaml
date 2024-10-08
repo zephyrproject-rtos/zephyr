@@ -23,7 +23,6 @@ supported:
   - counter
   - spi
   - usb_device
-  - usb
   - rtc
   - i2c
 vendor: st

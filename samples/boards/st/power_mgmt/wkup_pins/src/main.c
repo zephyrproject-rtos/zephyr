@@ -15,7 +15,7 @@
 #define WAIT_TIME_US 4000000
 
 #define WKUP_SRC_NODE DT_ALIAS(wkup_src)
-#if !DT_NODE_HAS_STATUS(WKUP_SRC_NODE, okay)
+#if !DT_NODE_HAS_STATUS_OKAY(WKUP_SRC_NODE)
 #error "Unsupported board: wkup_src devicetree alias is not defined"
 #endif
 

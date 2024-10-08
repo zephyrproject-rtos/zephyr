@@ -11,6 +11,28 @@ menuconfig NET_IPV4
 
 if NET_IPV4
 
+config NET_IF_MAX_IPV4_COUNT
+	int "Max number of IPv4 network interfaces in the system"
+	default NET_VLAN_COUNT if NET_VLAN
+	default 2 if NET_LOOPBACK
+	default 1
+	help
+	  This tells how many network interfaces there will be in the system
+	  that will have IPv4 enabled.
+
+config NET_IF_UNICAST_IPV4_ADDR_COUNT
+	int "Max number of unicast IPv4 addresses per network interface"
+	default 2 if NET_IPV4_AUTO
+	default 2 if NET_LOOPBACK
+	default 1
+
+config NET_IF_MCAST_IPV4_ADDR_COUNT
+	int "Max number of multicast IPv4 addresses per network interface"
+	default 2 if NET_IPV4_IGMP
+	default 1
+
+if NET_NATIVE_IPV4
+
 config NET_INITIAL_TTL
 	int "Initial IPv4 time to live value for unicast packets"
 	default 64
@@ -33,26 +55,6 @@ config NET_INITIAL_MCAST_TTL
 	  The default is 1 (same as in Linux) which means that multicast packets
 	  don't leave the local network unless the application explicitly
 	  requests it.
-
-config NET_IF_MAX_IPV4_COUNT
-	int "Max number of IPv4 network interfaces in the system"
-	default NET_VLAN_COUNT if NET_VLAN
-	default 2 if NET_LOOPBACK
-	default 1
-	help
-	  This tells how many network interfaces there will be in the system
-	  that will have IPv4 enabled.
-
-config NET_IF_UNICAST_IPV4_ADDR_COUNT
-	int "Max number of unicast IPv4 addresses per network interface"
-	default 2 if NET_IPV4_AUTO
-	default 2 if NET_LOOPBACK
-	default 1
-
-config NET_IF_MCAST_IPV4_ADDR_COUNT
-	int "Max number of multicast IPv4 addresses per network interface"
-	default 2 if NET_IPV4_IGMP
-	default 1
 
 config NET_IF_MCAST_IPV4_SOURCE_COUNT
 	int "Max number of IPv4 sources per mcast address to be included or excluded"
@@ -177,4 +179,5 @@ module-help = Enable debug diagnostic from IPv4 autoconf client.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_IPV4_AUTO
 
+endif # NET_NATIVE_IPV4
 endif # NET_IPV4

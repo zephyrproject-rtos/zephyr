@@ -1106,3 +1106,10 @@ test_i2c_apds9253: apds9253@96 {
 	rate = <APDS9253_MEASUREMENT_RATE_50MS>;
 	resolution = <APDS9253_RESOLUTION_16BIT_25MS>;
 };
+
+test_i2c_mmc56x3: mmc56x3@92 {
+	compatible = "memsic,mmc56x3";
+	reg = <0x92>;
+	magn-odr = <0>;
+	auto-self-reset;
+};

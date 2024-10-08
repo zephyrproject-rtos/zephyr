@@ -4,3 +4,5 @@ tests:
       - qemu_x86
     tags: test_framework
     harness: pytest
+    harness_config:
+      pytest_dut_scope: session

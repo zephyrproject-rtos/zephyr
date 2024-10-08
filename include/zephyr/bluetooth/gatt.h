@@ -1644,6 +1644,9 @@ enum {
 	BT_GATT_DISCOVER_STD_CHAR_DESC,
 };
 
+/** Handle value to denote that the CCC will be automatically discovered */
+#define BT_GATT_AUTO_DISCOVER_CCC_HANDLE 0x0000U
+
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
 	/** Discover UUID type */
@@ -1893,11 +1896,6 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  The number of pending callbacks can be increased with the
  *  @kconfig{CONFIG_BT_CONN_TX_MAX} option.
  *
- *  @note By using a callback it also disable the internal flow control
- *        which would prevent sending multiple commands without waiting for
- *        their transmissions to complete, so if that is required the caller
- *        shall not submit more data until the callback is called.
- *
  *  This function will block while the ATT request queue is full, except when
  *  called from the BT RX thread, as this would cause a deadlock.
  *
@@ -2049,7 +2047,7 @@ struct bt_gatt_subscribe_params {
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__)
 	/** Subscribe End handle (for automatic discovery) */
 	uint16_t end_handle;
-	/** Discover parameters used when ccc_handle = 0 */
+	/** Discover parameters used when ccc_handle = @ref BT_GATT_AUTO_DISCOVER_CCC_HANDLE */
 	struct bt_gatt_discover_params *disc_params;
 #endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */

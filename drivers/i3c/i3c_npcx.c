@@ -1455,7 +1455,6 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 	const struct device *dev = i3c_ibi_work->controller;
 	const struct npcx_i3c_config *config = dev->config;
 	struct npcx_i3c_data *data = dev->data;
-	struct i3c_dev_attached_list *dev_list = &data->common.attached_dev;
 	struct i3c_reg *inst = config->base;
 	struct i3c_device_desc *target = NULL;
 	uint32_t ibitype, ibiaddr;
@@ -1530,7 +1529,7 @@ static void npcx_i3c_ibi_work(struct k_work *work)
 
 	switch (ibitype) {
 	case MSTATUS_IBITYPE_IBI:
-		target = i3c_dev_list_i3c_addr_find(dev_list, (uint8_t)ibiaddr);
+		target = i3c_dev_list_i3c_addr_find(dev, (uint8_t)ibiaddr);
 		if (target != NULL) {
 			if (i3c_ibi_work_enqueue_target_irq(target, &payload[0], payload_sz) != 0) {
 				LOG_ERR("Error enqueue IBI IRQ work");

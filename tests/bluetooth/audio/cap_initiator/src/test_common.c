@@ -18,6 +18,8 @@
 #include "test_common.h"
 #include "ztest_assert.h"
 
+DEFINE_FFF_GLOBALS;
+
 void test_mocks_init(void)
 {
 	mock_cap_initiator_init();

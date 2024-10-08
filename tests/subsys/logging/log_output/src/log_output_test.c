@@ -129,9 +129,15 @@ ZTEST(test_log_output, test_ts_flag)
 
 ZTEST(test_log_output, test_format_ts)
 {
+#ifdef CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP
+#define TIMESTAMP_STR "[1970-01-01 00:00:01.000,000] "
+#elif defined(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)
+#define TIMESTAMP_STR "[1970-01-01T00:00:01,000000Z] "
+#else
+#define TIMESTAMP_STR "[00:00:01.000,000] "
+#endif
 	char package[256];
-	static const char *exp_str =
-		"[00:00:01.000,000] " DNAME "/" SNAME ": " TEST_STR "\r\n";
+	static const char *exp_str = TIMESTAMP_STR DNAME "/" SNAME ": " TEST_STR "\r\n";
 	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	int err;
 

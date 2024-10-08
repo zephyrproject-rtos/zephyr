@@ -16,13 +16,11 @@
 #include <zephyr/linker/sections.h>
 
 _ASM_FILE_PROLOGUE
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
 
+GTEXT(soc_reset_hook)
+SECTION_SUBSEC_FUNC(TEXT,_reset_section,soc_reset_hook)
 
-GTEXT(z_arm_platform_init)
-SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_platform_init)
-
-.z_arm_platform_init:
+.soc_reset_hook:
     ldr r0, =0x14000000
     ldr r1, =.ram_init_ctcm01
     bics r1, #0x10000000
@@ -55,5 +53,3 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,z_arm_platform_init)
     bcc .loop5
 .ram_init_done:
     b SystemInit
-
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */

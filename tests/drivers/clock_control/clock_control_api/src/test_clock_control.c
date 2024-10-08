@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(test);
 #include "nrf_device_subsys.h"
 #elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_rtc)
 #include "esp32_device_subsys.h"
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_series_clock)
+#include "silabs_device_subsys.h"
 #else
 #error "Unsupported board"
 #endif

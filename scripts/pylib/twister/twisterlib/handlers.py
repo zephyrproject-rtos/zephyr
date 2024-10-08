@@ -216,10 +216,9 @@ class BinaryHandler(Handler):
                 reader_t.join(this_timeout)
                 if not reader_t.is_alive() and self.line != b"":
                     line_decoded = self.line.decode('utf-8', "replace")
-                    if line_decoded.endswith(suffix):
-                        stripped_line = line_decoded[:-len(suffix)].rstrip()
-                    else:
-                        stripped_line = line_decoded.rstrip()
+                    stripped_line = line_decoded.rstrip()
+                    if stripped_line.endswith(suffix):
+                        stripped_line = stripped_line[:-len(suffix)].rstrip()
                     logger.debug("OUTPUT: %s", stripped_line)
                     log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()

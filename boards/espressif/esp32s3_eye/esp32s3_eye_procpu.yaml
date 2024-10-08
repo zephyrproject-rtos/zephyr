@@ -16,6 +16,7 @@ supported:
   - pwm
   - dma
   - input
+  - video
 testing:
   ignore_tags:
     - net

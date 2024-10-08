@@ -1690,6 +1690,57 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif
 
+static int cmd_wifi_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PBC;
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pbc connection failed\n");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_wps_pin(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PIN_GET;
+	} else if (argc == 2) {
+		params.oper = WIFI_WPS_PIN_SET;
+		strncpy(params.pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pin connection failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_WPS_PIN_GET) {
+		PR("WPS PIN is: %s\n", params.pin);
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_ps_wakeup_mode(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
@@ -2106,6 +2157,7 @@ static int cmd_wifi_version(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 static int parse_dpp_args_auth_init(const struct shell *sh, size_t argc, char *argv[],
 				    struct wifi_dpp_params *params)
 {
@@ -2579,24 +2631,27 @@ static int cmd_wifi_dpp_ap_qr_code(const struct shell *sh, size_t argc, char *ar
 
 static int cmd_wifi_dpp_ap_auth_init(const struct shell *sh, size_t argc, char *argv[])
 {
-	int ret = 0;
-	struct net_if *iface = net_if_get_wifi_sap();
-	struct wifi_dpp_params params = {0};
 	int opt;
 	int opt_index = 0;
 	struct getopt_state *state;
-	static struct option long_options[] = {{"peer", required_argument, 0, 'p'}, {0, 0, 0, 0}};
+	static const struct option long_options[] = {
+		{"peer", required_argument, 0, 'p'},
+		{0, 0, 0, 0}};
+	int ret = 0;
+	struct net_if *iface = net_if_get_wifi_sap();
+	struct wifi_dpp_params params = {0};
 
 	params.action = WIFI_DPP_AUTH_INIT;
 
-	while ((opt = getopt_long(argc, argv, "p:", long_options, &opt_index)) != -1) {
+	while ((opt = getopt_long(argc, argv, "p:",
+				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
 		case 'p':
-			params.auth_init.peer = shell_strtol(optarg, 10, &ret);
+			params.auth_init.peer = shell_strtol(state->optarg, 10, &ret);
 			break;
 		default:
-			PR_ERROR("Invalid option %c\n", optopt);
+			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
 		}
 
@@ -2640,6 +2695,7 @@ static int cmd_wifi_dpp_reconfig(const struct shell *sh, size_t argc, char *argv
 	return 0;
 }
 
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
@@ -2717,6 +2773,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_SUBCMD_SET_END
 );
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	wifi_cmd_dpp,
 	SHELL_CMD_ARG(configurator_add, NULL,
@@ -2793,6 +2850,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_wifi_dpp_reconfig, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 	SHELL_CMD_ARG(version, NULL, "Print Wi-Fi Driver and Firmware versions\n",
@@ -2909,6 +2967,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		cmd_wifi_btm_query,
 		2, 0),
 #endif
+	SHELL_CMD_ARG(wps_pbc, NULL,
+		"Start a WPS PBC connection.\n",
+		cmd_wifi_wps_pbc, 1, 0),
+	SHELL_CMD_ARG(wps_pin, NULL,
+		"Set and get WPS pin.\n"
+		"[pin] Only applicable for set.\n",
+		cmd_wifi_wps_pin, 1, 1),
 	SHELL_CMD_ARG(ps_timeout,
 		      NULL,
 		      "<val> - PS inactivity timer(in ms).\n",
@@ -2929,7 +2994,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		      "<rts_threshold: rts threshold/off>.\n",
 		      cmd_wifi_set_rts_threshold,
 		      1, 1),
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	SHELL_CMD_ARG(pmksa_flush, NULL,
 		     "Flush PMKSA cache entries.\n",
 		     cmd_wifi_pmksa_flush, 1, 0),

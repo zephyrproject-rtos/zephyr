@@ -309,6 +309,7 @@ static int element_token(enum json_tokens token)
 	case JSON_TOK_STRING:
 	case JSON_TOK_NUMBER:
 	case JSON_TOK_INT64:
+	case JSON_TOK_UINT64:
 	case JSON_TOK_FLOAT:
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_OBJ_ARRAY:
@@ -469,6 +470,30 @@ static int decode_int64(const struct json_token *token, int64_t *num)
 	return 0;
 }
 
+static int decode_uint64(const struct json_token *token, uint64_t *num)
+{
+	char *endptr;
+	char prev_end;
+
+	prev_end = *token->end;
+	*token->end = '\0';
+
+	errno = 0;
+	*num = strtoull(token->start, &endptr, 10);
+
+	*token->end = prev_end;
+
+	if (errno != 0) {
+		return -errno;
+	}
+
+	if (endptr != token->end) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 {
 	if (type1 == JSON_TOK_TRUE || type1 == JSON_TOK_FALSE) {
@@ -480,6 +505,10 @@ static bool equivalent_types(enum json_tokens type1, enum json_tokens type2)
 	}
 
 	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_INT64) {
+		return true;
+	}
+
+	if (type1 == JSON_TOK_NUMBER && type2 == JSON_TOK_UINT64) {
 		return true;
 	}
 
@@ -545,6 +574,11 @@ static int64_t decode_value(struct json_obj *obj,
 
 		return decode_int64(value, num);
 	}
+	case JSON_TOK_UINT64: {
+		uint64_t *num = field;
+
+		return decode_uint64(value, num);
+	}
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT: {
 		struct json_obj_token *obj_token = field;
@@ -573,6 +607,8 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 		return sizeof(int32_t);
 	case JSON_TOK_INT64:
 		return sizeof(int64_t);
+	case JSON_TOK_UINT64:
+		return sizeof(uint64_t);
 	case JSON_TOK_OPAQUE:
 	case JSON_TOK_FLOAT:
 	case JSON_TOK_OBJ_ARRAY:
@@ -1035,6 +1071,23 @@ static int int64_encode(const int64_t *num, json_append_bytes_t append_bytes,
 	return append_bytes(buf, (size_t)ret, data);
 }
 
+static int uint64_encode(const uint64_t *num, json_append_bytes_t append_bytes,
+			void *data)
+{
+	char buf[sizeof("18446744073709551610")];
+	int ret;
+
+	ret = snprintk(buf, sizeof(buf), "%" PRIu64, *num);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret >= (int)sizeof(buf)) {
+		return -ENOMEM;
+	}
+
+	return append_bytes(buf, (size_t)ret, data);
+}
+
 static int float_ascii_encode(struct json_obj_token *num, json_append_bytes_t append_bytes,
 		      void *data)
 {
@@ -1099,6 +1152,8 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 		return num_encode(ptr, append_bytes, data);
 	case JSON_TOK_INT64:
 		return int64_encode(ptr, append_bytes, data);
+	case JSON_TOK_UINT64:
+		return uint64_encode(ptr, append_bytes, data);
 	case JSON_TOK_FLOAT:
 		return float_ascii_encode(ptr, append_bytes, data);
 	case JSON_TOK_OPAQUE:

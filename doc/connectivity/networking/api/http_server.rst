@@ -78,7 +78,7 @@ using CMake:
     zephyr_linker_sources(SECTIONS sections-rom.ld)
     zephyr_linker_section(NAME http_resource_desc_my_service
                           KVMA RAM_REGION GROUP RODATA_REGION
-                          SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+                          SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 .. note::
 

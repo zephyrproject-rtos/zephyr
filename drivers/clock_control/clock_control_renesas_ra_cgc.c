@@ -12,7 +12,7 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pclkblock), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pclkblock))
 #define MSTP_REGS_ELEM(node_id, prop, idx)                                                         \
 	[DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)] =                                             \
 		(volatile uint32_t *)DT_REG_ADDR_BY_IDX(node_id, idx),

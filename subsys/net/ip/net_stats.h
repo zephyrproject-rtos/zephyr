@@ -345,6 +345,27 @@ static inline void net_stats_update_ipv4_igmp_drop(struct net_if *iface)
 #define net_stats_update_ipv4_igmp_drop(iface)
 #endif /* CONFIG_NET_STATISTICS_IGMP */
 
+#if defined(CONFIG_NET_STATISTICS_DNS)
+static inline void net_stats_update_dns_recv(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.recv++);
+}
+
+static inline void net_stats_update_dns_sent(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.sent++);
+}
+
+static inline void net_stats_update_dns_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.dns.drop++);
+}
+#else
+#define net_stats_update_dns_recv(iface)
+#define net_stats_update_dns_sent(iface)
+#define net_stats_update_dns_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_DNS */
+
 #if defined(CONFIG_NET_PKT_TXTIME_STATS) && defined(CONFIG_NET_STATISTICS)
 static inline void net_stats_update_tx_time(struct net_if *iface,
 					    uint32_t start_time,

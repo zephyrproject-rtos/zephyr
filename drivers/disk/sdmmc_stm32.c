@@ -89,6 +89,8 @@ struct stm32_sdmmc_priv {
 #if STM32_SDMMC_USE_DMA
 	struct sdmmc_dma_stream dma_rx;
 	struct sdmmc_dma_stream dma_tx;
+	DMA_HandleTypeDef dma_tx_handle;
+	DMA_HandleTypeDef dma_rx_handle;
 #endif
 };
 
@@ -230,31 +232,48 @@ static int stm32_sdmmc_configure_dma(DMA_HandleTypeDef *handle, struct sdmmc_dma
 
 static int stm32_sdmmc_dma_init(struct stm32_sdmmc_priv *priv)
 {
-	static DMA_HandleTypeDef dma_tx_handle;
-	static DMA_HandleTypeDef dma_rx_handle;
 	int err;
 
 	LOG_DBG("using dma");
 
-	err = stm32_sdmmc_configure_dma(&dma_tx_handle, &priv->dma_tx);
+	err = stm32_sdmmc_configure_dma(&priv->dma_tx_handle, &priv->dma_tx);
 	if (err) {
 		LOG_ERR("failed to init tx dma");
 		return err;
 	}
-	__HAL_LINKDMA(&priv->hsd, hdmatx, dma_tx_handle);
-	HAL_DMA_DeInit(&dma_tx_handle);
-	HAL_DMA_Init(&dma_tx_handle);
+	__HAL_LINKDMA(&priv->hsd, hdmatx, priv->dma_tx_handle);
+	HAL_DMA_Init(&priv->dma_tx_handle);
 
-	err = stm32_sdmmc_configure_dma(&dma_rx_handle, &priv->dma_rx);
+	err = stm32_sdmmc_configure_dma(&priv->dma_rx_handle, &priv->dma_rx);
 	if (err) {
 		LOG_ERR("failed to init rx dma");
 		return err;
 	}
-	__HAL_LINKDMA(&priv->hsd, hdmarx, dma_rx_handle);
-	HAL_DMA_DeInit(&dma_rx_handle);
-	HAL_DMA_Init(&dma_rx_handle);
+	__HAL_LINKDMA(&priv->hsd, hdmarx, priv->dma_rx_handle);
+	HAL_DMA_Init(&priv->dma_rx_handle);
 
 	return err;
+}
+
+static int stm32_sdmmc_dma_deinit(struct stm32_sdmmc_priv *priv)
+{
+	int ret;
+	struct sdmmc_dma_stream *dma_tx = &priv->dma_tx;
+	struct sdmmc_dma_stream *dma_rx = &priv->dma_rx;
+
+	ret = dma_stop(dma_tx->dev, dma_tx->channel);
+	HAL_DMA_DeInit(&priv->dma_tx_handle);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop tx DMA transmission");
+		return ret;
+	}
+	ret = dma_stop(dma_rx->dev, dma_rx->channel);
+	HAL_DMA_DeInit(&priv->dma_rx_handle);
+	if (ret != 0) {
+		LOG_ERR("Failed to stop rx DMA transmission");
+		return ret;
+	}
+	return ret;
 }
 
 #endif
@@ -309,13 +328,27 @@ static int stm32_sdmmc_access_init(struct disk_info *disk)
 
 static int stm32_sdmmc_access_deinit(struct stm32_sdmmc_priv *priv)
 {
-#if defined(CONFIG_SDMMC_STM32_EMMC)
-	HAL_MMC_DeInit(&priv->hsd);
-#else
-	HAL_SD_DeInit(&priv->hsd);
+	int err = 0;
 
+#if STM32_SDMMC_USE_DMA
+	err = stm32_sdmmc_dma_deinit(priv);
+	if (err) {
+		LOG_ERR("DMA deinit failed");
+		return err;
+	}
+#endif
+
+#if defined(CONFIG_SDMMC_STM32_EMMC)
+	err = HAL_MMC_DeInit(&priv->hsd);
+#else
+	err = HAL_SD_DeInit(&priv->hsd);
 	stm32_sdmmc_clock_disable(priv);
 #endif
+	if (err != HAL_OK) {
+		LOG_ERR("failed to deinit stm32_sdmmc (ErrorCode 0x%X)", priv->hsd.ErrorCode);
+		return err;
+	}
+
 	priv->status = DISK_STATUS_UNINIT;
 	return 0;
 }
@@ -710,7 +743,7 @@ err_card_detect:
 	return err;
 }
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 #if STM32_SDMMC_USE_DMA
 

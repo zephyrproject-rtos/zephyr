@@ -247,8 +247,6 @@ static inline int i2c_smartbond_set_msg_flags(struct i2c_msg *msgs, uint8_t num_
 			if (current->flags & I2C_MSG_STOP) {
 				return -EINVAL;
 			}
-		} else {
-			current->flags |= I2C_MSG_STOP;
 		}
 		current++;
 	}

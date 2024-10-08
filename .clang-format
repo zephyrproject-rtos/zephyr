@@ -46,6 +46,7 @@ ForEachMacros:
   - 'SYS_DLIST_FOR_EACH_CONTAINER_SAFE'
   - 'SYS_DLIST_FOR_EACH_NODE'
   - 'SYS_DLIST_FOR_EACH_NODE_SAFE'
+  - 'SYS_SEM_LOCK'
   - 'SYS_SFLIST_FOR_EACH_CONTAINER'
   - 'SYS_SFLIST_FOR_EACH_CONTAINER_SAFE'
   - 'SYS_SFLIST_FOR_EACH_NODE'
@@ -79,6 +80,8 @@ ForEachMacros:
   - 'HTTP_SERVER_CONTENT_TYPE_FOREACH'
   - 'HTTP_SERVICE_FOREACH'
   - 'HTTP_SERVICE_FOREACH_RESOURCE'
+  - 'I3C_BUS_FOR_EACH_I3CDEV'
+  - 'I3C_BUS_FOR_EACH_I2CDEV'
 IfMacros:
   - 'CHECKIF'
 # Disabled for now, see bug https://github.com/zephyrproject-rtos/zephyr/issues/48520
@@ -101,5 +104,10 @@ SpaceBeforeParens: ControlStatementsExceptControlMacros
 SortIncludes: Never
 UseTab: ForContinuationAndIndentation
 WhitespaceSensitiveMacros:
+  - COND_CODE_0
+  - COND_CODE_1
+  - IF_DISABLED
+  - IF_ENABLED
+  - LISTIFY
   - STRINGIFY
   - Z_STRINGIFY

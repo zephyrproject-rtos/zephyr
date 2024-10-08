@@ -3324,7 +3324,6 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 		/** copy url pointer to be used in socket */
 		client_ctx->desthostname = url + off;
 		client_ctx->desthostnamelen = len;
-		client_ctx->hostname_verify = true;
 #endif
 
 #else

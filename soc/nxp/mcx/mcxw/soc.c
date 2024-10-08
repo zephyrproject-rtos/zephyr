@@ -121,12 +121,21 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetIpSrcDiv(kCLOCK_Lpi2c1, kSCG_SysClkDivBy16);
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpc_lpuart, okay))
-	CLOCK_EnableClock(kCLOCK_Lpuart0);
-#endif
-#if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpc_lpuart, okay))
-	CLOCK_EnableClock(kCLOCK_Lpuart1);
-#endif
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart0), nxp_lpc_lpuart, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpuart0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), nxp_lpc_lpuart, okay)) {
+		CLOCK_EnableClock(kCLOCK_Lpuart1);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm0), nxp_kinetis_tpm, okay)) {
+		CLOCK_EnableClock(kCLOCK_Tpm0);
+	}
+
+	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm1), nxp_kinetis_tpm, okay)) {
+		CLOCK_EnableClock(kCLOCK_Tpm1);
+	}
 }
 
 static void vbat_init(void)
@@ -144,14 +153,14 @@ static void vbat_init(void)
 	base->STATUSA |= VBAT_STATUSA_POR_DET_MASK;
 };
 
-static int nxp_mcxw71_init(void)
+void soc_early_init_hook(void)
 {
 	unsigned int oldLevel; /* old interrupt lock level */
 
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	/* Initialize system clock to 40 MHz */
+	/* Initialize system clock to 96 MHz */
 	clock_init();
 
 	/* Smart power switch initialization */
@@ -159,8 +168,4 @@ static int nxp_mcxw71_init(void)
 
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
-
-	return 0;
 }
-
-SYS_INIT(nxp_mcxw71_init, PRE_KERNEL_1, 0);

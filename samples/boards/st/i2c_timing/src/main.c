@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(i2c_0))
 #define I2C_DEV_NODE	DT_ALIAS(i2c_0)
 #else
 #error "Please set the correct I2C device"

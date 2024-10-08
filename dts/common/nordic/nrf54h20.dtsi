@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/misc/nordic-nrf-ficr-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-domain-id-nrf54h20.h>
 #include <zephyr/dt-bindings/misc/nordic-owner-id-nrf54h20.h>
+#include <zephyr/dt-bindings/misc/nordic-tddconf.h>
 
 /delete-node/ &sw_pwm;
 
@@ -27,6 +28,7 @@
 			device_type = "cpu";
 			clocks = <&cpuapp_hsfll>;
 			clock-frequency = <DT_FREQ_M(320)>;
+			cpu-power-states = <&idle &s2ram>;
 		};
 
 		cpurad: cpu@3 {
@@ -119,6 +121,20 @@
 				#mbox-cells = <1>;
 				nordic,tasks = <32>;
 				nordic,tasks-mask = <0xffff0000>;
+			};
+		};
+
+		power-states {
+			idle: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <100000>;
+			};
+
+			s2ram: s2ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <800000>;
 			};
 		};
 	};
@@ -399,6 +415,7 @@
 				status = "disabled";
 				ble-2mbps-supported;
 				ble-coded-phy-supported;
+				cs-supported;
 				dfe-supported;
 				ieee802154-supported;
 				interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;
@@ -908,6 +925,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi130: spi@9a5000 {
@@ -950,6 +968,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi131: spi@9a6000 {
@@ -1029,6 +1048,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi132: spi@9b5000 {
@@ -1071,6 +1091,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi133: spi@9b6000 {
@@ -1150,6 +1171,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi134: spi@9c5000 {
@@ -1192,6 +1214,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi135: spi@9c6000 {
@@ -1271,6 +1294,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi136: spi@9d5000 {
@@ -1313,6 +1337,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi137: spi@9d6000 {

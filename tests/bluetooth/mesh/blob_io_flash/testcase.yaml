@@ -3,7 +3,6 @@ tests:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
-      - native_posix
       - native_sim
     tags:
       - bluetooth

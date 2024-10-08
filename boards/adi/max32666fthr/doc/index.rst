@@ -21,7 +21,7 @@ The Zephyr port is running on the MAX32666 MCU.
    :align: center
    :alt: MAX32666FTHR Front
 
-.. image:: img/max32666fthr_img1.jpg
+.. image:: img/max32666fthr_img2.jpg
    :align: center
    :alt: MAX32666FTHR Back
 
@@ -122,6 +122,8 @@ Below interfaces are supported by Zephyr on MAX32666FTHR.
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | Timer     | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
 Connections and IOs

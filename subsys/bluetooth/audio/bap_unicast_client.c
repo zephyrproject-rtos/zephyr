@@ -678,7 +678,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	struct bt_bap_unicast_client_ep *client_ep =
 		CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 	struct bt_ascs_ase_status_config *cfg;
-	struct bt_audio_codec_qos_pref *pref;
+	struct bt_bap_qos_cfg_pref *pref;
 	struct bt_bap_stream *stream;
 	void *cc;
 
@@ -740,7 +740,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max,
 		stream->codec_cfg->id);
 
-	if (!bt_audio_valid_qos_pref(pref)) {
+	if (!bt_bap_valid_qos_pref(pref)) {
 		LOG_DBG("Invalid QoS preferences");
 		memset(pref, 0, sizeof(*pref));
 
@@ -1656,7 +1656,7 @@ static int unicast_client_ep_subscribe(struct bt_conn *conn, struct bt_bap_ep *e
 	}
 
 	client_ep->subscribe.value_handle = client_ep->handle;
-	client_ep->subscribe.ccc_handle = 0x0000;
+	client_ep->subscribe.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	client_ep->subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 	client_ep->subscribe.disc_params = &client_ep->discover;
 	client_ep->subscribe.notify = unicast_client_ep_notify;
@@ -1749,7 +1749,7 @@ static void unicast_client_ep_set_cp(struct bt_conn *conn, uint16_t handle)
 		int err;
 
 		client->cp_subscribe.value_handle = handle;
-		client->cp_subscribe.ccc_handle = 0x0000;
+		client->cp_subscribe.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		client->cp_subscribe.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		client->cp_subscribe.disc_params = &client->disc_params;
 		client->cp_subscribe.notify = unicast_client_cp_notify;
@@ -1827,7 +1827,7 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 }
 
 int bt_bap_unicast_client_ep_qos(struct bt_bap_ep *ep, struct net_buf_simple *buf,
-				 struct bt_audio_codec_qos *qos)
+				 struct bt_bap_qos_cfg *qos)
 {
 	struct bt_ascs_qos *req;
 	struct bt_conn_iso *conn_iso;
@@ -2153,7 +2153,7 @@ static void unicast_client_ep_reset(struct bt_conn *conn, uint8_t reason)
 	reset_att_buf(client);
 }
 
-static void bt_audio_codec_qos_to_cig_param(struct bt_iso_cig_param *cig_param,
+static void bt_bap_qos_cfg_to_cig_param(struct bt_iso_cig_param *cig_param,
 					    const struct bt_bap_unicast_group *group)
 {
 	cig_param->framing = group->cig_param.framing;
@@ -2214,7 +2214,7 @@ static int bt_audio_cig_create(struct bt_bap_unicast_group *group)
 
 	param.num_cis = unicast_group_get_cis_count(group);
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, group);
+	bt_bap_qos_cfg_to_cig_param(&param, group);
 
 	err = bt_iso_cig_create(&param, &group->cig);
 	if (err != 0) {
@@ -2245,7 +2245,7 @@ static int bt_audio_cig_reconfigure(struct bt_bap_unicast_group *group)
 
 	param.num_cis = cis_count;
 	param.cis_channels = group->cis;
-	bt_audio_codec_qos_to_cig_param(&param, group);
+	bt_bap_qos_cfg_to_cig_param(&param, group);
 
 	err = bt_iso_cig_reconfigure(group->cig, &param);
 	if (err != 0) {
@@ -2333,9 +2333,9 @@ static void unicast_group_del_iso(struct bt_bap_unicast_group *group, struct bt_
 	}
 }
 
-static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
-						const struct bt_audio_codec_qos *qos,
-						enum bt_audio_dir dir)
+static void unicast_client_qos_cfg_to_iso_qos(struct bt_bap_iso *iso,
+					      const struct bt_bap_qos_cfg *qos,
+					      enum bt_audio_dir dir)
 {
 	struct bt_iso_chan_io_qos *io_qos;
 	struct bt_iso_chan_io_qos *other_io_qos;
@@ -2362,7 +2362,7 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
 		}
 	}
 
-	bt_audio_codec_qos_to_iso_qos(io_qos, qos);
+	bt_bap_qos_cfg_to_iso_qos(io_qos, qos);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
@@ -2377,11 +2377,11 @@ static void unicast_client_codec_qos_to_iso_qos(struct bt_bap_iso *iso,
 
 static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *group,
 					       struct bt_bap_iso *iso,
-					       struct bt_audio_codec_qos *qos,
+					       struct bt_bap_qos_cfg *qos,
 					       enum bt_audio_dir dir)
 {
 	/* Store the stream Codec QoS in the bap_iso */
-	unicast_client_codec_qos_to_iso_qos(iso, qos, dir);
+	unicast_client_qos_cfg_to_iso_qos(iso, qos, dir);
 
 	/* Store the group Codec QoS in the group - This assume thats the parameters have been
 	 * verified first
@@ -2401,7 +2401,7 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 				     struct bt_bap_iso *iso, enum bt_audio_dir dir)
 {
 	struct bt_bap_stream *stream = param->stream;
-	struct bt_audio_codec_qos *qos = param->qos;
+	struct bt_bap_qos_cfg *qos = param->qos;
 
 	LOG_DBG("group %p stream %p qos %p iso %p dir %u", group, stream, qos, iso, dir);
 
@@ -2610,7 +2610,7 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 					     struct bt_bap_unicast_group_cig_param *cig_param,
 					     enum bt_audio_dir dir)
 {
-	const struct bt_audio_codec_qos *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	CHECKIF(param->stream == NULL) {
 		LOG_DBG("param->stream is NULL");
@@ -2670,14 +2670,14 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 	}
 
 	if (cig_param->framing == 0) {
-		if (qos->framing == BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED) {
+		if (qos->framing == BT_BAP_QOS_CFG_FRAMING_UNFRAMED) {
 			cig_param->framing = BT_ISO_FRAMING_UNFRAMED;
-		} else if (qos->framing == BT_AUDIO_CODEC_QOS_FRAMING_FRAMED) {
+		} else if (qos->framing == BT_BAP_QOS_CFG_FRAMING_FRAMED) {
 			cig_param->framing = BT_ISO_FRAMING_FRAMED;
 		}
-	} else if ((qos->framing == BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED &&
+	} else if ((qos->framing == BT_BAP_QOS_CFG_FRAMING_UNFRAMED &&
 		    cig_param->framing != BT_ISO_FRAMING_UNFRAMED) ||
-		   (qos->framing == BT_AUDIO_CODEC_QOS_FRAMING_FRAMED &&
+		   (qos->framing == BT_BAP_QOS_CFG_FRAMING_FRAMED &&
 		    cig_param->framing != BT_ISO_FRAMING_FRAMED)) {
 		return false;
 	}
@@ -3777,7 +3777,7 @@ static uint8_t unicast_client_pacs_avail_ctx_discover_cb(struct bt_conn *conn,
 		if (sub_params->value_handle == 0) {
 			LOG_DBG("Subscribing to handle %u", value_handle);
 			sub_params->value_handle = value_handle;
-			sub_params->ccc_handle = 0x0000; /* auto discover ccc */
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 			sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 			sub_params->disc_params = &uni_cli_insts[index].avail_ctx_cc_disc;
 			sub_params->notify = unicast_client_pacs_avail_ctx_notify_cb;
@@ -3976,7 +3976,7 @@ static uint8_t unicast_client_pacs_location_discover_cb(struct bt_conn *conn,
 		}
 
 		sub_params->value_handle = value_handle;
-		sub_params->ccc_handle = 0x0000; /* auto discover ccc */
+		sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 		sub_params->end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 		sub_params->disc_params = &uni_cli_insts[index].loc_cc_disc;
 		sub_params->notify = unicast_client_pacs_location_notify_cb;

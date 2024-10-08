@@ -26,8 +26,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
 
-#define CLOCK_DELAY(swclk_freq, port_write_cycles) \
-	((CPU_CLOCK / 2 / swclk_freq) - port_write_cycles)
+#define MAX_SWJ_CLOCK(delay_cycles, port_write_cycles) \
+	((CPU_CLOCK / 2U) / (port_write_cycles + delay_cycles))
 
 /*
  * Default SWCLK frequency in Hz.
@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(swdp, CONFIG_DP_DRIVER_LOG_LEVEL);
  */
 #define SWDP_DEFAULT_SWCLK_FREQUENCY	1000000U
 
+#define DELAY_FAST_CYCLES		2U
 #define DELAY_SLOW_CYCLES		3U
 
 struct sw_config {
@@ -528,14 +529,19 @@ static int sw_set_clock(const struct device *dev, const uint32_t clock)
 	struct sw_cfg_data *sw_data = dev->data;
 	uint32_t delay;
 
-	sw_data->fast_clock = false;
-	delay = ((CPU_CLOCK / 2U) + (clock - 1U)) / clock;
-
-	if (delay > config->port_write_cycles) {
-		delay -= config->port_write_cycles;
-		delay = (delay + (DELAY_SLOW_CYCLES - 1U)) / DELAY_SLOW_CYCLES;
-	} else {
+	if (clock >= MAX_SWJ_CLOCK(DELAY_FAST_CYCLES, config->port_write_cycles)) {
+		sw_data->fast_clock = true;
 		delay = 1U;
+	} else {
+		sw_data->fast_clock = false;
+
+		delay = ((CPU_CLOCK / 2U) + (clock - 1U)) / clock;
+		if (delay > config->port_write_cycles) {
+			delay -= config->port_write_cycles;
+			delay = (delay + (DELAY_SLOW_CYCLES - 1U)) / DELAY_SLOW_CYCLES;
+		} else {
+			delay = 1U;
+		}
 	}
 
 	sw_data->clock_delay = delay;
@@ -666,8 +672,7 @@ static int sw_gpio_init(const struct device *dev)
 	sw_data->turnaround = 1U;
 	sw_data->data_phase = false;
 	sw_data->fast_clock = false;
-	sw_data->clock_delay = CLOCK_DELAY(SWDP_DEFAULT_SWCLK_FREQUENCY,
-					   config->port_write_cycles);
+	sw_set_clock(dev, SWDP_DEFAULT_SWCLK_FREQUENCY);
 
 	return 0;
 }

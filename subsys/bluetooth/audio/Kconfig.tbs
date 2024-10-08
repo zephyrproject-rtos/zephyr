@@ -22,70 +22,14 @@ config BT_TBS
 
 if BT_TBS
 
-config BT_TBS_PROVIDER_NAME
-	string "Telephone Bearer Service Provider Name"
-	default "Unknown"
-	help
-	  Sets the name of the service provider for the bearer.
-
-config BT_TBS_UCI
-	string "Telephone Bearer Service Uniform Caller Identifier (UCI)"
-	default "un000"
-	help
-	  Sets the UCI of the bearer. See
-		https://www.bluetooth.com/specifications/assigned-numbers/uniform-caller-identifiers/
-		for a table of valid UCIs.
-
-config BT_TBS_TECHNOLOGY
-	int "Telephone Bearer Service Technology"
-	range 1 10
-	help
-	  Sets the technology used for the bearer, e.g. GSM, LTE and 5G.
-	  1 : 3G
-	  2 : 4G
-	  3 : LTE
-	  4 : Wi-Fi
-	  5 : 5G
-	  6 : GSM
-	  7 : CDMA
-	  8 : 2G
-	  9 : WCDMA
-	  10: IP
-
-config BT_TBS_URI_SCHEMES_LIST
-	string "Telephone Bearer Service URI schemes Supported List"
-	default "tel,skype"
-	help
-	  Sets a list of URI schemes that are supported by the bearer,
-	  e.g. "tel" or "skype".
-	  Multiple values shall be comma (,) separated, e.g. "tel,skype".
-
-config BT_TBS_SIGNAL_STRENGTH_INTERVAL
-	int "Telephone Bearer Service Signal Strength Reporting Interval"
-	default 0
-	range 0 $(UINT8_MAX)
-	help
-	  Sets the interval of reporting the signal strength in seconds.
-		If the value is 0, the signal will not be reported.
-
-config BT_TBS_STATUS_FLAGS
-	int "Telephone Bearer Service Features and Status value"
-	default 0
-	range 0 3
-	help
-	  Bitfield to set feature and status flags.
-	  	Bit 0: In-band ringtone
-		Bit 1: Silent mode
-		Bits 2-15: Reserved for future use
-
 config BT_TBS_SUPPORTED_FEATURES
 	int "Telephone Bearer Service Supported Features"
 	default 1
 	range 0 3
 	help
 	  Bitfield to set supported features of the bearer.
-		Bit 0: Local Hold and Retrieve
-		Bit 1: Join calls within Telephone Bearer Service
+	  Bit 0: Local Hold and Retrieve
+	  Bit 1: Join calls within Telephone Bearer Service
 
 config BT_TBS_MAX_CALLS
 	int "Telephone Bearer Service Maximum Number Of Calls Supported"
@@ -107,12 +51,6 @@ config BT_TBS_MAX_SCHEME_LIST_LENGTH
 	range 0 512
 	help
 	  Sets the maximum length of the URI scheme list.
-
-config BT_TBS_AUTHORIZATION
-	bool "TBS authorization requirement"
-	help
-	  If set to true, then any writable characteristics will require
-	  authorization per connection.
 
 endif # BT_TBS
 

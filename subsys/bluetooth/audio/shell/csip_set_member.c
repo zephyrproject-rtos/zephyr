@@ -29,7 +29,7 @@
 #include <zephyr/types.h>
 #include <zephyr/shell/shell.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 extern const struct shell *ctx_shell;
 struct bt_csip_set_member_svc_inst *svc_inst;

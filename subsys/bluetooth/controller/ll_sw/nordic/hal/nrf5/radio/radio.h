@@ -163,7 +163,6 @@ void radio_gpio_pa_lna_deinit(void);
 void radio_gpio_pa_setup(void);
 void radio_gpio_lna_setup(void);
 void radio_gpio_pdn_setup(void);
-void radio_gpio_csn_setup(void);
 void radio_gpio_lna_on(void);
 void radio_gpio_lna_off(void);
 void radio_gpio_pa_lna_enable(uint32_t trx_us);

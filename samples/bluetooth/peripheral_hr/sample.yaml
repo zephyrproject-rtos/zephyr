@@ -13,6 +13,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
     integration_platforms:
       - qemu_cortex_m3
@@ -22,7 +23,7 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     tags: bluetooth
   sample.bluetooth.peripheral_hr.minimal:
     harness: bluetooth

@@ -47,12 +47,12 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "../host/conn_internal.h"
-#include "../host/keys.h"
-
 #include "csip_crypto.h"
 #include "csip_internal.h"
 #include "common/bt_str.h"
+#include "host/conn_internal.h"
+#include "host/keys.h"
+#include "host/hci_core.h"
 
 LOG_MODULE_REGISTER(bt_csip_set_coordinator, CONFIG_BT_CSIP_SET_COORDINATOR_LOG_LEVEL);
 
@@ -764,8 +764,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			if (sub_params->value != 0) {
 				int err;
 
-				/* With ccc_handle == 0 it will use auto discovery */
-				sub_params->ccc_handle = 0;
+				sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 				sub_params->end_handle = client->cur_inst->end_handle;
 				sub_params->value_handle = chrc->value_handle;
 				sub_params->notify = notify_handler;
@@ -1664,6 +1663,31 @@ int bt_csip_set_coordinator_ordered_access(
 	return 0;
 }
 
+/* As per CSIP, locking and releasing sets can only be done by bonded devices, so it does not makes
+ * sense to have these functions available if we do not support bonding
+ */
+#if defined(CONFIG_BT_BONDABLE)
+static bool all_members_bonded(const struct bt_csip_set_coordinator_set_member *members[],
+			       size_t count)
+{
+	for (size_t i = 0U; i < count; i++) {
+		const struct bt_csip_set_coordinator_set_member *member = members[i];
+		const struct bt_csip_set_coordinator_inst *client =
+			CONTAINER_OF(member, struct bt_csip_set_coordinator_inst, set_member);
+		struct bt_conn_info info;
+		int err;
+
+		err = bt_conn_get_info(client->conn, &info);
+		if (err != 0 || !bt_addr_le_is_bonded(info.id, info.le.dst)) {
+			LOG_DBG("Member[%zu] is not bonded", i);
+
+			return false;
+		}
+	}
+
+	return true;
+}
+
 int bt_csip_set_coordinator_lock(
 	const struct bt_csip_set_coordinator_set_member **members,
 	uint8_t count,
@@ -1681,6 +1705,10 @@ int bt_csip_set_coordinator_lock(
 	if (err != 0) {
 		LOG_DBG("Could not verify members: %d", err);
 		return err;
+	}
+
+	if (!all_members_bonded(members, count)) {
+		return -EINVAL;
 	}
 
 	if (!check_and_set_members_busy(members, count)) {
@@ -1725,6 +1753,10 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
 		return err;
 	}
 
+	if (!all_members_bonded(members, count)) {
+		return -EINVAL;
+	}
+
 	if (!check_and_set_members_busy(members, count)) {
 		LOG_DBG("One or more members are busy");
 		return -EBUSY;
@@ -1748,3 +1780,4 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
 
 	return err;
 }
+#endif /* CONFIG_BT_BONDABLE */

@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: bluetooth_cap_initiator
-   :name: Common Audio Profile Initiator
-   :relevant-api: bt_cap bt_bap bluetooth
+   :name: Common Audio Profile (CAP) Initiator
+   :relevant-api: bluetooth bt_bap bt_cap bt_conn
 
    Connect to CAP Acceptors and setup unicast audio streaming or broadcast audio streams.
 

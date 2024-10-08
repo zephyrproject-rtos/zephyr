@@ -87,6 +87,13 @@
 #include <zephyr/ipc/ipc_service_backend.h>
 #include <zephyr/cache.h>
 
+#if defined(CONFIG_ARCH_POSIX)
+#include <soc.h>
+#define MAYBE_CONST
+#else
+#define MAYBE_CONST const
+#endif
+
 LOG_MODULE_REGISTER(ipc_icbmsg,
 		    CONFIG_IPC_SERVICE_BACKEND_ICBMSG_LOG_LEVEL);
 
@@ -1178,11 +1185,16 @@ static int release_rx_buffer(const struct device *instance, void *token, void *d
  */
 static int backend_init(const struct device *instance)
 {
-	const struct icbmsg_config *conf = instance->config;
+	MAYBE_CONST struct icbmsg_config *conf = (struct icbmsg_config *)instance->config;
 	struct backend_data *dev_data = instance->data;
 #ifdef CONFIG_MULTITHREADING
 	static K_THREAD_STACK_DEFINE(ep_bound_work_q_stack, EP_BOUND_WORK_Q_STACK_SIZE);
 	static bool is_work_q_started;
+
+#if defined(CONFIG_ARCH_POSIX)
+	native_emb_addr_remap((void **)&conf->tx.blocks_ptr);
+	native_emb_addr_remap((void **)&conf->rx.blocks_ptr);
+#endif
 
 	if (!is_work_q_started) {
 		k_work_queue_init(&ep_bound_work_q);
@@ -1341,7 +1353,7 @@ const static struct ipc_service_backend backend_ops = {
 			.rx_pb = &rx_icbmsg_pb_##i,					\
 		}									\
 	};										\
-	static const struct icbmsg_config backend_config_##i =				\
+	static MAYBE_CONST struct icbmsg_config backend_config_##i =			\
 	{										\
 		.control_config = {							\
 			.mbox_tx = MBOX_DT_SPEC_INST_GET(i, tx),			\

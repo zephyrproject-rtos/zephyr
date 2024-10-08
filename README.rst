@@ -8,15 +8,9 @@
      </p>
    </a>
 
-   <a href="https://bestpractices.coreinfrastructure.org/projects/74">
-     <img src="https://bestpractices.coreinfrastructure.org/projects/74/badge">
-   </a>
-   <a href="https://scorecard.dev/viewer/?uri=github.com/zephyrproject-rtos/zephyr">
-     <img src="https://api.securityscorecards.dev/projects/github.com/zephyrproject-rtos/zephyr/badge">
-   </a>
-   <a href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain">
-     <img src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push">
-   </a>
+   <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
+   <a href="https://scorecard.dev/viewer/?uri=github.com/zephyrproject-rtos/zephyr"><img src="https://api.securityscorecards.dev/projects/github.com/zephyrproject-rtos/zephyr/badge"></a>
+   <a href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain"><img src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push"></a>
 
 Ambiq® is an Austin-based SoC vendor who at the forefront of enabling ambient intelligence on billions of
 devices with the unique SPOT platform and extreme-low power semiconductor solutions.

@@ -330,10 +330,10 @@ class CMake:
 
         if not self.options.disable_warnings_as_errors:
             warnings_as_errors = 'y'
-            gen_defines_args = "--edtlib-Werror"
+            gen_edt_args = "--edtlib-Werror"
         else:
             warnings_as_errors = 'n'
-            gen_defines_args = ""
+            gen_edt_args = ""
 
         warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
         if self.instance.sysbuild:
@@ -345,7 +345,7 @@ class CMake:
             f'-DTC_RUNID={self.instance.run_id}',
             f'-DTC_NAME={self.instance.testsuite.name}',
             f'-D{warning_command}={warnings_as_errors}',
-            f'-DEXTRA_GEN_DEFINES_ARGS={gen_defines_args}',
+            f'-DEXTRA_GEN_EDT_ARGS={gen_edt_args}',
             f'-G{self.env.generator}'
         ]
 

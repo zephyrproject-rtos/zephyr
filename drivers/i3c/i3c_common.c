@@ -198,17 +198,15 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 	return ret;
 }
 
-struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
 						   uint8_t addr)
 {
-	sys_snode_t *node;
 	struct i3c_device_desc *ret = NULL;
+	struct i3c_device_desc *desc;
 
-	__ASSERT_NO_MSG(dev_list != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i3c, node) {
-		struct i3c_device_desc *desc = (void *)node;
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
 		if (desc->dynamic_addr == addr) {
 			ret = desc;
 			break;
@@ -218,17 +216,15 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(struct i3c_dev_attached_list 
 	return ret;
 }
 
-struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(struct i3c_dev_attached_list *dev_list,
+struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr)
 {
-	sys_snode_t *node;
 	struct i3c_i2c_device_desc *ret = NULL;
+	struct i3c_i2c_device_desc *desc;
 
-	__ASSERT_NO_MSG(dev_list != NULL);
+	__ASSERT_NO_MSG(dev != NULL);
 
-	SYS_SLIST_FOR_EACH_NODE(&dev_list->devices.i2c, node) {
-		struct i3c_i2c_device_desc *desc = (void *)node;
-
+	I3C_BUS_FOR_EACH_I2CDEV(dev, desc) {
 		if (desc->addr == addr) {
 			ret = desc;
 			break;
@@ -616,6 +612,8 @@ static int i3c_bus_setdasa(const struct device *dev,
 	/* Loop through the registered I3C devices */
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
+		struct i3c_driver_data *bus_data = (struct i3c_driver_data *)dev->data;
+		struct i3c_ccc_address dyn_addr;
 
 		/*
 		 * A device without static address => need to do
@@ -639,10 +637,31 @@ static int i3c_bus_setdasa(const struct device *dev,
 
 		LOG_DBG("SETDASA for 0x%x", desc->static_addr);
 
-		ret = i3c_ccc_do_setdasa(desc);
+		/*
+		 * check that initial dynamic address is free before setting it
+		 * if configured
+		 */
+		if ((desc->init_dynamic_addr != 0) &&
+			(desc->init_dynamic_addr != desc->static_addr)) {
+			if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots,
+				desc->init_dynamic_addr)) {
+				if (i3c_detach_i3c_device(desc) != 0) {
+					LOG_ERR("Failed to detach %s", desc->dev->name);
+				}
+				continue;
+			}
+		}
+
+		/*
+		 * Note that the 7-bit address needs to start at bit 1
+		 * (aka left-justified). So shift left by 1;
+		 */
+		dyn_addr.addr = (desc->init_dynamic_addr ?
+					desc->init_dynamic_addr : desc->static_addr) << 1;
+
+		ret = i3c_ccc_do_setdasa(desc, dyn_addr);
 		if (ret == 0) {
-			desc->dynamic_addr = (desc->init_dynamic_addr ? desc->init_dynamic_addr
-								      : desc->static_addr);
+			desc->dynamic_addr = dyn_addr.addr >> 1;
 			if (desc->dynamic_addr != desc->static_addr) {
 				if (i3c_reattach_i3c_device(desc, desc->static_addr) != 0) {
 					LOG_ERR("Failed to reattach %s (%d)", desc->dev->name, ret);
@@ -655,7 +674,6 @@ static int i3c_bus_setdasa(const struct device *dev,
 			}
 			LOG_ERR("SETDASA error on address 0x%x (%d)",
 				desc->static_addr, ret);
-			continue;
 		}
 	}
 
@@ -664,12 +682,9 @@ static int i3c_bus_setdasa(const struct device *dev,
 
 bool i3c_bus_has_sec_controller(const struct device *dev)
 {
-	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
-	sys_snode_t *node;
+	struct i3c_device_desc *i3c_desc;
 
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
-		struct i3c_device_desc *i3c_desc = CONTAINER_OF(node, struct i3c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
 		if (i3c_device_is_controller_capable(i3c_desc)) {
 			return true;
 		}
@@ -683,7 +698,8 @@ int i3c_bus_deftgts(const struct device *dev)
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
 	struct i3c_config_target config_target;
 	struct i3c_ccc_deftgts *deftgts;
-	sys_snode_t *node;
+	struct i3c_device_desc *i3c_desc;
+	struct i3c_i2c_device_desc *i3c_i2c_desc;
 	int ret;
 	uint8_t n = 0;
 	size_t num_of_targets = sys_slist_len(&data->attached_dev.devices.i3c) +
@@ -723,9 +739,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	/*
 	 * Loop through each attached I3C device and add it to the payload
 	 */
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
-		struct i3c_device_desc *i3c_desc = CONTAINER_OF(node, struct i3c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {
 		deftgts->targets[n].addr = i3c_desc->dynamic_addr << 1;
 		deftgts->targets[n].dcr = i3c_desc->dcr;
 		deftgts->targets[n].bcr = i3c_desc->bcr;
@@ -736,10 +750,7 @@ int i3c_bus_deftgts(const struct device *dev)
 	/*
 	 * Loop through each attached I2C device and add it to the payload
 	 */
-	SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i2c, node) {
-		struct i3c_i2c_device_desc *i3c_i2c_desc =
-			CONTAINER_OF(node, struct i3c_i2c_device_desc, node);
-
+	I3C_BUS_FOR_EACH_I2CDEV(dev, i3c_i2c_desc) {
 		deftgts->targets[n].addr = 0;
 		deftgts->targets[n].lvr = i3c_i2c_desc->lvr;
 		deftgts->targets[n].bcr = 0;

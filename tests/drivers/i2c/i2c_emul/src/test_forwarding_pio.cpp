@@ -23,7 +23,7 @@ ZTEST(i2c_emul_forwarding, test_write_is_forwarded)
 {
 	// Try writing some values
 	for (uint8_t data = 0; data < 10; ++data) {
-		const int expected_call_count = 1 + data;
+		const unsigned int expected_call_count = 1 + data;
 
 		zassert_ok(i2c_write(controller, &data, sizeof(data),
 				     emulated_target_config[0].address));

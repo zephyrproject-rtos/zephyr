@@ -95,7 +95,7 @@ static void clock_init(void)
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = DT_PROP(DT_NODELABEL(cpu0), clock_frequency);
 	/* Set LPUART0 clock source. */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuart0Clock(LPUART_CLOCK_SEL(lpuart0));
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_tpm)

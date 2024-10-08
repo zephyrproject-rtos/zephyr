@@ -30,9 +30,16 @@ LOG_MODULE_REGISTER(spi_gecko);
 #endif
 #endif /* CONFIG_PINCTRL */
 
-#if DT_NODE_HAS_PROP(n, peripheral_id)
+#ifdef CONFIG_CLOCK_CONTROL
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/clock_control_silabs.h>
+#define GET_GECKO_USART_CLOCK(idx)                            \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)), \
+	.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),
+#elif DT_NODE_HAS_PROP(n, peripheral_id)
 #define CLOCK_USART(id) _CONCAT(cmuClock_USART, id)
-#define GET_GECKO_USART_CLOCK(n) CLOCK_USART(DT_INST_PROP(n, peripheral_id))
+#define GET_GECKO_USART_CLOCK(n) \
+	.clock = CLOCK_USART(DT_INST_PROP(n, peripheral_id)),
 #else
 #if (USART_COUNT == 1)
 #define CLOCK_USART(ref)	(((ref) == USART0) ? cmuClock_USART0 \
@@ -70,7 +77,8 @@ LOG_MODULE_REGISTER(spi_gecko);
 #else
 #error "Undefined number of USARTs."
 #endif /* USART_COUNT */
-#define GET_GECKO_USART_CLOCK(id) CLOCK_USART((USART_TypeDef *)DT_INST_REG_ADDR(id))
+#define GET_GECKO_USART_CLOCK(id) \
+	.clock = CLOCK_USART((USART_TypeDef *)DT_INST_REG_ADDR(id)),
 #endif /* DT_NODE_HAS_PROP(n, peripheral_id) */
 
 
@@ -84,7 +92,12 @@ struct spi_gecko_data {
 
 struct spi_gecko_config {
 	USART_TypeDef *base;
+#ifdef CONFIG_CLOCK_CONTROL
+	const struct device *clock_dev;
+	const struct silabs_clock_control_cmu_config clock_cfg;
+#else
 	CMU_Clock_TypeDef clock;
+#endif
 	uint32_t clock_frequency;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
@@ -106,7 +119,22 @@ static int spi_config(const struct device *dev,
 {
 	const struct spi_gecko_config *gecko_config = dev->config;
 	struct spi_gecko_data *data = dev->data;
-	uint32_t spi_frequency = CMU_ClockFreqGet(gecko_config->clock) / 2;
+	uint32_t spi_frequency;
+
+#ifdef CONFIG_CLOCK_CONTROL
+	int err;
+
+	err = clock_control_get_rate(gecko_config->clock_dev,
+				     (clock_control_subsys_t)&gecko_config->clock_cfg,
+				     &spi_frequency);
+	if (err) {
+		return err;
+	}
+	/* Max supported SPI frequency is half the source clock */
+	spi_frequency /= 2;
+#else
+	spi_frequency = CMU_ClockFreqGet(gecko_config->clock) / 2;
+#endif
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -314,7 +342,14 @@ static int spi_gecko_init(const struct device *dev)
 #endif
 
 	/* Enable USART clock */
+#ifdef CONFIG_CLOCK_CONTROL
+	err = clock_control_on(config->clock_dev, (clock_control_subsys_t)&config->clock_cfg);
+	if (err < 0) {
+		return err;
+	}
+#else
 	CMU_ClockEnable(config->clock, true);
+#endif
 
 	/* Init USART */
 	USART_InitSync(config->base, &usartInit);
@@ -405,7 +440,7 @@ static const struct spi_driver_api spi_gecko_api = {
 	    .pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    .clock = GET_GECKO_USART_CLOCK(n), \
+	    GET_GECKO_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000) \
 	}; \
 	DEVICE_DT_INST_DEFINE(n, \
@@ -426,7 +461,7 @@ static const struct spi_driver_api spi_gecko_api = {
 	static struct spi_gecko_config spi_gecko_cfg_##n = { \
 	    .base = (USART_TypeDef *) \
 		 DT_INST_REG_ADDR(n), \
-	    .clock = GET_GECKO_USART_CLOCK(n), \
+	    GET_GECKO_USART_CLOCK(n) \
 	    .clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000), \
 	    .pin_rx = { DT_INST_PROP_BY_IDX(n, location_rx, 1), \
 			DT_INST_PROP_BY_IDX(n, location_rx, 2), \

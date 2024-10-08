@@ -11,6 +11,9 @@ tests:
     build_only: true
     required_snippets:
       - nordic-log-stm-dict
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
   sample.boards.nrf.coresight_stm:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -26,6 +29,9 @@ tests:
         - "Timing for log message with 2 arguments:"
         - "Timing for log message with 3 arguments:"
         - "Timing for log_message with string:"
+    extra_args:
+      - SB_CONFIG_APP_CPUPPR_RUN=y
+      - SB_CONFIG_APP_CPUFLPR_RUN=y
     required_snippets:
       - nordic-log-stm
   sample.boards.nrf.coresight_stm.local_uart:

@@ -104,29 +104,52 @@ static void SOC_ClockInit(void)
 	CLOCK_SetRootMux(kCLOCK_RootAudioAhb, kCLOCK_AudioAhbRootmuxSysPll1);
 
 #if defined(CONFIG_UART_MCUX_IUART)
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart1))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart1, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart1, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart2, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart2, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart3))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart3, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart3, 1U, 1U);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4))
 	/* Set UART source to SysPLL1 Div10 80MHZ */
 	CLOCK_SetRootMux(kCLOCK_RootUart4, kCLOCK_UartRootmuxSysPll1Div10);
 	/* Set root clock to 80MHZ/ 1= 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootUart4, 1U, 1U);
+#endif
+#endif
+
+#if defined(CONFIG_SPI_MCUX_ECSPI)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi1), okay)
+	/* Set ECSPI1 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi1, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi1, 2U, 5U);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi2), okay)
+	/* Set ECSPI2 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi2, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi2, 2U, 5U);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(ecspi3), okay)
+	/* Set ECSPI3 source to SYSTEM PLL1 800MHZ */
+	CLOCK_SetRootMux(kCLOCK_RootEcspi3, kCLOCK_EcspiRootmuxSysPll1);
+	/* Set root clock to 800MHZ / 10 = 80MHZ */
+	CLOCK_SetRootDivider(kCLOCK_RootEcspi3, 2U, 5U);
 #endif
 #endif
 

@@ -47,7 +47,7 @@ static bool stream_is_central(struct bt_bap_stream *bap_stream)
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
-				     const struct bt_audio_codec_qos_pref *pref)
+				     const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
 							struct bt_cap_stream,
@@ -132,6 +132,11 @@ static void cap_stream_disabled_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
+		bt_cap_initiator_disabled(cap_stream);
+	}
+
 	if (ops != NULL && ops->disabled != NULL) {
 		ops->disabled(bap_stream);
 	}
@@ -187,6 +192,11 @@ static void cap_stream_stopped_cb(struct bt_bap_stream *bap_stream, uint8_t reas
 	struct bt_bap_stream_ops *ops = cap_stream->ops;
 
 	LOG_DBG("%p", cap_stream);
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
+		bt_cap_initiator_stopped(cap_stream);
+	}
 
 	if (ops != NULL && ops->stopped != NULL) {
 		ops->stopped(bap_stream, reason);

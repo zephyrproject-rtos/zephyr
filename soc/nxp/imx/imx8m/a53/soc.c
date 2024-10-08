@@ -12,7 +12,7 @@
 #include <fsl_common.h>
 #include <fsl_rdc.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(rdc), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rdc))
 
 #define rdc_inst ((RDC_Type *)DT_REG_ADDR(DT_NODELABEL(rdc)))
 
@@ -28,19 +28,19 @@ static void soc_rdc_init(void)
 
 	RDC_GetDefaultPeriphAccessConfig(&periphConfig);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && DT_NODE_HAS_PROP(DT_NODELABEL(uart2), rdc)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) && DT_NODE_HAS_PROP(DT_NODELABEL(uart2), rdc)
 	periphConfig.periph = kRDC_Periph_UART2;
 	periphConfig.policy = RDC_DT_VAL(uart2);
 	RDC_SetPeriphAccessConfig(rdc_inst, &periphConfig);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay) && DT_NODE_HAS_PROP(DT_NODELABEL(uart4), rdc)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart4)) && DT_NODE_HAS_PROP(DT_NODELABEL(uart4), rdc)
 	periphConfig.periph = kRDC_Periph_UART4;
 	periphConfig.policy = RDC_DT_VAL(uart4);
 	RDC_SetPeriphAccessConfig(rdc_inst, &periphConfig);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && DT_NODE_HAS_PROP(DT_NODELABEL(enet), rdc)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && DT_NODE_HAS_PROP(DT_NODELABEL(enet), rdc)
 	periphConfig.periph = kRDC_Periph_ENET1;
 	periphConfig.policy = RDC_DT_VAL(enet);
 	RDC_SetPeriphAccessConfig(rdc_inst, &periphConfig);

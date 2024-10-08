@@ -16,4 +16,6 @@ toolchain:
   - xtools
 supported:
   - uart
+  - i2c
+  - pwm
 vendor: nxp

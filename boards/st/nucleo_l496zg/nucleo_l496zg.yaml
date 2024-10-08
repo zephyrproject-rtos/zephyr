@@ -16,7 +16,6 @@ supported:
   - spi
   - pwm
   - counter
-  - usb
   - usb_device
   - usbd
   - watchdog

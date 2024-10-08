@@ -108,16 +108,37 @@ endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_compile_options.html
 function(zephyr_compile_options)
-  target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  if(ARGV0 STREQUAL "PROPERTY")
+    set(property $<TARGET_PROPERTY:compiler,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_compile_options(PROPERTY <prop> [<var>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_compile_options(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_compile_options(zephyr_interface INTERFACE ${property})
+    endif()
+  else()
+    target_compile_options(zephyr_interface INTERFACE ${ARGV})
+  endif()
 endfunction()
 
 # https://cmake.org/cmake/help/latest/command/target_link_libraries.html
 function(zephyr_link_libraries)
   if(ARGV0 STREQUAL "PROPERTY")
-    if(ARGC GREATER 2)
-      message(FATAL_ERROR "zephyr_link_libraries(PROPERTY <prop>) only allows a single property.")
+    set(property $<TARGET_PROPERTY:linker,${ARGV1}>)
+    set(property_defined $<BOOL:${property}>)
+    if(ARGC GREATER 3)
+      message(FATAL_ERROR "zephyr_link_options(PROPERTY <prop> [<val>]) "
+                          "called with too many arguments."
+      )
+    elseif(ARGC EQUAL 3)
+      target_link_libraries(zephyr_interface INTERFACE $<${property_defined}:${property}${ARGV2}>)
+    else()
+      target_link_libraries(zephyr_interface INTERFACE ${property})
     endif()
-    target_link_libraries(zephyr_interface INTERFACE $<TARGET_PROPERTY:linker,${ARGV1}>)
   else()
     target_link_libraries(zephyr_interface INTERFACE ${ARGV})
   endif()
@@ -2409,6 +2430,43 @@ function(toolchain_parse_make_rule input_file include_files)
   set(${include_files} ${result} PARENT_SCOPE)
 endfunction()
 
+# 'set_linker_property' is a function that sets the property for the linker
+# property target used for toolchain abstraction.
+#
+# This function is similar in nature to the CMake set_property function, but
+# with some additional extension flags for improved behavioral control.
+#
+# NO_CREATE: Flag to indicate that the property should only be set if not already
+#            defined with a value.
+# APPEND: Flag indicated that the property should be appended to the existing
+#         value list for the property.
+# TARGET: Name of target on which to add the property (default: linker)
+# PROPERTY: Name of property with the value(s) following immediately after
+#           property name
+function(set_linker_property)
+  set(options APPEND NO_CREATE)
+  set(single_args TARGET)
+  set(multi_args  PROPERTY)
+  cmake_parse_arguments(LINKER_PROPERTY "${options}" "${single_args}" "${multi_args}" ${ARGN})
+
+  if(LINKER_PROPERTY_APPEND)
+   set(APPEND "APPEND")
+  endif()
+
+  if(NOT DEFINED LINKER_PROPERTY_TARGET)
+   set(LINKER_PROPERTY_TARGET "linker")
+  endif()
+
+  if(LINKER_PROPERTY_NO_CREATE)
+    list(GET LINKER_PROPERTY_PROPERTY 0 property_name)
+    get_target_property(var ${LINKER_PROPERTY_TARGET} ${property_name})
+    if(NOT "${var}" STREQUAL "var-NOTFOUND")
+      return()
+    endif()
+  endif()
+  set_property(TARGET ${LINKER_PROPERTY_TARGET} ${APPEND} PROPERTY ${LINKER_PROPERTY_PROPERTY})
+endfunction()
+
 # 'check_set_linker_property' is a function that check the provided linker
 # flag and only set the linker property if the check succeeds
 #
@@ -2418,7 +2476,7 @@ endfunction()
 #
 # APPEND: Flag indicated that the property should be appended to the existing
 #         value list for the property.
-# TARGET: Name of target on which to add the property (commonly: linker)
+# TARGET: Name of target on which to add the property (default: linker)
 # PROPERTY: Name of property with the value(s) following immediately after
 #           property name
 function(check_set_linker_property)
@@ -2429,6 +2487,10 @@ function(check_set_linker_property)
 
   if(LINKER_PROPERTY_APPEND)
    set(APPEND "APPEND")
+  endif()
+
+  if(NOT DEFINED LINKER_PROPERTY_TARGET)
+   set(LINKER_PROPERTY_TARGET "linker")
   endif()
 
   list(GET LINKER_PROPERTY_PROPERTY 0 property)

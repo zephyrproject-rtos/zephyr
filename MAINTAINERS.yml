@@ -305,10 +305,9 @@ Bluetooth HCI:
   status: maintained
   maintainers:
     - jhedberg
-    - jori-nordic
+    - alwa-nordic
   collaborators:
     - hermabe
-    - alwa-nordic
     - Thalley
     - sjanc
     - theob-pro
@@ -345,9 +344,6 @@ Bluetooth controller:
     - subsys/bluetooth/common/
     - subsys/bluetooth/controller/
     - subsys/bluetooth/crypto/
-    - subsys/bluetooth/shell/ll.c
-    - subsys/bluetooth/shell/ll.h
-    - subsys/bluetooth/shell/ticker.c
     - tests/bluetooth/controller/
     - tests/bsim/bluetooth/ll/
   labels:
@@ -359,11 +355,10 @@ Bluetooth controller:
 Bluetooth Host:
   status: maintained
   maintainers:
-    - jori-nordic
     - jhedberg
+    - alwa-nordic
   collaborators:
     - hermabe
-    - alwa-nordic
     - Thalley
     - sjanc
     - theob-pro
@@ -376,7 +371,6 @@ Bluetooth Host:
     - subsys/bluetooth/host/
     - subsys/bluetooth/lib/
     - subsys/bluetooth/services/
-    - subsys/bluetooth/shell/
     - subsys/bluetooth/CMakeLists.txt
     - subsys/bluetooth/Kconfig*
     - tests/bluetooth/
@@ -404,14 +398,10 @@ Bluetooth Host:
     - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
-    - subsys/bluetooth/shell/bredr.c
-    - subsys/bluetooth/shell/iso.c
-    - subsys/bluetooth/shell/ll.c
-    - subsys/bluetooth/shell/ll.h
-    - subsys/bluetooth/shell/ticker.c
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
+    - subsys/bluetooth/host/shell/iso.c
     - tests/bluetooth/audio/
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
@@ -499,11 +489,9 @@ Bluetooth Classic:
     - lylezhu2012
   collaborators:
     - jhedberg
-    - sjanc
   files:
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
-    - subsys/bluetooth/shell/bredr.c
     - include/zephyr/bluetooth/classic/
   labels:
     - "area: Bluetooth Classic"
@@ -517,14 +505,15 @@ Bluetooth ISO:
     - Thalley
   collaborators:
     - jhedberg
+    - kruithofa
   files:
     - include/zephyr/bluetooth/iso.h
     - doc/connectivity/bluetooth/api/shell/iso.rst
     - samples/bluetooth/iso_*/
-    - subsys/bluetooth/shell/iso.c
     - subsys/bluetooth/Kconfig.iso
     - subsys/bluetooth/host/iso.c
     - subsys/bluetooth/host/iso_internal.h
+    - subsys/bluetooth/host/shell/iso.c
   labels:
     - "area: Bluetooth ISO"
     - "area: Bluetooth"
@@ -2088,6 +2077,7 @@ Release Notes:
   collaborators:
     - loicpoulain
     - josuah
+    - ngphibang
   files:
     - drivers/video/
     - include/zephyr/drivers/video.h
@@ -2367,8 +2357,10 @@ Input:
 IPC:
   status: maintained
   maintainers:
-    - carlocaione
+    - doki-nordic
     - arnopo
+  collaborators:
+    - carlocaione
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
@@ -3090,6 +3082,18 @@ Open AMP:
   tests:
     - sample.ipc.openamp
 
+PHYTEC Platforms:
+  status: maintained
+  maintainers:
+    - dnltz
+  collaborators:
+    - jonas-rem
+    - pefech
+  files:
+    - boards/phytec/
+  labels:
+    - "platform: PHYTEC"
+
 POSIX API layer:
   status: maintained
   maintainers:
@@ -3503,6 +3507,8 @@ Silabs Platforms:
     - dts/arm/silabs/
     - dts/bindings/*/silabs*
     - drivers/*/*_gecko*
+    - drivers/bluetooth/hci/slz_hci*
+    - drivers/*/*_silabs*
   labels:
     - "platform: Silabs"
 
@@ -3672,6 +3678,8 @@ NXP Platforms (MCU):
     - soc/nxp/mcx/
     - dts/arm/nxp/
     - samples/boards/nxp*/
+  files-exclude:
+    - dts/arm/nxp/nxp_imx*
   files-regex-exclude:
     - .*s32.*
   labels:
@@ -3713,10 +3721,10 @@ NXP Platforms (MPU):
     - dbaluta
     - iuliana-prodan
     - danieldegrasse
-    - decsny
     - yvanderv
   files:
     - dts/arm64/nxp/
+    - dts/arm/nxp/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
   files-regex:
@@ -3953,7 +3961,7 @@ Espressif Platforms:
     - dts/riscv/espressif/
     - dts/bindings/*/*esp32*
     - samples/boards/espressif/
-    - tests/boards/espressif_esp32/
+    - tests/boards/espressif/
     - drivers/*/*esp32*/
   labels:
     - "platform: ESP32"
@@ -4009,8 +4017,6 @@ TI K3 Platforms:
     - gramsay0
     - dnltz
   files:
-    - boards/phytec/phyboard_lyra/
-    - boards/phytec/phyboard_electra/
     - boards/ti/*am62*/
     - drivers/*/*ti_k3*
     - dts/bindings/*/ti,k3*
@@ -4110,6 +4116,20 @@ RTIO:
     - "area: RTIO"
   tests:
     - rtio
+
+Secure storage:
+  status: maintained
+  maintainers:
+    - tomi-font
+  files:
+    - subsys/secure_storage/
+    - samples/psa/
+    - doc/services/secure_storage.rst
+    - tests/subsys/secure_storage/
+  labels:
+    - "area: Secure storage"
+  tests:
+    - psa.secure_storage
 
 Storage:
   status: odd fixes
@@ -4831,6 +4851,14 @@ West:
   labels:
     - "platform: Intel"
 
+"West project: zephyr-lang-rust":
+  status: maintained
+  maintainers:
+    - d3zd3z
+  files: []
+  labels:
+    - "area: Rust"
+
 "West project: libmetal":
   status: odd fixes
   collaborators:
@@ -4912,6 +4940,7 @@ West:
   tests:
     - benchmark.crypto.mbedtls
     - crypto.mbedtls
+    - psa.secure_storage
 
 "West project: mcuboot":
   status: maintained
@@ -5084,6 +5113,7 @@ West:
     - "area: TF-M"
   tests:
     - trusted-firmware-m
+    - psa.secure_storage
 
 "West project: tf-m-tests":
   status: maintained
@@ -5156,6 +5186,8 @@ West:
     - modules/hostap/
   labels:
     - "area: Wi-Fi"
+  tests:
+    - net.wifi
 
 Xtensa arch:
   status: maintained
@@ -5283,6 +5315,8 @@ Testing with Renode:
     - fkokosinski
   files:
     - cmake/emu/renode.cmake
+    - soc/renode/
+    - boards/renode/
     - boards/**/*/support/*.repl
     - boards/**/*/support/*.resc
   labels:
@@ -5311,6 +5345,7 @@ zbus:
     - lyakh
     - pillo79
   files:
+    - cmake/llext-edk.cmake
     - samples/subsys/llext/
     - include/zephyr/llext/
     - tests/subsys/llext/

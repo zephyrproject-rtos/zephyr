@@ -12,7 +12,7 @@
 
 #define RESET_NODE DT_NODELABEL(nrf52840_reset)
 
-#if DT_NODE_HAS_STATUS(RESET_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(RESET_NODE)
 
 #define RESET_GPIO_CTRL  DT_GPIO_CTLR(RESET_NODE, gpios)
 #define RESET_GPIO_PIN   DT_GPIO_PIN(RESET_NODE, gpios)
@@ -65,4 +65,4 @@ int bt_hci_transport_setup(const struct device *h4)
 	return 0;
 }
 
-#endif /* DT_NODE_HAS_STATUS(RESET_NODE, okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(RESET_NODE) */

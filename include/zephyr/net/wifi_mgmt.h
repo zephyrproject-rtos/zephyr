@@ -106,7 +106,9 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
 	/** Get RTS threshold */
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
-/** @cond INTERNAL_HIDDEN */
+	/** WPS config */
+	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
+	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
 };
@@ -219,11 +221,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM);
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** Request a Wi-Fi DPP operation */
 #define NET_REQUEST_WIFI_DPP			\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DPP)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Request a Wi-Fi BTM query */
@@ -249,6 +253,10 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
+
+#define NET_REQUEST_WIFI_WPS_CONFIG (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_CONFIG)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -846,6 +854,7 @@ struct wifi_ap_config_params {
 	uint32_t max_num_sta;
 };
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /** @brief Wi-Fi DPP configuration parameter */
 /** Wi-Fi DPP QR-CODE in string max len for SHA512 */
 #define WIFI_DPP_QRCODE_MAX_LEN 255
@@ -1020,6 +1029,27 @@ struct wifi_dpp_params {
 		 */
 		char resp[WIFI_DPP_QRCODE_MAX_LEN + 1];
 	};
+};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#define WIFI_WPS_PIN_MAX_LEN 8
+
+/** Operation for WPS */
+enum wifi_wps_op {
+	/** WPS pbc */
+	WIFI_WPS_PBC = 0,
+	/** Get WPS pin number */
+	WIFI_WPS_PIN_GET = 1,
+	/** Set WPS pin number */
+	WIFI_WPS_PIN_SET = 2,
+};
+
+/** Wi-Fi wps setup */
+struct wifi_wps_config_params {
+	/** wps operation */
+	enum wifi_wps_op oper;
+	/** pin value*/
+	char pin[WIFI_WPS_PIN_MAX_LEN + 1];
 };
 
 #include <zephyr/net/net_if.h>
@@ -1228,6 +1258,8 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	/** Dispatch DPP operations by action enum, with or without arguments in string format
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
@@ -1236,6 +1268,7 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	/** Flush PMKSA cache entries
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1262,6 +1295,14 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_rts_threshold)(const struct device *dev, unsigned int *rts_threshold);
+	/** Start a WPS PBC/PIN connection
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params wps operarion parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
 };
 
 /** Wi-Fi management offload API */

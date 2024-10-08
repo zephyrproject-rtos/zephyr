@@ -469,6 +469,7 @@ static int gpio_stm32_config(const struct device *dev,
 {
 	int err;
 	uint32_t pincfg;
+	struct gpio_stm32_data *data = dev->data;
 
 	/* figure out if we can map the requested GPIO
 	 * configuration
@@ -479,11 +480,13 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 
 	/* Enable device clock before configuration (requires bank writes) */
-	if (((flags & GPIO_OUTPUT) != 0) || ((flags & GPIO_INPUT) != 0)) {
+	if ((((flags & GPIO_OUTPUT) != 0) || ((flags & GPIO_INPUT) != 0)) &&
+	    !(data->pin_has_clock_enabled & BIT(pin))) {
 		err = pm_device_runtime_get(dev);
 		if (err < 0) {
 			return err;
 		}
+		data->pin_has_clock_enabled |= BIT(pin);
 	}
 
 	if ((flags & GPIO_OUTPUT) != 0) {
@@ -515,12 +518,14 @@ static int gpio_stm32_config(const struct device *dev,
 	}
 #endif /* CONFIG_STM32_WKUP_PINS */
 
-	/* Release clock only if pin is disconnected */
-	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0)) {
+	/* Decrement GPIO usage count only if pin is now disconnected after being connected */
+	if (((flags & GPIO_OUTPUT) == 0) && ((flags & GPIO_INPUT) == 0) &&
+	    (data->pin_has_clock_enabled & BIT(pin))) {
 		err = pm_device_runtime_put(dev);
 		if (err < 0) {
 			return err;
 		}
+		data->pin_has_clock_enabled &= ~BIT(pin);
 	}
 
 	return 0;
@@ -697,7 +702,7 @@ static int gpio_stm32_init(const struct device *dev)
 	}
 
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
-	DT_NODE_HAS_STATUS(DT_NODELABEL(gpiog), okay)
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	/* Port G[15:2] requires external power supply */
 	/* Cf: L4/L5 RM, Chapter "Independent I/O supply rail" */
@@ -747,7 +752,7 @@ static int gpio_stm32_init(const struct device *dev)
 			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
 
 #define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX) \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(gpio##__suffix), okay), \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)), \
 		    (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)), \
 		    ())
 
