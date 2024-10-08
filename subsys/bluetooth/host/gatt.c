@@ -219,17 +219,19 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 #endif
 
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 static ssize_t read_central_addr_res(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint8_t central_addr_res = BT_GATT_CENTRAL_ADDR_RES_SUPP;
+	uint8_t central_addr_res = BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP;
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		central_addr_res = BT_GATT_CENTRAL_ADDR_RES_SUPP;
+	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &central_addr_res, sizeof(central_addr_res));
 }
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
 
 BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GAP),
@@ -253,11 +255,9 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_APPEARANCE, GAP_APPEARANCE_PROPS,
 			       GAP_APPEARANCE_PERMS, read_appearance,
 			       GAP_APPEARANCE_WRITE_HANDLER, NULL),
-#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_PRIVACY)
 	BT_GATT_CHARACTERISTIC(BT_UUID_CENTRAL_ADDR_RES,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       read_central_addr_res, NULL, NULL),
-#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_PRIVACY */
 #if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 	BT_GATT_CHARACTERISTIC(BT_UUID_GAP_PPCP, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_ppcp, NULL, NULL),
