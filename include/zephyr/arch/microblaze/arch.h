@@ -21,7 +21,6 @@
 
 #include <microblaze/emulate_isr.h>
 #include <microblaze/mb_interface.h>
-#include <microblaze/microblaze_asm.h>
 #include <microblaze/microblaze_regs.h>
 
 #define ARCH_STACK_PTR_ALIGN 16
