@@ -45,3 +45,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 
 	EMULATE_ISR();
 }
+
+void arch_irq_offload_init(void)
+{
+}
