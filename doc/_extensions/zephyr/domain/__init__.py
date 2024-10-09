@@ -14,6 +14,7 @@ Directives
 - ``zephyr:code-sample::`` - Defines a code sample.
 - ``zephyr:code-sample-category::`` - Defines a category for grouping code samples.
 - ``zephyr:code-sample-listing::`` - Shows a listing of code samples found in a given category.
+- ``zephyr:board-catalog::`` - Show a listing of boards supported by Zephyr.
 
 Roles
 -----
@@ -23,9 +24,10 @@ Roles
 
 """
 
+import sys
 from os import path
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List, Tuple, Final
 
 from docutils import nodes
 from docutils.parsers.rst import Directive, directives
@@ -42,6 +44,7 @@ from sphinx.util import logging
 from sphinx.util.docutils import SphinxDirective, switch_source_input
 from sphinx.util.nodes import NodeMatcher, make_refnode
 from sphinx.util.parsing import nested_parse_to_nodes
+from sphinx.util.template import SphinxRenderer
 
 from zephyr.doxybridge import DoxygenGroupDirective
 from zephyr.gh_utils import gh_link_get_url
@@ -53,6 +56,14 @@ from anytree import Node, Resolver, ChildResolverError, PreOrderIter, search
 
 __version__ = "0.2.0"
 
+ZEPHYR_BASE = Path(__file__).parents[4]
+
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts/dts/python-devicetree/src"))
+sys.path.insert(0, str(Path(__file__).parents[3] / "_scripts"))
+
+from gen_boards_catalog import get_catalog
+
+TEMPLATES_DIR = Path(__file__).parent / "templates"
 RESOURCES_DIR = Path(__file__).parent / "static"
 
 logger = logging.getLogger(__name__)
@@ -558,6 +569,25 @@ class CodeSampleListingDirective(SphinxDirective):
         return [code_sample_listing_node]
 
 
+class BoardCatalogDirective(SphinxDirective):
+    has_content = False
+    required_arguments = 0
+    optional_arguments = 0
+
+    def run(self):
+        if self.env.app.builder.format == "html":
+            self.env.domaindata["zephyr"]["has_board_catalog"][self.env.docname] = True
+
+            # As it is not expected that more than one board-catalog directive is used across
+            # the documentation, and since the generation is only taking a few seconds,  we don't
+            # store the catalog in the domain data. It might change in the future if the generation
+            # becomes more expensive.
+            board_catalog = get_catalog()
+            renderer = SphinxRenderer([TEMPLATES_DIR])
+            rendered = renderer.render("board-catalog.html", {"catalog": board_catalog})
+            return [nodes.raw("", rendered, format="html")]
+
+
 class ZephyrDomain(Domain):
     """Zephyr domain"""
 
@@ -573,6 +603,7 @@ class ZephyrDomain(Domain):
         "code-sample": CodeSampleDirective,
         "code-sample-listing": CodeSampleListingDirective,
         "code-sample-category": CodeSampleCategoryDirective,
+        "board-catalog": BoardCatalogDirective,
     }
 
     object_types: Dict[str, ObjType] = {
@@ -586,6 +617,7 @@ class ZephyrDomain(Domain):
         "code-samples-categories-tree": Node("samples"),
         # keep track of documents containing special directives
         "has_code_sample_listing": {},  # docname -> bool
+        "has_board_catalog": {},  # docname -> bool
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -604,6 +636,7 @@ class ZephyrDomain(Domain):
         # TODO clean up the anytree as well
 
         self.data["has_code_sample_listing"].pop(docname, None)
+        self.data["has_board_catalog"].pop(docname, None)
 
     def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
@@ -626,6 +659,10 @@ class ZephyrDomain(Domain):
             self.data["has_code_sample_listing"][docname] = otherdata[
                 "has_code_sample_listing"
             ].get(docname, False)
+            self.data["has_board_catalog"][docname] = otherdata["has_board_catalog"].get(
+                docname, False
+            )
+
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
             yield (
@@ -761,6 +798,9 @@ def install_static_assets_as_needed(
         app.add_js_file("js/codesample-livesearch.js")
 
     if app.env.domaindata["zephyr"]["has_board_catalog"].get(pagename, False):
+        app.add_css_file("css/board-catalog.css")
+        app.add_js_file("js/board-catalog.js")
+
 
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
