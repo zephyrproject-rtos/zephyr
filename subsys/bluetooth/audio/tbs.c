@@ -15,6 +15,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -33,7 +34,6 @@
 
 #include "audio_internal.h"
 #include "tbs_internal.h"
-#include "ccid_internal.h"
 
 LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 
@@ -42,6 +42,10 @@ LOG_MODULE_REGISTER(bt_tbs, CONFIG_BT_TBS_LOG_LEVEL);
 /* A service instance can either be a GTBS or a TBS instance */
 struct tbs_inst {
 	/* Attribute values */
+	/* TODO: The provider name should be removed from the tbs_inst and instead by stored by the
+	 * user of TBS. This will be done once the CCP API is complete as the CCP Server will own
+	 * all the data instead of the TBS
+	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
 	uint8_t technology;
@@ -1511,11 +1515,17 @@ static void signal_interval_timeout(struct k_work *work)
 static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_service *svc,
 				      const struct bt_tbs_register_param *param)
 {
-	int err;
+	int ret;
 
 	LOG_DBG("inst %p index 0x%02x", inst, inst_index(inst));
 
-	inst->ccid = bt_ccid_get_value();
+	ret = bt_ccid_alloc_value();
+	if (ret < 0) {
+		LOG_DBG("Could not allocate CCID: %d", ret);
+		return ret;
+	}
+
+	inst->ccid = (uint8_t)ret;
 	(void)utf8_lcpy(inst->provider_name, param->provider_name, sizeof(inst->provider_name));
 	(void)utf8_lcpy(inst->uci, param->uci, sizeof(inst->uci));
 	(void)utf8_lcpy(inst->uri_scheme_list, param->uri_schemes_supported,
@@ -1528,12 +1538,12 @@ static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_serv
 
 	k_work_init_delayable(&inst->reporting_interval_work, signal_interval_timeout);
 
-	err = bt_gatt_service_register(svc);
-	if (err != 0) {
-		LOG_DBG("Could not register %sTBS: %d", param->gtbs ? "G" : "", err);
+	ret = bt_gatt_service_register(svc);
+	if (ret != 0) {
+		LOG_DBG("Could not register %sTBS: %d", param->gtbs ? "G" : "", ret);
 		memset(inst, 0, sizeof(*inst));
 
-		return err;
+		return ret;
 	}
 
 	return inst_index(inst);

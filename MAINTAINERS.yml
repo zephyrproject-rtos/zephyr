@@ -392,6 +392,7 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/api/controller.rst
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/hci_*/
     - samples/bluetooth/pbp*/
@@ -474,6 +475,7 @@ Bluetooth Audio:
     - doc/connectivity/bluetooth/api/audio/
     - samples/bluetooth/bap*/
     - samples/bluetooth/cap*/
+    - samples/bluetooth/ccp*/
     - samples/bluetooth/hap*/
     - samples/bluetooth/pbp*/
     - samples/bluetooth/tmap*/
