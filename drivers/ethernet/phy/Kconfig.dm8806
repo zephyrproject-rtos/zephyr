@@ -1,0 +1,49 @@
+# Copyright 2024 Robert Slawinski <robert.slawinski1@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Davicom PHY DM8806 driver configuration options
+
+menuconfig PHY_DM8806
+	bool "Davicom PHY DM8806 driver"
+	default y
+	depends on DT_HAS_DAVICOM_DM8806_PHY_ENABLED
+	depends on MDIO
+	help
+	  Enable driver for Davicom DM8806 PHY.
+
+if PHY_DM8806
+
+choice PHY_DM8806_TRIGGER_MODE
+	prompt "Trigger mode"
+	default PHY_DM8806_TRIGGER_GLOBAL_THREAD
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config PHY_DM8806_TRIGGER_NONE
+	bool "No trigger"
+
+config PHY_DM8806_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select PHY_DM8806_TRIGGER
+
+endchoice
+
+config PHY_DM8806_TRIGGER
+	bool
+
+config PHY_DM8806_THREAD_PRIORITY
+	int "Thread priority"
+	depends on PHY_DM8806_TRIGGER_GLOBAL_THREAD
+	default 13
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config PHY_DM8806_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on PHY_DM8806_TRIGGER_GLOBAL_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # PHY_DM8806_TRIGGER
