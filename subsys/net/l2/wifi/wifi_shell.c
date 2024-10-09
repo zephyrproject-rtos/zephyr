@@ -1671,16 +1671,19 @@ static int cmd_wifi_btm_query(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_first_wifi();
 	uint8_t query_reason = 0;
+	long tmp = 0;
 
 	context.sh = sh;
 
-	if (!parse_number(sh, (long *)&query_reason, argv[1], NULL,
+	if (!parse_number(sh, &tmp, argv[1], NULL,
 			  WIFI_BTM_QUERY_REASON_UNSPECIFIED, WIFI_BTM_QUERY_REASON_LEAVING_ESS)) {
 		return -EINVAL;
 	}
 
+	query_reason = tmp;
+
 	if (net_mgmt(NET_REQUEST_WIFI_BTM_QUERY, iface, &query_reason, sizeof(query_reason))) {
-		PR_WARNING("Setting BTM query Reason failed..Reason :%d\n", query_reason);
+		PR_WARNING("Setting BTM query Reason failed. Reason : %d\n", query_reason);
 		return -ENOEXEC;
 	}
 
