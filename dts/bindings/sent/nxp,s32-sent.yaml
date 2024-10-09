@@ -1,0 +1,74 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for Single Edge Nibble Transmission (SENT) Receiver
+
+compatible: "nxp,s32-sent"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+child-binding:
+  description: Properties for Single Edge Nibble Transmission (SENT) Receiver channel
+
+  compatible: "nxp,s32-sent-channel"
+
+  include: base.yaml
+
+  properties:
+    num-data-nibbles:
+      type: int
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+      required: true
+      description: |
+        Specifies the number of data nibbles. A nibble is a four-bit aggregation.
+        This property defines how many such nibbles are used in the data transmission.
+
+    tick-time-prescaler-us:
+      type: int
+      required: true
+      description: |
+        Specifies the tick time prescaler in microseconds (us). This value determines the
+        base time unit for the system's timing operations, effectively setting the resolution
+        of the timer.
+
+    bus-timeout-cycles:
+      type: int
+      required: true
+      enum:
+        - 0
+        - 256
+        - 512
+        - 1024
+        - 2048
+      description: |
+        Specifies the number of bus timeout cycles. This value determines the maximum number
+        of cycles the bus will wait before timing out.
+
+    calib-method-low-latency:
+      type: boolean
+      description: |
+        Indicates whether the successive calibration pulse check method with low latency is enabled.
+        This method ensures faster calibration by reducing the delay between successive pulses.
+
+    slow-crc-no-data-nibble-xor:
+      type: boolean
+      description: |
+        Indicates whether the slow message CRC implementation avoids using the zero data nibble
+        XOR method. When set to true, the CRC calculation will not include the XOR operation
+        with zero data nibbles.
+
+    fast-crc-no-data-nibble-xor:
+      type: boolean
+      description: |
+        Indicates whether the fast message CRC implementation avoids using the zero data nibble
+        XOR method. When set to true, the CRC calculation will not include the XOR operation
+        with zero data nibbles.
