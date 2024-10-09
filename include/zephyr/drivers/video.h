@@ -33,7 +33,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @struct video_format
  * @brief Video format structure
@@ -56,7 +55,6 @@ struct video_format {
 	 */
 	uint32_t pitch;
 };
-
 
 /**
  * @struct video_format_cap
@@ -211,8 +209,7 @@ enum video_signal_result {
  *
  * See video_set_format() for argument descriptions.
  */
-typedef int (*video_api_set_format_t)(const struct device *dev,
-				      enum video_endpoint_id ep,
+typedef int (*video_api_set_format_t)(const struct device *dev, enum video_endpoint_id ep,
 				      struct video_format *fmt);
 
 /**
@@ -221,8 +218,7 @@ typedef int (*video_api_set_format_t)(const struct device *dev,
  *
  * See video_get_format() for argument descriptions.
  */
-typedef int (*video_api_get_format_t)(const struct device *dev,
-				      enum video_endpoint_id ep,
+typedef int (*video_api_get_format_t)(const struct device *dev, enum video_endpoint_id ep,
 				      struct video_format *fmt);
 
 /**
@@ -258,8 +254,7 @@ typedef int (*video_api_enum_frmival_t)(const struct device *dev, enum video_end
  *
  * See video_enqueue() for argument descriptions.
  */
-typedef int (*video_api_enqueue_t)(const struct device *dev,
-				   enum video_endpoint_id ep,
+typedef int (*video_api_enqueue_t)(const struct device *dev, enum video_endpoint_id ep,
 				   struct video_buffer *buf);
 
 /**
@@ -268,10 +263,8 @@ typedef int (*video_api_enqueue_t)(const struct device *dev,
  *
  * See video_dequeue() for argument descriptions.
  */
-typedef int (*video_api_dequeue_t)(const struct device *dev,
-				   enum video_endpoint_id ep,
-				   struct video_buffer **buf,
-				   k_timeout_t timeout);
+typedef int (*video_api_dequeue_t)(const struct device *dev, enum video_endpoint_id ep,
+				   struct video_buffer **buf, k_timeout_t timeout);
 
 /**
  * @typedef video_api_flush_t
@@ -280,9 +273,7 @@ typedef int (*video_api_dequeue_t)(const struct device *dev,
  *
  * See video_flush() for argument descriptions.
  */
-typedef int (*video_api_flush_t)(const struct device *dev,
-				 enum video_endpoint_id ep,
-				 bool cancel);
+typedef int (*video_api_flush_t)(const struct device *dev, enum video_endpoint_id ep, bool cancel);
 
 /**
  * @typedef video_api_stream_start_t
@@ -306,9 +297,7 @@ typedef int (*video_api_stream_stop_t)(const struct device *dev);
  *
  * See video_set_ctrl() for argument descriptions.
  */
-typedef int (*video_api_set_ctrl_t)(const struct device *dev,
-				    unsigned int cid,
-				    void *value);
+typedef int (*video_api_set_ctrl_t)(const struct device *dev, unsigned int cid, void *value);
 
 /**
  * @typedef video_api_get_ctrl_t
@@ -316,9 +305,7 @@ typedef int (*video_api_set_ctrl_t)(const struct device *dev,
  *
  * See video_get_ctrl() for argument descriptions.
  */
-typedef int (*video_api_get_ctrl_t)(const struct device *dev,
-				    unsigned int cid,
-				    void *value);
+typedef int (*video_api_get_ctrl_t)(const struct device *dev, unsigned int cid, void *value);
 
 /**
  * @typedef video_api_get_caps_t
@@ -326,8 +313,7 @@ typedef int (*video_api_get_ctrl_t)(const struct device *dev,
  *
  * See video_get_caps() for argument descriptions.
  */
-typedef int (*video_api_get_caps_t)(const struct device *dev,
-				    enum video_endpoint_id ep,
+typedef int (*video_api_get_caps_t)(const struct device *dev, enum video_endpoint_id ep,
 				    struct video_caps *caps);
 
 /**
@@ -336,8 +322,7 @@ typedef int (*video_api_get_caps_t)(const struct device *dev,
  *
  * See video_set_signal() for argument descriptions.
  */
-typedef int (*video_api_set_signal_t)(const struct device *dev,
-				      enum video_endpoint_id ep,
+typedef int (*video_api_set_signal_t)(const struct device *dev, enum video_endpoint_id ep,
 				      struct k_poll_signal *signal);
 
 __subsystem struct video_driver_api {
@@ -373,12 +358,10 @@ __subsystem struct video_driver_api {
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_set_format(const struct device *dev,
-				   enum video_endpoint_id ep,
+static inline int video_set_format(const struct device *dev, enum video_endpoint_id ep,
 				   struct video_format *fmt)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->set_format == NULL) {
 		return -ENOSYS;
@@ -398,12 +381,10 @@ static inline int video_set_format(const struct device *dev,
  *
  * @retval pointer to video format
  */
-static inline int video_get_format(const struct device *dev,
-				   enum video_endpoint_id ep,
+static inline int video_get_format(const struct device *dev, enum video_endpoint_id ep,
 				   struct video_format *fmt)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->get_format == NULL) {
 		return -ENOSYS;
@@ -511,12 +492,10 @@ static inline int video_enum_frmival(const struct device *dev, enum video_endpoi
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_enqueue(const struct device *dev,
-				enum video_endpoint_id ep,
+static inline int video_enqueue(const struct device *dev, enum video_endpoint_id ep,
 				struct video_buffer *buf)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->enqueue == NULL) {
 		return -ENOSYS;
@@ -540,13 +519,10 @@ static inline int video_enqueue(const struct device *dev,
  * @retval -EINVAL If parameters are invalid.
  * @retval -EIO General input / output error.
  */
-static inline int video_dequeue(const struct device *dev,
-				enum video_endpoint_id ep,
-				struct video_buffer **buf,
-				k_timeout_t timeout)
+static inline int video_dequeue(const struct device *dev, enum video_endpoint_id ep,
+				struct video_buffer **buf, k_timeout_t timeout)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->dequeue == NULL) {
 		return -ENOSYS;
@@ -554,7 +530,6 @@ static inline int video_dequeue(const struct device *dev,
 
 	return api->dequeue(dev, ep, buf, timeout);
 }
-
 
 /**
  * @brief Flush endpoint buffers.
@@ -570,12 +545,9 @@ static inline int video_dequeue(const struct device *dev,
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_flush(const struct device *dev,
-			      enum video_endpoint_id ep,
-			      bool cancel)
+static inline int video_flush(const struct device *dev, enum video_endpoint_id ep, bool cancel)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->flush == NULL) {
 		return -ENOSYS;
@@ -598,8 +570,7 @@ static inline int video_flush(const struct device *dev,
  */
 static inline int video_stream_start(const struct device *dev)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->stream_start == NULL) {
 		return -ENOSYS;
@@ -619,8 +590,7 @@ static inline int video_stream_start(const struct device *dev)
  */
 static inline int video_stream_stop(const struct device *dev)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 	int ret;
 
 	if (api->stream_stop == NULL) {
@@ -642,12 +612,10 @@ static inline int video_stream_stop(const struct device *dev)
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_get_caps(const struct device *dev,
-				 enum video_endpoint_id ep,
+static inline int video_get_caps(const struct device *dev, enum video_endpoint_id ep,
 				 struct video_caps *caps)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->get_caps == NULL) {
 		return -ENOSYS;
@@ -671,11 +639,9 @@ static inline int video_get_caps(const struct device *dev,
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_set_ctrl(const struct device *dev, unsigned int cid,
-				 void *value)
+static inline int video_set_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->set_ctrl == NULL) {
 		return -ENOSYS;
@@ -699,11 +665,9 @@ static inline int video_set_ctrl(const struct device *dev, unsigned int cid,
  * @retval -ENOTSUP If format is not supported.
  * @retval -EIO General input / output error.
  */
-static inline int video_get_ctrl(const struct device *dev, unsigned int cid,
-				 void *value)
+static inline int video_get_ctrl(const struct device *dev, unsigned int cid, void *value)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->get_ctrl == NULL) {
 		return -ENOSYS;
@@ -725,12 +689,10 @@ static inline int video_get_ctrl(const struct device *dev, unsigned int cid,
  *
  * @retval 0 Is successful, -ERRNO code otherwise.
  */
-static inline int video_set_signal(const struct device *dev,
-				   enum video_endpoint_id ep,
+static inline int video_set_signal(const struct device *dev, enum video_endpoint_id ep,
 				   struct k_poll_signal *signal)
 {
-	const struct video_driver_api *api =
-		(const struct video_driver_api *)dev->api;
+	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
 
 	if (api->set_signal == NULL) {
 		return -ENOSYS;
@@ -765,11 +727,9 @@ struct video_buffer *video_buffer_alloc(size_t size);
  */
 void video_buffer_release(struct video_buffer *buf);
 
-
 /* fourcc - four-character-code */
-#define video_fourcc(a, b, c, d)\
+#define video_fourcc(a, b, c, d)                                                                   \
 	((uint32_t)(a) | ((uint32_t)(b) << 8) | ((uint32_t)(c) << 16) | ((uint32_t)(d) << 24))
-
 
 /**
  * @defgroup video_pixel_formats Video pixel formats
@@ -782,13 +742,13 @@ void video_buffer_release(struct video_buffer *buf);
  */
 
 /** BGGR8 pixel format */
-#define VIDEO_PIX_FMT_BGGR8  video_fourcc('B', 'G', 'G', 'R') /*  8  BGBG.. GRGR.. */
+#define VIDEO_PIX_FMT_BGGR8 video_fourcc('B', 'G', 'G', 'R') /*  8  BGBG.. GRGR.. */
 /** GBRG8 pixel format */
-#define VIDEO_PIX_FMT_GBRG8  video_fourcc('G', 'B', 'R', 'G') /*  8  GBGB.. RGRG.. */
+#define VIDEO_PIX_FMT_GBRG8 video_fourcc('G', 'B', 'R', 'G') /*  8  GBGB.. RGRG.. */
 /** GRBG8 pixel format */
-#define VIDEO_PIX_FMT_GRBG8  video_fourcc('G', 'R', 'B', 'G') /*  8  GRGR.. BGBG.. */
+#define VIDEO_PIX_FMT_GRBG8 video_fourcc('G', 'R', 'B', 'G') /*  8  GRGR.. BGBG.. */
 /** RGGB8 pixel format */
-#define VIDEO_PIX_FMT_RGGB8  video_fourcc('R', 'G', 'G', 'B') /*  8  RGRG.. GBGB.. */
+#define VIDEO_PIX_FMT_RGGB8 video_fourcc('R', 'G', 'G', 'B') /*  8  RGRG.. GBGB.. */
 
 /**
  * @}
@@ -831,7 +791,7 @@ void video_buffer_release(struct video_buffer *buf);
  */
 
 /** JPEG pixel format */
-#define VIDEO_PIX_FMT_JPEG   video_fourcc('J', 'P', 'E', 'G') /*  8  JPEG */
+#define VIDEO_PIX_FMT_JPEG video_fourcc('J', 'P', 'E', 'G') /*  8  JPEG */
 
 /**
  * @}
