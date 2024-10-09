@@ -50,6 +50,9 @@ extern "C" {
 #define PF_LOCAL        6          /**< Inter-process communication   */
 #define PF_UNIX         PF_LOCAL   /**< Inter-process communication   */
 
+/** First ID available for downstream protocols. Must be last/biggest numbered PF_* entry. */
+#define PF_PRIVATE_START 100
+
 /* Address families. */
 #define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
 #define AF_INET        PF_INET     /**< IP protocol family version 4. */
@@ -59,6 +62,9 @@ extern "C" {
 #define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
 #define AF_LOCAL       PF_LOCAL    /**< Inter-process communication   */
 #define AF_UNIX        PF_UNIX     /**< Inter-process communication   */
+
+/** First ID available for downstream protocols. Must be last/biggest numbered AF_* entry. */
+#define AF_PRIVATE_START PF_PRIVATE_START
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
