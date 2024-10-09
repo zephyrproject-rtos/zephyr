@@ -2748,6 +2748,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_SUBCMD_ADD((wifi), ap, &wifi_cmd_ap,
+		 "Access Point mode commands.",
+		 NULL,
+		 0, 0);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 	SHELL_CMD_ARG(quick_setup, NULL, " Start a TWT flow with defaults:\n"
 		"<twt_wake_interval: 1-262144us> <twt_interval: 1us-2^31us>.\n",
@@ -2772,6 +2777,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_twt_ops,
 		1, 0),
 	SHELL_SUBCMD_SET_END
 );
+
+SHELL_SUBCMD_ADD((wifi), twt, &wifi_twt_ops,
+		 "Manage TWT flows.",
+		 NULL,
+		 0, 0);
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -2850,17 +2860,43 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      cmd_wifi_dpp_reconfig, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
+
+SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
+		 "DPP actions.",
+		 NULL,
+		 0, 0);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
-SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
-	SHELL_CMD_ARG(version, NULL, "Print Wi-Fi Driver and Firmware versions\n",
-		  cmd_wifi_version,
-		  1, 0),
-	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands.\n", NULL),
-	SHELL_CMD_ARG(connect, NULL,
+SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
+SHELL_SUBCMD_ADD((wifi), 11v_btm_query, &wifi_commands,
+		 "<query_reason: The reason code for a BSS transition management query>.\n",
+		 cmd_wifi_btm_query,
+		 2, 0);
+#endif
+
+SHELL_SUBCMD_ADD((wifi), channel, &wifi_commands,
+		 "wifi channel setting\n"
+		 "This command is used to set the channel when\n"
+		 "monitor or TX-Injection mode is enabled\n"
+		 "Currently 20 MHz is only supported and no BW parameter is provided\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-c, --channel <chan>] : Set a specific channel number to the lower layer\n"
+		 "[-g, --get] : Get current set channel number from the lower layer\n"
+		 "[-h, --help] : Help\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi channel -g -i1\n"
+		 "Set operation example for interface index 1 (setting channel 5)\n"
+		 "wifi -i1 -c5.\n",
+		 cmd_wifi_channel,
+		 2, 4);
+
+SHELL_SUBCMD_ADD((wifi), connect, &wifi_commands,
 		  "Connect to a Wi-Fi AP\n"
 		  "<-s --ssid \"<SSID>\">: SSID.\n"
-		  "[-c --channel]: Channel that needs to be scanned for connection. 0:any channel.\n"
+		  "[-c --channel]: Channel that needs to be scanned for connection. "
+		 "0:any channel.\n"
 		  "[-b, --band] 0: any band (2:2.4GHz, 5:5GHz, 6:6GHz]\n"
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
@@ -2874,134 +2910,150 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 13),
-	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
-		  cmd_wifi_disconnect,
-		  1, 0),
-	SHELL_CMD_ARG(ps, NULL, "Configure or display Wi-Fi power save state.\n"
-		  "[on/off]\n",
-		  cmd_wifi_ps,
-		  1, 1),
-	SHELL_CMD_ARG(ps_mode,
-		      NULL,
-		      "<mode: legacy/WMM>.\n",
-		      cmd_wifi_ps_mode,
-		      2, 0),
-	SHELL_CMD_ARG(scan, NULL,
-		  "Scan for Wi-Fi APs\n"
-		    "[-t, --type <active/passive>] : Preferred mode of scan. The actual mode of scan can depend on factors such as the Wi-Fi chip implementation, regulatory domain restrictions. Default type is active\n"
-		    "[-b, --bands <Comma separated list of band values (2/5/6)>] : Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
-		    "[-a, --dwell_time_active <val_in_ms>] : Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
-		    "[-p, --dwell_time_passive <val_in_ms>] : Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
-		    "[-s, --ssid] : SSID to scan for. Can be provided multiple times\n"
-		    "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
-		    "[-c, --chans <Comma separated list of channel ranges>] : Channels to be scanned. The channels must be specified in the form band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band values and chan1, chan2, chan3 must be specified as a list of comma separated values where each value is either a single channel or a channel range specified as chan_start-chan_end. Each band channel set has to be separated by a _. For example, a valid channel specification can be 2:1,6_5:36 or 2:1,6-11,14_5:36,163-177,52. Care should be taken to ensure that configured channels don't exceed CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL\n"
-		    "[-h, --help] : Print out the help for the scan command.\n",
-		  cmd_wifi_scan,
-		  1, 8),
-	SHELL_CMD_ARG(statistics, NULL, "Wi-Fi interface statistics.\n"
-					"[reset] : Reset Wi-Fi interface statistics\n"
-					"[help] :  Print out the help for the statistics command.",
-					cmd_wifi_stats,
-					1, 1),
-	SHELL_CMD_ARG(status, NULL, "Status of the Wi-Fi interface.\n", cmd_wifi_status, 1, 0),
-	SHELL_CMD(twt, &wifi_twt_ops, "Manage TWT flows.\n", NULL),
-	SHELL_CMD_ARG(reg_domain, NULL,
-		"Set or Get Wi-Fi regulatory domain\n"
-		"[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
-		"[-f]: Force to use this regulatory hint over any other regulatory hints\n"
-		"Note: This may cause regulatory compliance issues, use it at your own risk.\n",
-		cmd_wifi_reg_domain,
-		1, 2),
-	SHELL_CMD_ARG(mode, NULL, "mode operational setting\n"
-		"This command may be used to set the Wi-Fi device into a specific mode of operation\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-s, --sta] : Station mode\n"
-		"[-m, --monitor] : Monitor mode\n"
-		"[-a, --ap] : AP mode\n"
-		"[-k, --softap] : Softap mode\n"
-		"[-h, --help] : Help\n"
-		"[-g, --get] : Get current mode for a specific interface index\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi mode -g -i1\n"
-		"Set operation example for interface index 1 - set station+promiscuous\n"
-		"wifi mode -i1 -sp.\n",
-		cmd_wifi_mode,
-		1, 9),
-	SHELL_CMD_ARG(packet_filter, NULL, "mode filter setting\n"
-		"This command is used to set packet filter setting when\n"
-		"monitor, TX-Injection and promiscuous mode is enabled\n"
-		"The different packet filter modes are control, management, data and enable all filters\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-a, --all] : Enable all packet filter modes\n"
-		"[-m, --mgmt] : Enable management packets to allowed up the stack\n"
-		"[-c, --ctrl] : Enable control packets to be allowed up the stack\n"
-		"[-d, --data] : Enable Data packets to be allowed up the stack\n"
-		"[-g, --get] : Get current filter settings for a specific interface index\n"
-		"[-b, --capture-len <len>] : Capture length buffer size for each packet to be captured\n"
-		"[-h, --help] : Help\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi packet_filter -g -i1\n"
-		"Set operation example for interface index 1 - set data+management frame filter\n"
-		"wifi packet_filter -i1 -md.\n",
-		cmd_wifi_packet_filter,
-		2, 8),
-	SHELL_CMD_ARG(channel, NULL, "wifi channel setting\n"
-		"This command is used to set the channel when\n"
-		"monitor or TX-Injection mode is enabled\n"
-		"Currently 20 MHz is only supported and no BW parameter is provided\n"
-		"[-i, --if-index <idx>] : Interface index\n"
-		"[-c, --channel <chan>] : Set a specific channel number to the lower layer\n"
-		"[-g, --get] : Get current set channel number from the lower layer\n"
-		"[-h, --help] : Help\n"
-		"Usage: Get operation example for interface index 1\n"
-		"wifi channel -g -i1\n"
-		"Set operation example for interface index 1 (setting channel 5)\n"
-		"wifi -i1 -c5.\n",
-		cmd_wifi_channel,
-		2, 4),
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
-	SHELL_CMD_ARG(11v_btm_query,
-		NULL,
-		"<query_reason: The reason code for a BSS transition management query>.\n",
-		cmd_wifi_btm_query,
-		2, 0),
-#endif
-	SHELL_CMD_ARG(wps_pbc, NULL,
-		"Start a WPS PBC connection.\n",
-		cmd_wifi_wps_pbc, 1, 0),
-	SHELL_CMD_ARG(wps_pin, NULL,
-		"Set and get WPS pin.\n"
-		"[pin] Only applicable for set.\n",
-		cmd_wifi_wps_pin, 1, 1),
-	SHELL_CMD_ARG(ps_timeout,
-		      NULL,
-		      "<val> - PS inactivity timer(in ms).\n",
-		      cmd_wifi_ps_timeout,
-		      2, 0),
-	SHELL_CMD_ARG(ps_listen_interval,
-		      NULL,
-		      "<val> - Listen interval in the range of <0-65535>.\n",
-		      cmd_wifi_listen_interval,
-		      2, 0),
-	SHELL_CMD_ARG(ps_wakeup_mode,
-		      NULL,
-		      "<wakeup_mode: DTIM/Listen Interval>.\n",
-		      cmd_wifi_ps_wakeup_mode,
-		      2, 0),
-	SHELL_CMD_ARG(rts_threshold,
-		      NULL,
-		      "<rts_threshold: rts threshold/off>.\n",
-		      cmd_wifi_set_rts_threshold,
-		      1, 1),
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
-	SHELL_CMD(dpp, &wifi_cmd_dpp, "DPP actions\n", NULL),
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-	SHELL_CMD_ARG(pmksa_flush, NULL,
-		     "Flush PMKSA cache entries.\n",
-		     cmd_wifi_pmksa_flush, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+		 2, 13);
+
+SHELL_SUBCMD_ADD((wifi), disconnect, &wifi_commands,
+		 "Disconnect from the Wi-Fi AP.\n",
+		 cmd_wifi_disconnect,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), mode, &wifi_commands,
+		 "mode operational setting\n"
+		 "This command may be used to set the Wi-Fi device into a specific "
+		 "mode of operation\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-s, --sta] : Station mode\n"
+		 "[-m, --monitor] : Monitor mode\n"
+		 "[-a, --ap] : AP mode\n"
+		 "[-k, --softap] : Softap mode\n"
+		 "[-h, --help] : Help\n"
+		 "[-g, --get] : Get current mode for a specific interface index\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi mode -g -i1\n"
+		 "Set operation example for interface index 1 - set station+promiscuous\n"
+		 "wifi mode -i1 -sp.\n",
+		 cmd_wifi_mode,
+		 1, 9);
+
+SHELL_SUBCMD_ADD((wifi), packet_filter, &wifi_commands,
+		 "mode filter setting\n"
+		 "This command is used to set packet filter setting when\n"
+		 "monitor, TX-Injection and promiscuous mode is enabled\n"
+		 "The different packet filter modes are control, management, "
+		 "data and enable all filters\n"
+		 "[-i, --if-index <idx>] : Interface index\n"
+		 "[-a, --all] : Enable all packet filter modes\n"
+		 "[-m, --mgmt] : Enable management packets to allowed up the stack\n"
+		 "[-c, --ctrl] : Enable control packets to be allowed up the stack\n"
+		 "[-d, --data] : Enable Data packets to be allowed up the stack\n"
+		 "[-g, --get] : Get current filter settings for a specific interface index\n"
+		 "[-b, --capture-len <len>] : Capture length buffer size for each packet "
+		 "to be captured\n"
+		 "[-h, --help] : Help\n"
+		 "Usage: Get operation example for interface index 1\n"
+		 "wifi packet_filter -g -i1\n"
+		 "Set operation example for interface index 1 - set data+management frame filter\n"
+		 "wifi packet_filter -i1 -md.\n",
+		 cmd_wifi_packet_filter,
+		 2, 8);
+
+SHELL_SUBCMD_ADD((wifi), pmksa_flush, &wifi_commands,
+		 "Flush PMKSA cache entries.\n",
+		 cmd_wifi_pmksa_flush,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps, &wifi_commands,
+		 "Configure or display Wi-Fi power save state.\n[on/off]\n",
+		 cmd_wifi_ps,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), ps_listen_interval, &wifi_commands,
+		 "<val> - Listen interval in the range of <0-65535>.\n",
+		 cmd_wifi_listen_interval,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_mode, &wifi_commands,
+		 "<mode: legacy/WMM>.\n",
+		 cmd_wifi_ps_mode,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_timeout, &wifi_commands,
+		 "<val> - PS inactivity timer(in ms).\n",
+		 cmd_wifi_ps_timeout,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), ps_wakeup_mode, &wifi_commands,
+		 "<wakeup_mode: DTIM/Listen Interval>.\n",
+		 cmd_wifi_ps_wakeup_mode,
+		 2, 0);
+
+SHELL_SUBCMD_ADD((wifi), reg_domain, &wifi_commands,
+		 "Set or Get Wi-Fi regulatory domain\n"
+		 "[ISO/IEC 3166-1 alpha2]: Regulatory domain\n"
+		 "[-f]: Force to use this regulatory hint over any other regulatory hints\n"
+		 "Note: This may cause regulatory compliance issues, use it at your own risk.\n",
+		 cmd_wifi_reg_domain,
+		 1, 2);
+
+SHELL_SUBCMD_ADD((wifi), rts_threshold, &wifi_commands,
+		 "<rts_threshold: rts threshold/off>.\n",
+		 cmd_wifi_set_rts_threshold,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), scan, &wifi_commands,
+		 "Scan for Wi-Fi APs\n"
+		 "[-t, --type <active/passive>] : Preferred mode of scan. "
+		 "The actual mode of scan can depend on factors such as the Wi-Fi chip "
+		 "implementation, regulatory domain restrictions. Default type is active\n"
+		 "[-b, --bands <Comma separated list of band values (2/5/6)>] : "
+		 "Bands to be scanned where 2: 2.4 GHz, 5: 5 GHz, 6: 6 GHz\n"
+		 "[-a, --dwell_time_active <val_in_ms>] : "
+		 "Active scan dwell time (in ms) on a channel. Range 5 ms to 1000 ms\n"
+		 "[-p, --dwell_time_passive <val_in_ms>] : "
+		 "Passive scan dwell time (in ms) on a channel. Range 10 ms to 1000 ms\n"
+		 "[-s, --ssid] : SSID to scan for. Can be provided multiple times\n"
+		 "[-m, --max_bss <val>] : Maximum BSSes to scan for. Range 1 - 65535\n"
+		 "[-c, --chans <Comma separated list of channel ranges>] : "
+		 "Channels to be scanned. The channels must be specified in the form "
+		 "band1:chan1,chan2_band2:chan3,..etc. band1, band2 must be valid band "
+		 "values and chan1, chan2, chan3 must be specified as a list of comma "
+		 "separated values where each value is either a single channel or a "
+		 "channel range specified as chan_start-chan_end. Each band channel "
+		 "set has to be separated by a _. For example, a valid channel "
+		 "specification can be 2:1,6_5:36 or 2:1,6-11,14_5:36,163-177,52. "
+		 "Care should be taken to ensure that configured channels don't exceed "
+		 "CONFIG_WIFI_MGMT_SCAN_CHAN_MAX_MANUAL\n"
+		 "[-h, --help] : Print out the help for the scan command.\n",
+		 cmd_wifi_scan,
+		 1, 8);
+
+SHELL_SUBCMD_ADD((wifi), statistics, &wifi_commands,
+		 "Wi-Fi interface statistics.\n"
+		 "[reset] : Reset Wi-Fi interface statistics\n"
+		 "[help] :  Print out the help for the statistics command.",
+		 cmd_wifi_stats,
+		 1, 1);
+
+SHELL_SUBCMD_ADD((wifi), status, &wifi_commands,
+		 "Status of the Wi-Fi interface.\n",
+		 cmd_wifi_status,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), version, &wifi_commands,
+		 "Print Wi-Fi Driver and Firmware versions\n",
+		 cmd_wifi_version,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), wps_pbc, &wifi_commands,
+		 "Start a WPS PBC connection.\n",
+		 cmd_wifi_wps_pbc,
+		 1, 0);
+
+SHELL_SUBCMD_ADD((wifi), wps_pin, &wifi_commands,
+		 "Set and get WPS pin.\n"
+		 "[pin] Only applicable for set.\n",
+		 cmd_wifi_wps_pin,
+		 1, 1);
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
