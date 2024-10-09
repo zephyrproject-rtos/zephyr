@@ -135,12 +135,18 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 	uint16_t regval;
 	int ret;
 
-	if (channel > DACX3608_MAX_CHANNEL - 1) {
+	const bool brdcast = (channel == DAC_CHANNEL_BROADCAST) ? 1 : 0;
+
+	if (!brdcast && (channel > DACX3608_MAX_CHANNEL - 1)) {
 		LOG_ERR("Unsupported channel %d", channel);
 		return -ENOTSUP;
 	}
 
-	if (!(data->configured & BIT(channel))) {
+	/*
+	 * Check if channel is initialized
+	 * If broadcast channel is used, check if any channel is initialized
+	 */
+	if ((brdcast && !data->configured) || (!(data->configured & BIT(channel)))) {
 		LOG_ERR("Channel %d not initialized", channel);
 		return -EINVAL;
 	}
@@ -162,7 +168,9 @@ static int dacx3608_write_value(const struct device *dev, uint8_t channel,
 	regval = value << 2;
 	regval &= 0xFFFF;
 
-	ret = dacx3608_reg_write(dev, DACX3608_REG_DACA_DATA + channel, regval);
+	const uint8_t reg = brdcast ? DACX3608_REG_BRDCAST : DACX3608_REG_DACA_DATA + channel;
+
+	ret = dacx3608_reg_write(dev, reg, regval);
 	if (ret) {
 		LOG_ERR("Unable to set value %d on channel %d", value, channel);
 		return -EIO;
