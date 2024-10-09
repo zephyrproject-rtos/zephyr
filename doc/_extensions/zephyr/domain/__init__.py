@@ -319,6 +319,8 @@ class ProcessCodeSampleListingNode(SphinxPostTransform):
         matcher = NodeMatcher(CodeSampleListingNode)
 
         for node in self.document.traverse(matcher):
+            self.env.domaindata["zephyr"]["has_code_sample_listing"][self.env.docname] = True
+
             code_samples_categories = self.env.domaindata["zephyr"]["code-samples-categories"]
             code_samples_categories_tree = self.env.domaindata["zephyr"][
                 "code-samples-categories-tree"
@@ -582,6 +584,8 @@ class ZephyrDomain(Domain):
         "code-samples": {},  # id -> code sample data
         "code-samples-categories": {},  # id -> code sample category data
         "code-samples-categories-tree": Node("samples"),
+        # keep track of documents containing special directives
+        "has_code_sample_listing": {},  # docname -> bool
     }
 
     def clear_doc(self, docname: str) -> None:
@@ -598,6 +602,8 @@ class ZephyrDomain(Domain):
         }
 
         # TODO clean up the anytree as well
+
+        self.data["has_code_sample_listing"].pop(docname, None)
 
     def merge_domaindata(self, docnames: List[str], otherdata: Dict) -> None:
         self.data["code-samples"].update(otherdata["code-samples"])
@@ -616,6 +622,10 @@ class ZephyrDomain(Domain):
                 category.category["docname"],
             )
 
+        for docname in docnames:
+            self.data["has_code_sample_listing"][docname] = otherdata[
+                "has_code_sample_listing"
+            ].get(docname, False)
     def get_objects(self):
         for _, code_sample in self.data["code-samples"].items():
             yield (
@@ -743,14 +753,14 @@ def compute_sample_categories_hierarchy(app: Sphinx, env: BuildEnvironment) -> N
             code_sample["category"] = node.category["id"]
 
 
-def install_codesample_livesearch(
-    app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], event_arg: Any
+def install_static_assets_as_needed(
+    app: Sphinx, pagename: str, templatename: str, context: dict[str, Any], doctree: nodes.Node
 ) -> None:
-    # TODO only add the CSS/JS if the page contains a code sample listing
-    # As these resources are really small, it's not a big deal to include them on every page for now
-    app.add_css_file("css/codesample-livesearch.css")
-    app.add_js_file("js/codesample-livesearch.js")
+    if app.env.domaindata["zephyr"]["has_code_sample_listing"].get(pagename, False):
+        app.add_css_file("css/codesample-livesearch.css")
+        app.add_js_file("js/codesample-livesearch.js")
 
+    if app.env.domaindata["zephyr"]["has_board_catalog"].get(pagename, False):
 
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
@@ -768,7 +778,7 @@ def setup(app):
         "builder-inited",
         (lambda app: app.config.html_static_path.append(RESOURCES_DIR.as_posix())),
     )
-    app.connect("html-page-context", install_codesample_livesearch)
+    app.connect("html-page-context", install_static_assets_as_needed)
     app.connect("env-updated", compute_sample_categories_hierarchy)
 
     # monkey-patching of the DoxygenGroupDirective
