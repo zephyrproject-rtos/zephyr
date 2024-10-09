@@ -61,7 +61,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <39000000>;
+	clock-frequency = <78000000>;
 };
 
 &pstate_em3 {
