@@ -108,6 +108,13 @@ Bluetooth
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
     connection (experimental).
 
+  * Added a warning to :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` if
+    the connection pointer passed as an argument is not NULL.
+
+  * Added Kconfig option :kconfig:option:`CONFIG_BT_CONN_CHECK_NULL_BEFORE_CREATE` to enforce
+    :c:func:`bt_conn_le_create` and :c:func:`bt_conn_le_create_synced` return an error if the
+    connection pointer passed as an argument is not NULL.
+
 * HCI Drivers
 
 Boards & SoC Support
