@@ -37,6 +37,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -136,6 +137,14 @@
 				plca-to-timer = <1>;
 
 				local-mac-address = [00 00 00 01 02 03];
+			};
+
+			test_spi_lan9250: lan9250@6 {
+				compatible = "microchip,lan9250";
+				reg = <0x6>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 00 00 00];
 			};
 		};
 	};
