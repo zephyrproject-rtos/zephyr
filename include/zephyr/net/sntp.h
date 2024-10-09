@@ -73,13 +73,24 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
  *
  * @param ctx Address of sntp context.
  * @param timeout Timeout of waiting for sntp response (in milliseconds).
- * @param time Timestamp including integer and fractional seconds since
+ * @param ts Timestamp including integer and fractional seconds since
  * 1 Jan 1970 (output).
  *
  * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
-int sntp_query(struct sntp_ctx *ctx, uint32_t timeout,
-	       struct sntp_time *time);
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts);
+
+/**
+ * @brief Attempt to receive an SNTP response after issuing a query
+ *
+ * @param ctx Address of sntp context.
+ * @param timeout Timeout of waiting for sntp response (in milliseconds).
+ * @param ts Timestamp including integer and fractional seconds since
+ * 1 Jan 1970 (output).
+ *
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
+ */
+int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts);
 
 /**
  * @brief Release SNTP context
