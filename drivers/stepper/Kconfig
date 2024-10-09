@@ -24,29 +24,6 @@ config STEPPER_SHELL
 	help
 	  Enable stepper shell for testing.
 
-config STEPPER_SHELL_ASYNC
-	bool "Asynchronous stepper shell"
-	depends on STEPPER_SHELL
-	select POLL
-	help
-	  If enabled, the shell will run in asynchronous mode, spawning a thread
-	  that polls the completion of stepper motor moves and prints a message
-	  when all steps are completed.
-
-config STEPPER_SHELL_THREAD_STACK_SIZE
-	int "Stepper shell thread stack size"
-	default 1024
-	depends on STEPPER_SHELL_ASYNC
-	help
-	  The stack size for the stepper shell thread when asynchronous mode is enabled.
-
-config STEPPER_SHELL_THREAD_PRIORITY
-	int "Stepper shell thread priority"
-	default 7
-	depends on STEPPER_SHELL_ASYNC
-	help
-	  The priority for the stepper shell thread when asynchronous mode is enabled.
-
 comment "Stepper Drivers"
 
 rsource "adi_tmc/Kconfig"
