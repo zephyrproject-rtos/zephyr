@@ -43,8 +43,8 @@ typedef uint32_t pinctrl_soc_pin_t;
 	 | (DT_PROP(node_id, output_low)                   << MCHP_XEC_OUT_LO_POS)		\
 	 | (DT_PROP(node_id, low_power_enable)             << MCHP_XEC_PIN_LOW_POWER_POS)	\
 	 | (DT_PROP(node_id, microchip_output_func_invert) << MCHP_XEC_FUNC_INV_POS)		\
-	 | (DT_ENUM_IDX(node_id, slew_rate)                << MCHP_XEC_SLEW_RATE_POS)		\
-	 | (DT_ENUM_IDX(node_id, drive_strength)           << MCHP_XEC_DRV_STR_POS))
+	 | (DT_ENUM_IDX_OR(node_id, slew_rate, 0x3)        << MCHP_XEC_SLEW_RATE_POS)		\
+	 | (DT_ENUM_IDX_OR(node_id, drive_strength, 0x7)   << MCHP_XEC_DRV_STR_POS))
 
 /* initialize pin structure members */
 #define Z_PINCTRL_STATE_PIN_INIT(node_id, state_prop, idx)		\

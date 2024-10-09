@@ -27,7 +27,7 @@ static void config_drive_slew(struct gpio_regs * const regs, uint32_t idx, uint3
 	uint32_t drvstr = (conf >> MCHP_XEC_DRV_STR_POS) & MCHP_XEC_DRV_STR_MSK0;
 	uint32_t msk = 0, val = 0;
 
-	if (slew) {
+	if (slew != MCHP_XEC_SLEW_RATE_MSK0) {
 		msk |= MCHP_GPIO_CTRL2_SLEW_MASK;
 		/* slow slew value is 0 */
 		if (slew == MCHP_XEC_SLEW_RATE_FAST0) {
@@ -35,7 +35,7 @@ static void config_drive_slew(struct gpio_regs * const regs, uint32_t idx, uint3
 		}
 	}
 
-	if (drvstr) {
+	if (drvstr != MCHP_XEC_DRV_STR_MSK0) {
 		msk |= MCHP_GPIO_CTRL2_DRV_STR_MASK;
 		/* drive strength values are 0 based */
 		val |= ((drvstr - 1u) << MCHP_GPIO_CTRL2_DRV_STR_POS);

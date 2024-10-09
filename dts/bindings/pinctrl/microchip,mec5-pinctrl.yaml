@@ -1,5 +1,4 @@
-# Copyright (c) 2020 Linaro Limited
-# Copyright (c) 2021 Microchip Technology Inc.
+# Copyright (c) 2024 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -37,10 +36,10 @@ description: |
 
     Driver strength and slew rate hardware defaults vary by SoC and pin.
 
-    An example for MEC172x family, include the chip level pinctrl
+    An example for MEC174x family, include the chip level pinctrl
     DTSI file in the board level DTS:
 
-      #include <microchip/mec172x/mec172xnsz-pinctrl.dtsi>
+      #include <microchip/mec5/mec1743qlj-a0-pinctrl.dtsi>
 
     We want to use the shared SPI port of the MEC172x QMSPI controller
     and want the chip select 0 to be open-drain.
@@ -61,7 +60,7 @@ description: |
         drive-open-drain;
       };
 
-compatible: "microchip,xec-pinctrl"
+compatible: "microchip,mec5-pinctrl"
 
 include: base.yaml
 
