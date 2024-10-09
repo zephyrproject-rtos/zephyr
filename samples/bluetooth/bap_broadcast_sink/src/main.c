@@ -58,7 +58,6 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define ADV_TIMEOUT K_FOREVER
 #endif /* CONFIG_SCAN_SELF */
 
-#define INVALID_BROADCAST_ID        (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP                5
 #define NAME_LEN                    sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
@@ -1361,7 +1360,7 @@ static int reset(void)
 	(void)memset(sink_broadcast_code, 0, sizeof(sink_broadcast_code));
 	(void)memset(&broadcaster_info, 0, sizeof(broadcaster_info));
 	(void)memset(&broadcaster_addr, 0, sizeof(broadcaster_addr));
-	broadcaster_broadcast_id = INVALID_BROADCAST_ID;
+	broadcaster_broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);

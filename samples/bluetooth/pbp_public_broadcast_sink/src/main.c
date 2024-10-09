@@ -36,7 +36,6 @@
 #define SEM_TIMEOUT K_SECONDS(10)
 #define PA_SYNC_SKIP         5
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define INVALID_BROADCAST_ID 0xFFFFFFFF
 
 static bool pbs_found;
 
@@ -203,7 +202,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		 * Continue parsing if Broadcast Audio Announcement Service
 		 * was not found.
 		 */
-		if (*broadcast_id == INVALID_BROADCAST_ID) {
+		if (*broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return true;
 		}
 	}
@@ -223,10 +222,10 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	broadcast_id = INVALID_BROADCAST_ID;
+	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&broadcast_id);
 
-	if ((broadcast_id != INVALID_BROADCAST_ID) && pbs_found) {
+	if ((broadcast_id != BT_BAP_INVALID_BROADCAST_ID) && pbs_found) {
 		sync_broadcast_pa(info, broadcast_id);
 	}
 }
