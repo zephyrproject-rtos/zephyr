@@ -133,7 +133,7 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	}
 	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
-	if (first_pending_thread != NULL) {
+	if (unlikely(first_pending_thread != NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, queue_insert, queue, alloc, K_FOREVER);
 
 		prepare_thread_to_run(first_pending_thread, data);
