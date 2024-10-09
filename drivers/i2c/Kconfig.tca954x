@@ -4,7 +4,8 @@
 menuconfig I2C_TCA954X
 	bool "I2C addressable switch"
 	default y
-	depends on DT_HAS_TI_TCA9546A_ENABLED || DT_HAS_TI_TCA9548A_ENABLED
+	depends on DT_HAS_TI_TCA9546A_ENABLED || DT_HAS_TI_TCA9548A_ENABLED \
+	  || DT_HAS_TI_TCA9544A_ENABLED
 	help
 	  Enable TCA954x series I2C bus switch
 
