@@ -1113,3 +1113,12 @@ test_i2c_mmc56x3: mmc56x3@92 {
 	magn-odr = <0>;
 	auto-self-reset;
 };
+
+apds_9306: apds9306@92 {
+	compatible = "avago,apds9306";
+	reg = <0x92>;
+	status = "okay";
+	gain = <1>;
+	resolution = <13>;
+	frequency = <2000>;
+};
