@@ -54,6 +54,7 @@ Peripherals
    retained_mem.rst
    sdhc.rst
    sensor/index.rst
+   sent.rst
    spi.rst
    stepper.rst
    smbus.rst
