@@ -8,6 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);

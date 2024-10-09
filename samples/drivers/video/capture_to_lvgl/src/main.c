@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/video.h>
+#include <zephyr/drivers/video-controls.h>
 #include <lvgl.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
