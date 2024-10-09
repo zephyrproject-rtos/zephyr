@@ -24,6 +24,8 @@ static struct mctp *mctp_ctx;
 
 #define REMOTE_HELLO_EID 20
 
+K_SEM_DEFINE(mctp_rx, 0, 1);
+
 static void rx_message(uint8_t eid, bool tag_owner,
 		       uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
@@ -38,6 +40,8 @@ static void rx_message(uint8_t eid, bool tag_owner,
 		LOG_INF("Unknown endpoint %d", eid);
 		break;
 	}
+
+    k_sem_give(&mctp_rx);
 }
 
 MCTP_UART_DT_DEFINE(mctp_endpoint, DEVICE_DT_GET(DT_NODELABEL(arduino_serial)));
@@ -55,12 +59,12 @@ int main(void)
 	assert(mctp_ctx != NULL);
 
 	mctp_register_bus(mctp_ctx, &mctp_endpoint.binding, LOCAL_HELLO_EID);
-
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
+	mctp_uart_start_rx(&mctp_endpoint);
 
-	/* MCTP poll loop, needed as UART is polling */
+	/* MCTP poll loop */
 	while (true) {
-		mctp_uart_poll(&mctp_endpoint);
+		k_sem_take(&mctp_rx, K_FOREVER);
 	}
 
 	LOG_INF("exiting");

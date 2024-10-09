@@ -45,8 +45,6 @@ int main(void)
 
 	mctp_register_bus(mctp_ctx, &mctp_host.binding, LOCAL_HELLO_EID);
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
-
-
 	mctp_uart_start_rx(&mctp_host);
 
 	/* MCTP poll loop, send "hello" and get "world" back */
