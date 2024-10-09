@@ -212,15 +212,15 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 		k_sem_give(binding->tx_sem);
 		break;
 	case UART_TX_ABORTED:
-		binding->tx_res = -EABORT;
+		binding->tx_res = -EIO;
 		k_sem_give(binding->tx_sem);
 		break;
 	case UART_RX_RDY:
 		/* buffer being read into is ready */
-		binding->rx_res = evt->rx.len;
+		binding->rx_res = evt->data.rx.len;
 		/* parse the buffer */
-		for (size_t i = 0; i < evt->rx.len; i++) {
-			mctp_uart_consume(binding, evt->rx.buf[i]);
+		for (size_t i = 0; i < evt->data.rx.len; i++) {
+			mctp_uart_consume(binding, evt->data.rx.buf[i]);
 		}
 		LOG_DBG("Buffer consume by UART, done receiving one packet");
 		break;
@@ -232,13 +232,21 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 	case UART_RX_STOPPED:
 		/* Ignored */
 		break;
+    case UART_RX_DISABLED:
+        /* Ignored */
+        break;
 	}	
 }
 
 
 void mctp_uart_start_rx(struct mctp_binding_uart *uart)
 {
-	uart_rx_enable(uart->dev, &uart->rx_buf, sizeof(uart->rx_buf), K_MSEC(100));
+    int res;
+    res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
+    __ASSERT_NO_MSG(res == 0);
+
+	res = uart_rx_enable(uart->dev, uart->rx_buf, sizeof(uart->rx_buf), 100);
+    __ASSERT_NO_MSG(res == 0);
 }
 
 int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
@@ -267,7 +275,7 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 	buf = (void *)(hdr + 1);
 
 	len = mctp_uart_pkt_escape(pkt, NULL);
-	if (len + sizeof(*hdr) + sizeof(*tlr) > sizeof(uart->txbuf))
+	if (len + sizeof(*hdr) + sizeof(*tlr) > sizeof(uart->tx_buf))
 		return -EMSGSIZE;
 
 	mctp_uart_pkt_escape(pkt, buf);
@@ -281,7 +289,12 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 
 	len += sizeof(*hdr) + sizeof(*tlr);
 
-	uart_tx(uart->dev, uart->tx_buf, len, K_FOREVER);
+	int res = uart_tx(uart->dev, uart->tx_buf, len, 1000);
+
+    if (res != 0) {
+        return res;
+    }
+
 	k_sem_take(uart->tx_sem, K_FOREVER);
 	return uart->tx_res;
 }

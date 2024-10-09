@@ -56,7 +56,7 @@ int main(void)
 		if (rc != 0) {
 			printf("Failed to send message, errno %d\n", rc);
 			k_msleep(1000);
-		} else 
+		} else {
 			k_sem_take(&mctp_rx, K_FOREVER);
 		}
 		rc = 0;
