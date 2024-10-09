@@ -2228,27 +2228,6 @@ int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_param
 
 #ifdef CONFIG_AP
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-int hapd_state(const struct device *dev, int *state)
-{
-	struct hostapd_iface *iface;
-	int ret = 0;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	iface = get_hostapd_handle(dev);
-	if (!iface) {
-		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
-		ret = -ENOENT;
-		goto out;
-	}
-
-	*state = iface->state;
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
-}
-
 static int hapd_config_chan_center_seg0(struct wifi_connect_req_params *params)
 {
 	int ret = 0;
