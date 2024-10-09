@@ -41,6 +41,9 @@
 extern "C" {
 #endif
 
+/** An invalid Broadcast ID */
+#define BT_BAP_INVALID_BROADCAST_ID 0xFFFFFFFFU
+
 /**
  * @brief Check if a BAP BASS BIS_Sync bitfield is valid
  *
