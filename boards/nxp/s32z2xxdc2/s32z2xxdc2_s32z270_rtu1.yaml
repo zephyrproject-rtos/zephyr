@@ -1,4 +1,4 @@
-# Copyright 2022-2024 NXP
+# Copyright 2022-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: s32z2xxdc2/s32z270/rtu1
@@ -20,4 +20,5 @@ supported:
   - i2c
   - dma
   - pwm
+  - sent
 vendor: nxp
