@@ -2039,6 +2039,23 @@ Release Notes:
   tests:
     - drivers.pwm
 
+"Drivers: SAEJ2716":
+  status: maintained
+  maintainers:
+    - manuargue
+    - Dat-NguyenDuy
+  collaborators:
+    - congnguyenhuu
+  files:
+    - drivers/saej2716/
+    - include/zephyr/drivers/saej2716/
+    - dts/bindings/saej2716/
+    - doc/hardware/peripherals/saej2716.rst
+  labels:
+    - "area: SAEJ2716"
+  tests:
+    - drivers.saej2716
+
 "Drivers: SDHC":
   status: maintained
   maintainers:
