@@ -1195,6 +1195,57 @@ __comp_west_sdk()
 	esac
 }
 
+__comp_west_dtsh()
+{
+	local opt_bindings_dir="
+		--bindings -b
+	"
+	local opt_preferences="
+		--preferences
+	"
+	local opt_theme="
+		--theme
+	"
+	local opt_batch_file="
+		-f
+	"
+
+	all_opts="
+		$opt_bindings_dir
+		--user-files -u
+		$opt_preferences
+		$opt_theme
+		$opt_batch_file
+		-c
+		--interactive -i
+	"
+
+	case "$cur" in
+	$(__west_to_extglob "$opt_bindings_dir"))
+		__set_comp_dirs
+		return
+		;;
+	$(__west_to_extglob "$opt_preferences"))
+		__set_comp_files
+		return
+		;;
+	$(__west_to_extglob "$opt_theme"))
+		__set_comp_files
+		return
+		;;
+	$(__west_to_extglob "$opt_batch_file"))
+		__set_comp_files
+		return
+		;;
+	-*)
+		__set_comp "$all_opts"
+		;;
+	*)
+		__set_comp_files
+		;;
+	esac
+}
+
 __comp_west()
 {
 	local previous_extglob_setting=$(shopt -p extglob)
@@ -1230,6 +1281,7 @@ __comp_west()
 		blobs
 		twister
 		sdk
+		dtsh
 	)
 
 	local cmds=(${builtin_cmds[*]} ${zephyr_ext_cmds[*]})

@@ -215,3 +215,56 @@ You can dump all of the descriptors in an image using::
 You can list all known standard descriptor names using::
 
    west bindesc list
+
+.. _west-dtsh:
+
+The Devicetree Shell: ``west dtsh``
+***********************************
+
+The ``dtsh`` command opens a DTS file in a shell-like interactive command line interface::
+
+   west dtsh [DTS]
+
+If the command line does not explicitly specify a DTS file path, ``dtsh`` will try
+to open the devicetree at :file:`build/zephy/zephyr.dts`,
+allowing the simple workflow bellow::
+
+   $ west build
+   $ west dtsh
+   dtsh (0.0.99): Shell-like interface with Devicetree
+   How to exit: q, or quit, or exit, or press Ctrl-D
+
+   > ls -l
+   Name              Labels          Binding
+   ───────────────────────────────────────────────────────
+   chosen
+   aliases
+   soc
+   pin-controller    pinctrl         nordic,nrf-pinctrl
+   entropy_bt_hci    rng_hci         zephyr,bt-hci-entropy
+   sw-pwm            sw_pwm          nordic,nrf-sw-pwm
+   cpus
+   leds                              gpio-leds
+   pwmleds                           pwm-leds
+   buttons                           gpio-keys
+   connector         arduino_header  arduino-header-r3
+   analog-connector  arduino_adc     arduino,uno-adc
+
+By default, ``dtsh`` will try to retrieve, or work out, the bindings
+Zephyr has used at build-time to generate the DTS file, or would use if
+it were to generate it *now*.
+
+The ``-b`` option overrides this behavior by explicitly
+enumerating the directories to search for binding files::
+
+   west dtsh -b dir1 -b dir2
+
+For the full command synopsis, run ``west dtsh -h``.
+
+Please refer to the DTSh :ref:`Handbook <dtsh-handbook>` for detailed documentation.
+
+.. toctree::
+   :hidden:
+   :maxdepth: 2
+
+   dtsh/handbook

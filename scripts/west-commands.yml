@@ -84,3 +84,8 @@ west-commands:
       - name: sdk
         class: Sdk
         help: manage Zephyr SDK
+  - file: scripts/west_commands/dtshell.py
+    commands:
+      - name: dtsh
+        class: DTShell
+        help: devicetree shell

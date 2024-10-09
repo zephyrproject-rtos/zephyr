@@ -35,6 +35,7 @@ _west_cmds() {
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
   'sdk[manage SDKs]'
+  'dtsh[devicetree shell]'
   )
 
   local -a all_cmds=(${builtin_cmds} ${zephyr_ext_cmds})
@@ -356,6 +357,20 @@ _west_blob_fetch () {
 
 _west_blob_clean () {
   _arguments -S "1:west proj:_get_west_projs"
+}
+
+_west_dtsh () {
+  local -a opts=(
+  '(-b --bindings)'{-b,--bindings}'[directory to search for binding files]:bindings dir:_directories'
+  '(-u --user-files)'{-u,--user-files}'[initialize per-user configuration files]'
+  '--preferences[additional preferences file]:preferences file:_files'
+  '--theme[additional theme file]:theme file:_files'
+  '(-i --interactive)'{-i,--interactive}'[enter interactive loop after batch commands]'
+  '-f[execute batch commands from FILE at startup]:commands file:_files'
+  '-c[execute batch command at startup]:command'
+  )
+  _arguments -S $opts \
+      "1:dts:_files"
 }
 
 # don't run the completion function when being source-ed or eval-ed
