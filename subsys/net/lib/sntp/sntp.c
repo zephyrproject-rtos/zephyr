@@ -70,7 +70,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 		NET_DBG("Mismatch originate timestamp: %d.%09d, expect: %llu.%09u",
 			ntohl(pkt->orig_tm_s), ntohl(pkt->orig_tm_f), expected_orig_ts->seconds,
 			expected_orig_ts->fraction);
-		return -EINVAL;
+		return -ERANGE;
 	}
 
 	if (pkt->mode != SNTP_MODE_SERVER) {
@@ -151,38 +151,6 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	return 0;
 }
 
-static int sntp_recv_response(struct sntp_ctx *sntp, uint32_t timeout,
-			      struct sntp_time *time)
-{
-	struct sntp_pkt buf = { 0 };
-	int status;
-	int rcvd;
-
-	status = zsock_poll(sntp->sock.fds, sntp->sock.nfds, timeout);
-	if (status < 0) {
-		NET_ERR("Error in poll:%d", errno);
-		return -errno;
-	}
-
-	if (status == 0) {
-		return -ETIMEDOUT;
-	}
-
-	rcvd = zsock_recv(sntp->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
-	if (rcvd < 0) {
-		return -errno;
-	}
-
-	if (rcvd != sizeof(struct sntp_pkt)) {
-		return -EMSGSIZE;
-	}
-
-	status = parse_response((uint8_t *)&buf, sizeof(buf),
-				&sntp->expected_orig_ts,
-				time);
-	return status;
-}
-
 int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 {
 	int ret;
@@ -213,13 +181,13 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	return 0;
 }
 
-int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
+int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *ts)
 {
 	struct sntp_pkt tx_pkt = { 0 };
 	int ret = 0;
 	int64_t ts_us = 0;
 
-	if (!ctx || !time) {
+	if (!ctx || !ts) {
 		return -EFAULT;
 	}
 
@@ -239,7 +207,39 @@ int sntp_query(struct sntp_ctx *ctx, uint32_t timeout, struct sntp_time *time)
 		return ret;
 	}
 
-	return sntp_recv_response(ctx, timeout, time);
+	return sntp_recv_response(ctx, timeout, ts);
+}
+
+int sntp_recv_response(struct sntp_ctx *ctx, uint32_t timeout,
+			      struct sntp_time *ts)
+{
+	struct sntp_pkt buf = { 0 };
+	int status;
+	int rcvd;
+
+	status = zsock_poll(ctx->sock.fds, ctx->sock.nfds, timeout);
+	if (status < 0) {
+		NET_ERR("Error in poll:%d", errno);
+		return -errno;
+	}
+
+	if (status == 0) {
+		return -ETIMEDOUT;
+	}
+
+	rcvd = zsock_recv(ctx->sock.fd, (uint8_t *)&buf, sizeof(buf), 0);
+	if (rcvd < 0) {
+		return -errno;
+	}
+
+	if (rcvd != sizeof(struct sntp_pkt)) {
+		return -EMSGSIZE;
+	}
+
+	status = parse_response((uint8_t *)&buf, sizeof(buf),
+				&ctx->expected_orig_ts,
+				ts);
+	return status;
 }
 
 void sntp_close(struct sntp_ctx *ctx)
