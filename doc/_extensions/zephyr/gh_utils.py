@@ -112,7 +112,7 @@ def gh_link_get_url(app: Sphinx, pagename: str, mode: str = "blob") -> Optional[
             mode,
             app.config.gh_link_version,
             page_prefix,
-            app.env.doc2path(pagename, False),
+            str(app.env.doc2path(pagename, False)),
         ]
     )
 
