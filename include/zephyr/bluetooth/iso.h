@@ -141,6 +141,14 @@ extern "C" {
 #define BT_ISO_PTO_MAX              0x0FU
 
 /**
+ * @brief Check if ISO BIS bitfield is valid (BT_ISO_BIS_INDEX_BIT(1)|..|BT_ISO_BIS_INDEX_BIT(31))
+ *
+ * @param _bis_bitfield BIS index bitfield (uint32)
+ */
+#define BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield)                                                   \
+	((_bis_bitfield) != 0U && (_bis_bitfield) <= BIT_MASK(BT_ISO_BIS_INDEX_MAX))
+
+/**
  * @brief Life-span states of ISO channel. Used only by internal APIs dealing with setting channel
  * to proper state depending on operational context.
  */
