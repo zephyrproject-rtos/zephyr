@@ -5,7 +5,10 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/mgmt/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/hawkbit.h>
+#include <zephyr/mgmt/hawkbit/config.h>
+#include <zephyr/mgmt/hawkbit/autohandler.h>
+#include <zephyr/mgmt/hawkbit/event.h>
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/reboot.h>
@@ -53,6 +56,29 @@ int hawkbit_new_config_data_cb(const char *device_id, uint8_t *buffer, const siz
 }
 #endif /* CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES */
 
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+void hawkbit_event_cb(struct hawkbit_event_callback *cb, enum hawkbit_event_type event)
+{
+	LOG_INF("hawkBit event: %d", event);
+
+	switch (event) {
+	case HAWKBIT_EVENT_START_RUN:
+		LOG_INF("Run of hawkBit started");
+		break;
+
+	case HAWKBIT_EVENT_END_RUN:
+		LOG_INF("Run of hawkBit ended");
+		break;
+
+	default:
+		break;
+	}
+}
+
+static HAWKBIT_EVENT_CREATE_CALLBACK(hb_event_cb_start, hawkbit_event_cb, HAWKBIT_EVENT_START_RUN);
+static HAWKBIT_EVENT_CREATE_CALLBACK(hb_event_cb_end, hawkbit_event_cb, HAWKBIT_EVENT_END_RUN);
+#endif /* CONFIG_HAWKBIT_EVENT_CALLBACKS */
+
 int main(void)
 {
 	int ret = -1;
@@ -71,6 +97,11 @@ int main(void)
 	}
 #endif /* CONFIG_HAWKBIT_CUSTOM_ATTRIBUTES */
 
+#ifdef CONFIG_HAWKBIT_EVENT_CALLBACKS
+	hawkbit_event_add_callback(&hb_event_cb_start);
+	hawkbit_event_add_callback(&hb_event_cb_end);
+#endif /* CONFIG_HAWKBIT_EVENT_CALLBACKS */
+
 	ret = hawkbit_init();
 	if (ret < 0) {
 		LOG_ERR("Failed to init hawkBit");
@@ -83,7 +114,7 @@ int main(void)
 
 #if defined(CONFIG_HAWKBIT_POLLING)
 	LOG_INF("Starting hawkBit polling mode");
-	hawkbit_autohandler();
+	hawkbit_autohandler(true);
 #endif
 
 #if defined(CONFIG_HAWKBIT_MANUAL)
@@ -101,14 +132,6 @@ int main(void)
 
 	case HAWKBIT_NO_UPDATE:
 		LOG_INF("No update found");
-		break;
-
-	case HAWKBIT_CANCEL_UPDATE:
-		LOG_INF("hawkBit update cancelled from server");
-		break;
-
-	case HAWKBIT_OK:
-		LOG_INF("Image is already updated");
 		break;
 
 	case HAWKBIT_UPDATE_INSTALLED:

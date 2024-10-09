@@ -355,6 +355,27 @@ Libraries / Subsystems
     * Added support for img mgmt slot info command, which allows for listing information on
       images and slots on the device.
 
+  * hawkBit
+
+    * :c:func:`hawkbit_autohandler` now takes one argument. If the argument is set to true, the
+      autohandler will reshedule itself after running. If the argument is set to false, the
+      autohandler will not reshedule itself. Both variants are sheduled independent of each other.
+      The autohandler always runs in the system workqueue.
+
+    * Use the :c:func:`hawkbit_autohandler_wait` function to wait for the autohandler to finish.
+
+    * Running hawkBit from the shell is now executed in the system workqueue.
+
+    * Use the :c:func:`hawkbit_autohandler_cancel` function to cancel the autohandler.
+
+    * Use the :c:func:`hawkbit_autohandler_set_delay` function to delay the next run of the
+      autohandler.
+
+    * The hawkBit header file was separated into multiple header files. The main header file is now
+      ``<zephyr/mgmt/hawkbit/hawkbit.h>``, the autohandler header file is now
+      ``<zephyr/mgmt/hawkbit/autohandler.h>`` and the configuration header file is now
+      ``<zephyr/mgmt/hawkbit/config.h>``.
+
 * Logging
 
 * Modem modules
