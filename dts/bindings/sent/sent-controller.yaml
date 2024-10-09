@@ -1,0 +1,92 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: SENT (Single Edge Nibble Transmission) Controller
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Each child node defines the configuration of a SENT channel
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: Channel identifier.
+
+    num-data-nibbles:
+      type: int
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+      required: true
+      description: |
+        Specifies the number of data nibbles. A nibble is a four-bit aggregation.
+        This property defines how many such nibbles are used in the data transmission.
+
+    clock-tick-length-us:
+      type: int
+      required: true
+      description: |
+        Specifies the clock tick length in microseconds (us). This value determines the
+        base time unit for the system's timing operations, effectively setting the resolution
+        of the timer.
+
+    successive-calib-pulse-method:
+      type: int
+      required: true
+      enum:
+        - 1
+        - 2
+      description: |
+        Specifies the successive calibration pulse check method options.
+        Option 1 is the preferred high-latency method, while option 2 provides
+        a low-latency alternative.
+
+    calib-pulse-tolerance-percent:
+      type: int
+      required: true
+      enum:
+        - 20
+        - 25
+      description: |
+        Specifies the acceptable calibration pulse tolerance. The available options are
+        20% and 25%.
+
+    pause-pulse-detect:
+      type: boolean
+      description: |
+        Indicates whether the channel is enabled to detect a pause pulse.
+
+    fast-crc:
+      type: int
+      required: true
+      description: |
+        Specifies the fast message CRC configurations is applied when calculating the CRC.
+        Allowed value combinations are defined in dt-bindings/sent/sent.h:
+        - FAST_CRC_DISABLE
+        - FAST_CRC_RECOMMENDED_IMPLEMENTATION
+        - FAST_CRC_LEGACY_IMPLEMENTATION
+        - FAST_CRC_RECOMMENDED_IMPLEMENTATION | FAST_CRC_STATUS_INCLUDE
+        - FAST_CRC_LEGACY_IMPLEMENTATION | FAST_CRC_STATUS_INCLUDE
+
+    short-serial-crc:
+      type: int
+      required: true
+      description: |
+        Specifies the short serial message CRC configurations is applied when calculating the CRC.
+        Allowed values are defined in dt-bindings/sent/sent.h:
+        - SHORT_CRC_RECOMMENDED_IMPLEMENTATION
+        - SHORT_CRC_LEGACY_IMPLEMENTATION
