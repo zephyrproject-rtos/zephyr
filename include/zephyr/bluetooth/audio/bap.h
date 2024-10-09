@@ -260,7 +260,11 @@ struct bt_bap_qos_cfg_pref {
 	 */
 	uint8_t phy;
 
-	/** Preferred Retransmission Number */
+	/**
+	 * @brief Preferred Retransmission Number
+	 *
+	 * @ref BT_AUDIO_RTN_PREF_NONE indicates no preference.
+	 */
 	uint8_t rtn;
 
 	/**

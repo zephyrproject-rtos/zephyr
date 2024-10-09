@@ -47,6 +47,8 @@ extern "C" {
 #define BT_AUDIO_PD_PREF_NONE                    0x000000U
 /** Maximum presentation delay in microseconds */
 #define BT_AUDIO_PD_MAX                          0xFFFFFFU
+/** Indicates that the unicast server does not have a preference for any retransmission number */
+#define BT_AUDIO_RTN_PREF_NONE                   0xFFU
 /** Maximum size of the broadcast code in octets */
 #define BT_AUDIO_BROADCAST_CODE_SIZE             16
 
