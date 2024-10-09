@@ -1465,5 +1465,111 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		sent0: sent@40a50000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x40a50000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 428 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 429 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 430 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent0_ch0: ch@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sent0_ch1: ch@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			sent0_ch2: ch@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			sent0_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent0_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent0_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent0_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent0_ch7: ch@7 {
+				reg = <7>;
+				status = "disabled";
+			};
+		};
+
+		sent1: sent@42050000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x42050000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 455 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 456 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					<GIC_SPI 457 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent1_ch0: ch@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sent1_ch1: ch@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			sent1_ch2: ch@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			sent1_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent1_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent1_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent1_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent1_ch7: ch@7 {
+				reg = <7>;
+				status = "disabled";
+			};
+		};
 	};
 };
