@@ -206,6 +206,8 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 {
 	struct mctp_binding_uart *binding = userdata;
 
+    LOG_DBG("uart evt %d", evt->type);
+
 	switch (evt->type) {
 	case UART_TX_DONE:
 		binding->tx_res = 0;
@@ -289,9 +291,10 @@ int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
 
 	len += sizeof(*hdr) + sizeof(*tlr);
 
-	int res = uart_tx(uart->dev, uart->tx_buf, len, 1000);
+	int res = uart_tx(uart->dev, (const uint8_t *)uart->tx_buf, len, SYS_FOREVER_US);
 
     if (res != 0) {
+        LOG_ERR("Failed sending data, %d", res);
         return res;
     }
 
