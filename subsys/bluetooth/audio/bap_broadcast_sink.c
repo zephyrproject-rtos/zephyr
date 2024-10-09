@@ -51,11 +51,6 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVE
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define BROADCAST_SYNC_MIN_INDEX  (BIT(1))
 
-/* any value above 0xFFFFFF is invalid, so we can just use 0xFFFFFFFF to denote
- * invalid broadcast ID
- */
-#define INVALID_BROADCAST_ID 0xFFFFFFFF
-
 static struct bt_bap_ep broadcast_sink_eps[CONFIG_BT_BAP_BROADCAST_SNK_COUNT]
 					  [CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 static struct bt_bap_broadcast_sink broadcast_sinks[CONFIG_BT_BAP_BROADCAST_SNK_COUNT];
@@ -435,7 +430,7 @@ static struct bt_bap_broadcast_sink *broadcast_sink_free_get(void)
 		if (!atomic_test_bit(broadcast_sinks[i].flags,
 				     BT_BAP_BROADCAST_SINK_FLAG_INITIALIZED)) {
 			broadcast_sinks[i].index = i;
-			broadcast_sinks[i].broadcast_id = INVALID_BROADCAST_ID;
+			broadcast_sinks[i].broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 			return &broadcast_sinks[i];
 		}

@@ -183,7 +183,7 @@ static int reset(void)
 	k_sem_reset(&sem_pa_sync_lost);
 	k_sem_reset(&sem_data_received);
 
-	broadcast_id = INVALID_BROADCAST_ID;
+	broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	bis_index_bitfield = 0U;
 	pbs_found = false;
 
@@ -275,7 +275,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	if (!bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
 		/* Save broadcast_id */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 		}
 
@@ -292,7 +292,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 		pbs_found = true;
 
 		/* Continue parsing if Broadcast Audio Announcement Service was not found */
-		if (broadcast_id == INVALID_BROADCAST_ID) {
+		if (broadcast_id == BT_BAP_INVALID_BROADCAST_ID) {
 			return true;
 		}
 
@@ -316,7 +316,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&broadcast_id);
 
-	if ((broadcast_id != INVALID_BROADCAST_ID) && pbs_found) {
+	if ((broadcast_id != BT_BAP_INVALID_BROADCAST_ID) && pbs_found) {
 		sync_broadcast_pa(info);
 	}
 }
