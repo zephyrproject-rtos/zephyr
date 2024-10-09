@@ -261,6 +261,14 @@
 				primary-tap-enable;
 				swap-xy;
 			};
+
+			touch_dev: ili2132a@41 {
+				compatible = "ilitek,ili2132a";
+				reg = <0x41>;
+				irq-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 1 0>;
+			};
+
 		};
 
 		spi@2 {
