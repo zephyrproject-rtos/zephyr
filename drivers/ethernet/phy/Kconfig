@@ -15,6 +15,7 @@ module-str = Log level for Ethernet PHY driver
 module-help = Sets log level for Ethernet PHY Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
 source "drivers/ethernet/phy/Kconfig.tja1103"
+source "drivers/ethernet/phy/Kconfig.dm8806"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
@@ -39,13 +40,6 @@ config PHY_ADIN2111
 	depends on DT_HAS_ADI_ADIN2111_PHY_ENABLED || DT_HAS_ADI_ADIN1100_PHY_ENABLED
 	help
 	  Enable ADIN2111 PHY driver.
-
-config PHY_DM8806
-	bool "DM8806 PHY driver"
-	default y
-	depends on DT_HAS_DAVICOM_DM8806_PHY_ENABLED
-	help
-	  Enable DM8806 PHY driver.
 
 config PHY_MICROCHIP_KSZ8081
 	bool "Microchip KSZ8081 PHY Driver"
