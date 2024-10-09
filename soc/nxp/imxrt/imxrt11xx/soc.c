@@ -729,8 +729,22 @@ static int imxrt_init(void)
 	return 0;
 }
 
+/*
+ * Stack pointer is not set at this point in the early init, but we call C
+ * functions from the SOC reset.
+ * Set a stack pointer so that C functions will work correctly
+ */
+
 #ifdef CONFIG_SOC_RESET_HOOK
-void soc_reset_hook(void)
+__asm__ (
+	".global soc_reset_hook\n"
+	"soc_reset_hook:\n"
+	"ldr r0, =z_main_stack+"STRINGIFY(CONFIG_MAIN_STACK_SIZE)";\n"
+	"msr msp, r0;\n"
+	"b _soc_reset_hook;\n"
+);
+
+void __used _soc_reset_hook(void)
 {
 	SystemInit();
 
