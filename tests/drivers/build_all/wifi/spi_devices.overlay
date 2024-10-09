@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
+
+			test_spi_winc1500: winc1500@0 {
+				compatible = "atmel,winc1500";
+				status = "okay";
+				reg = <0>;
+				spi-max-frequency = <5000000>;
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				enable-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_eswifi: eswifi@1 {
+				compatible = "inventek,eswifi";
+				status = "okay";
+				reg = <1>;
+				spi-max-frequency = <2000000>;
+				resetn-gpios = <&test_gpio 0 0>;
+				wakeup-gpios = <&test_gpio 0 0>;
+				boot0-gpios = <&test_gpio 0 0>;
+				data-gpios = <&test_gpio 0 0>;
+			};
+		};
+	};
+};
