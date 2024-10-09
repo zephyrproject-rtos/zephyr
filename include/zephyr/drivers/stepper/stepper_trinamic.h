@@ -58,6 +58,7 @@ extern "C" {
 #define TMC_RAMP_IHOLDDELAY_MAX GENMASK(3, 0)
 #define TMC_RAMP_IHOLDDELAY_MIN 0
 #define TMC_RAMP_VACTUAL_SHIFT  22
+
 /**
  * @brief Trinamic Stepper Ramp Generator data
  */
