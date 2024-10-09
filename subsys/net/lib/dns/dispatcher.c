@@ -212,27 +212,31 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		/* Refuse to register context if we have identical context
 		 * already registered.
 		 */
-		if (ctx->type == entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
-				dup = true;
-				continue;
+		if (ctx->sock == entry->sock) {
+			if (ctx->type == entry->type &&
+				ctx->local_addr.sa_family == entry->local_addr.sa_family) {
+				if (net_sin(&entry->local_addr)->sin_port ==
+					net_sin(&ctx->local_addr)->sin_port) {
+					dup = true;
+					continue;
+				}
 			}
 		}
 
-		/* Then check if there is an entry with same family and
-		 * port already in the list. If there is then we can act
-		 * as a dispatcher for the given socket. Do not break
-		 * from the loop even if we found an entry so that we
-		 * can catch possible duplicates.
+		/* Then check if there is an entry with same family,
+		 * port and socket already in the list. If there is then
+		 * we can act as a dispatcher for the given socket. Do
+		 * not break from the loop even if we found an entry so
+		 * that we can catch possible duplicates.
 		 */
-		if (found == NULL && ctx->type != entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
-				found = entry;
-				continue;
+		if (ctx->sock == entry->sock) {
+			if (found == NULL && ctx->type != entry->type &&
+				ctx->local_addr.sa_family == entry->local_addr.sa_family) {
+				if (net_sin(&entry->local_addr)->sin_port ==
+					net_sin(&ctx->local_addr)->sin_port) {
+					found = entry;
+					continue;
+				}
 			}
 		}
 	}
