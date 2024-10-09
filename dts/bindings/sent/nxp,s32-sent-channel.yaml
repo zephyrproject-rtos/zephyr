@@ -1,0 +1,49 @@
+# Copyright 2024 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for  Single Edge Nibble Transmission (SENT) Receiver channel
+
+compatible: "nxp,s32-sent-channel"
+
+include: base.yaml
+
+properties:
+  num-data-nibbles:
+    type: int
+    required: true
+    description: |
+      The number of data nibbles.
+
+  tick-time-prescaler-us:
+    type: int
+    required: true
+    description: |
+      The tick time prescaler in us.
+
+  bus-timeout-cycles:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 256
+      - 512
+      - 1024
+      - 2048
+    description: |
+      The bus timeout cycles.
+
+  calib-method-low-latency:
+    type: boolean
+    description: |
+      The successive calibration pulse check method with low latency.
+
+  slow-crc-no-data-nibble-xor:
+    type: boolean
+    description: |
+      The slow message CRC implementation does not use the zero data nibble XOR method.
+
+  fast-crc-no-data-nibble-xor:
+    type: boolean
+    description: |
+      The fast message CRC implementation does not use the zero data nibble XOR method.
