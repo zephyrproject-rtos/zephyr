@@ -2211,6 +2211,12 @@ add_custom_command(
         -DWEST_TOPDIR=${WEST_TOPDIR}
         -DZEPHYR_BASE=${ZEPHYR_BASE}
         -DCONFIG_LLEXT_EDK_USERSPACE_ONLY=${CONFIG_LLEXT_EDK_USERSPACE_ONLY}
+        -DARCH=${ARCH}
+        -DBOARD=${NORMALIZED_BOARD_TARGET}
+        -DSOC=${SOC_NAME}
+        -DTOOLCHAIN=${ZEPHYR_TOOLCHAIN_VARIANT}
+        -DCROSS_COMPILE=${CROSS_COMPILE_TARGET}
+        -DCOMPILER=${COMPILER}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
     DEPENDS ${logical_target_for_zephyr_elf}
     COMMAND_EXPAND_LISTS
