@@ -2224,7 +2224,7 @@ add_custom_target(llext-edk DEPENDS ${llext_edk_file})
 zephyr_compile_options($<TARGET_PROPERTY:compiler,nostdinc>)
 target_include_directories(zephyr_interface SYSTEM INTERFACE $<TARGET_PROPERTY:compiler,nostdinc_include>)
 
-if(CONFIG_MINIMAL_LIBCPP)
+if(NOT CONFIG_USE_STD_CPP_HEADERS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,nostdincxx>>)
 endif()
 
