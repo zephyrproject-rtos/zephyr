@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_library()
+zephyr_library_named(nrfwifi)
 
 set(OS_AGNOSTIC_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/drivers/nrf_wifi)
 set(FW_BINS_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/zephyr/blobs/wifi_fw_bins)
@@ -166,8 +166,13 @@ else()
       ------------------------------------------------------------------------")
   endif()
 
-  zephyr_compile_definitions(
-    -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
+  set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
+  zephyr_include_directories(${gen_inc_dir})
+  set(gen_dir ${gen_inc_dir}/nrf70_fw_patch)
+  generate_inc_file_for_target(
+    nrfwifi
+    ${NRF70_PATCH}
+    ${gen_dir}/nrf70.bin.inc
   )
 endif()
 
