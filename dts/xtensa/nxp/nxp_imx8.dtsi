@@ -132,6 +132,8 @@
 		reg = <0x59050000 DT_SIZE_K(64)>;
 		interrupt-parent = <&master5>;
 		interrupts = <28>;
+		clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+		clock-names = "bus";
 		dai-index = <1>;
 		dmas = <&edma0 15 0>, <&edma0 14 0>;
 		dma-names = "tx", "rx";
