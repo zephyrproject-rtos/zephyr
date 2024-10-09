@@ -16,6 +16,15 @@ tests:
       - native_sim
       - native_sim/native/64
 
+  net.ethernet.build.spi.l2ethernet:
+    extra_args: DTC_OVERLAY_FILE="spi_devices_l2ethernet.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_NET_L2_ETHERNET=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+
   net.ethernet.build.stm32_ethernet:
     filter: dt_compat_enabled("st,stm32-ethernet")
     extra_configs:

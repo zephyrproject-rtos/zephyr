@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every devices at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
+
+			test_spi_lan865x: lan865x@5 {
+				compatible = "microchip,lan865x";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 0 0>;
+
+				plca-node-id = <0>;
+				plca-node-count = <1>;
+				plca-burst-count = <1>;
+				plca-burst-timer = <1>;
+				plca-to-timer = <1>;
+
+				local-mac-address = [00 00 00 01 02 03];
+			};
+		};
+	};
+};
