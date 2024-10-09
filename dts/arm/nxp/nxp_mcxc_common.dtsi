@@ -57,7 +57,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			fsec = <0xff>;
-			fopt = <0xff>;
+			fopt = <0x3d>;
 			config-field-offset = <0x400>;
 
 			flash0: flash@0 {
