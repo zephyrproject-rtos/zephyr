@@ -4,6 +4,14 @@ zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
 zephyr_library_sources_ifdef(
+  CONFIG_BT_CCP_SERVER
+  ccp_server.c
+  )
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CCP_CLIENT
+  ccp_client.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_VCP_VOL_REND
   vcp_vol_rend.c
   )
