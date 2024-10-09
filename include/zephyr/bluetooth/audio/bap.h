@@ -42,6 +42,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief Check if a BAP BASS BIS_Sync bitfield is valid
+ *
+ * Valid options are eiter a bitmask of valid BIS indices, including none (0x00000000)
+ * or @ref BT_BAP_BIS_SYNC_NO_PREF (0xFFFFFFFF).
+ *
+ * @param _bis_bitfield BIS_Sync bitfield (uint32)
+ */
+#define BT_BAP_BASS_VALID_BIT_BITFIELD(_bis_bitfield)                                              \
+	((_bis_bitfield) == 0U || (_bis_bitfield) == BT_BAP_BIS_SYNC_NO_PREF ||                    \
+	 BT_ISO_VALID_BIS_BITFIELD(_bis_bitfield))
+
+/**
  * @brief Helper to declare elements of bt_bap_qos_cfg
  *
  * @param _interval SDU interval (usec)
