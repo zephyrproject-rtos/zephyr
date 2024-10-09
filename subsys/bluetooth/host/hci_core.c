@@ -1929,6 +1929,23 @@ static void le_conn_update_complete(struct net_buf *buf)
 			conn->le.latency = sys_le16_to_cpu(evt->latency);
 			conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 
+			if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
+				if (!IN_RANGE(conn->le.interval, BT_HCI_LE_INTERVAL_MIN,
+					      BT_HCI_LE_INTERVAL_MAX)) {
+					LOG_WRN("interval exceeds the valid range 0x%04x",
+						conn->le.interval);
+				}
+				if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
+					LOG_WRN("latency exceeds the valid range 0x%04x",
+						conn->le.latency);
+				}
+				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+					      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+					LOG_WRN("supv_timeout exceeds the valid range 0x%04x",
+						conn->le.timeout);
+				}
+			}
+
 #if defined(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)
 			atomic_clear_bit(conn->flags,
 					 BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE);
@@ -2626,6 +2643,27 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 		conn->le.subrate.continuation_number = sys_le16_to_cpu(evt->continuation_number);
 		conn->le.latency = sys_le16_to_cpu(evt->peripheral_latency);
 		conn->le.timeout = sys_le16_to_cpu(evt->supervision_timeout);
+
+		if (!IS_ENABLED(CONFIG_BT_CONN_PARAM_ANY)) {
+			if (!IN_RANGE(conn->le.subrate.factor, BT_HCI_LE_SUBRATE_FACTOR_MIN,
+				      BT_HCI_LE_SUBRATE_FACTOR_MAX)) {
+				LOG_WRN("subrate_factor exceeds the valid range %d",
+					conn->le.subrate.factor);
+			}
+			if (conn->le.latency > BT_HCI_LE_PERIPHERAL_LATENCY_MAX) {
+				LOG_WRN("peripheral_latency exceeds the valid range 0x%04x",
+					conn->le.latency);
+			}
+			if (conn->le.subrate.continuation_number > BT_HCI_LE_CONTINUATION_NUM_MAX) {
+				LOG_WRN("continuation_number exceeds the valid range %d",
+					conn->le.subrate.continuation_number);
+			}
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
+					conn->le.timeout);
+			}
+		}
 	}
 
 	params.status = evt->status;
