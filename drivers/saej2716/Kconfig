@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SAEJ2716
+	bool "SAEJ2716 Single Edge Nibble Transmission (SENT)"
+	help
+	  Enable SAEJ2716 Driver Configuration
+
+if SAEJ2716
+
+module = SAEJ2716
+module-str = saej2716
+source "subsys/logging/Kconfig.template.log_config"
+
+config SAEJ2716_INIT_PRIORITY
+	int "SAEJ2716 driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  SAEJ2716 driver device initialization priority.
+
+source "drivers/saej2716/Kconfig.nxp_s32"
+
+endif # SAEJ2716
