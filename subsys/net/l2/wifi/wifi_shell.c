@@ -1051,41 +1051,6 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_wifi_ap_status(const struct shell *sh, size_t argc, char *argv[])
-{
-	struct net_if *iface = net_if_get_wifi_sap();
-	struct wifi_iface_status status = {0};
-
-	context.sh = sh;
-
-	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status,
-		     sizeof(struct wifi_iface_status))) {
-		PR_WARNING("Status request failed\n");
-
-		return -ENOEXEC;
-	}
-
-	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
-
-	PR("Interface Mode: %s\n", wifi_mode_txt(status.iface_mode));
-	PR("Link Mode: %s\n", wifi_link_mode_txt(status.link_mode));
-	PR("SSID: %.32s\n", status.ssid);
-	PR("BSSID: %s\n", net_sprint_ll_addr_buf(status.bssid, WIFI_MAC_ADDR_LEN,
-						 mac_string_buf, sizeof(mac_string_buf)));
-	PR("Band: %s\n", wifi_band_txt(status.band));
-	PR("Channel: %d\n", status.channel);
-	PR("Security: %s\n", wifi_security_txt(status.security));
-	PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
-	if (status.iface_mode == WIFI_MODE_INFRA) {
-		PR("RSSI: %d\n", status.rssi);
-	}
-	PR("Beacon Interval: %d\n", status.beacon_interval);
-	PR("DTIM: %d\n", status.dtim_period);
-	PR("TWT: %s\n", status.twt_capable ? "Supported" : "Not supported");
-
-	return 0;
-}
-
 #if defined(CONFIG_NET_STATISTICS_WIFI) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 static void print_wifi_stats(struct net_if *iface, struct net_stats_wifi *data,
@@ -3201,11 +3166,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ap,
 		  "<rts_threshold: rts threshold/off>.\n",
 		  cmd_wifi_ap_set_rts_threshold,
 		  2,
-	SHELL_CMD_ARG(status,
-		  NULL,
-		  "Status of Wi-Fi SAP.\n",
-		  cmd_wifi_ap_status,
-		  1,
 		  0),
 	SHELL_SUBCMD_SET_END
 );
