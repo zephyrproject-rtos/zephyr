@@ -41,6 +41,18 @@ static const char client_cert_test[] = {
 static const char client_key_test[] = {
 	#include <wifi_enterprise_test_certs/client-key.pem.inc>
 };
+
+static const char ca_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/ca2.pem.inc>
+	'\0'};
+
+static const char client_cert2_test[] = {
+	#include <wifi_enterprise_test_certs/client2.pem.inc>
+	'\0'};
+
+static const char client_key2_test[] = {
+	#include <wifi_enterprise_test_certs/client-key2.pem.inc>
+	'\0'};
 #endif
 
 #define WIFI_SHELL_MODULE "wifi"
@@ -100,6 +112,12 @@ static int cmd_wifi_set_enterprise_creds(const struct shell *sh, struct net_if *
 	params.client_cert_len = ARRAY_SIZE(client_cert_test);
 	params.client_key = (uint8_t *)client_key_test;
 	params.client_key_len = ARRAY_SIZE(client_key_test);
+	params.ca_cert2 = (uint8_t *)ca_cert2_test;
+	params.ca_cert2_len = ARRAY_SIZE(ca_cert2_test);
+	params.client_cert2 = (uint8_t *)client_cert2_test;
+	params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
+	params.client_key2 = (uint8_t *)client_key2_test;
+	params.client_key2_len = ARRAY_SIZE(client_key2_test);
 
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface, &params, sizeof(params))) {
 		PR_WARNING("Set enterprise credentials failed\n");
@@ -522,8 +540,9 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->channel = WIFI_CHANNEL_ANY;
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
+	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -644,6 +663,34 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 				return -EINVAL;
 			}
 			break;
+		case 'S':
+			params->suiteb_type = atoi(optarg);
+			break;
+		case 'V':
+			params->eap_ver = atoi(optarg);
+			if (params->eap_ver != 0U && params->eap_ver != 1U) {
+				PR_WARNING("eap_ver error %d\n", params->eap_ver);
+				return -EINVAL;
+			}
+			break;
+		case 'I':
+			params->eap_identity = optarg;
+			params->eap_id_length = strlen(params->eap_identity);
+			if (params->eap_id_length > WIFI_ENT_IDENTITY_MAX_LEN) {
+				PR_WARNING("eap identity too long (max %d characters)\n",
+					    WIFI_ENT_IDENTITY_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
+		case 'P':
+			params->eap_password = optarg;
+			params->eap_passwd_length = strlen(params->eap_password);
+			if (params->eap_passwd_length > WIFI_ENT_PSWD_MAX_LEN) {
+				PR_WARNING("eap password length too long (max %d characters)\n",
+					    WIFI_ENT_PSWD_MAX_LEN);
+				return -EINVAL;
+			}
+			break;
 		case 'h':
 			return -ENOEXEC;
 		default:
@@ -706,7 +753,12 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	/* Load the enterprise credentials if needed */
-	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS) {
+	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS ||
+	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS_SHA256) {
 		cmd_wifi_set_enterprise_creds(sh, iface);
 	}
 #endif
@@ -2865,16 +2917,21 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-p, --psk]: Passphrase (valid only for secure SSIDs)\n"
 		  "[-k, --key-mgmt]: Key Management type (valid only for secure SSIDs)\n"
 		  "0:None, 1:WPA2-PSK, 2:WPA2-PSK-256, 3:SAE-HNP, 4:SAE-H2E, 5:SAE-AUTO, 6:WAPI,"
-		  " 7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "7:EAP-TLS, 8:WEP, 9: WPA-PSK, 10: WPA-Auto-Personal, 11: DPP\n"
+		  "12: EAP-PEAP-MSCHAPv2, 13: EAP-PEAP-GTC, 14: EAP-TTLS-MSCHAPv2, 15: EAP-PEAP-TLS\n"
 		  "[-w, --ieee-80211w]: MFP (optional: needs security type to be specified)\n"
 		  ": 0:Disable, 1:Optional, 2:Required.\n"
 		  "[-m, --bssid]: MAC address of the AP (BSSID).\n"
 		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
+		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192.\n"
+		  "[-V, --eap-version]: 0 or 1.\n"
+		  "[-I, --eap-identity]: Client Identity.\n"
+		  "[-P, --eap-password]: Client Password.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 13),
+		  2, 17),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
