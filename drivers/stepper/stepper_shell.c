@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/stepper.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stepper_shell, CONFIG_STEPPER_LOG_LEVEL);
@@ -51,6 +52,35 @@ static bool poll_thread_started;
 K_THREAD_STACK_DEFINE(poll_thread_stack, CONFIG_STEPPER_SHELL_THREAD_STACK_SIZE);
 static struct k_thread poll_thread;
 static int start_polling(const struct shell *sh);
+
+static void print_callback(const struct device *dev, enum stepper_signal_result signal)
+{
+	switch (signal) {
+	case STEPPER_SIGNAL_STEPS_COMPLETED:
+		printf("Stepper %s: All steps completed.\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED:
+		printf("Stepper %s: Sensorless stall detected.\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_LEFT_END_STOP_DETECTED:
+		printf("Stepper %s: Left limit switch pressed.\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED:
+		printf("Stepper %s: Right limit switch pressed.\n", dev->name);
+		break;
+	default:
+		printf("Stepper %s: Unknown signal received.\n", dev->name);
+		break;
+	}
+}
+
+static void set_callback_start_polling(const struct shell *sh, const struct device *dev)
+{
+	struct k_poll_signal *poll_signal = &stepper_signal;
+
+	start_polling(sh);
+	stepper_set_callback(dev, print_callback, poll_signal);
+}
 
 #endif /* CONFIG_STEPPER_SHELL_ASYNC */
 
@@ -181,8 +211,7 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	int err = 0;
-	struct k_poll_signal *poll_signal =
-		COND_CODE_1(CONFIG_STEPPER_SHELL_ASYNC, (&stepper_signal), (NULL));
+
 	int32_t micro_steps = shell_strtol(argv[ARG_IDX_PARAM], 10, &err);
 
 	if (err < 0) {
@@ -195,10 +224,10 @@ static int cmd_stepper_move(const struct shell *sh, size_t argc, char **argv)
 	}
 
 #ifdef CONFIG_STEPPER_SHELL_ASYNC
-	start_polling(sh);
+	set_callback_start_polling(sh, dev);
 #endif /* CONFIG_STEPPER_SHELL_ASYNC */
 
-	err = stepper_move(dev, micro_steps, poll_signal);
+	err = stepper_move(dev, micro_steps);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -335,19 +364,16 @@ static int cmd_stepper_set_target_position(const struct shell *sh, size_t argc, 
 		return err;
 	}
 
-	struct k_poll_signal *poll_signal =
-		COND_CODE_1(CONFIG_STEPPER_SHELL_ASYNC, (&stepper_signal), (NULL));
-
 	err = parse_device_arg(sh, argv, &dev);
 	if (err < 0) {
 		return err;
 	}
 
 #ifdef CONFIG_STEPPER_SHELL_ASYNC
-	start_polling(sh);
+	set_callback_start_polling(sh, dev);
 #endif /* CONFIG_STEPPER_SHELL_ASYNC */
 
-	err = stepper_set_target_position(dev, position, poll_signal);
+	err = stepper_set_target_position(dev, position);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
 	}
@@ -384,7 +410,9 @@ static int cmd_stepper_enable_constant_velocity_mode(const struct shell *sh, siz
 	if (err < 0) {
 		return err;
 	}
-
+#ifdef CONFIG_STEPPER_SHELL_ASYNC
+	set_callback_start_polling(sh, dev);
+#endif
 	err = stepper_enable_constant_velocity_mode(dev, direction, velocity);
 	if (err) {
 		shell_error(sh, "Error: %d", err);
@@ -456,7 +484,7 @@ static void stepper_poll_thread(void *p1, void *p2, void *p3)
 			shell_fprintf_info(sh, "Stepper: Left limit switch pressed.\n");
 			break;
 		case STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED:
-			shell_fprintf_normal(sh, "Stepper: Right limit switch pressed.\n");
+			shell_fprintf_info(sh, "Stepper: Right limit switch pressed.\n");
 			break;
 		default:
 			shell_fprintf_error(sh, "Stepper: Unknown signal received.\n");

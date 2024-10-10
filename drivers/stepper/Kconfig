@@ -18,6 +18,13 @@ config STEPPER_INIT_PRIORITY
 	help
 	  Stepper motor controller initialization priority.
 
+config STEPPER_ASYNC_API
+	bool "Asynchronous Stepper API"
+	default y
+	select POLL
+	help
+	  Enable asynchronous stepper API.
+
 config STEPPER_SHELL
 	bool "Stepper shell"
 	depends on SHELL
@@ -27,7 +34,7 @@ config STEPPER_SHELL
 config STEPPER_SHELL_ASYNC
 	bool "Asynchronous stepper shell"
 	depends on STEPPER_SHELL
-	select POLL
+	select STEPPER_ASYNC_API
 	help
 	  If enabled, the shell will run in asynchronous mode, spawning a thread
 	  that polls the completion of stepper motor moves and prints a message

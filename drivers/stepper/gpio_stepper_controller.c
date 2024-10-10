@@ -34,6 +34,7 @@ struct gpio_stepper_data {
 	uint8_t step_gap;
 	uint8_t coil_charge;
 	struct k_work_delayable stepper_dwork;
+	stepper_callback_t callback;
 	struct k_poll_signal *async_signal;
 	int32_t actual_position;
 	uint32_t delay_in_us;
@@ -82,6 +83,9 @@ static void update_remaining_steps(struct gpio_stepper_data *data)
 		if (data->async_signal) {
 			(void)k_poll_signal_raise(data->async_signal,
 						  STEPPER_SIGNAL_STEPS_COMPLETED);
+		}
+		if (data->callback) {
+			data->callback(data->dev, STEPPER_SIGNAL_STEPS_COMPLETED);
 		}
 	}
 }
@@ -138,8 +142,7 @@ static void stepper_work_step_handler(struct k_work *work)
 	}
 }
 
-static int gpio_stepper_move(const struct device *dev, int32_t micro_steps,
-			     struct k_poll_signal *async)
+static int gpio_stepper_move(const struct device *dev, int32_t micro_steps)
 {
 	struct gpio_stepper_data *data = dev->data;
 
@@ -148,10 +151,6 @@ static int gpio_stepper_move(const struct device *dev, int32_t micro_steps,
 		return -EINVAL;
 	}
 	K_SPINLOCK(&data->lock) {
-		if (data->async_signal) {
-			k_poll_signal_reset(data->async_signal);
-		}
-		data->async_signal = async;
 		data->run_mode = STEPPER_POSITION_MODE;
 		data->step_count = micro_steps;
 		update_direction_from_step_count(data);
@@ -180,8 +179,7 @@ static int gpio_stepper_get_actual_position(const struct device *dev, int32_t *p
 	return 0;
 }
 
-static int gpio_stepper_set_target_position(const struct device *dev, int32_t position,
-					    struct k_poll_signal *async)
+static int gpio_stepper_set_target_position(const struct device *dev, int32_t position)
 {
 	struct gpio_stepper_data *data = dev->data;
 
@@ -190,10 +188,6 @@ static int gpio_stepper_set_target_position(const struct device *dev, int32_t po
 		return -EINVAL;
 	}
 	K_SPINLOCK(&data->lock) {
-		if (data->async_signal) {
-			k_poll_signal_reset(data->async_signal);
-		}
-		data->async_signal = async;
 		data->run_mode = STEPPER_POSITION_MODE;
 		data->step_count = position - data->actual_position;
 		update_direction_from_step_count(data);
@@ -278,6 +272,32 @@ static int gpio_stepper_get_micro_step_res(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_STEPPER_ASYNC_API
+
+static int gpio_stepper_set_callback(const struct device *dev, stepper_callback_t callback,
+				     struct k_poll_signal *async)
+{
+	struct gpio_stepper_data *data = dev->data;
+
+	K_SPINLOCK(&data->lock) {
+		if (!callback) {
+			return -EINVAL;
+		}
+		data->callback = callback;
+
+		if (!async) {
+			return 0;
+		}
+		if (data->async_signal) {
+			k_poll_signal_reset(data->async_signal);
+		}
+		data->async_signal = async;
+	}
+	return 0;
+}
+
+#endif /* CONFIG_STEPPER_ASYNC_API */
+
 static int gpio_stepper_enable(const struct device *dev, bool enable)
 {
 	struct gpio_stepper_data *data = dev->data;
@@ -335,7 +355,9 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 		.set_max_velocity = gpio_stepper_set_max_velocity,                                 \
 		.enable_constant_velocity_mode = gpio_stepper_enable_constant_velocity_mode,       \
 		.set_micro_step_res = gpio_stepper_set_micro_step_res,                             \
-		.get_micro_step_res = gpio_stepper_get_micro_step_res};
+		.get_micro_step_res = gpio_stepper_get_micro_step_res,                             \
+		IF_ENABLED(CONFIG_STEPPER_ASYNC_API, (                                             \
+		.set_callback = gpio_stepper_set_callback,)) };
 
 #define GPIO_STEPPER_DEVICE_DEFINE(child)                                                          \
 	DEVICE_DT_DEFINE(child, gpio_stepper_motor_controller_init, NULL,                          \

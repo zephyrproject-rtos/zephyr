@@ -11,12 +11,35 @@ struct stepper_fixture {
 	const struct device *dev;
 	struct k_poll_signal signal;
 	struct k_poll_event event;
+	stepper_callback_t callback;
 };
+
+static void stepper_print_callback(const struct device *dev, enum stepper_signal_result result)
+{
+	switch (result) {
+	case STEPPER_SIGNAL_STEPS_COMPLETED:
+		printf("%s steps completed\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_LEFT_END_STOP_DETECTED:
+		printf("%s left switch pressed\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED:
+		printf("%s right switch pressed\n", dev->name);
+		break;
+	case STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED:
+		printf("%s stall detected\n", dev->name);
+		break;
+	default:
+		printf("Unknown signal\n");
+		break;
+	}
+}
 
 static void *stepper_setup(void)
 {
 	static struct stepper_fixture fixture = {
 		.dev = DEVICE_DT_GET(DT_NODELABEL(motor_1)),
+		.callback = stepper_print_callback,
 	};
 
 	k_poll_signal_init(&fixture.signal);
@@ -57,7 +80,8 @@ ZTEST_F(stepper, test_target_position)
 	int32_t pos = 100u;
 
 	(void)stepper_set_max_velocity(fixture->dev, 100u);
-	(void)stepper_set_target_position(fixture->dev, pos, &fixture->signal);
+	(void)stepper_set_callback(fixture->dev, fixture->callback, &fixture->signal);
+	(void)stepper_set_target_position(fixture->dev, pos);
 	(void)k_poll(&fixture->event, 1, K_SECONDS(5));
 	unsigned int signaled;
 	int result;
