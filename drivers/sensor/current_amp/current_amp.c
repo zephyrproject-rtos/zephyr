@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(current_amp, CONFIG_SENSOR_LOG_LEVEL);
@@ -114,6 +115,8 @@ static int current_init(const struct device *dev)
 	const struct current_sense_amplifier_dt_spec *config = dev->config;
 	struct current_sense_amplifier_data *data = dev->data;
 	int ret;
+
+	__ASSERT(config->sense_milli_ohms != 0, "Milli-ohms must not be 0");
 
 	if (!adc_is_ready_dt(&config->port)) {
 		LOG_ERR("ADC is not ready");

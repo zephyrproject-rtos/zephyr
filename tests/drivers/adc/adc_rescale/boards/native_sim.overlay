@@ -23,7 +23,7 @@
 	sensor2: csa {
 		compatible = "current-sense-amplifier";
 		io-channels = <&adc0 2>;
-		sense-resistor-micro-ohms = <5000>;
+		sense-resistor-milli-ohms = <5>;
 		sense-gain-mult = <100>;
 	};
 
