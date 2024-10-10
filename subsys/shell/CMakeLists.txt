@@ -11,10 +11,12 @@ zephyr_sources_ifdef(
   shell_ops.c
   )
 
-zephyr_sources_ifdef(
-  CONFIG_SHELL_LOG_BACKEND
-  shell_log_backend.c
+if(NOT CONFIG_SHELL_LOG_BACKEND_CUSTOM)
+  zephyr_sources_ifdef(
+    CONFIG_SHELL_LOG_BACKEND
+    shell_log_backend.c
   )
+endif()
 
 zephyr_sources_ifdef(
   CONFIG_SHELL_HELP
