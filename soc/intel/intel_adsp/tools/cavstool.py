@@ -944,7 +944,7 @@ async def main():
         log.error(e)
         sys.exit(1)
 
-    log.info(f"Detected cAVS 1.8+ hardware")
+    log.info(f"Detected a supported cAVS/ACE hardware version")
 
     if args.log_only:
         wait_fw_entered(dsp, timeout_s=None)
