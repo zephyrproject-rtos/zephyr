@@ -1,0 +1,11 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&qtmr1_timer0 {
+	status = "okay";
+	primary_source = "kQTMR_ClockDivide_128";
+	mode = "kQTMR_PriSrcRiseEdge";
+};
