@@ -12,7 +12,7 @@ endif()
 
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library()
-  if(CONFIG_BOARD_MIMXRT1060_EVKB)
+  if(${BOARD_REVISION} STREQUAL "B")
     set(FLASH_CONF evkbmimxrt1060_flexspi_nor_config.c)
     set(BOARD_NAME evkbmimxrt1060)
   elseif(CONFIG_DT_HAS_NXP_IMX_FLEXSPI_NOR_ENABLED)
