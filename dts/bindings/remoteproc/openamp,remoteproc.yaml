@@ -1,0 +1,16 @@
+description: |
+  This binding is used to describe the remoteproc in the OpenAMP resource table
+
+compatible: "openamp,remoteproc"
+
+properties:
+  "#address-cells":
+    type: int
+    const: 1
+  "#size-cells":
+    type: int
+    const: 0
+  carveouts:
+    type: phandles
+    required: true
+    description: carveout for the shared memory
