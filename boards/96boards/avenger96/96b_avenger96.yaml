@@ -14,7 +14,6 @@ testing:
     - cmsis_rtos_v2
     - net
     - mpu
-    - tinycrypt
     - crypto
     - aes
     - cmm
