@@ -79,9 +79,6 @@ config SOC_NRF_FORCE_CONSTLAT
 	  of base resources on while in sleep. The advantage of having a constant
 	  and predictable latency will be at the cost of having increased power consumption.
 
-config SOC_NRF54L_NORMAL_VOLTAGE_MODE
-	bool "NRF54L Normal Voltage Mode."
-
 if NRF_GRTC_TIMER
 
 config ELV_GRTC_LFXO_ALLOWED
