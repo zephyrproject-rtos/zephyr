@@ -37,24 +37,20 @@
 
 static void ascs_register_test_suite_after(void *f)
 {
-	/* Attempt to clean up failing tests */
-	(void)bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	int err;
 
-	/* Sleep to trigger any pending state changes */
-	k_sleep(K_SECONDS(1));
+	err = bt_bap_unicast_server_unregister();
 
-	(void)bt_bap_unicast_server_unregister();
+	/* In case of a failure due to pending state change, try again */
+	while (err != 0 && err != -EALREADY) {
+		/* Only -EBUSY indicate pending state change */
+		zassert_equal(err, -EBUSY, "unexpected err response %d", err);
+		k_sleep(K_MSEC(10));
+		err = bt_bap_unicast_server_unregister();
+	}
 }
 
 ZTEST_SUITE(ascs_register_test_suite, NULL, NULL, NULL, ascs_register_test_suite_after, NULL);
-
-static ZTEST(ascs_register_test_suite, test_cb_register_without_ascs_registered)
-{
-	int err;
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, -ENOTSUP, "Unexpected err response %d", err);
-}
 
 static ZTEST(ascs_register_test_suite, test_ascs_register_with_null_param)
 {
@@ -70,6 +66,7 @@ static ZTEST(ascs_register_test_suite, test_ascs_register_twice)
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		&mock_bap_unicast_server_cb
 	};
 
 	/* Setup already registered once, so calling once here should be sufficient */
@@ -90,6 +87,7 @@ static ZTEST(ascs_register_test_suite, test_ascs_register_too_many_sinks)
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + 1,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		&mock_bap_unicast_server_cb
 	};
 
 	err = bt_bap_unicast_server_register(&param);
@@ -102,6 +100,7 @@ static ZTEST(ascs_register_test_suite, test_ascs_register_too_many_sources)
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT + 1,
+		&mock_bap_unicast_server_cb
 	};
 
 	err = bt_bap_unicast_server_register(&param);
@@ -123,6 +122,7 @@ static ZTEST(ascs_register_test_suite, test_ascs_register_fewer_than_max_ases)
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT > 0 ? CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT - 1 : 0,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0 ? CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT - 1 : 0,
+		&mock_bap_unicast_server_cb
 	};
 
 	err = bt_bap_unicast_server_register(&param);
@@ -142,20 +142,11 @@ static ZTEST(ascs_register_test_suite, test_ascs_unregister_with_cbs_registered)
 	struct bt_bap_unicast_server_register_param param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
 		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
+		&mock_bap_unicast_server_cb
 	};
 	int err;
 
 	err = bt_bap_unicast_server_register(&param);
-	zassert_equal(err, 0, "Unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
-	zassert_equal(err, 0, "Unexpected err response %d", err);
-
-	/* Not valid to unregister while callbacks are still registered */
-	err = bt_bap_unicast_server_unregister();
-	zassert_equal(err, -EAGAIN, "Unexpected err response %d", err);
-
-	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "Unexpected err response %d", err);
 
 	err = bt_bap_unicast_server_unregister();
