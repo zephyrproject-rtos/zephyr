@@ -413,9 +413,7 @@ void net_mgmt_event_init(void)
 	mgmt_rebuild_global_event_mask();
 
 #if defined(CONFIG_NET_MGMT_EVENT_THREAD)
-#if defined(CONFIG_NET_MGMT_THREAD_PRIO_CUSTOM)
-#define THREAD_PRIORITY CONFIG_NET_MGMT_THREAD_PRIORITY
-#elif defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 #else
