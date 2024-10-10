@@ -14,7 +14,7 @@ properties:
       as this is, by far, the most common mode.
       Selecting half duplex allows to use SPI MOSI as a bidirectional line,
       typically used when only one data line is connected.
-      Use the macros not the actual enum value, here is the concordance
+      Use the macros, not the actual enum value. Here is the concordance
       list (see dt-bindings/spi/spi.h)
         0    SPI_FULL_DUPLEX
         2048 SPI_HALF_DUPLEX
