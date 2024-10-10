@@ -23,8 +23,12 @@
 #include <lll_scan.h>
 #include <lll/lll_df_types.h>
 #include <lll_sync.h>
+#include <lll_conn.h>
+#include <ull_tx_queue.h>
 #include <ull_scan_types.h>
 #include <ull_scan_internal.h>
+#include <ull_conn_types.h>
+#include <ull_conn_internal.h>
 #include <ull_sync_types.h>
 #include <ull_sync_internal.h>
 

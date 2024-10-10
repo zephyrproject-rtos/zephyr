@@ -22,14 +22,9 @@ struct ll_scan_set {
 
 #if defined(CONFIG_BT_CTLR_SYNC_PERIODIC)
 	struct {
-		uint8_t sid;
-
-		uint8_t adv_addr_type:2;
 		uint8_t filter_policy:1;
 		uint8_t cancelled:1;
 		uint8_t state:2;
-
-		uint8_t adv_addr[BDADDR_SIZE];
 
 		/* Non-Null when creating sync, reset in ISR context on
 		 * synchronisation state and checked in Thread context when
