@@ -1,0 +1,144 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common properties for video interface endpoints.
+
+description: |
+  A video pipeline usually consists of several devices, e.g. camera sensors, video
+  data receivers, video data processors, etc. Data interfaces on these devices are
+  described by their child 'port' nodes. Configuration of a port depends on other
+  devices in the pipeline and is described by 'endpoint' subnodes.
+
+  If a port can be configured to work with more than one remote device on the same
+  bus, an 'endpoint' child node must be provided for each of them. If more than one
+  port is present in a device node or there is more than one endpoint at a port, or
+  port node needs to be associated with a selected hardware interface, a common
+  scheme using '#address-cells', '#size-cells' and 'reg' properties is used.
+
+  All 'port' nodes can be grouped under an optional 'ports' node, which allows to
+  specify #address-cells, #size-cells properties independently for the 'port' and
+  'endpoint' nodes. For example:
+
+    video_device {
+      ...
+      ports {
+          #address-cells = <1>;
+          #size-cells = <0>;
+
+          port@0 {
+              ...
+              endpoint@0 { ... };
+              endpoint@1 { ... };
+          };
+          port@1 { ... };
+      };
+    };
+
+  Two 'endpoint' nodes must be linked with each other via their 'remote-endpoint'
+  phandles. However, Zephyr does not allow circular dependency, so direct phandle
+  references are currently not possible. A 'remote-endpoint-label' string is used
+  instead to be able to specify, at least, the label of the peer remote-endpoint.
+  For example:
+
+          source: endpoint {
+              compatible = "zephyr,video-interfaces";
+              remote-endpoint-label = "sink";
+          };
+
+          sink: endpoint{
+              compatible = "zephyr,video-interfaces";
+              remote-endpoint-label = "source";
+          };
+
+  This binding contains the most common properties needed to configure an endpoint
+  subnode for data exchange with other device. In most cases, properties at the
+  peer 'endpoint' node will be identical, however they might be different when
+  there is any signal modifications on the bus between two devices, e.g. there are
+  logic signal inverters on the lines.
+
+properties:
+  remote-endpoint-label:
+    required: true
+    type: string
+    description: |
+      Label of the 'remote-endpoint' subnode that interfaces with this endpoint.
+      This property is used as a 'work-around' to be able to declare the remote
+      endpoint and should be replaced by a "remote-endpoint" phandle property when
+      Zephyr devicetree supports circular dependency in the future.
+
+  bus-type:
+    type: int
+    enum:
+      - 1 # MIPI CSI-2 C-PHY
+      - 2 # MIPI CSI1
+      - 3 # CCP2
+      - 4 # MIPI CSI-2 D-PHY
+      - 5 # Parallel
+      - 6 # BT.656
+    description: |
+      Data bus type.
+
+  data-shift:
+    type: int
+    description: |
+      On parallel data busses, if bus-width is used to specify the number of
+      data lines, data-shift can be used to specify which data lines are used,
+      e.g. "bus-width=<8>; data-shift=<2>;" means, that lines 9:2 are used.
+
+  hsync-active:
+    type: int
+    enum:
+      - 0 # low
+      - 1 # high
+    description: |
+      Active state of the HSYNC signal
+
+  vsync-active:
+    type: int
+    enum:
+      - 0 # low
+      - 1 # high
+    description: |
+      Active state of the VSYNC signal.
+
+  pclk-sample:
+    type: int
+    enum:
+      - 0 # falling
+      - 1 # rising
+      - 2 # both
+    description: |
+      Sample data on falling, rising or both edges of the pixel clock signal.
+
+  link-frequencies:
+    type: array
+    description: |
+      Allowed data bus frequencies. For MIPI CSI-2, for instance, this is the
+      actual frequency of the bus, not bits per clock per lane value.
+
+# For serial bus only
+  clock-lane:
+    type: int
+    description: |
+      Physical clock lane index. Position of an entry determines the logical
+      lane number, while the value of an entry indicates physical lane, e.g. for
+      a MIPI CSI-2 bus we could have "clock-lane = <0>;", which places the
+      clock lane on hardware lane 0. This property is valid for serial busses
+      only (e.g. MIPI CSI-2).
+
+  data-lanes:
+    type: array
+    description: |
+      An array of physical data lane indexes. Position of an entry determines
+      the logical lane number, while the value of an entry indicates physical
+      lane, e.g. for 2-lane MIPI CSI-2 bus we could have "data-lanes = <1 2>;",
+      assuming the clock lane is on hardware lane 0. If the hardware does not
+      support lane reordering, monotonically incremented values shall be used
+      from 0 or 1 onwards, depending on whether or not there is also a clock
+      lane. This property is valid for serial busses only (e.g. MIPI CSI-2).
+
+# For parallel bus only
+  bus-width:
+    type: int
+    description: |
+      Number of data lines actively used, only valid for parallel busses.
