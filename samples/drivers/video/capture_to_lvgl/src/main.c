@@ -79,13 +79,11 @@ int main(void)
 	fmt.pixelformat = VIDEO_PIX_FMT_RGB565;
 
 	if (video_set_format(video_dev, VIDEO_EP_OUT, &fmt)) {
-		LOG_ERR("Unable to set up video format");
+		LOG_ERR("Unable to set video format to " PRIvfmt, PRIvfmt_arg(&fmt));
 		return 0;
 	}
 
-	LOG_INF("- Format: %c%c%c%c %ux%u %u", (char)fmt.pixelformat, (char)(fmt.pixelformat >> 8),
-		(char)(fmt.pixelformat >> 16), (char)(fmt.pixelformat >> 24), fmt.width, fmt.height,
-		fmt.pitch);
+	LOG_INF("- Format: " PRIvfmt " %u", PRIvfmt_arg(&fmt), fmt.pitch);
 
 	/* Size to allocate for each buffer */
 	bsize = fmt.pitch * fmt.height;
