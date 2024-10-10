@@ -408,6 +408,10 @@ static int i2c_gd32_transfer(const struct device *dev,
 	uint8_t itr;
 	int err = 0;
 
+	if (!i2c_is_stop_op(&msgs[num_msgs - 1])) {
+		return -EINVAL;
+	}
+
 	current = msgs;
 
 	/* First message flags implicitly contain I2C_MSG_RESTART flag. */

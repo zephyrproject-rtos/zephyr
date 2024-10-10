@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 #endif
 
 struct i2c_nrfx_twim_data {
+	struct i2c_common_data common;
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
@@ -322,6 +323,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	int ret;
 
 	dev_config->irq_connect();
 
@@ -336,7 +338,12 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return pm_device_driver_init(dev, twim_nrfx_pm_action);
+	ret = pm_device_driver_init(dev, twim_nrfx_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return i2c_common_init(dev);
 }
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
