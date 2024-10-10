@@ -1182,8 +1182,21 @@ class ProjectBuilder(FilterBuilder):
         return args_expanded
 
     def cmake(self, filter_stages=[]):
+        args = []
+        for va in self.testsuite.extra_args.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    args.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if self.instance.platform.name == cond_args[1]:
+                    args.append(cond_args[2])
+            else:
+                args.append(va)
+
+
         args = self.cmake_assemble_args(
-            self.testsuite.extra_args.copy(), # extra_args from YAML
+            args,
             self.instance.handler,
             self.testsuite.extra_conf_files,
             self.testsuite.extra_overlay_confs,
