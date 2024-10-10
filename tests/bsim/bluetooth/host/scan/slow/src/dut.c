@@ -12,10 +12,32 @@
 #include "testlib/log_utils.h"
 #include "babblekit/flags.h"
 #include "babblekit/testcase.h"
+#include "data.h"
 
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_DBG);
 
 extern unsigned long runtime_log_level;
+
+static void validate_data(struct net_buf_simple *ad)
+{
+	LOG_HEXDUMP_DBG(ad->data, ad->len, "ad");
+
+	uint8_t len = net_buf_simple_pull_u8(ad);
+	uint8_t type = net_buf_simple_pull_u8(ad);
+
+	TEST_ASSERT(peer_ad->type == type, "Type mismatch: expect %x got %x", peer_ad->type, type);
+	TEST_ASSERT(peer_ad->data_len + 1 == len, "Data len mismatch: expect %x got %x",
+		    peer_ad->data_len + 1, len);
+	TEST_ASSERT(peer_ad->data_len == ad->len, "Buffer length mismatch");
+
+	int ret = memcmp(peer_ad->data, ad->data, peer_ad->data_len);
+
+	if (ret) {
+		LOG_HEXDUMP_ERR(peer_ad->data, peer_ad->data_len, "Expected");
+		LOG_HEXDUMP_ERR(ad->data, ad->len, "Got");
+		TEST_ASSERT(0, "Advertising data does not match");
+	}
+}
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -27,6 +49,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	LOG_DBG("Device found: %s (RSSI %d), type %u, AD data len %u", addr_str, rssi, type,
 		ad->len);
+
+	validate_data(ad);
 }
 
 #define BT_LE_SCAN_ACTIVE_CONTINUOUS_WITH_DUPLICATES                                               \

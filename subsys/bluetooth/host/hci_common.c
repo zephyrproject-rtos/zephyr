@@ -14,7 +14,7 @@ struct net_buf *bt_hci_evt_create(uint8_t evt, uint8_t len)
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = bt_buf_get_evt(evt, false, K_FOREVER);
+	buf = bt_buf_get_evt_but_better(evt, 0, K_FOREVER);
 
 	BT_ASSERT(buf);
 

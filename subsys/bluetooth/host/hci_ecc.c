@@ -90,7 +90,7 @@ static void send_cmd_status(uint16_t opcode, uint8_t status)
 
 	LOG_DBG("opcode %x status 0x%02x %s", opcode, status, bt_hci_err_to_str(status));
 
-	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	buf = bt_buf_get_evt_but_better(BT_HCI_EVT_CMD_STATUS, 0, K_FOREVER);
 	bt_buf_set_type(buf, BT_BUF_EVT);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
