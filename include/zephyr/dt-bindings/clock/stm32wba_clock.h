@@ -68,7 +68,7 @@
 #define STM32_CLOCK_VAL_MASK    0x7U
 #define STM32_CLOCK_VAL_SHIFT   16U
 
-#define STM32_CLOCK(val, mask, shift, reg)					\
+#define STM32_DOMAIN_CLOCK(val, mask, shift, reg)					\
 	((((reg) & STM32_CLOCK_REG_MASK) << STM32_CLOCK_REG_SHIFT) |	\
 	 (((shift) & STM32_CLOCK_SHIFT_MASK) << STM32_CLOCK_SHIFT_SHIFT) |	\
 	 (((mask) & STM32_CLOCK_MASK_MASK) << STM32_CLOCK_MASK_SHIFT) |	\
@@ -83,22 +83,22 @@
 
 /** @brief Device clk sources selection helpers */
 /** CCIPR1 devices */
-#define USART1_SEL(val)		STM32_CLOCK(val, 3, 0, CCIPR1_REG)
-#define USART2_SEL(val)		STM32_CLOCK(val, 3, 2, CCIPR1_REG)
-#define I2C1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR1_REG)
-#define LPTIM2_SEL(val)		STM32_CLOCK(val, 3, 18, CCIPR1_REG)
-#define SPI1_SEL(val)		STM32_CLOCK(val, 3, 20, CCIPR1_REG)
-#define SYSTICK_SEL(val)	STM32_CLOCK(val, 3, 22, CCIPR1_REG)
-#define TIMIC_SEL(val)		STM32_CLOCK(val, 1, 31, CCIPR1_REG)
+#define USART1_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 0, CCIPR1_REG)
+#define USART2_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 2, CCIPR1_REG)
+#define I2C1_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 10, CCIPR1_REG)
+#define LPTIM2_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 18, CCIPR1_REG)
+#define SPI1_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 20, CCIPR1_REG)
+#define SYSTICK_SEL(val)	STM32_DOMAIN_CLOCK(val, 3, 22, CCIPR1_REG)
+#define TIMIC_SEL(val)		STM32_DOMAIN_CLOCK(val, 1, 31, CCIPR1_REG)
 /** CCIPR2 devices */
-#define RNG_SEL(val)		STM32_CLOCK(val, 3, 12, CCIPR2_REG)
+#define RNG_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 12, CCIPR2_REG)
 /** CCIPR3 devices */
-#define LPUART1_SEL(val)	STM32_CLOCK(val, 3, 0, CCIPR3_REG)
-#define SPI3_SEL(val)		STM32_CLOCK(val, 3, 3, CCIPR3_REG)
-#define I2C3_SEL(val)		STM32_CLOCK(val, 3, 6, CCIPR3_REG)
-#define LPTIM1_SEL(val)		STM32_CLOCK(val, 3, 10, CCIPR3_REG)
-#define ADC_SEL(val)		STM32_CLOCK(val, 7, 12, CCIPR3_REG)
+#define LPUART1_SEL(val)	STM32_DOMAIN_CLOCK(val, 3, 0, CCIPR3_REG)
+#define SPI3_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 3, CCIPR3_REG)
+#define I2C3_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 6, CCIPR3_REG)
+#define LPTIM1_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 10, CCIPR3_REG)
+#define ADC_SEL(val)		STM32_DOMAIN_CLOCK(val, 7, 12, CCIPR3_REG)
 /** BCDR1 devices */
-#define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BCDR1_REG)
+#define RTC_SEL(val)		STM32_DOMAIN_CLOCK(val, 3, 8, BCDR1_REG)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WBA_CLOCK_H_ */
