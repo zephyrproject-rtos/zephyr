@@ -247,6 +247,11 @@ manifest:
       path: modules/hal/ti
       groups:
         - hal
+    - name: hal_wch
+      revision: 1de9d3e406726702ce7cfc504509a02ecc463554
+      path: modules/hal/wch
+      groups:
+        - hal
     - name: hal_wurthelektronik
       revision: e5bcb2eac1bb9639ce13b4dafc78eb254e014342
       path: modules/hal/wurthelektronik

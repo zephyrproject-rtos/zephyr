@@ -100,4 +100,6 @@ source "drivers/clock_control/Kconfig.arm_scmi"
 
 source "drivers/clock_control/Kconfig.silabs"
 
+source "drivers/clock_control/Kconfig.wch_rcc"
+
 endif # CLOCK_CONTROL

@@ -39,5 +39,6 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_ENE_KB1200 pinctrl_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_IMX_SCU pinctrl_imx_scu.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_MAX32 pinctrl_max32.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_IMX_SCMI pinctrl_imx_scmi.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_AFIO pinctrl_wch_afio.c)
 
 add_subdirectory(renesas)
