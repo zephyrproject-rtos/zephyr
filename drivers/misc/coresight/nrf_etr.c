@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/cache.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_output.h>
 #include <zephyr/logging/log_frontend_stmesp.h>
@@ -16,6 +17,7 @@
 #include <zephyr/debug/mipi_stp_decoder.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/misc/coresight/nrf_etr.h>
+#include <zephyr/drivers/serial/uart_async_rx.h>
 #include <zephyr/sys/printk.h>
 #include <dmm.h>
 #include <nrfx_tbm.h>
@@ -130,6 +132,20 @@ static const char *const hw_evts[] = {
 	"GD0 HS down", /* 30 Global domain high speed 0 down */
 	"GD0 HS down", /* 31 Global domain high speed 0 down */
 };
+
+#ifdef CONFIG_NRF_ETR_SHELL
+#define RX_BUF_SIZE \
+	(CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE * CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT)
+
+static void etr_timer_handler(struct k_timer *timer);
+K_TIMER_DEFINE(etr_timer, etr_timer_handler, NULL);
+static uint8_t rx_buf[RX_BUF_SIZE] DMM_MEMORY_SECTION(UART_NODE);
+static struct uart_async_rx async_rx;
+static atomic_t pending_rx_req;
+static const struct shell etr_shell;
+static shell_transport_handler_t shell_handler;
+static void *shell_context;
+#endif
 
 static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 {
@@ -610,6 +626,7 @@ void nrf_etr_flush(void)
 	irq_unlock(k);
 }
 
+#ifndef CONFIG_NRF_ETR_SHELL
 static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	uint64_t checkpoint = 0;
@@ -642,6 +659,7 @@ static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		k_sleep(K_MSEC(CONFIG_NRF_ETR_BACKOFF));
 	}
 }
+#endif
 
 static void uart_event_handler(const struct device *dev, struct uart_event *evt, void *user_data)
 {
@@ -653,6 +671,33 @@ static void uart_event_handler(const struct device *dev, struct uart_event *evt,
 	case UART_TX_DONE:
 		k_sem_give(&uart_sem);
 		break;
+#ifdef CONFIG_NRF_ETR_SHELL
+	case UART_RX_RDY:
+		uart_async_rx_on_rdy(&async_rx, evt->data.rx.buf, evt->data.rx.len);
+		shell_handler(SHELL_TRANSPORT_EVT_RX_RDY, shell_context);
+		break;
+	case UART_RX_BUF_REQUEST: {
+		uint8_t *buf = uart_async_rx_buf_req(&async_rx);
+		size_t len = uart_async_rx_get_buf_len(&async_rx);
+
+		if (buf) {
+			int err = uart_rx_buf_rsp(dev, buf, len);
+
+			if (err < 0) {
+				uart_async_rx_on_buf_rel(&async_rx, buf);
+			}
+		} else {
+			atomic_inc(&pending_rx_req);
+		}
+
+		break;
+	}
+	case UART_RX_BUF_RELEASED:
+		uart_async_rx_on_buf_rel(&async_rx, evt->data.rx_buf.buf);
+		break;
+	case UART_RX_DISABLED:
+		break;
+#endif /* CONFIG_NRF_ETR_SHELL */
 	default:
 		__ASSERT_NO_MSG(0);
 	}
@@ -666,7 +711,11 @@ static void tbm_event_handler(nrf_tbm_event_t event)
 		tbm_full = true;
 	}
 
+#ifdef CONFIG_NRF_ETR_SHELL
+	k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
+#else
 	k_wakeup(&etr_thread);
+#endif
 }
 
 int etr_process_init(void)
@@ -686,12 +735,178 @@ int etr_process_init(void)
 			    nrfx_isr, nrfx_tbm_irq_handler, 0);
 	irq_enable(DT_IRQN(DT_NODELABEL(tbm)));
 
-	k_thread_create(&etr_thread, etr_stack, K_KERNEL_STACK_SIZEOF(etr_stack),
-			etr_thread_func, NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
-			K_NO_WAIT);
+#ifdef CONFIG_NRF_ETR_SHELL
+	uint32_t level = CONFIG_LOG_MAX_LEVEL;
+	static const struct shell_backend_config_flags cfg_flags =
+		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
+
+	shell_init(&etr_shell, NULL, cfg_flags, true, level);
+	k_timer_start(&etr_timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_NRF_ETR_DEBUG)) {
+		err = decoder_init();
+		if (err < 0) {
+			return err;
+		}
+	}
+#else
+	k_thread_create(&etr_thread, etr_stack, K_KERNEL_STACK_SIZEOF(etr_stack), etr_thread_func,
+			NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(&etr_thread, "etr_process");
+#endif
 
 	return 0;
 }
 
 SYS_INIT(etr_process_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#ifdef CONFIG_NRF_ETR_SHELL
+
+static void etr_timer_handler(struct k_timer *timer)
+{
+	if (pending_data() >= MIN_DATA) {
+		k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
+	} else {
+		k_timer_start(timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	}
+}
+
+bool z_shell_log_backend_process(const struct shell_log_backend *backend)
+{
+	ARG_UNUSED(backend);
+
+	process();
+	k_timer_start(&etr_timer, K_MSEC(CONFIG_NRF_ETR_BACKOFF), K_NO_WAIT);
+
+	return false;
+}
+
+void z_shell_log_backend_disable(const struct shell_log_backend *backend)
+{
+	ARG_UNUSED(backend);
+}
+
+void z_shell_log_backend_enable(const struct shell_log_backend *backend, void *ctx,
+				uint32_t init_log_level)
+{
+	ARG_UNUSED(backend);
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(init_log_level);
+}
+
+static int etr_shell_write(const struct shell_transport *transport, const void *data, size_t length,
+			   size_t *cnt)
+{
+	size_t len = length;
+	uint8_t *buf = (uint8_t *)data;
+	size_t chunk_len;
+
+	do {
+		chunk_len = MIN(len, sizeof(log_output_buf));
+		len -= log_output_func(buf, chunk_len, NULL);
+		buf += chunk_len;
+	} while (len > 0);
+
+	*cnt = length;
+	shell_handler(SHELL_TRANSPORT_EVT_TX_RDY, shell_context);
+
+	return 0;
+}
+
+static int rx_enable(uint8_t *buf, size_t len)
+{
+	return uart_rx_enable(uart_dev, buf, len, 10000);
+}
+
+static int etr_shell_read(const struct shell_transport *transport, void *data, size_t length,
+			  size_t *cnt)
+{
+	uint8_t *buf;
+	size_t blen;
+	bool buf_available;
+
+	blen = uart_async_rx_data_claim(&async_rx, &buf, length);
+	memcpy(data, buf, blen);
+	buf_available = uart_async_rx_data_consume(&async_rx, blen);
+
+	*cnt = blen;
+	if (pending_rx_req && buf_available) {
+		uint8_t *buf = uart_async_rx_buf_req(&async_rx);
+		size_t len = uart_async_rx_get_buf_len(&async_rx);
+		int err;
+
+		__ASSERT_NO_MSG(buf != NULL);
+		atomic_dec(&pending_rx_req);
+		err = uart_rx_buf_rsp(uart_dev, buf, len);
+		/* If it is too late and RX is disabled then re-enable it. */
+		if (err < 0) {
+			if (err == -EACCES) {
+				pending_rx_req = 0;
+				err = rx_enable(buf, len);
+			} else {
+				return err;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int etr_shell_enable(const struct shell_transport *transport, bool blocking_tx)
+{
+	return 0;
+}
+
+static int etr_shell_uninit(const struct shell_transport *transport)
+{
+	return 0;
+}
+
+static int etr_shell_init(const struct shell_transport *transport, const void *config,
+			  shell_transport_handler_t evt_handler, void *context)
+{
+	int err;
+	uint8_t *buf;
+	static const struct uart_async_rx_config async_rx_config = {
+		.buffer = rx_buf,
+		.length = sizeof(rx_buf),
+		.buf_cnt = CONFIG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT,
+	};
+
+	shell_context = context;
+	shell_handler = evt_handler;
+	err = uart_async_rx_init(&async_rx, &async_rx_config);
+	if (err) {
+		return err;
+	}
+
+	buf = uart_async_rx_buf_req(&async_rx);
+
+	return rx_enable(buf, uart_async_rx_get_buf_len(&async_rx));
+}
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
+static void etr_shell_update(const struct shell_transport *transport)
+{
+}
+#endif
+
+const struct shell_transport_api shell_api = {
+	.init = etr_shell_init,
+	.uninit = etr_shell_uninit,
+	.enable = etr_shell_enable,
+	.write = etr_shell_write,
+	.read = etr_shell_read,
+#ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
+	.update = shell_update,
+#endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
+};
+
+static struct shell_transport transport = {
+	.api = &shell_api,
+	.ctx = NULL,
+};
+
+static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];
+Z_SHELL_DEFINE(etr_shell, CONFIG_NRF_ETR_SHELL_PROMPT, &transport, shell_out_buffer, NULL,
+	       SHELL_FLAG_OLF_CRLF);
+#endif /* CONFIG_NRF_ETR_SHELL */
