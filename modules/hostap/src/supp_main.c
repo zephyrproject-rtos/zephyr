@@ -79,9 +79,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.ap_disable = supplicant_ap_disable,
 	.ap_sta_disconnect = supplicant_ap_sta_disconnect,
 #endif /* CONFIG_AP */
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	.ap_bandwidth = supplicant_ap_bandwidth,
-#endif
 	.dpp_dispatch = supplicant_dpp_dispatch,
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
