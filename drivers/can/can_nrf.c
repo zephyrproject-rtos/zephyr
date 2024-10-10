@@ -15,9 +15,12 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 /* nRF CAN wrapper offsets */
 #define CAN_TASKS_START	  offsetof(NRF_CAN_Type, TASKS_START)
+#define CAN_TASKS_STOP	  offsetof(NRF_CAN_Type, TASKS_STOP)
 #define CAN_EVENTS_CORE_0 offsetof(NRF_CAN_Type, EVENTS_CORE[0])
 #define CAN_EVENTS_CORE_1 offsetof(NRF_CAN_Type, EVENTS_CORE[1])
 #define CAN_INTEN	  offsetof(NRF_CAN_Type, INTEN)
@@ -131,6 +134,36 @@ static const struct can_mcan_ops can_mcan_nrf_ops = {
 	.clear_mram = can_nrf_clear_mram,
 };
 
+static int can_nrf_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct can_mcan_config *mcan_config = dev->config;
+	const struct can_nrf_config *config = mcan_config->custom;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = clock_control_on(config->clock, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		sys_write32(1U, config->wrapper + CAN_TASKS_START);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		sys_write32(1U, config->wrapper + CAN_TASKS_STOP);
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
+		(void)clock_control_off(config->clock, NULL);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int can_nrf_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
@@ -141,20 +174,9 @@ static int can_nrf_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(config->clock, NULL);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		return ret;
-	}
-
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_0);
 	sys_write32(0U, config->wrapper + CAN_EVENTS_CORE_1);
 	sys_write32(CAN_INTEN_CORE0_Msk | CAN_INTEN_CORE1_Msk, config->wrapper + CAN_INTEN);
-	sys_write32(1U, config->wrapper + CAN_TASKS_START);
 
 	config->irq_configure();
 
@@ -168,11 +190,12 @@ static int can_nrf_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, can_nrf_pm_action);
 }
 
 #define CAN_NRF_DEFINE(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, can_nrf_pm_action);                                            \
                                                                                                    \
 	static inline void can_nrf_irq_configure##n(void)                                          \
 	{                                                                                          \
@@ -199,7 +222,7 @@ static int can_nrf_init(const struct device *dev)
                                                                                                    \
 	static struct can_mcan_data can_mcan_nrf_data##n = CAN_MCAN_DATA_INITIALIZER(NULL);        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                        \
+	DEVICE_DT_INST_DEFINE(n, can_nrf_init, PM_DEVICE_DT_INST_GET(n), &can_mcan_nrf_data##n,    \
 			      &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,      \
 			      &can_nrf_api);
 
