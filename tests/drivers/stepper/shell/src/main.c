@@ -62,11 +62,6 @@ ZTEST(stepper_shell, test_stepper_move)
 
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_move_fake, err);
 	zassert_equal(fake_stepper_move_fake.arg1_val, 1000, "wrong microsteps value");
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
-	zassert_not_null(fake_stepper_move_fake.arg2_val, "async poll signal not be null");
-#else
-	zassert_is_null(fake_stepper_move_fake.arg2_val, "async poll signal is null");
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
 }
 
 ZTEST(stepper_shell, test_stepper_set_max_velocity)
@@ -130,13 +125,6 @@ ZTEST(stepper_shell, test_stepper_set_target_position)
 	ASSERT_STEPPER_FUNC_CALLED(fake_stepper_set_target_position_fake, err);
 	zassert_equal(fake_stepper_set_target_position_fake.arg1_val, 200,
 		      "wrong target position value");
-#ifdef CONFIG_STEPPER_SHELL_ASYNC
-	zassert_not_null(fake_stepper_set_target_position_fake.arg2_val,
-			 "async poll signal not be null");
-#else
-	zassert_is_null(fake_stepper_set_target_position_fake.arg2_val,
-			"async poll signal is null");
-#endif /* CONFIG_STEPPER_SHELL_ASYNC */
 }
 
 ZTEST(stepper_shell, test_stepper_enable_constant_velocity_mode)
