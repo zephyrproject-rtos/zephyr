@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <errno.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
@@ -23,11 +24,13 @@
 
 #include <zephyr/settings/settings.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_vs.h>
+#include <zephyr/toolchain.h>
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #include <zephyr/drivers/bluetooth.h>
 #else
@@ -549,6 +552,17 @@ int bt_get_df_cte_type(uint8_t hci_cte_type)
 	default:
 		return BT_DF_CTE_TYPE_NONE;
 	}
+}
+
+uint8_t bt_get_hci_own_addr_type(uint8_t addr_type)
+{
+	BUILD_ASSERT(BT_ADDR_LE_PUBLIC == BT_HCI_OWN_ADDR_PUBLIC);
+	BUILD_ASSERT(BT_ADDR_LE_RANDOM == BT_HCI_OWN_ADDR_RANDOM);
+	BUILD_ASSERT(BT_ADDR_LE_PUBLIC_ID == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC);
+	BUILD_ASSERT(BT_ADDR_LE_RANDOM_ID == BT_HCI_OWN_ADDR_RPA_OR_RANDOM);
+	__ASSERT_NO_MSG(addr_type <= BT_ADDR_LE_RANDOM_ID);
+
+	return addr_type;
 }
 
 #if defined(CONFIG_BT_CONN_TX)

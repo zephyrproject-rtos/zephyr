@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
 #include <zephyr/devicetree.h>
 
 /* LL connection parameters */
@@ -479,6 +480,8 @@ uint8_t bt_get_phy(uint8_t hci_phy);
  * @return CTE type (@ref bt_df_cte_type).
  */
 int bt_get_df_cte_type(uint8_t hci_cte_type);
+/** Converts a BT_ADDR_LE_* address type to a BT_HCI_OWN_ADDR_* address type */
+uint8_t bt_get_hci_own_addr_type(uint8_t addr_type);
 
 int bt_le_create_conn(const struct bt_conn *conn);
 int bt_le_create_conn_cancel(void);
