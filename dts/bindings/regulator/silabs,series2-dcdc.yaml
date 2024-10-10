@@ -1,0 +1,63 @@
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs Series 2 DC-DC converter
+
+compatible: "silabs,series2-dcdc"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-boot-on
+      - regulator-allow-bypass
+      - regulator-initial-mode
+      - regulator-init-microvolt
+
+properties:
+  reg:
+    required: true
+
+  regulator-boot-on:
+    description: |
+      Enable DC-DC converter at boot. If not set, the DC-DC converter
+      is powered off.
+
+  regulator-allow-bypass:
+    description: |
+      Enable bypass mode. If combined with `regulator-boot-on`,
+      the DC-DC converter is initialized to bypass mode.
+
+  regulator-initial-mode:
+    description: |
+      Operating mode. Allowed values are:
+        - 0: buck mode
+        - 1: boost mode
+    enum: [0, 1]
+
+  regulator-init-microvolt:
+    description: |
+      Output voltage for boost mode. Not used in buck mode.
+    enum:
+      - 1800000
+      - 1900000
+      - 2000000
+      - 2100000
+      - 2200000
+      - 2300000
+      - 2400000
+
+  silabs,pfmx-peak-current-microamp:
+    type: int
+    description: Peak current draw in PFMX mode.
+    enum:
+      - 50000
+      - 65000
+      - 73000
+      - 80000
+      - 86000
+      - 93000
+      - 100000
+      - 106000
+      - 113000
+      - 120000

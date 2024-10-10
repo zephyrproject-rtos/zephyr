@@ -6,8 +6,15 @@ if SOC_FAMILY_SILABS_S2
 config SOC_FAMILY_SILABS_S2
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select BUILD_OUTPUT_HEX
+	select SOC_PREP_HOOK
 	select SOC_EARLY_INIT_HOOK
 
 rsource "*/Kconfig"
+
+config ARM_SECURE_FIRMWARE
+	default y
+
+config HW_HAS_SILABS_DCDC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_SILABS_SERIES2_DCDC))
 
 endif
