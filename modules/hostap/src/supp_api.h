@@ -61,16 +61,6 @@ int supplicant_disconnect(const struct device *dev);
 int supplicant_status(const struct device *dev, struct wifi_iface_status *status);
 
 /**
- * @brief
- *
- * @param dev: Wi-Fi interface name to use
- * @param state: connection state info to fill
- *
- * @return: 0 for OK; -1 for ERROR
- */
-int supplicant_wpa_state(const struct device *dev, int *state);
-
-/**
  * @brief Request a scan
  *
  * @param dev Wi-Fi interface name to use
