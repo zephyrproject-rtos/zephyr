@@ -212,3 +212,11 @@
   transform: none;
   text-decoration: underline;
 }
+
+#family,
+#series,
+#soc {
+  overflow: auto;
+  padding: 10px 18px;
+  border-radius: 8px;
+}

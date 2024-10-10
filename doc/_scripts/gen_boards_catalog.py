@@ -5,7 +5,7 @@ import logging
 from collections import namedtuple
 from pathlib import Path
 
-import list_boards
+import list_boards, list_hardware
 import pykwalify
 import yaml
 import zephyr_module
@@ -14,6 +14,7 @@ from gen_devicetree_rest import VndLookup
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 logger = logging.getLogger(__name__)
+
 
 def guess_file_from_patterns(directory, patterns, name, extensions):
     for pattern in patterns:
@@ -77,6 +78,16 @@ def get_catalog():
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    systems = list_hardware.find_v2_systems(args_find_boards)
+
+    all_socs = {}
+    for soc in systems.get_socs():
+        all_socs[soc.name] = {
+            "name": soc.name,
+            "series": soc.series,
+            "family": soc.family,
+        }
+
     board_catalog = {}
 
     for board in boards:
@@ -98,6 +109,8 @@ def get_catalog():
                     archs.add(board_data.get("arch"))
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
+
+        socs = {soc.name for soc in board.socs}
 
         full_name = board.full_name
         doc_page = guess_doc_page(board)
@@ -121,7 +134,37 @@ def get_catalog():
             "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
             "vendor": vendor,
             "archs": list(archs),
+            "socs": list(socs),
             "image": guess_image(board),
         }
 
-    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor}
+    # re-arrange socs so that the structure is family -> series -> soc. Some socs are not part of a
+    # series or family (it may be "" or None), so handle that too
+    new_socs = {}
+    for soc in all_socs.values():
+        family = (
+            soc["family"] if soc["family"] is not None and soc["family"] != "" else "<no family>"
+        )
+        series = (
+            soc["series"] if soc["series"] is not None and soc["series"] != "" else "<no series>"
+        )
+
+        if family not in new_socs:
+            new_socs[family] = {}
+        if series not in new_socs[family]:
+            new_socs[family][series] = []
+        new_socs[family][series].append(soc["name"])
+
+    # sort each level of the hierarchy alphabetically (family, series, soc). The <no family> and
+    # <no series> entries should always be put at the end of their respective levels
+    sorted_socs = {}
+    for family, series in sorted(new_socs.items()):
+        sorted_socs[family] = {}
+        for series, socs in sorted(series.items()):
+            sorted_socs[family][series] = sorted(socs)
+        if "<no series>" in sorted_socs[family]:
+            sorted_socs[family]["<no series>"] = sorted_socs[family].pop("<no series>")
+    if "<no family>" in sorted_socs:
+        sorted_socs["<no family>"] = sorted_socs.pop("<no family>")
+
+    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor, "socs": sorted_socs}
