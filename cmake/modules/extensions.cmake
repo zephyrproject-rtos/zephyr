@@ -3658,7 +3658,8 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>...)
+#   build_info(<tag>... VALUE <value>... )
+#   build_info(<tag>... PATH  <path>... )
 #
 # This function populates updates the build_info.yml info file with exchangable build information
 # related to the current build.
@@ -3675,11 +3676,20 @@ endfunction()
 # <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
 #           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
 # VALUE <value>... : value(s) to place in the build_info.yml file.
+# PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
+#                   style. If no conversion is required, for example when paths are already
+#                   guaranteed to be CMake style, then VALUE can also be used.
 function(build_info)
+  set(convert_path FALSE)
   set(arg_list ${ARGV})
   list(FIND arg_list VALUE index)
   if(index EQUAL -1)
-    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE")
+    list(FIND arg_list PATH index)
+    set(convert_path TRUE)
+  endif()
+
+  if(index EQUAL -1)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) missing a required argument: VALUE or PATH")
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3696,6 +3706,15 @@ function(build_info)
   list(SUBLIST arg_list 0 ${index} keys)
   list(SUBLIST arg_list ${index} -1 values)
   list(POP_FRONT values)
+
+  if(convert_path)
+    set(converted_values)
+    foreach(val ${values})
+      cmake_path(SET cmake_path "${val}")
+      list(APPEND converted_values "${cmake_path}")
+    endforeach()
+    set(values "${converted_values}")
+  endif()
 
   if(ARGV0 STREQUAL "vendor-specific")
     set(type VALUE)
