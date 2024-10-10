@@ -97,6 +97,16 @@ tests:
       - openthread
     platform_allow: frdm_kw41z
     filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+  sample.net.sockets.echo_client.rw612_openthread_rcp_host:
+    extra_args: OVERLAY_CONFIG="overlay-ot-rcp-host-nxp.conf"
+    slow: true
+    tags:
+      - net
+      - openthread
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+    filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
   sample.net.sockets.echo_client.userspace:
     extra_args:
       - CONFIG_USERSPACE=y
