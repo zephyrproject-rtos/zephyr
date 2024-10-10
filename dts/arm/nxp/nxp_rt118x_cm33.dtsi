@@ -10,9 +10,9 @@
 
 / {
 	soc {
-		itcm: itcm@1FFE0000 {
+		itcm: itcm@1ffe0000 {
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
-			reg = <0x1FFE0000 DT_SIZE_K(128)>;
+			reg = <0x1ffe0000 DT_SIZE_K(128)>;
 			zephyr,memory-region = "ITCM";
 		};
 

@@ -1,0 +1,25 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX NETC Physical Station Interface (PSI)
+
+compatible: "nxp,imx-netc-psi"
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  phy-handle:
+    required: true
+
+  mac-index:
+    required: true
+    type: int
+    description: The MAC index of this PSI.
+
+  si-index:
+    required: true
+    type: int
+    description: The SI index of this PSI.

@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(mdio_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define DT_DRV_COMPAT espressif_esp32_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_netc_emdio)
 #define DT_DRV_COMPAT nxp_s32_netc_emdio
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_netc_emdio)
+#define DT_DRV_COMPAT nxp_imx_netc_emdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_s32_gmac_mdio)
 #define DT_DRV_COMPAT nxp_s32_gmac_mdio
 #elif DT_HAS_COMPAT_STATUS_OKAY(adi_adin2111_mdio)

@@ -30,6 +30,26 @@
 	};
 };
 
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy4: phy@3 {
+		compatible = "ethernet-phy";
+		reg = <0x3>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth4_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy4>;
+	status = "okay";
+};
+
 &lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
