@@ -1,0 +1,22 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Output Terminal representing the data going out of the device.
+
+compatible: "zephyr,uvc-control-output"
+
+include: base.yaml
+
+properties:
+
+  control-target:
+    type: phandle
+    description: |
+      Device that will receive the start/stop signals from the host, and
+      receives the format negotiated from the host.
+
+  source-entity:
+    type: phandle
+    required: true
+    description: |
+      Last entity of the chain before the output of the device.

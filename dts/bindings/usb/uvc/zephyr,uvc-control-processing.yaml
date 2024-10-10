@@ -1,0 +1,16 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Processing Unit controls for the Image Signal Processor (ISP)
+
+compatible: "zephyr,uvc-control-processing"
+
+include: "zephyr,uvc-control.yaml"
+
+properties:
+
+  source-entity:
+    type: phandle
+    required: true
+    description: |
+      Entity connected as input to the ISP.

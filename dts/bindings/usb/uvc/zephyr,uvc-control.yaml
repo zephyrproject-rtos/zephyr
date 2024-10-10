@@ -1,0 +1,19 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# USB Video Class control common properties.
+
+include: base.yaml
+
+properties:
+
+  control-target:
+    type: phandle
+    description: |
+      Reference to a video device which these controls affect.
+
+  source-entity:
+    type: phandle
+    required: true
+    description: |
+      Points to the entity that controls the data source to the current control.

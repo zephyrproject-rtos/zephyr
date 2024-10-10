@@ -1,0 +1,29 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  UVC Extension Unit for custom vendor-specific controls
+
+  Extension units can have any number of input pins specified by
+  "source-entity", and the control-target device is going to receive
+  controls IDs such as VIDEO_CTRL_CLASS_VENDOR + N where N is the
+  UVC control selector number.
+
+compatible: "zephyr,uvc-control-xu"
+
+include: "zephyr,uvc-control.yaml"
+
+properties:
+
+  control-num:
+    type: int
+    required: true
+    description: |
+      Number of controls enabled, with control codes 0x00, 0x01, 0x02, 0x03...
+
+  guid:
+    type: uint8-array
+    required: true
+    description: |
+      GUID that identifies the control block and let the host know what
+      kind of extension this is about.

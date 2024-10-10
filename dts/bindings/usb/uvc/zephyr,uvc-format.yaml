@@ -1,0 +1,35 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# USB Video Class format common properties.
+
+include: base.yaml
+
+properties:
+  fourcc:
+    type: string
+    description: |
+      The four-character string that uniquely identifies a pixel format.
+      This must be matching the definition on "include/zephyr/drivers/video.h".
+    required: true
+
+child-binding:
+  description: |
+    Enumeration of all frame dimensions supported for this format.
+
+  properties:
+
+    size:
+      type: array
+      description: |
+        Frame width and size in pixel, from which can be deduced the
+        frame size since this is an uncompressed format.
+      required: true
+
+    max-fps:
+      type: int
+      description: |
+        Maximum FPS that can be sustained by theh device for this frame format.
+        The actual FPS might be lower if the host throttles the transfer, or if
+        it desires to receive frames less fast.
+      required: true

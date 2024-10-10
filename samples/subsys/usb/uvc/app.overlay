@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/usb/video.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+	};
+};
+
+&usb_cdc_acm_uart {
+	status = "disabled";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	uvc_0: uvc {
+		compatible = "zephyr,uvc";
+
+		/* This builds a control chain to explain the organization
+		 * of the video system to the host, changing the topology
+		 * here will not affect how the firmware works itself, but
+		 * will affect how it is described to the host, and which
+		 * video device receives the controls.
+		 */
+		uvc0it: input_terminal {
+			compatible = "zephyr,uvc-control-it";
+		};
+		uvc0ot: output_terminal {
+			compatible = "zephyr,uvc-control-ot";
+			source-entity = <&uvc0it>;
+		};
+
+		format_uncompressed {
+			compatible = "zephyr,uvc-format-uncompressed";
+			fourcc = "YUYV";
+			guid = [UVC_GUID_YUY2];
+			bits-per-pixel = <16>;
+
+			qVGA {
+				size = <60 60>;
+				max-fps = <15>;
+			};
+		};
+	};
+};

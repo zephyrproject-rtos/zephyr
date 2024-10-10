@@ -1,0 +1,23 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Selector Unit controls for choosing one of several sources
+
+compatible: "zephyr,uvc-control-selector"
+
+include: "base.yaml"
+
+properties:
+
+  control-target:
+    type: phandle
+    required: true
+    description: |
+      Reference to a video device which controls the source selection.
+
+  source-entities:
+    type: phandle-array
+    required: true
+    description: |
+      Entities connected as input to the Selector Unit.
+      The target video device will receive the host's source switch requests.

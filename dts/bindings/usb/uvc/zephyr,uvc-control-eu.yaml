@@ -1,0 +1,70 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Encoding Unit controls for the compression engine
+
+compatible: "zephyr,uvc-control-eu"
+
+include: "zephyr,uvc-control.yaml"
+
+properties:
+
+  control-select-layer:
+    type: boolean
+
+  control-profile-toolset:
+    type: boolean
+
+  control-video-resolution:
+    type: boolean
+
+  control-min-frame-interval:
+    type: boolean
+
+  control-slice-mode:
+    type: boolean
+
+  control-rate-control-mode:
+    type: boolean
+
+  control-average-bitrate:
+    type: boolean
+
+  control-cpb-size:
+    type: boolean
+
+  control-peak-bit-rate:
+    type: boolean
+
+  control-quantization-params:
+    type: boolean
+
+  control-sync-ref-frame:
+    type: boolean
+
+  control-ltr-buffer:
+    type: boolean
+
+  control-ltr-picture:
+    type: boolean
+
+  control-ltr-validation:
+    type: boolean
+
+  control-level-idc-limit:
+    type: boolean
+
+  control-sei-payloadtype:
+    type: boolean
+
+  control-qp-range:
+    type: boolean
+
+  control-priority:
+    type: boolean
+
+  control-start-or-stop-layer:
+    type: boolean
+
+  control-error-resiliency:
+    type: boolean

@@ -1,0 +1,25 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class list of supported uncompressed frame formats.
+
+compatible: "zephyr,uvc-format-uncompressed"
+
+include: zephyr,uvc-format.yaml
+
+properties:
+
+  guid:
+    type: uint8-array
+    description: |
+      A GUID identifier that identifies the frame format. A list of GUIDs can
+      be found in "include/zephyr/dt-bindings/usb/video.h" already encoded.
+    required: true
+
+  bits-per-pixel:
+    type: int
+    description: |
+      Number of bit for one pixel. This must match the pixel format specified
+      by the GUID.
+    required: true

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Extension Unit for custom vendor-specific controls
+
+compatible: "zephyr,uvc-control-extension"
+
+include: "zephyr,uvc-control.yaml"
+
+properties:
+
+  source-entities:
+    type: phandle-array
+    required: true
+    description: |
+      Entities connected as input to the Extension Unit.
+      The relation between controls and the source(s) is implementation-specific.

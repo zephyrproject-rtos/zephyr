@@ -1,0 +1,82 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Input Terminal for controlling image sensors
+
+compatible: "zephyr,uvc-control-ct"
+
+include: "base.yaml"
+
+properties:
+
+  control-target:
+    type: phandle
+    description: |
+      Video device that will receive the camera control requests from the host
+      as set_ctrl() and get_ctrl() API calls.
+
+  control-scanning-mode:
+    type: boolean
+
+  control-ae-mode:
+    type: boolean
+
+  control-ae-priority:
+    type: boolean
+
+  control-exposure-time-absolute:
+    type: boolean
+    description: |
+      Enable controls for the camera exposure time.
+      Sent to control-target as VIDEO_CID_CAMERA_EXPOSURE
+
+  control-exposure-time-relative:
+    type: boolean
+
+  control-focus-absolute:
+    type: boolean
+
+  control-focus-relative:
+    type: boolean
+
+  control-focus-auto:
+    type: boolean
+
+  control-focus-simple:
+    type: boolean
+
+  control-iris-absolute:
+    type: boolean
+
+  control-iris-relative:
+    type: boolean
+
+  control-zoom-absolute:
+    type: boolean
+    description: |
+      Enable controls for the camera zoom, assuming a zoom motor present.
+      Sent to control-target as VIDEO_CID_CAMERA_ZOOM
+
+  control-zoom-relative:
+    type: boolean
+
+  control-pantilt-absolute:
+    type: boolean
+
+  control-pantilt-relative:
+    type: boolean
+
+  control-roll-absolute:
+    type: boolean
+
+  control-roll-relative:
+    type: boolean
+
+  control-privacy:
+    type: boolean
+
+  control-window:
+    type: boolean
+
+  control-region-of-interest:
+    type: boolean

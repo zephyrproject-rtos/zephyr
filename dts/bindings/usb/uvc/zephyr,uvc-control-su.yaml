@@ -1,0 +1,8 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Selector Unit controls for choosing one of several sources
+
+compatible: "zephyr,uvc-control-su"
+
+include: "zephyr,uvc-control.yaml"

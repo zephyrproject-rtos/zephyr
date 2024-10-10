@@ -1,0 +1,70 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Processing Unit controls for the Image Signal Processor (ISP)
+
+compatible: "zephyr,uvc-control-pu"
+
+include: "zephyr,uvc-control.yaml"
+
+properties:
+
+  control-backlight-compensation:
+    type: boolean
+
+  control-brightness:
+    type: boolean
+    description: |
+      Enable controls for image brightness level tuning.
+      Sent to control-target as VIDEO_CID_CAMERA_BRIGHTNESS
+
+  control-contrast:
+    type: boolean
+    description: |
+      Enable controls for image contrast tuning.
+      Sent to control-target as VIDEO_CID_CAMERA_CONTRAST
+
+  control-gain:
+    type: boolean
+    description: |
+      Enable controls for overall gain tuning, combined digital and analog.
+      Sent to control-target as VIDEO_CID_CAMERA_GAIN
+
+  control-power-line-frequency:
+    type: boolean
+
+  control-hue:
+    type: boolean
+
+  control-saturation:
+    type: boolean
+    description: |
+      Enable controls for the image color saturation tuning.
+      Sent to control-target as VIDEO_CID_CAMERA_SATURATION
+
+  control-sharpness:
+    type: boolean
+
+  control-gamma:
+    type: boolean
+
+  control-white-balance-temperature:
+    type: boolean
+    description: |
+      Enable controls for .
+      Sent to control-target as VIDEO_CID_CAMERA_WHITE_BAL
+
+  control-white-balance-component:
+    type: boolean
+
+  control-digital-multiplier:
+    type: boolean
+
+  control-digital-multiplier-limit:
+    type: boolean
+
+  control-analog-video-standard:
+    type: boolean
+
+  control-analog-lock-status:
+    type: boolean

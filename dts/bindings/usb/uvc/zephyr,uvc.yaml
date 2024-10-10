@@ -1,0 +1,84 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class instance
+
+  Child nodes of "zephyr,uvc" compatibles are supposed to be:
+  - First, Video Control entities, with a compatible = "zephry,uvc-control-...";
+  - Then, Video Streaming entities, with a compatible = "zephyr,uvc-format-...";
+
+  The position of the Video Control entities determines their ID on the USB
+  descriptors. The last UVC Control entity must be an Output Terminal with a
+  compatible = "zephyr,uvc-control-ot";
+
+  Example: USB UVC Control allowing tuning of the exposure at the image sensor
+  level, and tuning of the gain with an Image Signal Processor (ISP) core.
+  There are two format types, each declaring their own frame sizes.
+
+  #include <zephyr/dt-bindings/usb/video.h>
+
+  uvc0 {
+    compatible = "zephyr,uvc";
+
+    uvc0ct: camera_terminal {
+      compatible = "zephyr,uvc-control-ct";
+      control-ae-mode;
+      control-exposure-time-absolute;
+      control-target = <&imx219>;
+    };
+
+    uvc0pu: processing_unit {
+      compatible = "zephyr,uvc-control-pu";
+      control-gain;
+      control-target = <&isp0>;
+      source-entity = <&uvc0ct>;
+    };
+
+    uvc0ot: output_terminal {
+      compatible = "zephyr,uvc-control-ot";
+      control-target = <&uvcmanager>;
+      source-entity = <&uvc0pu>;
+    };
+
+    format_uncompressed {
+      compatible = "zephyr,uvc-format-uncompressed";
+      fourcc = "YUYV";
+      guid = [UVC_GUID_YUY2];
+      bits-per-pixel = <16>;
+
+      FHD {
+        size = <1920 1080>;
+        max-fps = <87>;
+      };
+
+      VGA {
+        size = <640 480>;
+        max-fps = <589>;
+      };
+
+      QVGA {
+        size = <320 240>;
+        max-fps = <2347>;
+      };
+    };
+
+    format_mjpeg {
+      compatible = "zephyr,uvc-format-mjpeg";
+      fourcc = "JPEG";
+
+      4K {
+        size = <3840 2160>;
+        max-fps = <22>;
+      };
+
+      FHD {
+        size = <1920 1080>;
+        max-fps = <87>;
+      };
+    };
+  };
+
+compatible: "zephyr,uvc"
+
+on-bus: usb

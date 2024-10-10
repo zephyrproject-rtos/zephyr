@@ -1,0 +1,8 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: UVC Output Terminal representing the data going out of the device.
+
+compatible: "zephyr,uvc-control-ot"
+
+include: "zephyr,uvc-control.yaml"
