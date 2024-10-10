@@ -439,7 +439,7 @@ static int cmd_bap_broadcast_assistant_add_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!VALID_BIS_SYNC(bis_sync)) {
+		if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -667,7 +667,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_id(const struct shell *sh,
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (!VALID_BIS_SYNC(bis_sync)) {
+		} else if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -735,7 +735,7 @@ static int cmd_bap_broadcast_assistant_add_broadcast_name(const struct shell *sh
 			shell_error(sh, "failed to parse bis_sync: %d", err);
 
 			return -ENOEXEC;
-		} else if (!VALID_BIS_SYNC(bis_sync)) {
+		} else if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
@@ -836,7 +836,7 @@ static int cmd_bap_broadcast_assistant_mod_src(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (!VALID_BIS_SYNC(bis_sync)) {
+		if (!BT_BAP_BASS_VALID_BIT_BITFIELD(bis_sync)) {
 			shell_error(sh, "Invalid bis_sync: %lu", bis_sync);
 
 			return -ENOEXEC;
