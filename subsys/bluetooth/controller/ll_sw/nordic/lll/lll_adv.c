@@ -1343,10 +1343,17 @@ static void isr_done(void *param)
 
 		lll_aux = lll->aux;
 		if (lll_aux) {
-			(void)ull_adv_aux_lll_offset_fill(pdu,
-							  lll_aux->ticks_pri_pdu_offset,
-							  lll_aux->us_pri_pdu_offset,
-							  start_us);
+			struct pdu_adv_aux_ptr *aux_ptr;
+
+			aux_ptr = ull_adv_aux_lll_offset_fill(pdu,
+						  lll_aux->ticks_pri_pdu_offset,
+						  lll_aux->us_pri_pdu_offset,
+						  start_us);
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT)
+			ull_adv_aux_lll_offset_constant_update(lll_aux,
+							       aux_ptr);
+#endif /* CONFIG_BT_CTLR_ADV_AUX_OFFSET_CONSTANT */
 		}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		ARG_UNUSED(pdu);
