@@ -4,28 +4,24 @@
 # Common fields for panel timings
 # inherited from Linux panel bindings.
 
-description: |
-  Common timing settings for display panels. These timings can be added to
-  a panel under display-timings node. For example:
-
-  &lcdif {
-    display-timings {
-      compatible = "zephyr,panel-timing";
-      hsync-len = <8>;
-      hfront-porch = <32>;
-      hback-porch = <32>;
-      vsync-len = <2>;
-      vfront-porch = <16>;
-      vback-porch = <14>;
-      hsync-active = <0>;
-      vsync-active = <0>;
-      de-active = <1>;
-      pixelclk-active = <0>;
-      clock-frequency = <62346240>;
-    };
-  };
-
-compatible: "zephyr,panel-timing"
+#  Common timing settings for display panels. These timings can be added to
+#  a panel under display-timings node. For example:
+#
+#  &lcdif {
+#    display-timings {
+#      hsync-len = <8>;
+#      hfront-porch = <32>;
+#      hback-porch = <32>;
+#      vsync-len = <2>;
+#      vfront-porch = <16>;
+#      vback-porch = <14>;
+#      hsync-active = <0>;
+#      vsync-active = <0>;
+#      de-active = <1>;
+#      pixelclk-active = <0>;
+#      clock-frequency = <62346240>;
+#    };
+#  };
 
 properties:
   clock-frequency:

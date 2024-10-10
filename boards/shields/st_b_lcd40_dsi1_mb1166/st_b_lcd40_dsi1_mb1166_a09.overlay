@@ -41,7 +41,6 @@
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	/* frida, nt35510 */
 	display-timings {
-		compatible = "zephyr,panel-timing";
 		hsync-active = <0>;
 		vsync-active = <0>;
 		de-active = <0>;
