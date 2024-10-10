@@ -1,0 +1,2 @@
+config BOARD_RP2040_ZERO
+	select SOC_RP2040
