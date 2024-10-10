@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-#
-# Copyright (c) 2024 Christophe Dufaza
+# Copyright (c) 2024, Christophe Dufaza
 
 """Unit tests dedicated to edtlib.Binding objects initialization.
 
@@ -1006,6 +1005,135 @@ def test_bindings_propspecs_consistency() -> None:
 
     binding = load_binding("test-bindings-init/diamond.yaml")
     verify_binding_propspecs_consistency(binding)
+
+def test_binding_propspecs_last_modified() -> None:
+    """Verify the Last Modified Here semantic of PropertySpec.path.
+    This test verifies the binding level.
+    """
+    binding = load_binding("test-bindings-init/base_inherit.yaml")
+    # All properties are inherited without modifications.
+    assert all(
+        "base.yaml" == _basename(propspec.path)
+        for propspec in binding.prop2specs.values()
+    )
+
+    binding = load_binding("test-bindings-init/base_amend.yaml")
+    assert all(
+        "base.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in (
+            "prop-default",
+            "prop-const",
+            "prop-req",
+        )
+    )
+    assert all(
+        "base_amend.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in (
+            # Amended.
+            "prop-1",
+            "prop-2",
+            "prop-enum",
+            # New.
+            "prop-new",
+        )
+    )
+
+    binding = load_binding("test-bindings-init/diamond.yaml")
+    assert "base.yaml" == _basename(binding.prop2specs["prop-default"].path)
+    assert all(
+        "thing.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("prop-1", "prop-thing")
+    )
+    assert all(
+        "diamond.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("prop-enum", "prop-diamond")
+    )
+
+def test_child_binding_propspecs_last_modified() -> None:
+    """Verify the Last Modified Here semantic of PropertySpec.path.
+    This test verifies the child-binding level.
+    """
+    binding = child_binding_of("test-bindings-init/base_inherit.yaml")
+    # All properties are inherited without modifications.
+    assert all(
+        _basename(propspec.path) == "base.yaml"
+        for propspec in binding.prop2specs.values()
+    )
+
+    binding = child_binding_of("test-bindings-init/base_amend.yaml")
+    assert all(
+        _basename(binding.prop2specs[prop].path) == "base.yaml"
+        for prop in (
+            "child-prop-default",
+            "child-prop-const",
+            "child-prop-req",
+        )
+    )
+    assert all(
+        _basename(binding.prop2specs[prop].path) == "base_amend.yaml"
+        for prop in (
+            "child-prop-1",
+            "child-prop-2",
+            "child-prop-enum",
+            "child-prop-new",
+        )
+    )
+
+    binding = child_binding_of("test-bindings-init/diamond.yaml")
+    assert "base.yaml" == _basename(
+        binding.prop2specs["child-prop-default"].path
+    )
+    assert all(
+        "thing.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("child-prop-1", "child-prop-thing")
+    )
+    assert all(
+        "diamond.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("child-prop-enum", "child-prop-diamond")
+    )
+
+def test_grandchild_binding_propspecs_last_modified() -> None:
+    """Verify the Last Modified Here semantic of PropertySpec.path.
+    This test verifies the grandchild-binding level.
+    """
+    binding = grandchild_binding_of("test-bindings-init/base_inherit.yaml")
+    # All properties are inherited without modifications.
+    assert all(
+        _basename(propspec.path) == "base.yaml"
+        for propspec in binding.prop2specs.values()
+    )
+
+    binding = grandchild_binding_of("test-bindings-init/base_amend.yaml")
+    assert all(
+        _basename(binding.prop2specs[prop].path) == "base.yaml"
+        for prop in (
+            "grandchild-prop-default",
+            "grandchild-prop-const",
+            "grandchild-prop-req",
+        )
+    )
+    assert all(
+        _basename(binding.prop2specs[prop].path) == "base_amend.yaml"
+        for prop in (
+            "grandchild-prop-1",
+            "grandchild-prop-2",
+            "grandchild-prop-enum",
+            "grandchild-prop-new",
+        )
+    )
+
+    binding = grandchild_binding_of("test-bindings-init/diamond.yaml")
+    assert "base.yaml" == _basename(
+        binding.prop2specs["grandchild-prop-default"].path
+    )
+    assert all(
+        "thing.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("grandchild-prop-1", "grandchild-prop-thing")
+    )
+    assert all(
+        "diamond.yaml" == _basename(binding.prop2specs[prop].path)
+        for prop in ("grandchild-prop-enum", "grandchild-prop-diamond")
+    )
 
 
 # Borrowed from test_edtlib.py.
