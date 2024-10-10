@@ -25,9 +25,6 @@ config HCI_NXP_ENABLE_AUTO_SLEEP
 config HCI_NXP_SET_CAL_DATA
 	default y
 
-config MAIN_STACK_SIZE
-	default 1280
-
 endif # BT
 
 config NXP_MONOLITHIC_WIFI
