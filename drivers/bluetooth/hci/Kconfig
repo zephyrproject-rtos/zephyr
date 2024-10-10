@@ -74,6 +74,7 @@ config BT_STM32WBA
 	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR
+	select TAINT_BLOBS
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
