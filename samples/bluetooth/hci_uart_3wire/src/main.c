@@ -182,6 +182,7 @@ static void process_unack(void)
 {
 	uint8_t next_seq = h5.tx_seq;
 	uint8_t number_removed = unack_queue_len;
+	bool acked = false;
 
 	if (!unack_queue_len) {
 		return;
@@ -224,7 +225,15 @@ static void process_unack(void)
 		net_buf_unref(buf);
 		unack_queue_len--;
 		number_removed--;
+
+		acked = true;
 	}
+
+	if (!acked) {
+		return;
+	}
+
+	k_poll_signal_raise(&tx_queue_change, 0);
 }
 
 static void h5_print_header(const uint8_t *hdr, const char *str)
