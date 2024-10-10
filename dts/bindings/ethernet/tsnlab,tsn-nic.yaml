@@ -1,3 +1,5 @@
+# Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
+# SPDX-License-Identifier: Apache-2.0
 
 description: TSN NIC Ethernet driver
 
