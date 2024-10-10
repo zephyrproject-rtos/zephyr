@@ -990,6 +990,17 @@ The ``--device-flash-with-test`` option indicates that on the platform
 the flash operation also executes a test scenario, so the flash timeout is
 increased by a test scenario timeout.
 
+Special hardware preliminary
+++++++++++++++++++++++++++++
+
+Some hardware related tests need special arrangements like additional
+hardware or specific pins shortend to a differend signal. To advertise these
+conditions and that tests can safely be executed, a list of `Fixtures`_ can be
+provided. A recommended way to deal with these *Fixtures* is to use and extend
+a hardware map described in `Executing tests on multiple devices`_ below.
+
+.. include:: twister/hardware-fixtures.rst
+
 Executing tests on multiple devices
 ===================================
 
