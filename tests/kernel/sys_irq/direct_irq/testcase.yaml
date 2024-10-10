@@ -1,0 +1,11 @@
+tests:
+  kernel.sys_irq.direct_irq:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet
+  kernel.sys_irq.direct_irq.lto:
+    extra_configs:
+      - CONFIG_LTO=y
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340dk/nrf5340/cpunet

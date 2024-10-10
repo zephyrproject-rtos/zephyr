@@ -244,7 +244,7 @@
 			reg = <0x41016000 0x1000>;
 			cc-num = <4>;
 			interrupts = <22 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "disabled";
+			status = "reserved";
 		};
 
 		timer1: timer@41018000 {
@@ -362,6 +362,7 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+	interrupt-lines = <30>;
 };
 
 &systick {
