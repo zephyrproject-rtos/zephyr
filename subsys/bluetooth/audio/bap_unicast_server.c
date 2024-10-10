@@ -29,29 +29,15 @@ LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVE
 
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
-int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param)
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param,
+				   const struct bt_bap_unicast_server_cb *cb)
 {
-	if (param == NULL) {
+	int err;
+
+	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
-
-	return bt_ascs_register(param->snk_cnt, param->src_cnt);
-}
-
-int bt_bap_unicast_server_unregister(void)
-{
-	if (unicast_server_cb != NULL) {
-		LOG_DBG("Callbacks are still registered");
-		return -EAGAIN;
-	}
-
-	return bt_ascs_unregister();
-}
-
-int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
-{
-	int err;
 
 	CHECKIF(cb == NULL) {
 		LOG_DBG("cb is NULL");
@@ -63,6 +49,11 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 		return -EALREADY;
 	}
 
+	err = bt_ascs_register(param->snk_cnt, param->src_cnt);
+	if (err != 0) {
+		return err;
+	}
+
 	err = bt_ascs_init(cb);
 	if (err != 0) {
 		return err;
@@ -70,7 +61,18 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 
 	unicast_server_cb = cb;
 
-	return 0;
+
+	return err;
+}
+
+int bt_bap_unicast_server_unregister(void)
+{
+	if (unicast_server_cb != NULL) {
+		LOG_DBG("Callbacks are still registered");
+		return -EAGAIN;
+	}
+
+	return bt_ascs_unregister();
 }
 
 int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb)
