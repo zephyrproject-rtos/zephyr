@@ -438,7 +438,7 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 	param.streams = streams;
 	param.count = stream_cnt;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
-	param.release = true;
+	param.release = (cp->flags & BTP_CAP_UNICAST_AUDIO_STOP_FLAG_RELEASE) != 0;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
