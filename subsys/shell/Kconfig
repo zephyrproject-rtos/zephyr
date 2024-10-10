@@ -277,6 +277,13 @@ config SHELL_LOG_BACKEND
 	  using the shell backend's LOG_LEVEL option
 	  (e.g. CONFIG_SHELL_TELNET_INIT_LOG_LEVEL_NONE=y).
 
+config SHELL_LOG_BACKEND_CUSTOM
+	bool "Use custom backend implementation"
+	help
+	  When enabled, standard implementation of shell log backend is not included.
+	  It allows to provide custom implementation of multiplexing logging messages
+	  with shell data.
+
 config SHELL_LOG_FORMAT_TIMESTAMP
 	bool "Format timestamp"
 	default y
