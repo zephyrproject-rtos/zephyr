@@ -4,6 +4,7 @@ common:
     - sensors
   platform_allow:
     - native_sim
+    - nucleo_f746zg
   build_only: true
 tests:
   drivers.fpga.build:

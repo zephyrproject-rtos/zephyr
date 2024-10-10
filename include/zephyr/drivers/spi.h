@@ -676,6 +676,12 @@ typedef void (*spi_api_iodev_submit)(const struct device *dev,
 typedef int (*spi_api_release)(const struct device *dev,
 			       const struct spi_config *config);
 
+/**
+ * @typedef spi_api_apply_default_pin_state
+ * @brief Callback API for applying the default pin state of a SPI device.
+ * See spi_apply_default_pin_state() for argument descriptions
+ */
+typedef int (*spi_api_apply_default_pin_state)(const struct device *dev);
 
 /**
  * @brief SPI driver API
@@ -690,6 +696,7 @@ __subsystem struct spi_driver_api {
 	spi_api_iodev_submit iodev_submit;
 #endif /* CONFIG_SPI_RTIO */
 	spi_api_release release;
+	spi_api_apply_default_pin_state apply_default_pin_state;
 };
 
 /**
@@ -1133,6 +1140,48 @@ static inline int z_impl_spi_release(const struct device *dev,
 static inline int spi_release_dt(const struct spi_dt_spec *spec)
 {
 	return spi_release(spec->bus, &spec->config);
+}
+
+
+/**
+ * @brief Apply the default pin state
+ *
+ * This applies the default pin state for the SPI. It might be used
+ * if other devices have reconfigured the pins to a different setup,
+ * for instance to do bitbanging on them.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ *
+ * @retval 0 If successful.
+ * @retval -errno Negative errno code on failure.
+ */
+__syscall int spi_apply_default_pin_state(const struct device *dev);
+
+static inline int z_impl_spi_apply_default_pin_state(const struct device *dev)
+{
+	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
+
+	if (api->apply_default_pin_state == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->apply_default_pin_state(dev);
+}
+
+/**
+ * @brief Apply the default pin state for the SPI device specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_apply_default_pin_state(spec->bus)
+ *
+ * @param spec SPI specification from devicetree
+ *
+ * @return a value from spi_apply_default_pin_state().
+ */
+static inline int spi_apply_default_pin_state_dt(const struct spi_dt_spec *spec)
+{
+	return spi_apply_default_pin_state(spec->bus);
 }
 
 #ifdef __cplusplus
