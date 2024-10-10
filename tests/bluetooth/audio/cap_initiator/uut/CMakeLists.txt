@@ -13,6 +13,7 @@ add_library(uut STATIC
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/cap_initiator.c
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/cap_common.c
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/cap_stream.c
+  ${ZEPHYR_BASE}/subsys/bluetooth/audio/ccid.c
   ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
   ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
   ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
