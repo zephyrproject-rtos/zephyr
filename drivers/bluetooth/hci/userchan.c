@@ -111,6 +111,9 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 
 	switch (type) {
 	case BT_HCI_H4_CMD: {
+		if (buf_len < header_len + BT_HCI_CMD_HDR_SIZE) {
+			return 0;
+		}
 		const struct bt_hci_cmd_hdr *cmd = (const struct bt_hci_cmd_hdr *)hdr;
 
 		/* Parameter Total Length */
@@ -119,6 +122,9 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 		break;
 	}
 	case BT_HCI_H4_ACL: {
+		if (buf_len < header_len + BT_HCI_ACL_HDR_SIZE) {
+			return 0;
+		}
 		const struct bt_hci_acl_hdr *acl = (const struct bt_hci_acl_hdr *)hdr;
 
 		/* Data Total Length */
@@ -127,6 +133,9 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 		break;
 	}
 	case BT_HCI_H4_SCO: {
+		if (buf_len < header_len + BT_HCI_SCO_HDR_SIZE) {
+			return 0;
+		}
 		const struct bt_hci_sco_hdr *sco = (const struct bt_hci_sco_hdr *)hdr;
 
 		/* Data_Total_Length */
@@ -135,6 +144,9 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 		break;
 	}
 	case BT_HCI_H4_EVT: {
+		if (buf_len < header_len + BT_HCI_EVT_HDR_SIZE) {
+			return 0;
+		}
 		const struct bt_hci_evt_hdr *evt = (const struct bt_hci_evt_hdr *)hdr;
 
 		/* Parameter Total Length */
@@ -143,6 +155,9 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 		break;
 	}
 	case BT_HCI_H4_ISO: {
+		if (buf_len < header_len + BT_HCI_ISO_HDR_SIZE) {
+			return 0;
+		}
 		const struct bt_hci_iso_hdr *iso = (const struct bt_hci_iso_hdr *)hdr;
 
 		/* ISO_Data_Load_Length parameter */
@@ -157,7 +172,7 @@ static int32_t hci_packet_complete(const uint8_t *buf, uint16_t buf_len)
 	}
 
 	/* Request more data */
-	if (buf_len < header_len || buf_len - header_len < payload_len) {
+	if (buf_len < header_len + payload_len) {
 		return 0;
 	}
 
