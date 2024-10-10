@@ -1180,3 +1180,11 @@ Code samples
       A flag to include a search box right above the listing. The search box allows users to filter
       the listing by code sample name/description, which can be useful for categories with a large
       number of samples. This option is only available in the HTML builder.
+
+Boards
+======
+
+.. rst:directive:: .. zephyr:board-catalog::
+
+   This directive is used to generate a catalog of Zephyr-supported boards that can be used to
+   quickly browse the list of all supported boards and filter them according to various criteria.
