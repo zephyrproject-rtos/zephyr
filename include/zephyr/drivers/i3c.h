@@ -639,13 +639,11 @@ __subsystem struct i3c_driver_api {
 	 *
 	 * @param dev Pointer to controller device driver instance.
 	 * @param target Pointer to target device descriptor.
-	 * @param addr Address to attach with
 	 *
 	 * @return See i3c_attach_i3c_device()
 	 */
 	int (*attach_i3c_device)(const struct device *dev,
-			struct i3c_device_desc *target,
-			uint8_t addr);
+			struct i3c_device_desc *target);
 
 	/**
 	 * I3C Address Update
@@ -865,10 +863,28 @@ __subsystem struct i3c_driver_api {
 	 * @param len Length of the buffer
 	 * @param hdr_mode HDR mode
 	 *
-	 * @return See i3c_target_tx_write()
+	 * @return @see i3c_target_tx_write()
 	 */
 	int (*target_tx_write)(const struct device *dev,
 				 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+
+	/**
+	 * ACK or NACK controller handoffs
+	 *
+	 * This will tell the target to ACK or NACK controller handoffs
+	 * from the CCC GETACCCR
+	 *
+	 * Target device only API.
+	 *
+	 * @see i3c_target_controller_handoff()
+	 *
+	 * @param dev Pointer to the controller device driver instance.
+	 * @param accept True to ACK controller handoffs, False to NACK.
+	 *
+	 * @return See i3c_target_controller_handoff()
+	 */
+	int (*target_controller_handoff)(const struct device *dev,
+				      bool accept);
 };
 
 /**
@@ -922,7 +938,8 @@ struct i3c_device_desc {
 	const struct device * const dev;
 
 	/** Device Provisioned ID */
-	const uint64_t pid:48;
+	/* TODO: bring back the bitfield */
+	const uint64_t pid;
 
 	/**
 	 * Static address for this target device.
@@ -1020,6 +1037,9 @@ struct i3c_device_desc {
 		uint8_t max_ibi;
 	} data_length;
 
+	/** Controller Handoff Delay Parameters */
+	uint8_t crhdly1;
+
 	/** Describes advanced (Target) capabilities and features */
 	struct {
 		union {
@@ -1071,6 +1091,28 @@ struct i3c_device_desc {
 		 */
 		uint8_t getcap4;
 	} getcaps;
+
+	/* Describes Controller Feature Capabilities */
+	struct {
+		/**
+		 * CRCAPS1
+		 * - Bit[0]: Hot-Join Support
+		 * - Bit[1]: Group Management Support
+		 * - Bit[2]: Multi-Lane Support
+		 * - Bit[7:3]: Reserved
+		 */
+		uint8_t crcaps1;
+
+		/**
+		 * CRCAPS2
+		 * - Bit[0]: In-Band Interrupt Support
+		 * - Bit[1]: Controller Pass-Back
+		 * - Bit[2]: Deep Sleep Capable
+		 * - Bit[3]: Delayed Controller Handoff
+		 * - Bit[7:4]: Reserved
+		 */
+		uint8_t crcaps2;
+	} crcaps;
 
 	/** @cond INTERNAL_HIDDEN */
 	/**
@@ -1204,6 +1246,12 @@ struct i3c_driver_data {
 
 	/** Attached I3C/I2C devices and addresses */
 	struct i3c_dev_attached_list attached_dev;
+
+	/** Received DEFTGTS Pointer */
+	struct i3c_ccc_deftgts *deftgts;
+
+	/** DEFTGTS refreshed */
+	bool deftgts_refreshed;
 };
 
 /**
@@ -1272,21 +1320,6 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
  */
 struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr);
-
-/**
- * @brief Helper function to find the default address an i3c device is attached with
- *
- * This is a helper function to find the default address the
- * device will be loaded with. This could be either it's static
- * address, a requested dynamic address, or just a dynamic address
- * that is available
- * @param[in] target The pointer of the device descriptor
- * @param[out] addr Address to be assigned to target device.
- *
- * @retval 0 if successful.
- * @retval -EINVAL if the expected default address is already in use
- */
-int i3c_determine_default_addr(struct i3c_device_desc *target, uint8_t *addr);
 
 /**
  * @brief Helper function to find a usable address during ENTDAA.
@@ -2146,6 +2179,43 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_deftgts(const struct device *dev);
+
+/**
+ * @brief Calculate odd parity
+ *
+ * Calculate the Odd Parity of a Target Address.
+ *
+ * @param p The 7b target dynamic address
+ *
+ * @return The odd parity bit
+ */
+uint8_t i3c_odd_parity(uint8_t p);
+
+/**
+ * @brief Perform Controller Handoff
+ *
+ * This performs the controller handoff according to 5.1.7.1 of
+ * I3C v1.1.1 Specification.
+ *
+ * @param target I3C target device descriptor.
+ * @param requested True if the target requested the Handoff, False if
+ * the active controller is passing it to a secondary controller
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ * @retval -EBUSY Target cannot accept Controller Handoff
+ */
+int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
+
+void i3c_sec_handoffed(struct k_work *work);
+
+struct i3c_device_desc *i3c_alloc_i3c_device_desc(void);
+void i3c_free_i3c_device_desc(struct i3c_device_desc *desc);
+bool i3c_is_common_i3c_device_desc(struct i3c_device_desc *desc);
+
+struct i3c_i2c_device_desc *i3c_alloc_i3c_i2c_device_desc(void);
+void i3c_free_i3c_i2c_device_desc(struct i3c_i2c_device_desc *desc);
+bool i3c_is_common_i3c_i2c_device_desc(struct i3c_i2c_device_desc *desc);
 
 /*
  * This needs to be after declaration of struct i3c_driver_api,

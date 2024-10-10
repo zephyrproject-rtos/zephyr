@@ -218,12 +218,60 @@ struct i3c_target_callbacks {
 	 * @return Ignored.
 	 */
 	int (*stop_cb)(struct i3c_target_config *config);
+
+	/**
+	 * @brief Function called when an active controller handoffs controlership
+	 * to this target.
+	 *
+	 * This function is invoked by the active controller when it handoffs
+	 * controllership to this target. This can happen wither the target has
+	 * requested it or if the active controller chooses to handoff to the
+	 * controller capable target.
+	 *
+	 * @param config Configuration structure associated with the
+	 *               device to which the operation is addressed.
+	 *
+	 * @return Ignored.
+	 */
+	int (*controller_handoff_cb)(struct i3c_target_config *config);
 };
 
 __subsystem struct i3c_target_driver_api {
 	int (*driver_register)(const struct device *dev);
 	int (*driver_unregister)(const struct device *dev);
 };
+
+/**
+ * @brief Writes to the target's TX FIFO
+ *
+ * Write to the TX FIFO @p dev I3C bus driver using the provided
+ * buffer and length. Some I3C targets will NACK read requests until data
+ * is written to the TX FIFO. This function will write as much as it can
+ * to the FIFO return the total number of bytes written. It is then up to
+ * the application to utalize the target callbacks to write the remaining
+ * data. Negative returns indicate error.
+ *
+ * Most of the existing hardware allows simultaneous support for master
+ * and target mode. This is however not guaranteed.
+ *
+ * @param dev Pointer to the device structure for an I3C controller
+ *            driver configured in target mode.
+ * @param accept True to ACK controller handoffs, False to NACK
+ *
+ * @retval 0 Is successful
+ */
+static inline int i3c_target_controller_handoff(const struct device *dev,
+				      bool accept)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->target_controller_handoff == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->target_controller_handoff(dev, accept);
+}
 
 /**
  * @brief Writes to the target's TX FIFO
