@@ -14,7 +14,7 @@ import pytest
 import sys
 import json
 
-from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock  # pylint: disable = no-name-in-module
 from twisterlib.testplan import TestPlan
 
 
@@ -27,6 +27,7 @@ class TestPlatform:
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 9,
+                'executed_test_instances': 6,
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
@@ -46,6 +47,7 @@ class TestPlatform:
             {
                 'selected_test_scenarios': 1,
                 'selected_test_instances': 3,
+                'executed_test_instances': 0,
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
@@ -188,7 +190,7 @@ class TestPlatform:
                 ['qemu_x86', 'qemu_x86_64'],
                 {
                     'passed_configurations': 3,
-                    'selected_test_instances': 6,
+                    'executed_test_instances': 3,
                     'executed_on_platform': 2,
                     'only_built': 1,
                 }
@@ -214,7 +216,7 @@ class TestPlatform:
         sys.stderr.write(err)
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed'
+                     r' (?P<test_instances>[0-9]+) executed test configurations passed'
 
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
@@ -226,7 +228,7 @@ class TestPlatform:
         assert int(pass_search.group('passed_configurations')) == \
                expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
+               expected['executed_test_instances']
 
         built_search = re.search(built_regex, err, re.MULTILINE)
 
@@ -264,16 +266,25 @@ class TestPlatform:
                        r' (?P<skipped_at_runtime>[0-9]+) at runtime\)\.$'
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
-                     r' (?P<test_instances>[0-9]+) test configurations passed' \
+                     r' (?P<executed_test_instances>[0-9]+) executed test configurations passed' \
                      r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
-                     r' (?P<skipped_configurations>[0-9]+) skipped with' \
-                     r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
+                     r' with (?:[0-9]+|no) warnings in [0-9]+\.[0-9]+ seconds.$'
 
-        case_regex = r'^INFO    - In total (?P<executed_test_cases>[0-9]+)' \
-                     r' test cases were executed, (?P<skipped_test_cases>[0-9]+) skipped' \
-                     r' on (?P<platform_count>[0-9]+) out of total [0-9]+ platforms' \
-                     r' \([0-9]+\.[0-9]+%\)$'
+        case_regex = r'^INFO    - (?P<passed_cases>[0-9]+) of' \
+                     r' (?P<executed_test_cases>[0-9]+) executed test cases passed' \
+                     r' \([0-9]+\.[0-9]+%\)' \
+                     r'(?:, (?P<blocked_cases>[0-9]+) blocked)?' \
+                     r'(?:, (?P<failed_cases>[0-9]+) failed)?' \
+                     r'(?:, (?P<errored_cases>[0-9]+) errored)?' \
+                     r'(?:, (?P<none_cases>[0-9]+) without a status)?' \
+                     r' on (?P<platform_count>[0-9]+) out of total' \
+                     r' (?P<total_platform_count>[0-9]+) platforms \([0-9]+\.[0-9]+%\)'
+
+        skip_regex = r'(?P<skipped_test_cases>[0-9]+) selected test cases not executed:' \
+                     r'(?: (?P<skipped_cases>[0-9]+) skipped)?' \
+                     r'(?:, (?P<filtered_cases>[0-9]+) filtered)?' \
+                     r'.'
 
         built_regex = r'^INFO    - (?P<executed_on_platform>[0-9]+)' \
                       r' test configurations executed on platforms, (?P<only_built>[0-9]+)' \
@@ -302,24 +313,29 @@ class TestPlatform:
         assert pass_search
         assert int(pass_search.group('passed_configurations')) == \
                expected['passed_configurations']
-        assert int(pass_search.group('test_instances')) == \
-               expected['selected_test_instances']
-        assert int(pass_search.group('failed_configurations')) == \
-               expected['failed_configurations']
-        assert int(pass_search.group('errored_configurations')) == \
-               expected['errored_configurations']
-        assert int(pass_search.group('skipped_configurations')) == \
-               expected['skipped_configurations']
+        assert int(pass_search.group('executed_test_instances')) == \
+               expected['executed_test_instances']
+        if expected['failed_configurations']:
+            assert int(pass_search.group('failed_configurations')) == \
+                   expected['failed_configurations']
+        if expected['errored_configurations']:
+            assert int(pass_search.group('errored_configurations')) == \
+                   expected['errored_configurations']
 
         case_search = re.search(case_regex, err, re.MULTILINE)
 
         assert case_search
         assert int(case_search.group('executed_test_cases')) == \
                expected['executed_test_cases']
-        assert int(case_search.group('skipped_test_cases')) == \
-               expected['skipped_test_cases']
         assert int(case_search.group('platform_count')) == \
                expected['platform_count']
+
+        if expected['skipped_test_cases']:
+            skip_search = re.search(skip_regex, err, re.MULTILINE)
+
+            assert skip_search
+            assert int(skip_search.group('skipped_test_cases')) == \
+                   expected['skipped_test_cases']
 
         built_search = re.search(built_regex, err, re.MULTILINE)
 
