@@ -551,11 +551,21 @@ Shell
 JWT (JSON Web Token)
 ====================
 
-* By default, the signature is now computed through PSA Crypto API for both RSA and ECDSA.
-  The newly-added :kconfig:option:`CONFIG_JWT_USE_LEGACY` can be used to switch
-  back to previous libraries (TinyCrypt for ECDSA and Mbed TLS for RSA).
-  The conversion to the PSA Crypto API is being done in preparation for the
-  deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
+* By default, the signature is now computed using the PSA Crypto API for both RSA and ECDSA
+  (:github:`78243`). The conversion to the PSA Crypto API is part of the adoption
+  of a standard interface for crypto operations (:github:`43712`). Moreover,
+  following the deprecation of the TinyCrypt library (:github:`79566`), usage
+  of TinyCrypt was removed from the JWT subsystem (:github:`79653`).
+
+* The following new symbols were added to allow specifying both the signature
+  algorithm and crypto library:
+
+  * :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA` (default) RSA signature using the PSA Crypto API;
+  * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` RSA signature using Mbed TLS;
+  * :kconfig:option:`CONFIG_JWT_SIGN_ECDSA_PSA` ECDSA signature using the PSA Crypto API.
+
+  They replace the previously-existing Kconfigs ``CONFIG_JWT_SIGN_RSA`` and
+  ``CONFIG_JWT_SIGN_ECDSA``. (:github:`79653`)
 
 Architectures
 *************
