@@ -17,3 +17,7 @@ psutil
 
 # used for CAN <=> host testing
 python-can>=4.3.0
+
+# used for mcumgr SMP testing
+anyio
+smpclient

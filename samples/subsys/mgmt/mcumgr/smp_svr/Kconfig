@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Marcin Niestroj
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Set HAS_FLASH_LOAD_OFFSET to make SMP implementation build and handle image
+# upload.
+config NATIVE_SIM_LOAD_OFFSET
+	bool
+	select HAS_FLASH_LOAD_OFFSET
+	default y if BOARD_NATIVE_SIM
+
+source "Kconfig.zephyr"
