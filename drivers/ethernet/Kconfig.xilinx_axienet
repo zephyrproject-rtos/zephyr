@@ -1,0 +1,15 @@
+#
+#Xilinx AXI 1G / 2.5G Ethernet Subsystem
+#
+#Copyright(c) 2024, CISPA Helmholtz Center for Information Security
+#SPDX-License-Identifier: Apache-2.0
+#
+
+config ETH_XILINX_AXIENET
+	bool "Xilinx AXI Ethernet Driver"
+	default y
+	depends on DT_HAS_XLNX_AXI_ETHERNET_7_2_ENABLED || DT_HAS_XLNX_AXI_ETHERNET_1_00_A_ENABLED
+	depends on DT_HAS_XLNX_ETH_DMA_ENABLED && DMA_XILINX_AXI_DMA
+	help
+		Enable Xilinx 1G / 2.5G AXI Ethernet driver,
+		commonly found on FPGAs.
