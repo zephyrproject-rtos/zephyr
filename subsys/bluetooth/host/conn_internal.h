@@ -249,7 +249,7 @@ struct bt_conn {
 	/* Completed TX for which we need to call the callback */
 	sys_slist_t		tx_complete;
 #if defined(CONFIG_BT_CONN_TX)
-	struct k_work           tx_complete_work;
+	struct k_work           tx_notify_work;
 #endif /* CONFIG_BT_CONN_TX */
 
 	/* Active L2CAP channels */

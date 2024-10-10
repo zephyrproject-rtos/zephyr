@@ -605,7 +605,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			atomic_dec(&conn->in_ll);
 
 			/* TX context free + callback happens in there */
-			k_work_submit(&conn->tx_complete_work);
+			k_work_submit(&conn->tx_notify_work);
 		}
 
 		bt_conn_unref(conn);

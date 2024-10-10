@@ -74,7 +74,7 @@ static void conn_tx_destroy(struct bt_conn *conn, struct bt_conn_tx *tx)
 }
 
 #if defined(CONFIG_BT_CONN_TX)
-static void tx_complete_work(struct k_work *work);
+static void tx_notify_work(struct k_work *work);
 #endif /* CONFIG_BT_CONN_TX */
 
 static void notify_recycled_conn_slot(void);
@@ -256,8 +256,20 @@ static void tx_free(struct bt_conn_tx *tx)
 #if defined(CONFIG_BT_CONN_TX)
 static void tx_notify(struct bt_conn *conn)
 {
-	__ASSERT_NO_MSG(k_current_get() ==
-			k_work_queue_thread_get(&k_sys_work_q));
+	/* Always run from the system workqueue, both as a
+	 * synchronization mechanism, and to ensure a
+	 * predictable stack size for the callbacks.
+	 */
+	if (k_current_get() != k_work_queue_thread_get(&k_sys_work_q)) {
+		struct k_work_sync sync;
+		int err;
+
+		err = k_work_submit(&conn->tx_notify_work);
+		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
+
+		k_work_flush(&conn->tx_notify_work, &sync);
+		return;
+	}
 
 	LOG_DBG("conn %p", conn);
 
@@ -324,7 +336,7 @@ struct bt_conn *bt_conn_new(struct bt_conn *conns, size_t size)
 	k_work_init_delayable(&conn->deferred_work, deferred_work);
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CONN_TX)
-	k_work_init(&conn->tx_complete_work, tx_complete_work);
+	k_work_init(&conn->tx_notify_work, tx_notify_work);
 #endif /* CONFIG_BT_CONN_TX */
 
 	return conn;
@@ -443,19 +455,7 @@ static void wait_for_tx_work(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_CONN_TX)
 	LOG_DBG("conn %p", conn);
-
-	if (IS_ENABLED(CONFIG_BT_RECV_WORKQ_SYS) ||
-	    k_current_get() == k_work_queue_thread_get(&k_sys_work_q)) {
-		tx_notify(conn);
-	} else {
-		struct k_work_sync sync;
-		int err;
-
-		err = k_work_submit(&conn->tx_complete_work);
-		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
-
-		k_work_flush(&conn->tx_complete_work, &sync);
-	}
+	tx_notify(conn);
 	LOG_DBG("done");
 #else
 	ARG_UNUSED(conn);
@@ -466,9 +466,6 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 {
 	/* Make sure we notify any pending TX callbacks before processing
 	 * new data for this connection.
-	 *
-	 * Always do so from the same context for sanity. In this case that will
-	 * be the system workqueue.
 	 */
 	wait_for_tx_work(conn);
 
@@ -1629,12 +1626,10 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 }
 
 #if defined(CONFIG_BT_CONN_TX)
-static void tx_complete_work(struct k_work *work)
+static void tx_notify_work(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn,
-					    tx_complete_work);
-
-	LOG_DBG("conn %p", conn);
+					    tx_notify_work);
 
 	tx_notify(conn);
 }
