@@ -1149,7 +1149,6 @@ static void bt_ready(int err)
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
-	bt_le_scan_cb_unregister(&scan_callbacks);
 	bt_le_scan_cb_register(&scan_callbacks);
 #endif
 
