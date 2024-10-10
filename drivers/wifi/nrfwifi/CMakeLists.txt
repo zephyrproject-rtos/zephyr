@@ -166,25 +166,14 @@ else()
       ------------------------------------------------------------------------")
   endif()
 
-  zephyr_compile_definitions(
-    -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
+  set(gen_inc_dir ${ZEPHYR_BINARY_DIR}/misc/generated)
+  zephyr_include_directories(${gen_inc_dir})
+  set(gen_dir ${gen_inc_dir}/nrf70_fw_patch)
+  generate_inc_file_for_target(
+    nrfwifi
+    ${NRF70_PATCH}
+    ${gen_dir}/nrf70.bin.inc
   )
-
-  # Rebuild fw_load.c whenever the firmware binary changes
-  # a bit crude way to do it, but it works
-  add_custom_command(
-    OUTPUT ${CMAKE_SOURCE_DIR}/src/fw_load.c
-    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_SOURCE_DIR}/src/fw_load.c
-    DEPENDS ${NRF70_PATCH}
-    COMMENT "Checking firmware blobs ${NRF70_PATCH}"
-  )
-
-  add_custom_target(
-    check_firmware_blobs ALL
-    DEPENDS ${CMAKE_SOURCE_DIR}/src/fw_load.c
-  )
-
-  add_dependencies(nrfwifi check_firmware_blobs)
 endif()
 
 
