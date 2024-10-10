@@ -4,7 +4,7 @@
 
 config PROFILING_PERF
 	bool "Perf support"
-	depends on !SMP
+	depends on MP_MAX_NUM_CPUS = 1
 	depends on SHELL
 	depends on PROFILING_PERF_HAS_BACKEND
 	help
