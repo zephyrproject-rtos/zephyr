@@ -502,7 +502,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"anon-id", required_argument, 0, 'a'},
 		{"key-passwd", required_argument, 0, 'K'},
 		{"suiteb-type", required_argument, 0, 'S'},
-		{"TLS-cipher", required_argument, 0, 'T'},
 		{"eap-version", required_argument, 0, 'V'},
 		{"eap-identity", required_argument, 0, 'I'},
 		{"eap-password", required_argument, 0, 'P'},
@@ -529,7 +528,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->mfp = WIFI_MFP_OPTIONAL;
 	params->eap_ver = 1;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:T:V:I:P:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:K:S:V:I:P:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -652,9 +651,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'S':
 			params->suiteb_type = atoi(optarg);
-			break;
-		case 'T':
-			params->TLS_cipher = atoi(optarg);
 			break;
 		case 'V':
 			params->eap_ver = atoi(optarg);
@@ -3030,7 +3026,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
 		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192.\n"
-		  "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K.\n"
 		  "[-V, --eap-version]: 0 or 1.\n"
 		  "[-I, --eap-identity]: Client Identity.\n"
 		  "[-P, --eap-password]: Client Password.\n"

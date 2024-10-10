@@ -92,15 +92,6 @@ enum wifi_suiteb_type {
 	WIFI_SUITEB_192,
 };
 
-enum wifi_eap_tls_cipher_type {
-	/** EAP TLS with NONE */
-	WIFI_EAP_TLS_NONE,
-	/** EAP TLS with ECDH & ECDSA with p384 */
-	WIFI_EAP_TLS_ECC_P384,
-	/** EAP TLS with ECDH & RSA with > 3K */
-	WIFI_EAP_TLS_RSA_3K,
-};
-
 /** gropu cipher and pairwise cipher types. */
 enum wifi_cipher_type {
 	WPA_CAPA_ENC_WEP40,
