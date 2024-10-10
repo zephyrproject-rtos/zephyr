@@ -13,12 +13,10 @@
 #define SCMI_CLK_CONFIG_EA_MASK GENMASK(23, 16)
 
 struct scmi_clock_attributes_reply {
-	int32_t status;
 	uint32_t attributes;
 };
 
 struct scmi_clock_rate_set_reply {
-	int32_t status;
 	uint32_t rate[2];
 };
 
@@ -52,10 +50,6 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return ret;
 	}
 
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-
 	*rate = reply_buffer.rate[0];
 
 	return 0;
@@ -65,7 +59,6 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 			  struct scmi_clock_config *cfg)
 {
 	struct scmi_message msg, reply;
-	int status, ret;
 
 	/* sanity checks */
 	if (!proto || !cfg) {
@@ -97,19 +90,10 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	msg.content = cfg;
 
 	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	reply.len = 0;
+	reply.content = NULL;
 
-	ret = scmi_send_message(proto, &msg, &reply);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
-	return 0;
+	return scmi_send_message(proto, &msg, &reply);
 }
 
 int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attributes)
@@ -140,10 +124,6 @@ int scmi_clock_protocol_attributes(struct scmi_protocol *proto, uint32_t *attrib
 	ret = scmi_send_message(proto, &msg, &reply);
 	if (ret < 0) {
 		return ret;
-	}
-
-	if (reply_buffer.status != 0) {
-		return scmi_status_to_errno(reply_buffer.status);
 	}
 
 	*attributes = reply_buffer.attributes;

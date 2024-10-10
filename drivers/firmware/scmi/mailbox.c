@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/firmware/scmi/protocol.h>
 #include "mailbox.h"
 
 LOG_MODULE_REGISTER(scmi_mbox);
@@ -50,10 +51,16 @@ static int scmi_mbox_read_message(const struct device *transport,
 				  struct scmi_message *msg)
 {
 	struct scmi_mbox_channel *mbox_chan;
+	int ret;
 
 	mbox_chan = chan->data;
 
-	return scmi_shmem_read_message(mbox_chan->shmem, msg);
+	ret = scmi_shmem_read_message(mbox_chan->shmem, msg);
+	if (!ret && msg->status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(msg->status);
+	}
+
+	return ret;
 }
 
 static bool scmi_mbox_channel_is_free(const struct device *transport,
@@ -63,6 +70,12 @@ static bool scmi_mbox_channel_is_free(const struct device *transport,
 
 	return scmi_shmem_channel_status(mbox_chan->shmem) &
 		SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+}
+
+static uint16_t scmi_mbox_channel_get_token(const struct device *transport,
+					    struct scmi_channel *chan)
+{
+	return 0;
 }
 
 static int scmi_mbox_setup_chan(const struct device *transport,
@@ -109,6 +122,7 @@ static struct scmi_transport_api scmi_mbox_api = {
 	.send_message = scmi_mbox_send_message,
 	.read_message = scmi_mbox_read_message,
 	.channel_is_free = scmi_mbox_channel_is_free,
+	.channel_get_token = scmi_mbox_channel_get_token,
 };
 
 DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,

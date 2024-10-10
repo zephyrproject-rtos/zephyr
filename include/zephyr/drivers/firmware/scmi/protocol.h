@@ -17,6 +17,25 @@
 #include <stdint.h>
 #include <errno.h>
 
+#define SCMI_MAX_STR_SIZE        64
+#define SCMI_SHORT_NAME_MAX_SIZE 16
+
+/**
+ * @brief SCMI message header definitions
+ */
+#define SCMI_MSG_ID_MASK             GENMASK(7, 0)
+#define SCMI_MSG_XTRACT_ID(hdr)      (uint8_t)FIELD_GET(SCMI_MSG_ID_MASK, (hdr))
+#define SCMI_MSG_TYPE_MASK           GENMASK(9, 8)
+#define SCMI_MSG_XTRACT_TYPE(hdr)    (uint8_t)FIELD_GET(SCMI_MSG_TYPE_MASK, (hdr))
+#define SCMI_MSG_TYPE_COMMAND        0
+#define SCMI_MSG_TYPE_DELAYED_RESP   2
+#define SCMI_MSG_TYPE_NOTIFICATION   3
+#define SCMI_MSG_PROTOCOL_ID_MASK    GENMASK(17, 10)
+#define SCMI_MSG_XTRACT_PROT_ID(hdr) (uint8_t)FIELD_GET(SCMI_MSG_PROTOCOL_ID_MASK, (hdr))
+#define SCMI_MSG_TOKEN_ID_MASK       GENMASK(27, 18)
+#define SCMI_MSG_XTRACT_TOKEN(hdr)   (uint16_t)FIELD_GET(SCMI_MSG_TOKEN_ID_MASK, (hdr))
+#define SCMI_MSG_TOKEN_MAX           (SCMI_MSG_XTRACT_TOKEN(SCMI_MSG_TOKEN_ID_MASK) + 1)
+
 /**
  * @brief Build an SCMI message header
  *
@@ -28,11 +47,9 @@
  * @param proto protocol ID
  * @param token message token
  */
-#define SCMI_MESSAGE_HDR_MAKE(id, type, proto, token)	\
-	(SCMI_FIELD_MAKE(id, GENMASK(7, 0), 0)     |	\
-	 SCMI_FIELD_MAKE(type, GENMASK(1, 0), 8)   |	\
-	 SCMI_FIELD_MAKE(proto, GENMASK(7, 0), 10) |	\
-	 SCMI_FIELD_MAKE(token, GENMASK(9, 0), 18))
+#define SCMI_MESSAGE_HDR_MAKE(id, type, proto, token)                                              \
+	(FIELD_PREP(SCMI_MSG_ID_MASK, id) | FIELD_PREP(SCMI_MSG_TYPE_MASK, type) |                 \
+	 FIELD_PREP(SCMI_MSG_PROTOCOL_ID_MASK, proto) | FIELD_PREP(SCMI_MSG_TOKEN_ID_MASK, token))
 
 struct scmi_channel;
 
@@ -67,6 +84,21 @@ enum scmi_status_code {
 };
 
 /**
+ * @brief SCMI protocol version
+ *
+ * Protocol versioning uses a 32-bit unsigned integer, where
+ * - the upper 16 bits are the major revision;
+ * - the lower 16 bits are the minor revision.
+ *
+ */
+struct scmi_protocol_version {
+	/** major protocol revision */
+	uint16_t minor;
+	/** minor protocol revision */
+	uint16_t major;
+};
+
+/**
  * @struct scmi_protocol
  *
  * @brief SCMI protocol structure
@@ -90,6 +122,7 @@ struct scmi_protocol {
 struct scmi_message {
 	uint32_t hdr;
 	uint32_t len;
+	int32_t status;
 	void *content;
 };
 
@@ -118,5 +151,18 @@ int scmi_status_to_errno(int scmi_status);
  */
 int scmi_send_message(struct scmi_protocol *proto,
 		      struct scmi_message *msg, struct scmi_message *reply);
+
+/**
+ * @brief Get SCMI protocol version
+ *
+ * Generic function to get SCMI protocol version which is common operation for all protocols.
+ *
+ * @param proto pointer to SCMI protocol
+ * @param ver pointer to SCMI protocol version structure
+ *
+ * @retval 0 if successful
+ * @retval negative errno on failure
+ */
+int scmi_core_get_version(struct scmi_protocol *proto, struct scmi_protocol_version *ver);
 
 #endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */

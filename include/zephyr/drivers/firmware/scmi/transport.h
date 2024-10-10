@@ -82,8 +82,10 @@ struct scmi_transport_api {
 			    struct scmi_message *msg);
 	bool (*channel_is_free)(const struct device *transport,
 				struct scmi_channel *chan);
+	bool (*channel_is_polling)(const struct device *transport, struct scmi_channel *chan);
 	struct scmi_channel *(*request_channel)(const struct device *transport,
 						uint32_t proto, bool tx);
+	uint16_t (*channel_get_token)(const struct device *transport, struct scmi_channel *chan);
 };
 
 /**
@@ -258,6 +260,51 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
 	}
 
 	return api->channel_is_free(transport, chan);
+}
+
+/**
+ * @brief Check if an SCMI channel is in polling mode
+ *
+ * @param transport pointer to the device structure for
+ * the transport layer
+ * @param chan pointer to SCMI channel the query is to be
+ * performed on
+ *
+ * @retval true if channel is in polling mode
+ */
+static inline bool scmi_transport_channel_is_polling(const struct device *transport,
+						     struct scmi_channel *chan)
+{
+	const struct scmi_transport_api *api = (const struct scmi_transport_api *)transport->api;
+
+	if (!api || !api->channel_is_polling) {
+		return false;
+	}
+
+	return api->channel_is_polling(transport, chan);
+}
+
+/**
+ * @brief Get actual token value from channel.
+ *
+ * @param transport pointer to the device structure for
+ * the transport layer
+ * @param chan pointer to SCMI channel the query is to be
+ * performed on
+ *
+ * @retval The token value to be used in SCMI message header. The each call should return value
+ * differ from previous one, for example continuously incremented.
+ */
+static inline uint16_t scmi_transport_channel_get_token(const struct device *transport,
+							struct scmi_channel *chan)
+{
+	const struct scmi_transport_api *api = (const struct scmi_transport_api *)transport->api;
+
+	if (!api || !api->channel_get_token) {
+		return -ENOSYS;
+	}
+
+	return api->channel_get_token(transport, chan);
 }
 
 /**

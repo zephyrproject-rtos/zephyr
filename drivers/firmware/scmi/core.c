@@ -91,7 +91,12 @@ static int scmi_send_message_pre_kernel(struct scmi_protocol *proto,
 					struct scmi_message *msg,
 					struct scmi_message *reply)
 {
+	uint16_t token;
 	int ret;
+
+	token = scmi_transport_channel_get_token(proto->transport, proto->tx);
+	msg->hdr |= FIELD_PREP(SCMI_MSG_TOKEN_ID_MASK, token);
+	reply->hdr = msg->hdr;
 
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
@@ -120,6 +125,7 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 					 struct scmi_message *msg,
 					 struct scmi_message *reply)
 {
+	uint16_t token;
 	int ret = 0;
 
 	if (!proto->tx) {
@@ -133,17 +139,27 @@ static int scmi_send_message_post_kernel(struct scmi_protocol *proto,
 		return ret;
 	}
 
+	token = scmi_transport_channel_get_token(proto->transport, proto->tx);
+	msg->hdr |= FIELD_PREP(SCMI_MSG_TOKEN_ID_MASK, token);
+	reply->hdr = msg->hdr;
+
 	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
 	if (ret < 0) {
 		LOG_ERR("failed to send message");
 		goto out_release_mutex;
 	}
 
-	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to wait for msg reply");
-		goto out_release_mutex;
+	if (!scmi_transport_channel_is_polling(proto->transport, proto->tx)) {
+		/* only one protocol instance can wait for a message reply at a time */
+		ret = k_sem_take(&proto->tx->sem, K_USEC(SCMI_CHAN_SEM_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to wait for msg reply");
+			goto out_release_mutex;
+		}
+	} else {
+		while (!scmi_transport_channel_is_free(proto->transport, proto->tx)) {
+			k_cpu_idle();
+		}
 	}
 
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
@@ -211,4 +227,55 @@ int scmi_core_transport_init(const struct device *transport)
 	}
 
 	return scmi_core_protocol_setup(transport);
+}
+
+#define SCMI_MSG_PROTOCOL_VERSION 0x0
+
+/**
+ * @brief Response for a message SCMI_PROTOCOL_VERSION
+ *
+ * Protocol versioning uses a 32-bit unsigned integer, where
+ * - the upper 16 bits are the major revision;
+ * - the lower 16 bits are the minor revision.
+ *
+ */
+struct scmi_msg_prot_version_p2a {
+	union {
+		uint32_t version;
+		struct {
+			uint16_t minor;
+			uint16_t major;
+		} ver;
+	};
+} __packed;
+
+int scmi_core_get_version(struct scmi_protocol *proto, struct scmi_protocol_version *ver)
+{
+	struct scmi_msg_prot_version_p2a rx;
+	struct scmi_message msg, reply;
+	int ret;
+
+	if (!proto || !ver) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_PROTOCOL_VERSION,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = 0;
+	msg.content = NULL;
+
+	reply.len = sizeof(rx);
+	reply.content = &rx;
+
+	ret = scmi_send_message(proto, &msg, &reply);
+	if (ret < 0) {
+		LOG_ERR("proto:%u get version failed (%d)", proto->id, ret);
+		return ret;
+	}
+
+	LOG_DBG("proto:%u version 0x%08x", proto->id, rx.version);
+	ver->major = rx.ver.major;
+	ver->minor = rx.ver.minor;
+
+	return 0;
 }

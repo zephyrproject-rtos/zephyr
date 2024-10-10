@@ -1,0 +1,10 @@
+# Copyright (c) 2024 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SMC based System Control and Management Interface (SCMI) with
+  shmem address(4KB-page, offset) as parameters
+
+include: arm,scmi-smc.yaml
+
+compatible: "arm,scmi-smc-param"

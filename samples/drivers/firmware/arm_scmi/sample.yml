@@ -1,0 +1,14 @@
+sample:
+  name: ARM SCMI shell sample
+common:
+  filter: dt_compat_enabled("arm,scmi-smc") and dt_compat_enabled("arm,scmi-smc-param")
+  integration_platforms:
+    - rpi_5
+tests:
+  sample.firmware.arm_scmi_shell:
+    tags:
+      - drivers
+      - firmware
+      - arm_scmi
+      - shell
+    harness: console

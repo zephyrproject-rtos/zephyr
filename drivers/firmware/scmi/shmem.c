@@ -35,6 +35,9 @@ struct scmi_shmem_layout {
 	volatile uint32_t msg_hdr;
 };
 
+#define SCMI_SHMEM_RX_DATA_LEN(layout) ((layout)->len - sizeof((layout)->msg_hdr) - sizeof(int32_t))
+#define SCMI_SHMEM_RX_DATA_OFS(layout) (sizeof(*(layout)) + sizeof(int32_t))
+
 int scmi_shmem_get_channel_status(const struct device *dev, uint32_t *status)
 {
 	struct scmi_shmem_data *data;
@@ -62,6 +65,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
 	const struct scmi_shmem_config *cfg;
+	size_t len;
 
 	data = shmem->data;
 	cfg = shmem->config;
@@ -76,14 +80,15 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
+	LOG_HEXDUMP_DBG((void *)layout, 64, "shmem before read");
+
 	if (cfg->size < (sizeof(*layout) + msg->len)) {
 		LOG_ERR("message doesn't fit in shmem area");
 		return -EINVAL;
 	}
 
-	/* mismatch between expected reply size and actual size? */
-	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
-		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
+	if (msg->len && msg->len < SCMI_SHMEM_RX_DATA_LEN(layout)) {
+		LOG_ERR("bad message len. max 0x%x, got 0x%x",
 			msg->len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
 		return -EINVAL;
@@ -96,9 +101,14 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
+	msg->status = SCMI_SUCCESS;
+	len = SCMI_SHMEM_RX_DATA_LEN(layout);
+	msg->len = MIN(msg->len, len);
+	msg->status = *(uint32_t *)((uint8_t *)data->regmap + sizeof(*layout));
+
 	if (msg->content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+				  data->regmap + SCMI_SHMEM_RX_DATA_OFS(layout), msg->len);
 	}
 
 	return 0;
@@ -131,6 +141,7 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 		return -EBUSY;
 	}
 
+	msg->status = SCMI_SUCCESS;
 	layout->len = sizeof(layout->msg_hdr) + msg->len;
 	layout->msg_hdr = msg->hdr;
 
@@ -141,6 +152,8 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 
 	/* done, mark channel as busy and proceed */
 	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+
+	LOG_HEXDUMP_DBG((void *)layout, 64, "shmem after write");
 
 	return 0;
 }
@@ -180,6 +193,7 @@ static int scmi_shmem_init(const struct device *dev)
 	}
 
 	device_map(&data->regmap, cfg->phys_addr, cfg->size, K_MEM_CACHE_NONE);
+	LOG_DBG("shmem phys:%lx dev:%lx", cfg->phys_addr, data->regmap);
 
 	return 0;
 }
