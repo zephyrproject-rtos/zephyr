@@ -62,3 +62,8 @@ config USE_RA_FSP_FLASH_HP
 	  Enable RA FSP FLASH HP driver
 
 endif # HAS_RENESAS_RA_FSP
+
+config USE_RA_FSP_AGT
+	bool
+	help
+	  Enable RA FSP AGT driver
