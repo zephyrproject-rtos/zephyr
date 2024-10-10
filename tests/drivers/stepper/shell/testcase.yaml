@@ -13,5 +13,3 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_STEPPER_SHELL_ASYNC=y
