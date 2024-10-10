@@ -42,28 +42,6 @@ if PM
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 	depends on $(dt_nodelabel_enabled,standby)
-
-# Enable PM_DEVICE by default if STANDBY mode is enabled
-# as we use the TURN_OFF and TURN_ON actions to recover
-# from Standby mode (PM Mode 3)
-config PM_DEVICE
-	default y
-	depends on "$(dt_nodelabel_enabled,standby)"
-
-# Enable the counter if STANDBY mode is enabled
-# RTC counter is the wakeup source from STANDBY mode
-config COUNTER
-	default y
-	depends on "$(dt_nodelabel_enabled,standby)"
-
-config MCUX_OS_TIMER_PM_POWERED_OFF
-	default y
-
-# PM code that runs from the idle loop has a large
-# footprint. Hence increase the size when PM is enabled.
-config IDLE_STACK_SIZE
-	default 640
-
-endif # PM
+endif
 
 endif # SOC_SERIES_RW6XX
