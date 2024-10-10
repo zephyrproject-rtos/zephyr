@@ -1,14 +1,14 @@
-.. _mimx8mp_phyboard_pollux:
+.. _phyboard_pollux:
 
-PhyBOARD Pollux (NXP i.MX8M Plus)
-#################################
+phyBOARD-Pollux i.MX8M Plus
+###########################
 
 Overview
 ********
 
-The PhyBOARD Pollux is based upon the PhyCore-i.MX8M Plus SOM which is based on
+The phyBOARD-Pollux is based upon the PhyCore-i.MX8M Plus SOM which is based on
 the NXP i.MX8M Plus SoC. The SoC includes four Coretex-A53 cores and one
-Coretex-M7 core for real time applications like Zephyr. The PhyBOARD Pollux
+Coretex-M7 core for real time applications like Zephyr. The phyBOARD-Pollux
 can be used for various applications like SmartHomes, Industry 4.0, IoT etc.
 It features a lots of interfaces and computing capacity. It can be used as
 a reference, to develop or in the final product too.
@@ -45,14 +45,14 @@ Board features:
    :width: 720px
    :align: center
    :height: 405px
-   :alt: PhyBOARD Pollux
+   :alt: phyBOARD-Pollux
 
 More information about the board can be found at the `PHYTEC website`_.
 
 Supported Features
 ==================
 
-The Zephyr mimx8mp_phyboard_polis board configuration supports the following hardware
+The Zephyr phyboard_polis board configuration supports the following hardware
 features:
 
 +-----------+------------+------------------------------------+
@@ -74,7 +74,7 @@ features:
 +-----------+------------+------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/phytec/mimx8mp_phyboard_pollux/mimx8mp_phyboard_pollux_mimx8ml8_m7_defconfig`.
+:zephyr_file:`boards/phytec/phyboard_pollux/phyboard_pollux_mimx8ml8_m7_defconfig`.
 
 It's recommended to disable peripherals used by the M7-Core on the host running
 on the Linux host. Other hardware features are not currently supported with
@@ -198,7 +198,7 @@ Connect to the console via your favorite terminal program. For example:
 Flashing and Debugging via JTAG
 ===============================
 
-The PhyBOARD-Pollux can be debugged using a JTAG or SWD debug adapter. A Segger
+The phyBOARD-Pollux can be debugged using a JTAG or SWD debug adapter. A Segger
 JLink can be connected to the compatible JTAG connector on Phytec's
 ``PEB-EVAL-01`` shield.
 
@@ -219,7 +219,7 @@ Here is an example for the :zephyr:code-sample:`hello_world` application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimx8mp_phyboard_pollux/mimx8ml8/m7
+   :board: phyboard_pollux/mimx8ml8/m7
    :goals: flash
 
 The console should now show the output of the application:
@@ -227,13 +227,13 @@ The console should now show the output of the application:
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.7.0 ***
-   Hello World! mimx8mp_phyboard_pollux/mimx8ml8/m7
+   Hello World! phyboard_pollux/mimx8ml8/m7
 
 Starting a debug session is similar to flashing:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimx8mp_phyboard_pollux/mimx8ml8/m7
+   :board: phyboard_pollux/mimx8ml8/m7
    :goals: debug
 
 Starting the M7-Core from U-Boot and Linux
