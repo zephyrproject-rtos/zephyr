@@ -15,7 +15,7 @@
 #define DT_DRV_COMPAT zephyr_fake_stepper
 
 struct fake_stepper_data {
-	enum micro_step_resolution micro_step_res;
+	enum stepper_micro_step_resolution micro_step_res;
 	int32_t actual_position;
 };
 
@@ -23,29 +23,30 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, const bo
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move, const struct device *, const int32_t,
-		       struct k_poll_signal *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move, const struct device *, const int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_max_velocity, const struct device *, const uint32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_micro_step_res, const struct device *,
-		       const enum micro_step_resolution);
+		       const enum stepper_micro_step_resolution);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_micro_step_res, const struct device *,
-		       enum micro_step_resolution *);
+		       enum stepper_micro_step_resolution *);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_actual_position, const struct device *, const int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
 
-DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, const int32_t,
-		       struct k_poll_signal *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, const int32_t);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable_constant_velocity_mode, const struct device *,
 		       const enum stepper_direction, const uint32_t);
 
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_event_callback, const struct device *,
+		       stepper_event_callback_t, void *);
+
 static int fake_stepper_set_micro_step_res_delegate(const struct device *dev,
-						    const enum micro_step_resolution res)
+						    const enum stepper_micro_step_resolution res)
 {
 	struct fake_stepper_data *data = dev->data;
 
@@ -55,7 +56,7 @@ static int fake_stepper_set_micro_step_res_delegate(const struct device *dev,
 }
 
 static int fake_stepper_get_micro_step_res_delegate(const struct device *dev,
-						    enum micro_step_resolution *res)
+						    enum stepper_micro_step_resolution *res)
 {
 	struct fake_stepper_data *data = dev->data;
 
@@ -134,6 +135,7 @@ static const struct stepper_driver_api fake_stepper_driver_api = {
 	.get_actual_position = fake_stepper_get_actual_position,
 	.set_target_position = fake_stepper_set_target_position,
 	.enable_constant_velocity_mode = fake_stepper_enable_constant_velocity_mode,
+	.set_event_callback = fake_stepper_set_event_callback,
 };
 
 #define FAKE_STEPPER_INIT(inst)                                                                    \
