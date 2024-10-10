@@ -59,7 +59,7 @@ The key features of the EK-RA6M3 board are categorized in three groups as follow
 - USB High Speed Host and Device (micro-AB connector)
 - 32 Mb (256 Mb) External Quad-SPI Flash
 
-.. figure:: ek-ra6m3-board.webp
+.. figure:: ek_ra6m3.webp
 	:align: center
 	:alt: RA6M3 Evaluation Kit
 

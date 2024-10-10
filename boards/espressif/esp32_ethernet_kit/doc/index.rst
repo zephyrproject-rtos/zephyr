@@ -13,7 +13,7 @@ over Ethernet (PoE).
 
 .. _get-started-esp32-ethernet-kit-v1.2-overview:
 
-.. figure:: img/esp32-ethernet-kit-v1.2-overview.jpg
+.. figure:: img/esp32_ethernet_kit.jpg
     :align: center
     :alt: ESP32-Ethernet-Kit V1.2
     :figclass: align-center
