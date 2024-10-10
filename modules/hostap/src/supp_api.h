@@ -283,6 +283,15 @@ int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_param
 #ifdef CONFIG_AP
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 /**
+ * @brief Get Wi-Fi AP Status
+ *
+ * @param dev Wi-Fi device
+ * @param params AP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_state(const struct device *dev, int *state);
+
+/**
  * @brief Set/Get Wi-Fi AP Bandwidth
  *
  * @param dev Wi-Fi device
@@ -319,6 +328,11 @@ int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_
  */
 int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
 #endif
+#else
+static inline int hapd_state(const struct device *dev, int *state)
+{
+	return -EINVAL;
+}
 #endif
 
 /**
