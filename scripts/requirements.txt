@@ -1,4 +1,5 @@
 -r requirements-base.txt
+-r requirements-build-nordic.txt
 -r requirements-build-test.txt
 -r requirements-run-test.txt
 -r requirements-extras.txt

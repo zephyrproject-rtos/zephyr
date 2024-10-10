@@ -1,0 +1,8 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# BUILD-NORDIC: required to do build for Nordic SoCs
+
+# Required by the Noridic HAL
+nrf-regtool>=6.0
