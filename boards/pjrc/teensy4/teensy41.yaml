@@ -19,6 +19,7 @@ supported:
   - gpio
   - sdhc
   - usb_device
+  - netif:eth
 testing:
   ignore_tags:
     - net
