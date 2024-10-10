@@ -3,6 +3,7 @@
 / {
 	chosen {
 		zephyr,display = &st7796s_lcdic;
+		zephyr,touch = &ft7401;
 	};
 
 	lvgl_pointer {

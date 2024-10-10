@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_dma_v2bis
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 #if DT_INST_IRQ_HAS_IDX(0, 7)
 #define DMA_STM32_0_STREAM_COUNT 8
 #elif DT_INST_IRQ_HAS_IDX(0, 6)
@@ -41,9 +41,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #else
 #define DMA_STM32_0_STREAM_COUNT 3
 #endif
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 #if DT_INST_IRQ_HAS_IDX(1, 7)
 #define DMA_STM32_1_STREAM_COUNT 8
 #elif DT_INST_IRQ_HAS_IDX(1, 6)
@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #else
 #define DMA_STM32_1_STREAM_COUNT 5
 #endif
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */
 
 static const uint32_t table_m_size[] = {
 	LL_DMA_MDATAALIGN_BYTE,
@@ -110,9 +110,6 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 #else
 	callback_arg = id + STM32_DMA_STREAM_OFFSET;
 #endif /* CONFIG_DMAMUX_STM32 */
-	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
-		stream->busy = false;
-	}
 
 	/* The dma stream id is in range from STM32_DMA_STREAM_OFFSET..<dma-requests> */
 	if (stm32_dma_is_ht_irq_active(dma, id)) {
@@ -122,12 +119,10 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		stream->dma_callback(dev, stream->user_data, callback_arg, DMA_STATUS_BLOCK);
 	} else if (stm32_dma_is_tc_irq_active(dma, id)) {
-#ifdef CONFIG_DMAMUX_STM32
 		/* Circular buffer never stops receiving as long as peripheral is enabled */
 		if (!stream->cyclic) {
 			stream->busy = false;
 		}
-#endif
 		/* Let HAL DMA handle flags on its own */
 		if (!stream->hal_override) {
 			dma_stm32_clear_tc(dma, id);
@@ -139,6 +134,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 				     callback_arg, -EIO);
 	} else {
 		LOG_ERR("Transfer Error.");
+		stream->busy = false;
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 		stream->dma_callback(dev, stream->user_data,
@@ -608,6 +604,11 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return -EINVAL;
 	}
 
+	if (stream->hal_override) {
+		stream->busy = false;
+		return 0;
+	}
+
 	/* Repeated stop : return now if channel is already stopped */
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
 		return 0;
@@ -755,7 +756,7 @@ static void dma_stm32_irq_##dma##_##chan(const struct device *dev)	\
 #endif /* CONFIG_DMA_STM32_SHARED_IRQS */
 
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0))
 
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(0, 1);
@@ -803,10 +804,10 @@ static void dma_stm32_config_irq_0(const struct device *dev)
 
 DMA_STM32_INIT_DEV(0);
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(0)) */
 
 
-#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1))
 
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 0);
 DMA_STM32_DEFINE_IRQ_HANDLER(1, 1);
@@ -855,4 +856,4 @@ static void dma_stm32_config_irq_1(const struct device *dev)
 
 DMA_STM32_INIT_DEV(1);
 
-#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(DT_DRV_INST(1)) */

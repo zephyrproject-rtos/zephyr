@@ -52,7 +52,7 @@ In summary:
 
 Modules are repositories that contain a :file:`zephyr/module.yml` file, so that
 the Zephyr build system can pull in the source code from the repository.
-:ref:`West projects <west-manifests-projects>` are entries in the `projects:`
+:ref:`West projects <west-manifests-projects>` are entries in the ``projects:``
 section in the :file:`west.yml` manifest file.
 West projects are often also modules, but not always. There are west projects
 that are not included in the final firmware image (eg. tools) and thus do not
@@ -545,7 +545,7 @@ The ``sysbuild-cmake: <cmake-directory>`` part specifies that
 use.
 
 Here is an example :file:`module.yml` file referring to
-:file:`CMakeLists.txt` and :file:`Kconfig` files in the `sysbuild` directory of
+:file:`CMakeLists.txt` and :file:`Kconfig` files in the ``sysbuild`` directory of
 the module:
 
 .. code-block:: yaml
@@ -592,7 +592,7 @@ be monitored for your module. The supported formats are:
        - <an-other-module-related-cpe>
        - <module-related-purl>
 
-A real life example for `mbedTLS` module could look like this:
+A real life example for ``mbedTLS`` module could look like this:
 
 .. code-block:: yaml
 
@@ -620,6 +620,14 @@ Zephyr modules
 
 In both Kconfig and CMake, the variable ``ZEPHYR_<MODULE_NAME>_MODULE_DIR``
 contains the absolute path to the module.
+
+Additionally, ``ZEPHYR_<MODULE_NAME>_MODULE`` and ``ZEPHYR_<MODULE_NAME>_MODULE_BLOBS``
+(in case the module declares blobs) symbols are automatically generated for available
+modules. These can be used e.g. to declare dependencies from other Kconfig symbols
+which depend on the module or blobs from the module. To satisfy compliance checking
+when building Zephyr without the module present, it's recommended for the module to
+have default definitions for these symbols in its respective Kconfig file under
+``modules/`` in the Zephyr main tree.
 
 In CMake, ``ZEPHYR_<MODULE_NAME>_CMAKE_DIR`` contains the
 absolute path to the directory containing the :file:`CMakeLists.txt` file that

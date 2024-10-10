@@ -175,8 +175,7 @@ static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_c
 	*ctx = NULL;
 
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
-		if (memcmp(path, &block1_contexts[i].path,
-			  sizeof(struct lwm2m_obj_path)) == 0) {
+		if (lwm2m_obj_path_equal(path, &block1_contexts[i].path)) {
 			*ctx = &block1_contexts[i];
 			/* refresh timestamp */
 			(*ctx)->timestamp = k_uptime_get();
@@ -2813,7 +2812,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, uint8_t *buf, uint16_t buf_
 		if (has_block2 && IS_ENABLED(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)) {
 			msg = find_ongoing_block2_tx();
 			if (msg) {
-				return handle_ongoing_block2_tx(msg, &response);
+				handle_ongoing_block2_tx(msg, &response);
 			}
 			return;
 		}
@@ -3325,7 +3324,6 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 		/** copy url pointer to be used in socket */
 		client_ctx->desthostname = url + off;
 		client_ctx->desthostnamelen = len;
-		client_ctx->hostname_verify = true;
 #endif
 
 #else

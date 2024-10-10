@@ -1,0 +1,29 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BLINK_DELAY_SHORT
+	int "Blinking delay for short cycle demo"
+	default 100
+	help
+	  Specifies the LED on/off delay in milliseconds for short cycle
+	  blinking demonstration.
+	  If set to 0, the short-cycle blinking demo will not be performed.
+
+config BLINK_DELAY_LONG
+	int "Blinking delay for long cycle demo"
+	default 1000
+	help
+	  Specifies the LED on/off delay in milliseconds for long cycle
+	  blinking demonstration.
+	  If set to 0, the long-cycle blinking demo will not be performed.
+
+config FADE_DELAY
+	int "Delay time for fade demo"
+	default 10
+	help
+	  Specifies the delay in milliseconds for the fade demo of the
+	  PWM-LED sample.
+	  The brightness gradually increases by one level each time this
+	  delay elapses.
+
+source "Kconfig.zephyr"

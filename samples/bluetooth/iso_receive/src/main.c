@@ -42,7 +42,7 @@ static K_SEM_DEFINE(sem_big_sync_lost, 0, BIS_ISO_CHAN_COUNT);
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#if DT_NODE_HAS_STATUS_OKAY(LED0_NODE)
 static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
 #define HAS_LED     1
 #define BLINK_ONOFF K_MSEC(500)

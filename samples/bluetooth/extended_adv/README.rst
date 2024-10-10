@@ -21,7 +21,7 @@ while the scanner cools-down for 5 seconds to restart its process.
 This sample handles all actions in a separate thread, to promote good design
 practices. Even though it is not strictly required, scheduling from another context is
 strongly recommended (e.g. using a work item), as re-starting an advertiser or
-scanner from within the `recycled` callback exposes the application to deadlocking.
+scanner from within the ``recycled`` callback exposes the application to deadlocking.
 
 Requirements
 ************
@@ -34,7 +34,7 @@ Building and Running
 This sample can be found under
 :zephyr_file:`samples/bluetooth/extended_adv` in the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 This sample uses two applications, so two devices need to be setup.
 Flash one device with the scanner application, and another device with the

@@ -13,6 +13,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=duplicate-code
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -46,7 +47,7 @@ class TestCoverage:
                 'coverage.log', 'coverage.json',
                 'coverage'
             ],
-            r'{"files": \[], "gcovr/format_version": ".*"}'
+            r'{"files": \[\], "gcovr/format_version": ".*"}'
         ),
     ]
     TESTDATA_4 = [
@@ -189,7 +190,7 @@ class TestCoverage:
     )
     def test_enable_coverage(self, capfd, test_path, test_platforms, out_path, expected):
         args = ['-i','--outdir', out_path, '-T', test_path] + \
-               ['--enable-coverage', '-vv'] + \
+               ['--enable-coverage', '-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]
@@ -243,7 +244,7 @@ class TestCoverage:
                 with open(path, "r") as json_file:
                     json_content = json.load(json_file)
                     pattern = re.compile(expected_content)
-                    assert pattern.match(json.dumps(json_content))
+                    assert pattern.match(json.dumps(json_content, sort_keys=True))
         if os.path.exists(base_dir):
             os.rmdir(base_dir)
 

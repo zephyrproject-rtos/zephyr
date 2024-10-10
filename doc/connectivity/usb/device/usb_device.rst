@@ -565,7 +565,7 @@ The USB Vendor ID for the Zephyr project is ``0x2FE3``.
 This USB Vendor ID must not be used when a vendor
 integrates Zephyr USB device support into its own product.
 
-Each USB :ref:`sample<usb-samples>` has its own unique Product ID.
+Each USB :zephyr:code-sample-category:`sample<usb>` has its own unique Product ID.
 The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
 Steering Committee, may allocate other USB Product IDs based on well-motivated
 and documented requests.

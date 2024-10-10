@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2024 Intel Corporation
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -21,7 +22,7 @@ def test_extract_single_field_from_string_argument():
         target_fields, arg_list)
 
     assert extracted_fields == {"FIELD1": ["value1"]}
-    assert other_fields == "FIELD2=value2 FIELD3=value3"
+    assert other_fields == ["FIELD2=value2", "FIELD3=value3"]
 
 
 def test_no_fields_to_extract():
@@ -32,7 +33,7 @@ def test_no_fields_to_extract():
         target_fields, arg_list)
 
     assert extracted_fields == {}
-    assert other_fields == "arg1 arg2 arg3"
+    assert other_fields == ["arg1", "arg2", "arg3" ]
 
 
 def test_missing_fields():
@@ -42,7 +43,7 @@ def test_missing_fields():
         target_fields, arg_list)
 
     assert extracted_fields == {"CONF_FILE": [], "OVERLAY_CONFIG": [], "DTC_OVERLAY_FILE": []}
-    assert other_fields == "arg1 arg2 arg3"
+    assert other_fields == ["arg1", "arg2", "arg3" ]
 
 def test_load_yaml_with_extra_args_and_retrieve_scenario_data(zephyr_base):
     filename = "test_data.yaml"
@@ -51,7 +52,9 @@ def test_load_yaml_with_extra_args_and_retrieve_scenario_data(zephyr_base):
     tests:
       scenario1:
         tags: ['tag1', 'tag2']
-        extra_args: '--CONF_FILE=file1.conf --OVERLAY_CONFIG=config1.conf'
+        extra_args:
+        - '--CONF_FILE=file1.conf'
+        - '--OVERLAY_CONFIG=config1.conf'
         filter: 'filter1'
     common:
       filter: 'filter2'
@@ -129,32 +132,37 @@ def test_default_values(zephyr_base):
     assert expected_scenario_data.items() <= expected_scenario_data.items()
 
 @pytest.mark.parametrize(
-    'value, typestr, expected',
+    'value, typestr, expected, expected_warning',
     [
-        (' hello ', 'str', 'hello'),
-        ('3.14', 'float', 3.14),
-        ('10', 'int', 10),
-        ('True', 'bool', 'True'),          # do-nothing cast
-        ('key: val', 'map', 'key: val'),   # do-nothing cast
-        ('test', 'int', ValueError),
-        ('test', 'unknown', ConfigurationError),
-        ('1 2 2 3', 'list', ['1', '2', '2','3']),
-        ('1 2 2 3', 'set', {'1', '2', '3'})
+        (' hello ', 'str', 'hello', None),
+        ('3.14', 'float', 3.14, None),
+        ('10', 'int', 10, None),
+        ('True', 'bool', 'True', None),          # do-nothing cast
+        ('key: val', 'map', 'key: val', None),   # do-nothing cast
+        ('test', 'int', ValueError, None),
+        ('test', 'unknown', ConfigurationError, None),
+        ('1 2 2 3', 'list', ['1', '2', '2','3'], ('Space-separated lists are deprecated, use YAML lists instead', DeprecationWarning)),
+        ('1 2 2 3', 'set', {'1', '2', '3'}, ('Space-separated lists are deprecated, use YAML lists instead', DeprecationWarning)),
+        ([ '1', '2', '3' ], 'set', { '1', '2', '2','3' }, None),
     ],
     ids=['str to str', 'str to float', 'str to int', 'str to bool', 'str to map',
-         'invalid', 'to unknown', "to list", "to set"]
+         'invalid', 'to unknown', "str to list", "str to set", "list to set"]
 )
 
-def test_cast_value(zephyr_base, value, typestr, expected):
+def test_cast_value(zephyr_base, value, typestr, expected, expected_warning):
     loaded_schema = scl.yaml_load(
         os.path.join(zephyr_base, 'scripts', 'schemas', 'twister','testsuite-schema.yaml')
     )
 
     parser = TwisterConfigParser("config.yaml", loaded_schema)
-    with pytest.raises(expected) if \
-         isinstance(expected, type) and issubclass(expected, Exception) else nullcontext():
-        result = parser._cast_value(value, typestr)
-        assert result == expected
+    with mock.patch('warnings.warn') as warn_mock:
+        with pytest.raises(expected) if isinstance(expected, type) and issubclass(expected, Exception) else nullcontext():
+            result = parser._cast_value(value, typestr)
+            assert result == expected
+            if expected_warning:
+                warn_mock.assert_called_once_with(*expected_warning)
+            else:
+                warn_mock.assert_not_called()
 
 def test_load_invalid_test_config_yaml(zephyr_base):
     filename = "test_data.yaml"

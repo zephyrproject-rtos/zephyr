@@ -78,7 +78,7 @@ using CMake:
     zephyr_linker_sources(SECTIONS sections-rom.ld)
     zephyr_linker_section(NAME http_resource_desc_my_service
                           KVMA RAM_REGION GROUP RODATA_REGION
-                          SUBALIGN Z_LINK_ITERABLE_SUBALIGN)
+                          SUBALIGN ${CONFIG_LINKER_ITERABLE_SUBALIGN})
 
 .. note::
 
@@ -223,18 +223,16 @@ Dynamic resources
 =================
 
 For dynamic resource, a resource callback is registered to exchange data between
-the server and the application. The application defines a resource buffer used
-to pass the request payload data from the server, and to provide response payload
-to the server. The following example code shows how to register a dynamic resource
-with a simple resource handler, which echoes received data back to the client:
+the server and the application.
+
+The following example code shows how to register a dynamic resource with a simple
+resource handler, which echoes received data back to the client:
 
 .. code-block:: c
 
-    static uint8_t recv_buffer[1024];
-
-    static int dyn_handler(struct http_client_ctx *client,
-                           enum http_data_status status, uint8_t *buffer,
-                           size_t len, void *user_data)
+    static int dyn_handler(struct http_client_ctx *client, enum http_data_status status,
+			               uint8_t *buffer, size_t len, struct http_response_ctx *response_ctx,
+			               void *user_data)
     {
     #define MAX_TEMP_PRINT_LEN 32
         static char print_str[MAX_TEMP_PRINT_LEN];
@@ -260,10 +258,12 @@ with a simple resource handler, which echoes received data back to the client:
             processed = 0;
         }
 
-        /* This will echo data back to client as the buffer and recv_buffer
-         * point to same area.
-         */
-        return len;
+        /* Echo data back to client */
+        response_ctx->body = buffer;
+        response_ctx->body_len = len;
+        response_ctx->final_chunk = (status == HTTP_SERVER_DATA_FINAL);
+
+        return 0;
     }
 
     struct http_resource_detail_dynamic dyn_resource_detail = {
@@ -273,8 +273,6 @@ with a simple resource handler, which echoes received data back to the client:
                 BIT(HTTP_GET) | BIT(HTTP_POST),
         },
         .cb = dyn_handler,
-        .data_buffer = recv_buffer,
-        .data_buffer_len = sizeof(recv_buffer),
         .user_data = NULL,
     };
 
@@ -298,9 +296,25 @@ the application shall reset any progress recorded for the resource, and await
 a new request to come. The server guarantees that the resource can only be
 accessed by single client at a time.
 
-The resource callback returns the number of bytes to be replied in the response
-payload to the server (provided in the resource data buffer). In case there is
-no more data to be included in the response, the callback should return 0.
+The ``response_ctx`` field is used by the application to pass response data to
+the HTTP server:
+
+* The ``status`` field allows the application to send an HTTP response code. If
+  not populated, the response code will be 200 by default.
+
+* The ``headers`` and ``header_count`` fields can be used for the application to
+  send any arbitrary HTTP headers. If not populated, only Transfer-Encoding and
+  Content-Type are sent by default. The callback may override the Content-Type
+  if desired.
+
+* The ``body`` and ``body_len`` fields are used to send body data.
+
+* The ``final_chunk`` field is used to indicate that the application has no more
+  response data to send.
+
+Headers and/or response codes may only be sent in the first populated
+``response_ctx``, after which only further body data is allowed in subsequent
+callbacks.
 
 The server will call the resource callback until it provided all request data
 to the application, and the application reports there is no more data to include

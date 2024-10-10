@@ -6,7 +6,7 @@ tests:
     extra_args:
       # Will be ignored for other platforms
       - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
-    tags: wifi
+    tags: wifi net
     platform_exclude:
+      - rd_rw612_bga/rw612/ethernet # Requires binary blobs to build
       - frdm_rw612 # Requires binary blobs to build
-      - rd_rw612_bga # Requires binary blobs to build

@@ -24,7 +24,7 @@ user_iram_end = SRAM1_DRAM_IRAM_CALC(SRAM1_DRAM_USER_START);
 user_iram_seg_org = (SRAM0_IRAM_START + SRAM0_CACHE_SIZE);
 user_iram_seg_len = user_iram_end - user_iram_seg_org;
 user_dram_seg_org = SRAM2_DRAM_USER_START;
-user_dram_seg_len = SRAM2_USER_SIZE;
+user_dram_seg_len = SRAM2_DRAM_USER_SIZE;
 user_dram_2_seg_org = SRAM1_DRAM_USER_START;
 user_dram_2_seg_len = SRAM1_USER_SIZE;
 
@@ -116,11 +116,7 @@ _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = 0x40000450);
 PROVIDE(_memmap_reset_vector = 0x40000400);
 
-#ifdef CONFIG_BT
-_heap_sentry = SRAM1_DRAM_USER_START;
-#else
-_heap_sentry = DRAM1_BT_SHM_BUFFERS_START; /* was 0x3ffe3f20; */
-#endif
+_heap_sentry = SRAM2_DRAM_END;
 
 SECTIONS
 {
@@ -357,12 +353,6 @@ SECTIONS
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
-/*  TODO: optimize SRAM usage
-    *libzephyr.a:periph_ctrl.*(.literal.periph_module_reset .text.periph_module_reset)
-    *libzephyr.a:periph_ctrl.*(.literal.wifi_module_disable .text.wifi_module_disable)
-    *libzephyr.a:periph_ctrl.*(.literal.wifi_module_enable .text.wifi_module_enable)
-    *libzephyr.a:rtc_wdt.*(.literal .literal.* .text .text.*)
-*/
     *libzephyr.a:esp_system_chip.*(.literal.esp_system_abort .text.esp_system_abort)
     *libzephyr.a:spi_hal_iram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_slave_hal_iram.*(.literal .literal.* .text .text.*)
@@ -453,7 +443,7 @@ SECTIONS
     *libzephyr.a:mpu_hal.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cpu_region_protect.*(.literal .text .literal.* .text.*)
 
-    /* to overcome the bug in esptool making Simple boot compatible image */
+    /* NOTE: to overcome the bug in esptool making Simple boot compatible image */
     . += 16;
     . = ALIGN(16);
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -487,6 +477,12 @@ SECTIONS
     . = ALIGN(4);
     _iram_end = ABSOLUTE(.);
   } GROUP_LINK_IN(IRAM_REGION)
+
+  /* This symbol is here to check SRAM1 usage in case it is used for data too */
+  _iram_end_at_dram_addr = SRAM1_IRAM_DRAM_CALC(_iram_end);
+  _unallocated_iram_memory_size = ORIGIN(iram0_0_seg) + LENGTH(iram0_0_seg) - _iram_end;
+
+  ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)), "IRAM code does not fit.")
 
   /* --- IRAM END --- */
 
@@ -707,9 +703,6 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
-  ASSERT(((__bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
-          "DRAM segment data does not fit.")
-
   .dram0.noinit (NOLOAD) :
   {
     . = ALIGN (8);
@@ -718,15 +711,12 @@ SECTIONS
     . = ALIGN (8);
   } GROUP_LINK_IN(RAMABLE_REGION_1)
 
-  .dram0.end (NOLOAD) :
-  {
-    . = ALIGN(4);
-    _end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+  /* Provide total SRAM usage, including IRAM and DRAM */
+  _image_ram_start = _dram_data_start;
+  #include <zephyr/linker/ram-end.ld>
+  _image_ram_size += _iram_end - _iram_start;
 
-  /* TODO: Provide total SRAM usage, including IRAM and DRAM */
-  /* _image_ram_start = _iram_start - IRAM_DRAM_OFFSET; */
-  /* #include <zephyr/linker/ram-end.ld> */
+  ASSERT(((_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)), "DRAM data does not fit.")
 
   /* --- DRAM END --- */
 
@@ -933,9 +923,6 @@ SECTIONS
 }
 
   /* --- XTENSA GLUE AND DEBUG END --- */
-
-ASSERT(((_iram_end - ORIGIN(iram0_0_seg)) <= LENGTH(iram0_0_seg)),
-          "IRAM0 segment data does not fit.")
 
 #ifdef CONFIG_ESP_SPIRAM
 ASSERT(((_ext_ram_data_end - _ext_ram_data_start) <= CONFIG_ESP_SPIRAM_SIZE),

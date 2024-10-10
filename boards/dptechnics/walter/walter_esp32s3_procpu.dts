@@ -1,0 +1,122 @@
+/*
+ * Copyright (c) 2024 DPTechnics bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "espressif/esp32s3/esp32s3_wroom_n16r2.dtsi"
+#include "walter-pinctrl.dtsi"
+#include <espressif/partitions_0x0_amp_8M.dtsi>
+
+/ {
+	model = "DPTechnics Walter PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		modem = &modem;
+		modem-uart = &uart1;
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &usb_serial;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	hw-flow-control;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	modem: modem {
+		status = "okay";
+		compatible = "sqn,gm02s";
+		mdm-reset-gpios = <&gpio1 13 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

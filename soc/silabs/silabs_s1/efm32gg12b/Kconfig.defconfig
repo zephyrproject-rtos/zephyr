@@ -1,4 +1,3 @@
-# EFM32GG12B series configuration options
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -13,4 +12,4 @@ config GPIO_GECKO
 	default y
 	depends on GPIO || LOG_BACKEND_SWO
 
-endif # SOC_SERIES_EFM32GG12B
+endif

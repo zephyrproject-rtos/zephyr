@@ -18,6 +18,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#ifdef CONFIG_LLEXT
+#include <zephyr/llext/symbol.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -91,15 +95,18 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_NAME_GET(dev_id) _CONCAT(__device_, dev_id)
 
-/* Node paths can exceed the maximum size supported by
- * device_get_binding() in user mode; this macro synthesizes a unique
- * dev_id from a devicetree node while staying within this maximum
- * size.
+/* This macro synthesizes a unique dev_id from a devicetree node by using
+ * the node's dependency ordinal.
  *
  * The ordinal used in this name can be mapped to the path by
  * examining zephyr/include/generated/zephyr/devicetree_generated.h.
  */
 #define Z_DEVICE_DT_DEV_ID(node_id) _CONCAT(dts_ord_, DT_DEP_ORD(node_id))
+
+#if defined(CONFIG_LLEXT_EXPORT_DEVICES)
+/* Export device identifiers using the builtin name */
+#define Z_DEVICE_EXPORT(node_id) EXPORT_SYMBOL(DEVICE_DT_NAME_GET(node_id))
+#endif
 
 /**
  * @brief Create a device object and set it up for boot time initialization.
@@ -173,8 +180,9 @@ typedef int16_t device_handle_t;
  *
  * The device is declared with extern visibility, so a pointer to a global
  * device object can be obtained with `DEVICE_DT_GET(node_id)` from any source
- * file that includes `<zephyr/device.h>`. Before using the pointer, the
- * referenced object should be checked using device_is_ready().
+ * file that includes `<zephyr/device.h>` (even from extensions, when
+ * @kconfig{CONFIG_LLEXT_EXPORT_DEVICES} is enabled). Before using the
+ * pointer, the referenced object should be checked using device_is_ready().
  *
  * @param node_id The devicetree node identifier.
  * @param init_fn Pointer to the device's initialization function, which will be
@@ -199,7 +207,8 @@ typedef int16_t device_handle_t;
 			DEVICE_DT_NAME(node_id), init_fn, pm, data, config,    \
 			level, prio, api,                                      \
 			&Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)),     \
-			__VA_ARGS__)
+			__VA_ARGS__)                                           \
+	IF_ENABLED(CONFIG_LLEXT_EXPORT_DEVICES, (Z_DEVICE_EXPORT(node_id);))
 
 /**
  * @brief Like DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
@@ -309,7 +318,7 @@ typedef int16_t device_handle_t;
  * @return a @ref device reference for the node identifier, which may be `NULL`.
  */
 #define DEVICE_DT_GET_OR_NULL(node_id)                                         \
-	COND_CODE_1(DT_NODE_HAS_STATUS(node_id, okay),                         \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),                          \
 		    (DEVICE_DT_GET(node_id)), (NULL))
 
 /**
@@ -999,7 +1008,7 @@ device_get_dt_nodelabels(const struct device *dev)
  */
 #define Z_DEVICE_NAME_CHECK(name)                                              \
 	BUILD_ASSERT(sizeof(Z_STRINGIFY(name)) <= Z_DEVICE_MAX_NAME_LEN,       \
-			    Z_STRINGIFY(DEVICE_NAME_GET(name)) " too long")
+			    Z_STRINGIFY(name) " too long")
 
 /**
  * @brief Initializer for @ref device.

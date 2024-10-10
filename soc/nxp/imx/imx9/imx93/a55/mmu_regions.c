@@ -32,6 +32,9 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_kinetis_lpuart,
 						(MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
 
+	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_flexcan,
+						(MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
+
 #if CONFIG_SOF
 		MMU_REGION_FLAT_ENTRY("MU2_A", DT_REG_ADDR(DT_NODELABEL(mu2_a)),
 				      DT_REG_SIZE(DT_NODELABEL(mu2_a)),

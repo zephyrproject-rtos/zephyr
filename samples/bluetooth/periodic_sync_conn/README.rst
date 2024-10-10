@@ -30,4 +30,4 @@ Use the sample found under :zephyr_file:`samples/bluetooth/periodic_adv_conn` on
 another board that will start periodic advertising and connect to this sample
 once synced.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

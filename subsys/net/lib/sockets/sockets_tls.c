@@ -1056,7 +1056,7 @@ static int tls_set_psk(struct tls_context *tls,
 		       struct tls_credential *psk,
 		       struct tls_credential *psk_id)
 {
-#if defined(MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED)
+#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
 	int err = mbedtls_ssl_conf_psk(&tls->config,
 				       psk->buf, psk->len,
 				       (const unsigned char *)psk_id->buf,
@@ -1419,6 +1419,10 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 					       mbedtls_ssl_cache_get,
 					       mbedtls_ssl_cache_set);
 	}
+#endif
+
+#if defined(MBEDTLS_SSL_EARLY_DATA)
+	mbedtls_ssl_conf_early_data(&context->config, MBEDTLS_SSL_EARLY_DATA_ENABLED);
 #endif
 
 	ret = mbedtls_ssl_setup(&context->ssl,
@@ -2034,7 +2038,7 @@ static int protocol_check(int family, int type, int *proto)
 		return -EAFNOSUPPORT;
 	}
 
-	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_2) {
+	if (*proto >= IPPROTO_TLS_1_0 && *proto <= IPPROTO_TLS_1_3) {
 		if (type != SOCK_STREAM) {
 			return -EPROTOTYPE;
 		}
@@ -2177,7 +2181,8 @@ int ztls_connect_ctx(struct tls_context *ctx, const struct sockaddr *addr,
 		/* TODO For simplicity, TLS handshake blocks the socket
 		 * even for non-blocking socket.
 		 */
-		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
+		ret = tls_mbedtls_handshake(
+			ctx, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 		if (ret < 0) {
 			goto error;
 		}
@@ -2234,7 +2239,8 @@ int ztls_accept_ctx(struct tls_context *parent, struct sockaddr *addr,
 	/* TODO For simplicity, TLS handshake blocks the socket even for
 	 * non-blocking socket.
 	 */
-	ret = tls_mbedtls_handshake(child, K_FOREVER);
+	ret = tls_mbedtls_handshake(
+		child, K_MSEC(CONFIG_NET_SOCKETS_CONNECT_TIMEOUT));
 	if (ret < 0) {
 		goto error;
 	}
@@ -2375,6 +2381,9 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 
 		/* TODO For simplicity, TLS handshake blocks the socket even for
 		 * non-blocking socket.
+		 * DTLS handshake timeout/retransmissions are limited by
+		 * mbed TLS, so K_FOREVER is fine here, the function will not
+		 * block indefinitely.
 		 */
 		ret = tls_mbedtls_handshake(ctx, K_FOREVER);
 		if (ret < 0) {
@@ -2600,7 +2609,8 @@ static ssize_t recv_tls(struct tls_context *ctx, void *buf,
 			if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
 			    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
 			    ret == MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS ||
-			    ret ==  MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) {
+			    ret == MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS ||
+			    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 				int timeout_ms;
 
 				if (!is_block) {

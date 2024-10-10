@@ -122,7 +122,7 @@ USB port, then run a serial host program to connect with the board. For example:
    $ minicom -b 115200 -D /dev/ttyACM0
 
 You can then build and flash applications in the usual way.
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -140,7 +140,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
     :zephyr-app: samples/hello_world

@@ -22,18 +22,13 @@ static inline int display_setup(const struct device *const display_dev, const ui
 	struct display_capabilities capabilities;
 	int ret = 0;
 
-	if (!device_is_ready(display_dev)) {
-		LOG_ERR("Device %s not found", display_dev->name);
-		return -ENODEV;
-	}
-
-	printk("\nDisplay device: %s\n", display_dev->name);
+	LOG_INF("Display device: %s", display_dev->name);
 
 	display_get_capabilities(display_dev, &capabilities);
 
-	printk("- Capabilities:\n");
-	printk("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u\n"
-	       "  current_pixel_format = %u, current_orientation = %u\n\n",
+	LOG_INF("- Capabilities:");
+	LOG_INF("  x_resolution = %u, y_resolution = %u, supported_pixel_formats = %u"
+	       "  current_pixel_format = %u, current_orientation = %u",
 	       capabilities.x_resolution, capabilities.y_resolution,
 	       capabilities.supported_pixel_formats, capabilities.current_pixel_format,
 	       capabilities.current_orientation);
@@ -41,7 +36,7 @@ static inline int display_setup(const struct device *const display_dev, const ui
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {
 	case VIDEO_PIX_FMT_RGB565:
-		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_BGR_565);
+		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
 		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
@@ -75,9 +70,11 @@ static inline void video_display_frame(const struct device *const display_dev,
 
 int main(void)
 {
-	struct video_buffer *buffers[2], *vbuf;
+	struct video_buffer *buffers[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX], *vbuf;
 	struct video_format fmt;
 	struct video_caps caps;
+	struct video_frmival frmival;
+	struct video_frmival_enum fie;
 	unsigned int frame = 0;
 	size_t bsize;
 	int i = 0;
@@ -99,7 +96,7 @@ int main(void)
 	}
 #endif
 
-	printk("Video device: %s\n", video_dev->name);
+	LOG_INF("Video device: %s", video_dev->name);
 
 	/* Get capabilities */
 	if (video_get_caps(video_dev, VIDEO_EP_OUT, &caps)) {
@@ -107,11 +104,11 @@ int main(void)
 		return 0;
 	}
 
-	printk("- Capabilities:\n");
+	LOG_INF("- Capabilities:");
 	while (caps.format_caps[i].pixelformat) {
 		const struct video_format_cap *fcap = &caps.format_caps[i];
 		/* fourcc to string */
-		printk("  %c%c%c%c width [%u; %u; %u] height [%u; %u; %u]\n",
+		LOG_INF("  %c%c%c%c width [%u; %u; %u] height [%u; %u; %u]",
 		       (char)fcap->pixelformat, (char)(fcap->pixelformat >> 8),
 		       (char)(fcap->pixelformat >> 16), (char)(fcap->pixelformat >> 24),
 		       fcap->width_min, fcap->width_max, fcap->width_step, fcap->height_min,
@@ -125,9 +122,49 @@ int main(void)
 		return 0;
 	}
 
-	printk("- Default format: %c%c%c%c %ux%u\n", (char)fmt.pixelformat,
+#if CONFIG_VIDEO_FRAME_HEIGHT
+	fmt.height = CONFIG_VIDEO_FRAME_HEIGHT;
+#endif
+
+#if CONFIG_VIDEO_FRAME_WIDTH
+	fmt.width = CONFIG_VIDEO_FRAME_WIDTH;
+	fmt.pitch = fmt.width * 2;
+#endif
+
+	if (strcmp(CONFIG_VIDEO_PIXEL_FORMAT, "")) {
+		fmt.pixelformat =
+			video_fourcc(CONFIG_VIDEO_PIXEL_FORMAT[0], CONFIG_VIDEO_PIXEL_FORMAT[1],
+				     CONFIG_VIDEO_PIXEL_FORMAT[2], CONFIG_VIDEO_PIXEL_FORMAT[3]);
+	}
+
+	LOG_INF("- Video format: %c%c%c%c %ux%u", (char)fmt.pixelformat,
 	       (char)(fmt.pixelformat >> 8), (char)(fmt.pixelformat >> 16),
 	       (char)(fmt.pixelformat >> 24), fmt.width, fmt.height);
+
+	if (video_set_format(video_dev, VIDEO_EP_OUT, &fmt)) {
+		LOG_ERR("Unable to set format");
+		return 0;
+	}
+
+	if (!video_get_frmival(video_dev, VIDEO_EP_OUT, &frmival)) {
+		LOG_INF("- Default frame rate : %f fps",
+		       1.0 * frmival.denominator / frmival.numerator);
+	}
+
+	LOG_INF("- Supported frame intervals for the default format:");
+	memset(&fie, 0, sizeof(fie));
+	fie.format = &fmt;
+	while (video_enum_frmival(video_dev, VIDEO_EP_OUT, &fie) == 0) {
+		if (fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+			LOG_INF("   %u/%u ", fie.discrete.numerator, fie.discrete.denominator);
+		} else {
+			LOG_INF("   [min = %u/%u; max = %u/%u; step = %u/%u]",
+			       fie.stepwise.min.numerator, fie.stepwise.min.denominator,
+			       fie.stepwise.max.numerator, fie.stepwise.max.denominator,
+			       fie.stepwise.step.numerator, fie.stepwise.step.denominator);
+		}
+		fie.index++;
+	}
 
 #if DT_HAS_CHOSEN(zephyr_display)
 	const struct device *const display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
@@ -168,7 +205,7 @@ int main(void)
 		return 0;
 	}
 
-	printk("Capture started\n");
+	LOG_INF("Capture started");
 
 	/* Grab video frames */
 	while (1) {
@@ -178,7 +215,7 @@ int main(void)
 			return 0;
 		}
 
-		printk("Got frame %u! size: %u; timestamp %u ms\n", frame++, vbuf->bytesused,
+		LOG_DBG("Got frame %u! size: %u; timestamp %u ms", frame++, vbuf->bytesused,
 		       vbuf->timestamp);
 
 #if DT_HAS_CHOSEN(zephyr_display)

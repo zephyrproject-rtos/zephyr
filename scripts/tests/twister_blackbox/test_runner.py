@@ -556,7 +556,7 @@ class TestRunner:
         ],
     )
     def test_tag(self, capfd, out_path, test_path, test_platforms, tags, expected):
-        args = ['--outdir', out_path, '-T', test_path, '-vv'] + \
+        args = ['--outdir', out_path, '-T', test_path, '-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair] + \

@@ -21,6 +21,8 @@
 #include <zephyr/sys/poweroff.h>
 #include <kernel_arch_func.h>
 
+#include "paging.h"
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
@@ -372,6 +374,12 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 			reason = K_ERR_STACK_CHK_FAIL;
 		}
 #endif
+
+		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
+		    reason != K_ERR_STACK_CHK_FAIL &&
+		    z_arm64_do_demand_paging(esf, esr, far)) {
+			return;
+		}
 
 		if (GET_EL(el) != MODE_EL0) {
 #ifdef CONFIG_EXCEPTION_DEBUG

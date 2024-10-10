@@ -29,7 +29,7 @@ Building and Running
 ********************
 
 This sample can be run on any board with an IS31FL3733 LED driver connected via
-I2C, and a node with the `issi,is31fl3733` compatible present in its devicetree.
+I2C, and a node with the :dtcompatible:`issi,is31fl3733` compatible present in its devicetree.
 
 This sample provides a DTS overlay for the :ref:`frdm_k22f` board
 (:file:`boards/frdm_k22f.overlay`). It assumes that the IS31FL3733 LED

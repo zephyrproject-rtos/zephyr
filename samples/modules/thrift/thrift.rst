@@ -1,11 +1,5 @@
-Apache Thrift
-=============
+.. zephyr:code-sample-category:: thrift
+   :name: Apache Thrift
+   :show-listing:
 
-These samples demonstrate how to use Apache Thrift in Zephyr.
-
-.. toctree::
-   :titlesonly:
-   :glob:
-   :maxdepth: 1
-
-   */*
+   These samples demonstrate how to use Apache Thrift in Zephyr.

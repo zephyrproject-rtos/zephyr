@@ -1,24 +1,24 @@
 .. zephyr:code-sample:: bluetooth_bap_broadcast_sink
-   :name: Broadcast Audio Sink
-   :relevant-api: bluetooth
+   :name: Basic Audio Profile (BAP) Broadcast Audio Sink
+   :relevant-api: bluetooth bt_audio bt_bap bt_conn bt_pacs
 
-   Use LE Audio Broadcast Sink functionality.
+   Use BAP Broadcast Sink functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio broadcast sink functionality.
-Starts by scanning for LE Audio broadcast sources and then synchronizes to
+Application demonstrating the BAP Broadcast Sink functionality.
+Starts by scanning for BAP Broadcast Sources and then synchronizes to
 the first found and listens to it until the source is (potentially) stopped.
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_broadcast_sink` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
-Use `CONFIG_TARGET_BROADCAST_NAME` Kconfig to specify the name (CONFIG_BT_DEVICE_NAME)
-of a broadcast source to listen to. With default value (empty string), sink
-device will listen to all available broadcast sources.
+Use :kconfig:option:`CONFIG_TARGET_BROADCAST_NAME` Kconfig to specify the name
+(:kconfig:option:`CONFIG_BT_DEVICE_NAME`) of a broadcast source to listen to. With default value
+(empty string), sink device will listen to all available broadcast sources.
 
 Requirements
 ************
@@ -30,7 +30,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use `-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf` to enable the required ISO
+use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
 Building for an nrf5340dk
@@ -67,7 +67,7 @@ Similarly to how you would for real HW, you can do:
    :goals: build
    :west-args: --sysbuild
 
-Note this will produce a Linux executable in `./build/zephyr/zephyr.exe`.
+Note this will produce a Linux executable in :file:`./build/zephyr/zephyr.exe`.
 For more information, check :ref:`this board documentation <nrf5340bsim>`.
 
 Building for a simulated nrf52_bsim

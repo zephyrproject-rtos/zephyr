@@ -181,8 +181,8 @@ but does not support debugging the device.
 #. If using UF2, connect the board to your host computer using USB.
 
 #. Tap the reset button twice quickly to enter bootloader mode.
-   A mass storage device named `FTHR840BOOT` for (Express) or
-   `FTHRSNSBOOT` (Sense) should appear on the host. Ensure this is
+   A mass storage device named ``FTHR840BOOT`` for (Express) or
+   ``FTHRSNSBOOT`` (Sense) should appear on the host. Ensure this is
    mounted.
 
 #. Flash the image.

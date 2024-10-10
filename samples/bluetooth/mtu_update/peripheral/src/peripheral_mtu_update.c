@@ -91,7 +91,7 @@ void run_peripheral_sample(uint8_t *notify_data, size_t notify_data_size, uint16
 	struct bt_gatt_attr *notify_crch =
 		bt_gatt_find_by_uuid(mtu_test.attrs, 0xffff, &notify_characteristic_uuid.uuid);
 
-	bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, adv_ad_data, ARRAY_SIZE(adv_ad_data), NULL, 0);
+	bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, adv_ad_data, ARRAY_SIZE(adv_ad_data), NULL, 0);
 
 	bool infinite = seconds == 0;
 

@@ -1,13 +1,5 @@
-.. _tflitemicro_samples:
+.. zephyr:code-sample-category:: tflite-micro
+   :name: TensorFlow Lite for Microcontrollers
+   :show-listing:
 
-TensorFlow Lite for Microcontrollers
-####################################
-
-These samples demonstrate how to use TensorFlow Lite for Microcontrollers in Zephyr.
-
-.. toctree::
-   :titlesonly:
-   :glob:
-   :maxdepth: 1
-
-   **/*
+   These samples demonstrate how to use TensorFlow Lite for Microcontrollers in Zephyr.

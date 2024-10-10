@@ -20,6 +20,7 @@ zephyr_library_sources(
   )
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_NET_NATIVE                     sockets_inet.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN                sockets_can.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET             sockets_packet.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS        sockets_tls.c)

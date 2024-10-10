@@ -6,6 +6,7 @@
 
 #include <zephyr/llext/elf.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/llext/llext_internal.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/logging/log.h>
 
@@ -18,6 +19,7 @@ LOG_MODULE_DECLARE(llext);
 #define R_XTENSA_JMP_SLOT       4
 #define R_XTENSA_RELATIVE       5
 #define R_XTENSA_PLT            6
+#define R_XTENSA_SLOT0_OP	20
 
 /**
  * @brief Architecture specific function for relocating shared elf
@@ -49,6 +51,33 @@ void arch_elf_relocate_local(struct llext_loader *ldr, struct llext *ext,
 		break;
 	case R_XTENSA_32:
 		*got_entry += sh_addr;
+		break;
+	case R_XTENSA_SLOT0_OP:
+		;
+		uint8_t *opc = (uint8_t *)got_entry;
+
+		/* Check the opcode: is this an L32R? And does it have to be relocated? */
+		if ((opc[0] & 0xf) != 1 || opc[1] || opc[2])
+			break;
+
+		elf_sym_t rsym;
+
+		int ret = llext_seek(ldr, ldr->sects[LLEXT_MEM_SYMTAB].sh_offset +
+				     ELF_R_SYM(rel->r_info) * sizeof(elf_sym_t));
+		if (!ret) {
+			ret = llext_read(ldr, &rsym, sizeof(elf_sym_t));
+		}
+		if (ret)
+			return;
+
+		uintptr_t link_addr = (uintptr_t)llext_loaded_sect_ptr(ldr, ext, rsym.st_shndx) +
+			rsym.st_value;
+
+		ssize_t value = (link_addr - (((uintptr_t)got_entry + 3) & ~3)) >> 2;
+
+		opc[1] = value & 0xff;
+		opc[2] = (value >> 8) & 0xff;
+
 		break;
 	default:
 		LOG_DBG("unsupported relocation type %u", type);

@@ -10,7 +10,7 @@ common:
 tests:
   drivers.gpio.2pin:
     min_flash: 34
-    filter: dt_compat_enabled("test-gpio-basic-api")
+    filter: dt_compat_enabled("test-gpio-basic-api") and not dt_compat_enabled("arduino-header-r3")
 
   drivers.gpio.nrf_sense_edge:
     platform_allow: nrf52840dk/nrf52840 nrf52_bsim
@@ -30,3 +30,26 @@ tests:
     extra_args: "DTC_OVERLAY_FILE=boards/frdm_ke17z_fgpio.overlay"
     harness_config:
       fixture: fgpio_loopback
+
+  drivers.gpio.2pin_arduino:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+    extra_args: "DTC_OVERLAY_FILE=arduino.overlay"
+    integration_platforms:
+      - frdm_k64f
+    platform_exclude:
+      # below boards are mikro bus not arduino
+      - da14695_dk_usb
+      - mimxrt595_evk/mimxrt595s/cm33
+
+  drivers.gpio.2pin_arduino_customized:
+    min_flash: 34
+    depends_on:
+      - gpio
+      - arduino_gpio
+    filter: dt_compat_enabled("test-gpio-basic-api") and dt_compat_enabled("arduino-header-r3")
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33

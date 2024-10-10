@@ -197,10 +197,6 @@ ipc0: &cpuapp_cpurad_ipc {
 	status = "okay";
 };
 
-&dma_fast_region {
-	status = "okay";
-};
-
 &cpuapp_rx_partitions {
 	status = "okay";
 };

@@ -13,8 +13,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
+#endif
 #include <zephyr/device.h>
 #include <soc.h>
 #include "esp_private/wifi.h"
@@ -24,6 +26,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include "esp_wpa.h"
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
+
+#if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
+#include <esp_private/adc_share_hw_ctrl.h>
+#endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 #define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
 
@@ -590,8 +596,19 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 #else
 	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 #endif
-	ret |= esp_wifi_scan_start(&scan_config, false);
 
+	if (ret) {
+		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
+		return -EINVAL;
+	}
+
+	ret = esp_wifi_start();
+	if (ret) {
+		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
+		return -EAGAIN;
+	}
+
+	ret = esp_wifi_scan_start(&scan_config, false);
 	if (ret != ESP_OK) {
 		LOG_ERR("Failed to start Wi-Fi scanning");
 		return -EAGAIN;
@@ -604,7 +621,6 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
 {
 	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	esp_err_t err = 0;
 
 	/* Build Wi-Fi configuration for AP mode */
@@ -787,10 +803,12 @@ static void esp32_wifi_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct esp32_wifi_runtime *dev_data = dev->data;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
-	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
 
 	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
+
 	if (!esp32_wifi_iface_ap) {
 		esp32_wifi_iface_ap = iface;
 		dev_data->state = ESP32_AP_STOPPED;
@@ -807,12 +825,14 @@ static void esp32_wifi_init(struct net_if *iface)
 		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
 	}
 #else
+
 	esp32_wifi_iface = iface;
 	dev_data->state = ESP32_STA_STOPPED;
 
 	/* Start interface when we are actually connected with Wi-Fi network */
 	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_STA);
 	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+
 #endif
 
 	/* Assign link local address. */
@@ -820,7 +840,6 @@ static void esp32_wifi_init(struct net_if *iface)
 
 	ethernet_init(iface);
 	net_if_carrier_off(iface);
-
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
@@ -847,6 +866,10 @@ static int esp32_wifi_stats(const struct device *dev, struct net_stats_wifi *sta
 
 static int esp32_wifi_dev_init(const struct device *dev)
 {
+#if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
+	adc2_init_code_calibration();
+#endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
+
 	esp_timer_init();
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
@@ -895,6 +918,6 @@ NET_DEVICE_DT_INST_DEFINE(1,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
-#endif
 
 CONNECTIVITY_WIFI_MGMT_BIND(Z_DEVICE_DT_DEV_ID(DT_DRV_INST(0)));
+#endif

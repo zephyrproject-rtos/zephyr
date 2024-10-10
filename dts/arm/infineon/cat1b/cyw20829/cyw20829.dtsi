@@ -39,14 +39,14 @@
 		hsiom: hsiom@40400000 {
 			compatible = "infineon,cat1-hsiom";
 			reg = <0x40400000 0x4000>;
-			interrupts = <7 6>, <6 6>;
+			interrupts = <7 4>, <6 4>;
 			status = "disabled";
 		};
 
 		gpio_prt0: gpio@40410000 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410000 0x80>;
-			interrupts = <0 6>;
+			interrupts = <0 4>;
 			gpio-controller;
 			ngpios = <6>;
 			status = "disabled";
@@ -55,7 +55,7 @@
 		gpio_prt1: gpio@40410080 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410080 0x80>;
-			interrupts = <1 6>;
+			interrupts = <1 4>;
 			gpio-controller;
 			ngpios = <7>;
 			status = "disabled";
@@ -64,7 +64,7 @@
 		gpio_prt2: gpio@40410100 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410100 0x80>;
-			interrupts = <2 6>;
+			interrupts = <2 4>;
 			gpio-controller;
 			ngpios = <6>;
 			status = "disabled";
@@ -73,7 +73,7 @@
 		gpio_prt3: gpio@40410180 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410180 0x80>;
-			interrupts = <3 6>;
+			interrupts = <3 4>;
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
@@ -82,7 +82,7 @@
 		gpio_prt4: gpio@40410200 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410200 0x80>;
-			interrupts = <4 6>;
+			interrupts = <4 4>;
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
@@ -91,7 +91,7 @@
 		gpio_prt5: gpio@40410280 {
 			compatible = "infineon,cat1-gpio";
 			reg = <0x40410280 0x80>;
-			interrupts = <5 6>;
+			interrupts = <5 4>;
 			gpio-controller;
 			ngpios = <3>;
 			status = "disabled";
@@ -108,96 +108,104 @@
 		scb0: scb@40590000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x40590000 0xfd0>;
-			interrupts = <8 6>;
+			interrupts = <8 4>;
 			status = "disabled";
 		};
 		scb1: scb@405a0000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x405a0000 0xfd0>;
-			interrupts = <17 6>;
+			interrupts = <17 4>;
 			status = "disabled";
 		};
 		scb2: scb@405b0000 {
 			compatible = "infineon,cat1-scb";
 			reg = <0x405b0000 0xfd0>;
-			interrupts = <18 6>;
+			interrupts = <18 4>;
 			status = "disabled";
 		};
 
 		watchdog0: watchdog@4020c000 {
 			compatible = "infineon,cat1-watchdog";
 			reg = <0x4020c000 0x10>;
-			interrupts = <15 6>;
+			interrupts = <15 4>;
 			status = "disabled";
 		};
 
 		mcwdt0: mcwdt@4020d000 {
 			compatible = "infineon,cat1-lp-timer";
 			reg = <0x4020d000 0x40>;
-			interrupts = <9 6>;
+			interrupts = <9 4>;
+			status = "disabled";
+		};
+
+		rtc0: rtc@40220000 {
+			compatible = "infineon,cat1-rtc";
+			reg = <0x40220000 0x10000>;
+			interrupts = <10 6>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
 		counter0_0: counter@404a0000 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a0000 0x80>;
-			interrupts = <42 6>;
+			interrupts = <42 4>;
 			resolution = <32>;
 			status = "disabled";
 		};
 		counter0_1: counter@404a0080 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a0080 0x80>;
-			interrupts = <43 6>;
+			interrupts = <43 4>;
 			resolution = <32>;
 			status = "disabled";
 		};
 		counter1_0: counter@404a8000 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8000 0x80>;
-			interrupts = <44 6>;
+			interrupts = <44 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_1: counter@404a8080 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8080 0x80>;
-			interrupts = <45 6>;
+			interrupts = <45 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_2: counter@404a8100 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8100 0x80>;
-			interrupts = <46 6>;
+			interrupts = <46 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_3: counter@404a8180 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8180 0x80>;
-			interrupts = <47 6>;
+			interrupts = <47 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_4: counter@404a8200 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8200 0x80>;
-			interrupts = <48 6>;
+			interrupts = <48 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_5: counter@404a8280 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8280 0x80>;
-			interrupts = <49 6>;
+			interrupts = <49 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		counter1_6: counter@404a8300 {
 			compatible = "infineon,cat1-counter";
 			reg = <0x404a8300 0x80>;
-			interrupts = <50 6>;
+			interrupts = <50 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -205,63 +213,63 @@
 		pwm0_0: pwm@404a0000 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a0000 0x80>;
-			interrupts = <42 6>;
+			interrupts = <42 4>;
 			resolution = <32>;
 			status = "disabled";
 		};
 		pwm0_1: pwm@404a0080 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a0080 0x80>;
-			interrupts = <43 6>;
+			interrupts = <43 4>;
 			resolution = <32>;
 			status = "disabled";
 		};
 		pwm1_0: pwm@404a8000 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8000 0x80>;
-			interrupts = <44 6>;
+			interrupts = <44 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_1: pwm@404a8080 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8080 0x80>;
-			interrupts = <45 6>;
+			interrupts = <45 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_2: pwm@404a8100 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8100 0x80>;
-			interrupts = <46 6>;
+			interrupts = <46 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_3: pwm@404a8180 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8180 0x80>;
-			interrupts = <47 6>;
+			interrupts = <47 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_4: pwm@404a8200 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8200 0x80>;
-			interrupts = <48 6>;
+			interrupts = <48 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_5: pwm@404a8280 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8280 0x80>;
-			interrupts = <49 6>;
+			interrupts = <49 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
 		pwm1_6: pwm@404a8300 {
 			compatible = "infineon,cat1-pwm";
 			reg = <0x404a8300 0x80>;
-			interrupts = <50 6>;
+			interrupts = <50 4>;
 			resolution = <16>;
 			status = "disabled";
 		};
@@ -271,28 +279,28 @@
 			compatible = "infineon,cat1-dma";
 			reg = <0x40180000 0x10000>;
 			dma-channels = <16>;
-			interrupts = <19 6>, /* CH0 */
-					     <20 6>, /* CH1 */
-					     <21 6>, /* CH2 */
-					     <22 6>, /* CH3 */
-					     <23 6>, /* CH4 */
-					     <24 6>, /* CH5 */
-					     <25 6>, /* CH6 */
-					     <26 6>, /* CH7 */
-					     <27 6>, /* CH8 */
-					     <28 6>, /* CH9 */
-					     <29 6>, /* CH10 */
-					     <30 6>, /* CH11 */
-					     <31 6>, /* CH12 */
-					     <32 6>, /* CH13 */
-					     <33 6>, /* CH14 */
-					     <34 6>; /* CH15 */
+			interrupts = <19 4>, /* CH0 */
+					     <20 4>, /* CH1 */
+					     <21 4>, /* CH2 */
+					     <22 4>, /* CH3 */
+					     <23 4>, /* CH4 */
+					     <24 4>, /* CH5 */
+					     <25 4>, /* CH6 */
+					     <26 4>, /* CH7 */
+					     <27 4>, /* CH8 */
+					     <28 4>, /* CH9 */
+					     <29 4>, /* CH10 */
+					     <30 4>, /* CH11 */
+					     <31 4>, /* CH12 */
+					     <32 4>, /* CH13 */
+					     <33 4>, /* CH14 */
+					     <34 4>; /* CH15 */
 			status = "disabled";
 		};
 		bluetooth: btss@42000000 {
 			compatible = "infineon,cyw208xx-hci";
 			reg = <0x42000000 0x6186A0>;
-			interrupts = <16 6>;
+			interrupts = <16 4>;
 			status = "disabled";
 		};
 

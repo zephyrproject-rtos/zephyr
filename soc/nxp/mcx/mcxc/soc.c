@@ -18,10 +18,10 @@
 #define MCG_NODE DT_NODELABEL(mcg)
 #define OSC_NODE DT_NODELABEL(osc)
 
-#define SIM_LPUART_CLK_SEL_DISABLED     0U /*!< LPUART clock select: Disabled */
-#define SIM_LPUART_CLK_SEL_IRC48M_CLK   1U /*!< LPUART clock select: IRC48M clock */
-#define SIM_LPUART_CLK_SEL_OSCERCLK_CLK 2U /*!< LPUART clock select: OSCERCLK clock */
-#define SIM_LPUART_CLK_SEL_MCGIRCLK_CLK 3U /*!< LPUART clock select: MCGIRCLK clock */
+#define SIM_MODULE_CLK_SEL_DISABLED     0U /*!< Module clock select: Disabled */
+#define SIM_MODULE_CLK_SEL_IRC48M_CLK   1U /*!< Module clock select: IRC48M clock */
+#define SIM_MODULE_CLK_SEL_OSCERCLK_CLK 2U /*!< Module clock select: OSCERCLK clock */
+#define SIM_MODULE_CLK_SEL_MCGIRCLK_CLK 3U /*!< Module clock select: MCGIRCLK clock */
 
 #define CLOCK_NODEID(clk) DT_CHILD(DT_INST(0, nxp_kinetis_sim), clk)
 
@@ -29,12 +29,19 @@
 
 #define LPUART_CLOCK_SEL(label) \
 	(DT_PHA(DT_NODELABEL(label), clocks, name) == kCLOCK_McgIrc48MClk \
-		 ? SIM_LPUART_CLK_SEL_IRC48M_CLK \
+		 ? SIM_MODULE_CLK_SEL_IRC48M_CLK                                                   \
 	 : DT_PHA(DT_NODELABEL(label), clocks, name) == kCLOCK_Osc0ErClk \
-		 ? SIM_LPUART_CLK_SEL_OSCERCLK_CLK \
+		 ? SIM_MODULE_CLK_SEL_OSCERCLK_CLK                                                 \
 	 : DT_PHA(DT_NODELABEL(label), clocks, name) == kCLOCK_McgInternalRefClk \
-		 ? SIM_LPUART_CLK_SEL_MCGIRCLK_CLK \
-		 : SIM_LPUART_CLK_SEL_DISABLED)
+		 ? SIM_MODULE_CLK_SEL_MCGIRCLK_CLK                                                 \
+		 : SIM_MODULE_CLK_SEL_DISABLED)
+
+#define TPM_CLOCK_SEL(node_id)                                                                     \
+	(DT_PHA(node_id, clocks, name) == kCLOCK_McgIrc48MClk ? SIM_MODULE_CLK_SEL_IRC48M_CLK      \
+	 : DT_PHA(node_id, clocks, name) == kCLOCK_Osc0ErClk  ? SIM_MODULE_CLK_SEL_OSCERCLK_CLK    \
+	 : DT_PHA(node_id, clocks, name) == kCLOCK_McgInternalRefClk                               \
+		 ? SIM_MODULE_CLK_SEL_MCGIRCLK_CLK                                                 \
+		 : SIM_MODULE_CLK_SEL_DISABLED)
 
 /*******************************************************************************
  * Variables
@@ -88,24 +95,28 @@ static void clock_init(void)
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = DT_PROP(DT_NODELABEL(cpu0), clock_frequency);
 	/* Set LPUART0 clock source. */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuart0Clock(LPUART_CLOCK_SEL(lpuart0));
+#endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_tpm)
+	/* All TPM instances share common clock source for counter clock.
+	 * Select the clock source using an arbitrary enabled TPM node.
+	 * All TPM nodes should use the same clock source in device tree.
+	 */
+	CLOCK_SetTpmClock(TPM_CLOCK_SEL(DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_kinetis_tpm)));
 #endif
 }
 
-static int mcxc_init(void)
+void soc_early_init_hook(void)
 {
 	clock_init();
-	return 0;
 }
 
-#ifdef CONFIG_PLATFORM_SPECIFIC_INIT
+#ifdef CONFIG_SOC_RESET_HOOK
 
-void z_arm_platform_init(void)
+void soc_reset_hook(void)
 {
 	SystemInit();
 }
 
-#endif /* CONFIG_PLATFORM_SPECIFIC_INIT */
-
-SYS_INIT(mcxc_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_SOC_RESET_HOOK */

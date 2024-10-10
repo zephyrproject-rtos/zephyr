@@ -25,11 +25,8 @@
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int stm32h7rs_init(void)
+void soc_early_init_hook(void)
 {
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
@@ -71,8 +68,4 @@ static int stm32h7rs_init(void)
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOSRDY() == 0) {
 	}
-
-	return 0;
 }
-
-SYS_INIT(stm32h7rs_init, PRE_KERNEL_1, 0);

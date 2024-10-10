@@ -52,6 +52,9 @@ config OPENTHREAD_BORDER_AGENT
 config OPENTHREAD_BORDER_AGENT_EPHEMERAL_KEY_ENABLE
 	bool "Border agent ephemeral PSKc"
 
+config OPENTHREAD_BORDER_AGENT_ID
+	bool "Create and save border agent ID"
+
 config OPENTHREAD_BORDER_ROUTER
 	bool "Border Router support"
 
@@ -150,6 +153,9 @@ config OPENTHREAD_DNS_UPSTREAM_QUERY
 	help
 	  Enable forwarding DNS queries to platform DNS upstream API
 
+config OPENTHREAD_DNSSD_DISCOVERY_PROXY
+	bool "DNS-SD discovery proxy support"
+
 config OPENTHREAD_DNSSD_SERVER
 	bool "DNS-SD server support"
 
@@ -157,6 +163,9 @@ config OPENTHREAD_DUA
 	bool "Domain Unicast Address support"
 	help
 	  Enable Domain Unicast Address feature for Thread 1.2
+
+config OPENTHREAD_DYNAMIC_STORE_FRAME_AHEAD_COUNTER
+	bool "Dynamic store frame ahead counter"
 
 config OPENTHREAD_ECDSA
 	bool "ECDSA support"
@@ -247,6 +256,9 @@ config OPENTHREAD_NAT64_TRANSLATOR
 
 config OPENTHREAD_NETDIAG_CLIENT
 	bool "TMF network diagnostics on client"
+
+config OPENTHREAD_NETDIAG_VENDOR_INFO
+	bool "Allow setting vendor info at runtime"
 
 config OPENTHREAD_NEIGHBOR_DISCOVERY_AGENT
 	bool "Neighbor discovery agent support"

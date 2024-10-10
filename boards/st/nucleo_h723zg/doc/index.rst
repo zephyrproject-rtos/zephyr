@@ -136,10 +136,10 @@ and a ST morpho connector. Board is configured as follows:
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - USER_PB : PC13
 - LD1 : PB0
-- LD2 : PB7
+- LD2 : PE1
 - LD3 : PB14
 - I2C : PB8, PB9
-- SPI1 NSS/SCK/MISO/MOSI : PD14PA5/PA6/PB5 (Arduino SPI)
+- SPI1 NSS/SCK/MISO/MOSI : PD14/PA5/PA6/PB5 (Arduino SPI)
 - FDCAN1 RX/TX : PD0, PD1
 
 System Clock
@@ -197,7 +197,7 @@ Flashing an application to Nucleo H723ZG
 First, connect the NUCLEO-H723ZG to your host computer using
 the USB port to prepare it for flashing. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your NUCLEO-H723ZG board.
 
@@ -235,7 +235,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

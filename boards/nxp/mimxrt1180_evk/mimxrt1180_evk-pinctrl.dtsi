@@ -63,4 +63,14 @@
 			input-enable;
 		};
 	};
+
+	pinmux_lpadc1: pinmux_lpadc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_16_adc1_ch0a>,
+				<&iomuxc_gpio_ad_14_adc1_ch1a>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+	};
 };

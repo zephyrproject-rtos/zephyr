@@ -19,6 +19,7 @@
 		i2c-0 = &flexcomm2;
 		watchdog0 = &wwdt;
 		dmic-dev = &dmic0;
+		mcuboot-button0 = &sw_4;
 	};
 
 	chosen {
@@ -75,6 +76,22 @@
 				<19 0 &hsgpio0 4 0>,	/* D13 */
 				<20 0 &hsgpio0 16 0>,	/* D14 */
 				<21 0 &hsgpio0 17 0>;	/* D15 */
+	};
+
+
+	/*
+	 * The pins for this interface are chosen arbitrarily- the RD-RW612
+	 * board does not have the NXP 8080 interface, but can support displays
+	 * using it by connecting signals directly with jumper wires.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<9  0 &hsgpio0 3 0>,	/* Pin 9, LCD touch INT */
+				<10  0 &hsgpio0 2 0>,	/* Pin 10, LCD backlight control */
+				<11  0 &hsgpio0 4 0>;	/* Pin 11, LCD and touch reset */
 	};
 };
 
@@ -144,30 +161,20 @@ arduino_i2c: &flexcomm2 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* Note slot 0 has one additional sector,
-			 * this is intended for use with the swap move algorithm
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
+			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 0x3e0000>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
 			};
-
-			/* This partition is reserved for connectivity firmwares storage
-			 * and shouldn't be moved.
-			 */
-			 fw_storage: partition@400000 {
-				label = "fw_storage";
-				reg = <0x400000 0x280000>;
-				read-only;
-			};
-
-			slot1_partition: partition@680000 {
+			slot1_partition: partition@323000 {
 				label = "image-1";
-				reg = <0x680000 0x3e0000>;
+				reg = <0x00323000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@a60000 {
+			storage_partition: partition@623000 {
 				label = "storage";
-				reg = <0xa60000 0x35a0000>;
+				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
 			};
 		};
 	};
@@ -241,10 +248,20 @@ zephyr_udc0: &usb_otg {
 	status = "okay";
 };
 
-&lcdic {
+zephyr_mipi_dbi_parallel: &lcdic {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lcdic>;
 	pinctrl-names = "default";
+};
+
+/*
+ * Similar to the flexio connection, these pins are not
+ * broken out in the format required to connect directly to
+ * an NXP 8080 display, but they can be connected with jumper
+ * wires.
+ */
+nxp_8080_touch_panel_i2c: &arduino_i2c {
+	status = "okay";
 };
 
 &mrt0_channel0 {

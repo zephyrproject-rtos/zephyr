@@ -15,11 +15,10 @@ menuconfig NRF_GRTC_TIMER
 
 if NRF_GRTC_TIMER
 
-config NRF_GRTC_SLEEP_ALLOWED
-	def_bool y
-	depends on POWEROFF
+config NRF_GRTC_ALWAYS_ON
+	bool
 	help
-	  This feature allows GRTC SYSCOUNTER to go to sleep state.
+	  Always keep the SYSCOUNTER active even if the CPU is in sleep mode.
 
 config NRF_GRTC_TIMER_APP_DEFINED_INIT
 	bool "Application defines GRTC initialization"
@@ -44,7 +43,7 @@ config NRF_GRTC_TIMER_CLOCK_MANAGEMENT
 config NRF_GRTC_SYSCOUNTER_SLEEP_MINIMUM_LATENCY
 	int
 	default 1000
-	depends on NRF_GRTC_SLEEP_ALLOWED
+	depends on POWEROFF
 	help
 	  The value (in us) ensures that the wakeup event will not fire
 	  too early. In other words, applying SYSCOUNTER sleep state for less than

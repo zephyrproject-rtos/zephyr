@@ -77,8 +77,8 @@ struct pm_state_device_constraint {
  * @brief Helper macro to define a device pm constraints.
  */
 #define PM_STATE_CONSTRAINT_DEFINE(i, node_id)                                  \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_PHANDLE_BY_IDX(node_id,               \
-		zephyr_disabling_power_states, i), okay),                       \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_PHANDLE_BY_IDX(node_id,          \
+		zephyr_disabling_power_states, i)),                             \
 		(PM_STATE_CONSTRAINT_INIT(DT_PHANDLE_BY_IDX(node_id,            \
 		zephyr_disabling_power_states, i)),), ())
 

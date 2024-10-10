@@ -145,5 +145,33 @@
 			interrupts = <18 0>;
 			status = "disabled";
 		};
+
+		lptimer0: timer@40114000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40114000 0x1000>;
+			interrupts = <9 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+		};
+
+		lptimer1: timer@40115000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40115000 0x1000>;
+			interrupts = <10 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+		};
 	};
 };

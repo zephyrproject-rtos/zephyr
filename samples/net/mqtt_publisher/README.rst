@@ -372,3 +372,9 @@ This is the output from the MQTT broker:
 	1485663807: Received PUBREL from zephyr_publisher (Mid: 49829)
 	1485663807: Sending PUBCOMP to zephyr_publisher (Mid: 49829)
 	1485663808: Received DISCONNECT from zephyr_publisher
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

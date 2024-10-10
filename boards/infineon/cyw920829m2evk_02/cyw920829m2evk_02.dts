@@ -92,27 +92,27 @@ uart2: &scb2 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flash0: flash@60000000 {
+		flash0: flash@8000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x60000000 DT_SIZE_K(512)>;
+			reg = <0x08000000 DT_SIZE_K(512)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			toc2_region: toc2_region@60000000 {
+			toc2_region: toc2_region@8000000 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "APP_HEADER_FLASH";
-				reg = <0x60000000 0x50>;
+				reg = <0x08000000 0x50>;
 			};
-			bootstrap_region: bootstrap_region@60000050 {
+			bootstrap_region: bootstrap_region@8000050 {
 				compatible = "zephyr,memory-region", "soc-nv-flash";
 				zephyr,memory-region = "BOOTSTRAP_FLASH";
-				reg = <0x60000050 DT_SIZE_K(12)>;
+				reg = <0x08000050 DT_SIZE_K(12)>;
 			};
-			app_region: app_region@60003050 {
+			app_region: app_region@8003050 {
 				compatible = "soc-nv-flash";
-				reg = <0x60003050 0x6CFB0>; /* 435kb */
+				reg = <0x08003050 0x6CFB0>; /* 435kb */
 			};
 
 			partitions {
@@ -120,7 +120,7 @@ uart2: &scb2 {
 				#address-cells = <1>;
 				#size-cells = <1>;
 
-				storage_partition: storage_partition@70000 {
+				storage_partition: storage_partition@60000 {
 					compatible = "soc-nv-flash";
 					reg = <0x60000 DT_SIZE_K(64)>;
 				};

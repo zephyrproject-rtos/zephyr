@@ -397,11 +397,11 @@
 			reg = <0x34000000 0x48>;
 			status = "disabled";
 		};
+	};
 
-		bt_hci_da1469x: bt_hci_da1469x {
-			compatible = "renesas,bt-hci-da1469x";
-			status = "disabled";
-		};
+	bt_hci_da1469x: bt_hci_da1469x {
+		compatible = "renesas,bt-hci-da1469x";
+		status = "disabled";
 	};
 };
 

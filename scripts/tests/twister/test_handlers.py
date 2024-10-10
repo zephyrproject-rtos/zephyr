@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2023 Intel Corporation
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 """
@@ -126,7 +127,7 @@ def test_handler_final_handle_actions(mocked_instance):
     instance = mocked_instance
     instance.testcases = [mock.Mock()]
 
-    handler = Handler(mocked_instance)
+    handler = Handler(mocked_instance, 'build', mock.Mock())
     handler.suite_name_check = True
 
     harness = twisterlib.harness.Test()
@@ -178,7 +179,7 @@ def test_handler_verify_ztest_suite_name(
     handler_time = mock.Mock()
 
     with mock.patch.object(Handler, '_missing_suite_name') as _missing_mocked:
-        handler = Handler(instance)
+        handler = Handler(instance, 'build', mock.Mock())
         handler._verify_ztest_suite_name(
             harness_status,
             detected_suite_names,
@@ -195,7 +196,7 @@ def test_handler_missing_suite_name(mocked_instance):
     instance = mocked_instance
     instance.testcases = [mock.Mock()]
 
-    handler = Handler(mocked_instance)
+    handler = Handler(mocked_instance, 'build', mock.Mock())
     handler.suite_name_check = True
 
     expected_suite_names = ['dummy_testsuite_name']
@@ -219,7 +220,7 @@ def test_handler_terminate(mocked_instance):
 
     instance = mocked_instance
 
-    handler = Handler(instance)
+    handler = Handler(instance, 'build', mock.Mock())
 
     mock_process = mock.Mock()
     mock_child1 = mock.Mock(pid=1)
@@ -265,7 +266,7 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
 
     instance = mocked_instance
 
-    handler = BinaryHandler(instance, 'build')
+    handler = BinaryHandler(instance, 'build', mock.Mock())
     handler.pid_fn = os.path.join('dummy', 'path', 'to', 'pid.pid')
 
     with mock.patch(
@@ -296,17 +297,19 @@ def test_binaryhandler_try_kill_process_by_pid(mocked_instance):
 
 TESTDATA_3 = [
     (
-        [b'This\\r\\n', b'is\r', b'a short', b'file.'],
+        [b'This\\r\\n\n', b'is\r', b'some \x1B[31mANSI\x1B[39m in\n', b'a short\n', b'file.'],
         mock.Mock(status=TwisterStatus.NONE, capture_coverage=False),
         [
-            mock.call('This\\r\\n'),
+            mock.call('This\\r\\n\n'),
             mock.call('is\r'),
-            mock.call('a short'),
+            mock.call('some ANSI in\n'),
+            mock.call('a short\n'),
             mock.call('file.')
         ],
         [
             mock.call('This'),
             mock.call('is'),
+            mock.call('some \x1B[31mANSI\x1B[39m in'),
             mock.call('a short'),
             mock.call('file.')
         ],
@@ -385,9 +388,8 @@ def test_binaryhandler_output_handler(
             if timeout_wait:
                 raise TimeoutExpired('dummy cmd', 'dummyamount')
 
-    handler = BinaryHandler(mocked_instance, 'build')
+    handler = BinaryHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     handler.terminate = mock.Mock()
-    handler.options = mock.Mock(timeout_multiplier=1)
 
     proc = MockProc(1, proc_stdout)
 
@@ -419,7 +421,7 @@ TESTDATA_4 = [
       f'--suppressions={ZEPHYR_BASE}/scripts/valgrind.supp',
       '--log-file=build_dir/valgrind.log', '--track-origins=yes',
       'generator']),
-    (False, True, False, 123, None, ['generator', 'run', '--seed=123']),
+    (False, True, False, 123, None, ['generator', '-C', 'build_dir', 'run', '--seed=123']),
     (False, False, False, None, ['ex1', 'ex2'], ['build_dir/zephyr/zephyr.exe', 'ex1', 'ex2']),
 ]
 
@@ -438,13 +440,12 @@ def test_binaryhandler_create_command(
     extra_args,
     expected
 ):
-    handler = BinaryHandler(mocked_instance, 'build')
-    handler.generator_cmd = 'generator'
+    options = SimpleNamespace()
+    options.enable_valgrind = enable_valgrind
+    options.coverage_basedir = "coverage_basedir"
+    handler = BinaryHandler(mocked_instance, 'build', options, 'generator', False)
     handler.binary = 'bin'
     handler.call_make_run = call_make_run
-    handler.options = SimpleNamespace()
-    handler.options.enable_valgrind = enable_valgrind
-    handler.options.coverage_basedir = "coverage_basedir"
     handler.seed = seed
     handler.extra_test_args = extra_args
     handler.build_dir = 'build_dir'
@@ -476,12 +477,11 @@ def test_binaryhandler_create_env(
     enable_lsan,
     enable_ubsan
 ):
-    handler = BinaryHandler(mocked_instance, 'build')
-    handler.options = mock.Mock(
+    handler = BinaryHandler(mocked_instance, 'build', mock.Mock(
         enable_asan=enable_asan,
         enable_lsan=enable_lsan,
         enable_ubsan=enable_ubsan
-    )
+    ))
 
     env = {
         'example_env_var': True,
@@ -531,11 +531,12 @@ def test_binaryhandler_update_instance_info(
     expected_reason,
     do_add_missing
 ):
-    handler = BinaryHandler(mocked_instance, 'build')
+    handler = BinaryHandler(mocked_instance, 'build', mock.Mock(
+        enable_valgrind=enable_valgrind
+    ))
     handler_time = 59
     handler.terminated = terminated
     handler.returncode = returncode
-    handler.options = mock.Mock(enable_valgrind=enable_valgrind)
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
 
@@ -579,7 +580,7 @@ def test_binaryhandler_handle(
     def mock_thread(target, *args, **kwargs):
         return thread_mock_obj
 
-    handler = BinaryHandler(mocked_instance, 'build')
+    handler = BinaryHandler(mocked_instance, 'build', mock.Mock(coverage=coverage))
     handler.sourcedir = 'source_dir'
     handler.build_dir = 'build_dir'
     handler.name= 'Dummy Name'
@@ -589,7 +590,6 @@ def test_binaryhandler_handle(
     handler._final_handle_actions = mock.Mock()
     handler.terminate = mock.Mock()
     handler.try_kill_process_by_pid = mock.Mock()
-    handler.options = mock.Mock(coverage=coverage)
 
     robot_mock = mock.Mock()
     harness = mock.Mock(is_robot_test=is_robot_test, run_robot_test=robot_mock)
@@ -637,7 +637,7 @@ def test_simulationhandler_init(
     is_binary,
     expected_ready
 ):
-    handler = SimulationHandler(mocked_instance, type_str)
+    handler = SimulationHandler(mocked_instance, type_str, mock.Mock())
 
     assert handler.call_make_run == expected_call_make_run
     assert handler.ready == expected_ready
@@ -713,8 +713,7 @@ def test_devicehandler_monitor_serial(
     harness = mock.Mock(capture_coverage=False)
     type(harness).status=mock.PropertyMock(side_effect=status_iter)
 
-    handler = DeviceHandler(mocked_instance, 'build')
-    handler.options = mock.Mock(enable_coverage=not end_by_status)
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock(enable_coverage=not end_by_status))
 
     with mock.patch('builtins.open', mock.mock_open(read_data='')):
         handler.monitor_serial(ser, halt_event, harness)
@@ -738,8 +737,7 @@ def test_devicehandler_monitor_serial_splitlines(mocked_instance):
     )
     harness = mock.Mock(status=TwisterStatus.PASS)
 
-    handler = DeviceHandler(mocked_instance, 'build')
-    handler.options = mock.Mock(enable_coverage=False)
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock(enable_coverage=False))
 
     with mock.patch('builtins.open', mock.mock_open(read_data='')):
         handler.monitor_serial(ser, halt_event, harness)
@@ -914,7 +912,7 @@ def test_devicehandler_device_is_available(
     mocked_instance.platform.name = platform_name
     mocked_instance.testsuite.harness_config = {'fixture': fixture}
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.duts = duts
 
     if isinstance(expected, int):
@@ -946,7 +944,7 @@ def test_devicehandler_make_dut_available(mocked_instance):
         )
     ]
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.duts = duts
 
     handler.make_dut_available(duts[1])
@@ -1038,7 +1036,7 @@ def test_devicehandler_get_hardware(
             return None
         return expected_hardware
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.no = num_of_failures
 
     with mock.patch.object(
@@ -1169,7 +1167,7 @@ def test_devicehandler_create_command(
     hardware_product_name,
     expected
 ):
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.options = mock.Mock(west_flash=self_west_flash)
     handler.generator_cmd = 'generator_cmd'
 
@@ -1210,7 +1208,7 @@ def test_devicehandler_update_instance_info(
         expected_reason,
         do_add_missing
         ):
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler_time = 59
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
@@ -1269,10 +1267,9 @@ def test_devicehandler_create_serial_connection(
             raise expected_exception('')
         return expected_result
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
-    handler.options = mock.Mock(timeout_multiplier=1)
     twisterlib.handlers.terminate_process = mock.Mock()
 
     dut = DUT()
@@ -1329,7 +1326,7 @@ def test_devicehandler_get_serial_device(
             raise popen_exception(command, 'Dummy error')
         return mock.Mock()
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     hardware_serial = 'dummy hardware serial'
 
     popen_mock = mock.Mock(side_effect=mock_popen)
@@ -1442,7 +1439,7 @@ def test_devicehandler_handle(
         flash_with_test=True
     )
 
-    handler = DeviceHandler(mocked_instance, 'build')
+    handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.get_hardware = mock.Mock(return_value=hardware)
     handler.options = mock.Mock(
         timeout_multiplier=1,
@@ -1518,7 +1515,7 @@ def test_qemuhandler_init(
 ):
     mocked_instance.testsuite.ignore_qemu_crash = ignore_qemu_crash
 
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
 
     assert handler.ignore_qemu_crash == expected_ignore_crash
     assert handler.ignore_unexpected_eof == expected_ignore_unexpected_eof
@@ -1573,7 +1570,7 @@ def test_qemuhandler_get_default_domain_build_dir(
     domains_mock = mock.Mock(get_default_domain=get_default_domain_mock)
     from_file_mock = mock.Mock(return_value=domains_mock)
 
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
     handler.instance.sysbuild = self_sysbuild
     handler.build_dir = self_build_dir
 
@@ -1613,7 +1610,7 @@ def test_qemuhandler_set_qemu_filenames(
     unlink_mock = mock.Mock()
     exists_mock = mock.Mock(return_value=exists_pid_fn)
 
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
     handler.log = self_log
     handler.pid_fn = self_pid_fn
 
@@ -1636,8 +1633,7 @@ def test_qemuhandler_set_qemu_filenames(
 def test_qemuhandler_create_command(mocked_instance):
     sysbuild_build_dir = os.path.join('sysbuild', 'dummy_dir')
 
-    handler = QEMUHandler(mocked_instance, 'build')
-    handler.generator_cmd = 'dummy_cmd'
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(), 'dummy_cmd', False)
 
     result = handler._create_command(sysbuild_build_dir)
 
@@ -1719,7 +1715,7 @@ def test_qemuhandler_update_instance_info(
     mocked_instance.add_missing_case_status = mock.Mock()
     mocked_instance.reason = self_instance_reason
 
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
     handler.returncode = self_returncode
     handler.ignore_qemu_crash = self_ignore_qemu_crash
 
@@ -1855,7 +1851,7 @@ def test_qemuhandler_thread_update_instance_info(
     expected_status,
     expected_reason
 ):
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock())
     handler_time = 59
 
     QEMUHandler._thread_update_instance_info(handler, handler_time, _status, _reason)
@@ -1980,11 +1976,10 @@ def test_qemuhandler_thread(
             raise ProcessLookupError()
 
     type(mocked_instance.testsuite).timeout = mock.PropertyMock(return_value=timeout)
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     handler.ignore_unexpected_eof = False
     handler.pid_fn = 'pid_fn'
     handler.fifo_fn = 'fifo_fn'
-    handler.options = mock.Mock(timeout_multiplier=1)
 
     def mocked_open(filename, *args, **kwargs):
         if filename == handler.pid_fn:
@@ -2089,7 +2084,7 @@ def test_qemuhandler_handle(
     )
     mock_process.wait = mock.Mock(side_effect=mock_wait)
 
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
 
     def mock_path_exists(name, *args, **kwargs):
         return exists_pid_fn
@@ -2142,7 +2137,7 @@ def test_qemuhandler_handle(
 
 
 def test_qemuhandler_get_fifo(mocked_instance):
-    handler = QEMUHandler(mocked_instance, 'build')
+    handler = QEMUHandler(mocked_instance, 'build', mock.Mock(timeout_multiplier=1))
     handler.fifo_fn = 'fifo_fn'
 
     result = handler.get_fifo()

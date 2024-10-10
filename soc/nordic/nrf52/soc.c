@@ -37,7 +37,7 @@ static int nordicsemi_nrf52_init(void)
 	nrf_power_dcdcen_set(NRF_POWER, true);
 #endif
 #if NRF_POWER_HAS_DCDCEN_VDDH && (defined(CONFIG_SOC_DCDC_NRF52X_HV) || \
-	DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52x_regulator_hv), okay))
+	DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nordic_nrf52x_regulator_hv)))
 	nrf_power_dcdcen_vddh_set(NRF_POWER, true);
 #endif
 

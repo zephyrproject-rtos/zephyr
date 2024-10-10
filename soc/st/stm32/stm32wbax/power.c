@@ -26,7 +26,7 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-static int stm32_power_init(void);
+void stm32_power_init(void);
 
 static void disable_cache(void)
 {
@@ -207,7 +207,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(void)
+void stm32_power_init(void)
 {
 
 #ifdef CONFIG_BT_STM32WBA
@@ -228,8 +228,4 @@ static int stm32_power_init(void)
 	LL_PWR_EnableUltraLowPowerMode();
 
 	LL_FLASH_EnableSleepPowerDown();
-
-	return 0;
 }
-
-SYS_INIT(stm32_power_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

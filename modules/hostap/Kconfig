@@ -23,13 +23,13 @@ config WIFI_NM_WPA_SUPPLICANT
 
 if WIFI_NM_WPA_SUPPLICANT
 
-config COMMON_LIBC_MALLOC_ARENA_SIZE
-	default 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
-	default 40000 if WIFI_NM_WPA_SUPPLICANT_AP
+config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
+	def_int 85000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && !MBEDTLS_ENABLE_HEAP
+	def_int 40000 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 8192 for MbedTLS heap
-	default 21808 if MBEDTLS_ENABLE_HEAP
+	def_int 21808 if MBEDTLS_ENABLE_HEAP
 	# 30K is mandatory, but might need more for long duration use cases
-	default 30000
+	def_int 30000
 
 config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
@@ -484,5 +484,9 @@ config SAE_PWE_EARLY_EXIT
 	  supplicant goes through full iterations, but in some low-resource systems
 	  this can be intensive, so, add an option to exit early.
 	  Note that this is highly insecure and shouldn't be used in production
+
+config WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
+	bool
+	depends on WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 
 endif # WIFI_NM_WPA_SUPPLICANT

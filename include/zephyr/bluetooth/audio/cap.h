@@ -312,6 +312,9 @@ struct bt_cap_unicast_audio_stop_param {
 
 	/** Array of streams to stop */
 	struct bt_cap_stream **streams;
+
+	/** Whether to release the streams after they have stopped */
+	bool release;
 };
 
 /**
@@ -379,7 +382,10 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  *
  * @param param Stop parameters.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success
+ * @retval -EBUSY if a CAP procedure is already in progress
+ * @retval -EINVAL if any parameter is invalid
+ * @retval -EALREADY if no state changes will occur
  */
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
@@ -450,7 +456,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.
@@ -820,6 +826,17 @@ struct bt_cap_commander_cb {
 	 *			by bt_cap_commander_cancel().
 	 */
 	void (*broadcast_reception_start)(struct bt_conn *conn, int err);
+	/**
+	 * @brief Callback for bt_cap_commander_broadcast_reception_stop().
+	 *
+	 * @param conn		Pointer to the connection where the error
+	 *			occurred. NULL if @p err is 0 or if cancelled by
+	 *			bt_cap_commander_cancel()
+	 * @param err		0 on success, BT_GATT_ERR() with a
+	 *			specific ATT (BT_ATT_ERR_*) error code or -ECANCELED if cancelled
+	 *			by bt_cap_commander_cancel().
+	 */
+	void (*broadcast_reception_stop)(struct bt_conn *conn, int err);
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 };
 
@@ -948,14 +965,26 @@ int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 
 /** Parameters for stopping broadcast reception  */
+
+struct bt_cap_commander_broadcast_reception_stop_member_param {
+	/** Coordinated or ad-hoc set member. */
+	union bt_cap_set_member member;
+
+	/** Source ID of the receive state. */
+	uint8_t src_id;
+
+	/** Number of subgroups */
+	size_t num_subgroups;
+};
+
 struct bt_cap_commander_broadcast_reception_stop_param {
 	/** The type of the set. */
 	enum bt_cap_set_type type;
 
-	/** Coordinated or ad-hoc set member. */
-	union bt_cap_set_member *members;
+	/** The set of devices for this procedure */
+	struct bt_cap_commander_broadcast_reception_stop_member_param *param;
 
-	/** The number of members in @p members */
+	/** The number of parameters in @p param */
 	size_t count;
 };
 

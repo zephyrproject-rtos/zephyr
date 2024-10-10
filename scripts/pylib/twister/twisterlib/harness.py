@@ -562,7 +562,8 @@ class Pytest(Harness):
     def _parse_report_file(self, report):
         tree = ET.parse(report)
         root = tree.getroot()
-        if elem_ts := root.find('testsuite'):
+
+        if (elem_ts := root.find('testsuite')) is not None:
             if elem_ts.get('failures') != '0':
                 self.status = TwisterStatus.FAIL
                 self.instance.reason = f"{elem_ts.get('failures')}/{elem_ts.get('tests')} pytest scenario(s) failed"

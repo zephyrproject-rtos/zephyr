@@ -242,7 +242,8 @@ static int rpu_pwron(void)
 	/* Settling time for iovdd nRF7002 DK/EK - switch (TCK106AG): ~600us */
 	k_msleep(1);
 
-	if (IS_ENABLED(CONFIG_NRF_WIFI_COMBINED_BUCKEN_IOVDD_GPIO)) {
+	if ((bucken_spec.port == iovdd_ctrl_spec.port) &&
+	    (bucken_spec.pin == iovdd_ctrl_spec.pin)) {
 		/* When a single GPIO is used, we need a total wait time after bucken assertion
 		 * to be 6ms (1ms + 1ms + 4ms).
 		 */

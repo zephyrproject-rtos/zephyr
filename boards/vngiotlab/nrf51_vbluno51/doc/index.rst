@@ -135,7 +135,7 @@ Testing the VBLUno51 with Zephyr: buttons, LEDs, UART, BLE
  Here are some sample applications that you can use to test different
  components on the VBLUno51 board:
 
- * :ref:`hello_world`
+ * :zephyr:code-sample:`hello_world`
  * :zephyr:code-sample:`blinky`
  * :zephyr:code-sample:`button`
  * :zephyr:code-sample:`bluetooth_beacon`

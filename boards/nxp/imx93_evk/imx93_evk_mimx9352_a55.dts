@@ -17,6 +17,7 @@
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
 		zephyr,sram = &sram0;
+		zephyr,canbus = &flexcan2;
 	};
 
 	cpus {
@@ -66,9 +67,21 @@
 	};
 
 	board_exp_sel: board-exp-sel {
+		/*
+		 * Kconfig BOARD_MIMX93_EVK_A55_EXP_SEL_INIT must be
+		 * enabled to configure it during init.
+		 */
 		compatible = "imx93evk-exp-sel";
 		mux-gpios = <&gpio_exp0 4 GPIO_ACTIVE_HIGH>;
 		mux = "A";
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1057", "can-transceiver-gpio";
+		standby-gpios = <&gpio_exp0 8 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
 	};
 };
 
@@ -89,7 +102,7 @@
 	pinctrl-0 = <&pinmux_mdio>;
 	pinctrl-names = "default";
 	status = "okay";
-	phy: phy@0 {
+	phy: phy@2 {
 		compatible = "realtek,rtl8211f";
 		reg = <2>;
 		status = "okay";
@@ -177,5 +190,12 @@
 };
 
 &gpio4{
+	status = "okay";
+};
+
+&flexcan2 {
+	pinctrl-0 = <&flexcan2_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
 	status = "okay";
 };

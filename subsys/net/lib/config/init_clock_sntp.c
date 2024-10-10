@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
@@ -11,6 +12,11 @@ LOG_MODULE_DECLARE(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/sntp.h>
 #include <zephyr/posix/time.h>
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
+static void sntp_resync_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(sntp_resync_work_handle, sntp_resync_handler);
+#endif
 
 static int sntp_init_helper(struct sntp_time *tm)
 {
@@ -39,12 +45,33 @@ int net_init_clock_via_sntp(void)
 
 	if (res < 0) {
 		LOG_ERR("Cannot set time using SNTP");
-		return res;
+		goto end;
 	}
 
 	tspec.tv_sec = ts.seconds;
 	tspec.tv_nsec = ((uint64_t)ts.fraction * (1000 * 1000 * 1000)) >> 32;
 	res = clock_settime(CLOCK_REALTIME, &tspec);
 
-	return 0;
+end:
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
+	k_work_reschedule(&sntp_resync_work_handle,
+			  K_SECONDS(CONFIG_NET_CONFIG_SNTP_INIT_RESYNC_INTERVAL));
+#endif
+	return res;
 }
+
+#ifdef CONFIG_NET_CONFIG_SNTP_INIT_RESYNC
+static void sntp_resync_handler(struct k_work *work)
+{
+	int res;
+
+	ARG_UNUSED(work);
+
+	res = net_init_clock_via_sntp();
+	if (res < 0) {
+		LOG_ERR("Cannot resync time using SNTP");
+		return;
+	}
+	LOG_DBG("Time resynced using SNTP");
+}
+#endif /* CONFIG_NET_CONFIG_SNTP_INIT_RESYNC */

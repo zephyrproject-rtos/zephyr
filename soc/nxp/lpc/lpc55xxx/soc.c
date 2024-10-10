@@ -193,7 +193,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hs_lspi))
 	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 #endif
@@ -228,7 +228,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 * According to reference mannual, device mode setting has to be set by access
 	 * usb host register
 	 */
-	*((uint32_t *)(USBFSH_BASE + 0x5C)) |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
+	USBFSH->PORTMODE |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
 	/* disable usb0 host clock */
 	CLOCK_DisableClock(kCLOCK_Usbhsl0);
 
@@ -244,12 +244,12 @@ static ALWAYS_INLINE void clock_init(void)
 	/* enable usb1 host clock */
 	CLOCK_EnableClock(kCLOCK_Usbh1);
 	/* Put PHY powerdown under software control */
-	*((uint32_t *)(USBHSH_BASE + 0x50)) = USBHSH_PORTMODE_SW_PDCOM_MASK;
+	USBHSH->PORTMODE = USBHSH_PORTMODE_SW_PDCOM_MASK;
 	/*
 	 * According to reference manual, device mode setting has to be set by
 	 * access usb host register
 	 */
-	*((uint32_t *)(USBHSH_BASE + 0x50)) |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
+	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
 	/* disable usb1 host clock */
 	CLOCK_DisableClock(kCLOCK_Usbh1);
 

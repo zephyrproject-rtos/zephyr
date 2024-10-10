@@ -22,6 +22,7 @@
 #include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/arch/cache.h>
 
 /**
  * @brief Prepare to and run C code
@@ -49,6 +50,9 @@ void z_prep_c(void)
 	 */
 	z_nios2_dcache_flush_all();
 #endif
+#endif
+#if CONFIG_ARCH_CACHE
+	arch_cache_init();
 #endif
 	z_cstart();
 	CODE_UNREACHABLE;

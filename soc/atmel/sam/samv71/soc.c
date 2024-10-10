@@ -132,23 +132,18 @@ void soc_reset_hook(void)
 	clock_init();
 }
 
+extern void atmel_samv71_config(void);
 /**
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run at the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int atmel_samv71_init(void)
+void soc_early_init_hook(void)
 {
 	/* Check that the CHIP CIDR matches the HAL one */
 	if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
 		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
 			(uint32_t)CHIPID->CHIPID_CIDR, (uint32_t)CHIP_CIDR);
 	}
-
-	return 0;
+	atmel_samv71_config();
 }
-
-SYS_INIT(atmel_samv71_init, PRE_KERNEL_1, 0);

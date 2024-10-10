@@ -14,6 +14,7 @@ import re
 import sys
 import json
 
+# pylint: disable=duplicate-code
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -75,7 +76,7 @@ class TestQuarantine:
     def test_quarantine_list(self, capfd, out_path, test_path, test_platforms, quarantine_directory):
         args = ['--outdir', out_path, '-T', test_path] +\
                ['--quarantine-list', quarantine_directory] + \
-               ['-vv'] + \
+               ['-vv', '-ll', 'DEBUG'] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
                ) for val in pair]

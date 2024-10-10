@@ -261,7 +261,7 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 				       sizeof(struct in_addr));
 				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
 				net_sin(local)->sin_family = AF_INET;
-			} else if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET6) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == AF_INET6) {
 				memcpy(&net_sin6(local)->sin6_addr,
 				       net_sin6_ptr(&ctx->local)->sin6_addr,
 				       sizeof(struct in6_addr));
@@ -836,17 +836,6 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	NET_DBG("conn: %p, ref_count=%d", conn, ref_count);
 
-	k_mutex_lock(&conn->lock, K_FOREVER);
-
-#if !defined(CONFIG_NET_TEST_PROTOCOL)
-	if (conn->in_connect) {
-		conn->in_connect = false;
-		k_sem_reset(&conn->connect_sem);
-	}
-#endif /* CONFIG_NET_TEST_PROTOCOL */
-
-	k_mutex_unlock(&conn->lock);
-
 	ref_count = atomic_dec(&conn->ref_count) - 1;
 	if (ref_count != 0) {
 		tp_out(net_context_get_family(conn->context), conn->iface,
@@ -888,6 +877,9 @@ static int tcp_conn_close(struct tcp *conn, int status)
 			/* Make sure the connect_cb is only called once. */
 			conn->connect_cb = NULL;
 		}
+
+		conn->in_connect = false;
+		k_sem_reset(&conn->connect_sem);
 	} else if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 				       status, conn->recv_user_data);
@@ -3645,8 +3637,8 @@ int net_tcp_put(struct net_context *context)
 		({ const char *state = net_context_state(context);
 					state ? state : "<unknown>"; }));
 
-	if (conn && (conn->state == TCP_ESTABLISHED ||
-		     conn->state == TCP_SYN_RECEIVED)) {
+	if (conn->state == TCP_ESTABLISHED ||
+	    conn->state == TCP_SYN_RECEIVED) {
 		/* Send all remaining data if possible. */
 		if (conn->send_data_total > 0) {
 			NET_DBG("conn %p pending %zu bytes", conn,
@@ -3678,8 +3670,9 @@ int net_tcp_put(struct net_context *context)
 
 			keep_alive_timer_stop(conn);
 		}
-	} else if (conn && conn->in_connect) {
+	} else if (conn->in_connect) {
 		conn->in_connect = false;
+		k_sem_reset(&conn->connect_sem);
 	}
 
 	k_mutex_unlock(&conn->lock);
@@ -3948,16 +3941,21 @@ int net_tcp_connect(struct net_context *context,
 	 * a TCP connection to be established
 	 */
 	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
+
+	/* The ref will make sure that if the connection is closed in tcp_in(),
+	 * we do not access already freed connection.
+	 */
+	tcp_conn_ref(conn);
 	(void)tcp_in(conn, NULL);
 
 	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
 		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
-			ret = -errno;
-			goto out;
+			ret = -ENOTCONN;
+			goto out_unref;
 		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) &&
 			   conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
-			goto out;
+			goto out_unref;
 		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
 			   conn->state != TCP_ESTABLISHED) {
 			if (conn->in_connect) {
@@ -3966,11 +3964,15 @@ int net_tcp_connect(struct net_context *context,
 			}
 
 			ret = -ETIMEDOUT;
-			goto out;
+			goto out_unref;
 		}
 		conn->in_connect = false;
 	}
- out:
+
+out_unref:
+	tcp_conn_unref(conn);
+
+out:
 	NET_DBG("conn: %p, ret=%d", conn, ret);
 
 	return ret;

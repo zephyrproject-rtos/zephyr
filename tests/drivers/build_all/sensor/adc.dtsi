@@ -85,7 +85,7 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 
 test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 	compatible = "tdk,ntcg163jf103ft1";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	pullup-uv = <3300000>;
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
@@ -94,7 +94,7 @@ test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
 
 test_lm35: lm35 {
 	compatible = "lm35";
-	io-channels = <&adc0 0>;
+	io-channels = <&test_adc 0>;
 	status = "okay";
 };
 
@@ -105,4 +105,24 @@ test_murata_ncp15xh103: murata-ncp15xh103 {
 	pullup-ohm = <0>;
 	pulldown-ohm = <10000>;
 	connected-positive;
+};
+
+test_seeed_grove_light: seeed-grove-light {
+	compatible = "seeed,grove-light";
+	io-channels = <&test_adc 0>;
+};
+
+test_seeed_grove_temperature: seeed-grove-temperature {
+	compatible = "seeed,grove-temperature";
+	io-channels = <&test_adc 0>;
+};
+
+test_veaa_x_3: test_veaa_x_3 {
+	status = "okay";
+	compatible = "festo,veaa-x-3";
+	io-channels = <&test_adc 3>;
+	dac = <&test_dac>;
+	dac-channel-id = <2>;
+	dac-resolution = <12>;
+	pressure-range-type = "D2";
 };

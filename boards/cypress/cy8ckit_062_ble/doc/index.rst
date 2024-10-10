@@ -154,7 +154,7 @@ and J12 that can be used with Segger J-Link [default].
 A watchdog timer is enabled by default. To disable it call Cy_WDT_Unlock() and
 Cy_WDT_Disable().
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
@@ -248,7 +248,7 @@ connections may not allow the correct use of shields.  The default board
 revision (0.0.0) allows use of default connections.  The use of Arduino headers
 are only possible after rework the board and using the revision 1.0.0.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application for
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application for
    board revision 1.0.0:
 
    .. zephyr-app-commands::

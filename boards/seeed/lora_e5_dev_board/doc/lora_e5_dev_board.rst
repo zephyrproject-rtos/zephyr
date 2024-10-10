@@ -242,7 +242,7 @@ Flashing an application to LoRa-E5 Dev board
 
 Connect the LoRa-E5 to your host computer using the external debug probe.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your board:
 Per default the console on ``usart1`` is available on the USB Type C connector

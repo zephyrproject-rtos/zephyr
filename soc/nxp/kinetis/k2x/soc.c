@@ -118,15 +118,13 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int fsl_frdm_k22f_init(void)
+void soc_early_init_hook(void)
 {
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clock_init();
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -137,5 +135,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(fsl_frdm_k22f_init, PRE_KERNEL_1, 0);

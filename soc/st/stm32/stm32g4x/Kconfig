@@ -12,3 +12,4 @@ config SOC_SERIES_STM32G4X
 	select CPU_HAS_ARM_MPU
 	select HAS_PM
 	select HAS_SWO
+	select SOC_EARLY_INIT_HOOK

@@ -1,6 +1,7 @@
 boards:
 
   - name: qemu_x86
+    full_name: 'QEMU Emulation for X86'
     socs:
       - name: atom
         variants:
@@ -11,15 +12,18 @@ boards:
           - name: 'xip'
 
   - name: qemu_x86_lakemont
+    full_name: 'QEMU Emulation for X86 / Lakemont CPU'
     socs:
       - name: lakemont
 
   - name: qemu_x86_64
+    full_name: 'QEMU Emulation for X86 64bit'
     socs:
       - name: atom
         variants:
           - name: 'nokpti'
 
   - name: qemu_x86_tiny
+    full_name: 'QEMU Emulation for X86 Minimal Configuration'
     socs:
       - name: atom

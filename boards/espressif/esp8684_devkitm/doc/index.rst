@@ -70,6 +70,10 @@ Current Zephyr's ESP8684-DevKitM board supports the following features:
 +------------+------------+-------------------------------------+
 | LEDC       | on-chip    | pwm                                 |
 +------------+------------+-------------------------------------+
+| SPI Master | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
+| SPI DMA    | on-chip    | spi                                 |
++------------+------------+-------------------------------------+
 
 For a getting started user guide, please check `ESP8684-DevKitM User Guide`_.
 
@@ -187,7 +191,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp8684_devkitm`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -220,7 +224,7 @@ The Zephyr SDK uses a bundled version of OpenOCD by default. You can overwrite t
 ``-DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>``
 parameter when building.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -228,7 +232,7 @@ Here is an example for building the :ref:`hello_world` application.
    :goals: build flash
    :gen-args: -DOPENOCD=<path/to/bin/openocd> -DOPENOCD_DEFAULT_PATH=<path/to/openocd/share/openocd/scripts>
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -64,6 +64,7 @@ enum coap_option_num {
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
 	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
+	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
 	COAP_OPTION_REQUEST_TAG = 292    /**< Request-Tag (RFC 9175) */
 };
 
@@ -222,6 +223,22 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
 };
 
+/**
+ * @brief Set of No-Response option values for CoAP.
+ *
+ * To be used when encoding or decoding a No-Response option defined
+ * in RFC 7967.
+ */
+enum coap_no_response {
+	COAP_NO_RESPONSE_SUPPRESS_2_XX = 0x02,
+	COAP_NO_RESPONSE_SUPPRESS_4_XX = 0x08,
+	COAP_NO_RESPONSE_SUPPRESS_5_XX = 0x10,
+
+	COAP_NO_RESPONSE_SUPPRESS_ALL = COAP_NO_RESPONSE_SUPPRESS_2_XX |
+					COAP_NO_RESPONSE_SUPPRESS_4_XX |
+					COAP_NO_RESPONSE_SUPPRESS_5_XX,
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /* block option helper */
@@ -338,8 +355,15 @@ typedef int (*coap_reply_t)(const struct coap_packet *response,
  * @brief CoAP transmission parameters.
  */
 struct coap_transmission_parameters {
-	/**  Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
+	/** Initial ACK timeout. Value is used as a base value to retry pending CoAP packets. */
 	uint32_t ack_timeout;
+#if defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) || defined(__DOXYGEN__)
+	/**
+	 * Set CoAP ack random factor. A value of 150 means a factor of 1.5. A value of 0 defaults
+	 * to @kconfig{CONFIG_COAP_ACK_RANDOM_PERCENT}. The value must be >= 100.
+	 */
+	uint16_t ack_random_percent;
+#endif /* defined(CONFIG_COAP_RANDOMIZE_ACK_TIMEOUT) */
 	/** Set CoAP retry backoff factor. A value of 200 means a factor of 2.0. */
 	uint16_t coap_backoff_percent;
 	/** Maximum number of retransmissions. */

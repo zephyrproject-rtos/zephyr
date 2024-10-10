@@ -136,8 +136,7 @@ void net_socket_service_callback(struct k_work *work)
 	}
 }
 
-static int call_work(struct zsock_pollfd *pev, struct k_work_q *work_q,
-		     struct k_work *work)
+static int call_work(struct zsock_pollfd *pev, struct k_work *work)
 {
 	int ret = 0;
 
@@ -170,7 +169,7 @@ static int trigger_work(struct zsock_pollfd *pev)
 	 */
 	event->event = *pev;
 
-	return call_work(pev, svc->work_q, &event->work);
+	return call_work(pev, &event->work);
 }
 
 static void socket_service_thread(void)

@@ -248,8 +248,8 @@ the ``--runner`` (or ``-r``) option:
 
    $ west flash --runner openocd
 
-Flashing `hci_uart` application to STM32WB5MMG
-----------------------------------------------
+Flashing ``hci_uart`` application to STM32WB5MMG
+------------------------------------------------
 
 Connect the B-U585I-IOT02A to your host computer using the USB port. Put
 the SW4 (MCU SWD) in OFF mode and SW5 (SWD BLE) in ON mode. Then build

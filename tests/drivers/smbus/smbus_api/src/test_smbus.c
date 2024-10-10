@@ -14,7 +14,7 @@
 
 #include <smbus_utils.h>
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(smbus0), okay),
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smbus0)),
 	     "SMBus node is disabled!");
 
 #define FAKE_ADDRESS	0x10

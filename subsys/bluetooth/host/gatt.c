@@ -1833,11 +1833,20 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	len = MIN(buf_len, value_len - offset);
+	if (value_len != 0U && value == NULL) {
+		LOG_WRN("value_len of %u provided for NULL value", value_len);
+
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
+
+	if (value_len == 0U) {
+		len = 0U;
+	} else {
+		len = MIN(buf_len, value_len - offset);
+		memcpy(buf, (uint8_t *)value + offset, len);
+	}
 
 	LOG_DBG("handle 0x%04x offset %u length %u", attr->handle, offset, len);
-
-	memcpy(buf, (uint8_t *)value + offset, len);
 
 	return len;
 }
@@ -5477,7 +5486,7 @@ int bt_gatt_subscribe(struct bt_conn *conn,
 		int err;
 
 #if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
-		if (!params->ccc_handle) {
+		if (params->ccc_handle == BT_GATT_AUTO_DISCOVER_CCC_HANDLE) {
 			return gatt_ccc_discover(conn, params);
 		}
 #endif

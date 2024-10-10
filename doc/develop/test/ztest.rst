@@ -600,13 +600,17 @@ By default the tests are sorted and ran in alphanumerical order.  Test cases may
 be dependent on this sequence. Enable :kconfig:option:`CONFIG_ZTEST_SHUFFLE` to
 randomize the order. The output from the test will display the seed for failed
 tests.  For native simulator builds you can provide the seed as an argument to
-twister with `--seed`
+twister with ``--seed``.
 
-Static configuration of ZTEST_SHUFFLE contains:
 
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT` - Number of iterations the test suite will run.
- - :kconfig:option:`CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT` - Number of iterations the test will run.
-
+Repeating Tests
+***********************
+By default the tests are executed once. The test cases and test suites
+may be executed multiple times. Enable :kconfig:option:`CONFIG_ZTEST_REPEAT` to
+execute the tests multiple times. By default the multiplication factors are 3, which
+means every test suite is executed 3 times and every test case is executed 3 times. This can
+be changed by the :kconfig:option:`CONFIG_ZTEST_SUITE_REPEAT_COUNT` and
+:kconfig:option:`CONFIG_ZTEST_TEST_REPEAT_COUNT` Kconfig options.
 
 Test Selection
 **************

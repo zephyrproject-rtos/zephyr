@@ -73,12 +73,30 @@ function(zephyr_mcuboot_tasks)
     return()
   endif()
 
-  # Basic 'west sign' command and output format independent arguments.
-  separate_arguments(west_sign_extra UNIX_COMMAND ${CONFIG_MCUBOOT_CMAKE_WEST_SIGN_PARAMS})
-  set(west_sign ${WEST} sign ${west_sign_extra}
-    --tool imgtool
-    --tool-path "${imgtool_path}"
-    --build-dir "${APPLICATION_BINARY_DIR}")
+  # Fetch devicetree details for flash and slot information
+  dt_chosen(flash_node PROPERTY "zephyr,flash")
+  dt_nodelabel(slot0_flash NODELABEL "slot0_partition" REQUIRED)
+  dt_prop(slot_size PATH "${slot0_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
+  dt_prop(write_block_size PATH "${flash_node}" PROPERTY "write-block-size")
+
+  if(NOT write_block_size)
+    set(write_block_size 4)
+    message(WARNING "slot0_partition write block size devicetree parameter is missing, assuming write block size is 4")
+  endif()
+
+  # If single slot mode, or if in firmware updater mode and this is the firmware updater image,
+  # use slot 0 information
+  if(NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP AND (NOT CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER OR CONFIG_MCUBOOT_APPLICATION_FIRMWARE_UPDATER))
+    # Slot 1 size is used instead of slot 0 size
+    set(slot_size)
+    dt_nodelabel(slot1_flash NODELABEL "slot1_partition" REQUIRED)
+    dt_prop(slot_size PATH "${slot1_flash}" PROPERTY "reg" INDEX 1 REQUIRED)
+  endif()
+
+  # Basic 'imgtool sign' command with known image information.
+  set(imgtool_sign ${PYTHON_EXECUTABLE} ${imgtool_path} sign
+      --version ${CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION} --header-size ${CONFIG_ROM_START_OFFSET}
+      --slot-size ${slot_size})
 
   # Arguments to imgtool.
   if(NOT CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS STREQUAL "")
@@ -87,21 +105,21 @@ function(zephyr_mcuboot_tasks)
     #
     # Use UNIX_COMMAND syntax for uniform results across host
     # platforms.
-    separate_arguments(imgtool_extra UNIX_COMMAND ${CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS})
+    separate_arguments(imgtool_args UNIX_COMMAND ${CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS})
   else()
-    set(imgtool_extra)
+    set(imgtool_args)
   endif()
 
   if(NOT "${keyfile}" STREQUAL "")
-    set(imgtool_extra --key "${keyfile}" ${imgtool_extra})
+    set(imgtool_args --key "${keyfile}" ${imgtool_args})
   endif()
 
   # Use overwrite-only instead of swap upgrades.
   if(CONFIG_MCUBOOT_IMGTOOL_OVERWRITE_ONLY)
-    set(imgtool_extra --overwrite-only --align 1 ${imgtool_extra})
+    set(imgtool_args --overwrite-only --align 1 ${imgtool_args})
+  else()
+    set(imgtool_args --align ${write_block_size} ${imgtool_args})
   endif()
-
-  set(imgtool_args -- ${imgtool_extra})
 
   # Extensionless prefix of any output file.
   set(output ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME})
@@ -109,80 +127,68 @@ function(zephyr_mcuboot_tasks)
   # List of additional build byproducts.
   set(byproducts)
 
-  # 'west sign' arguments for confirmed, unconfirmed and encrypted images.
-  set(unconfirmed_args)
-  set(confirmed_args)
-  set(encrypted_args)
-
   # Set up .bin outputs.
   if(CONFIG_BUILD_OUTPUT_BIN)
-    list(APPEND unconfirmed_args --bin --sbin ${output}.signed.bin)
     list(APPEND byproducts ${output}.signed.bin)
     zephyr_runner_file(bin ${output}.signed.bin)
     set(BYPRODUCT_KERNEL_SIGNED_BIN_NAME "${output}.signed.bin"
         CACHE FILEPATH "Signed kernel bin file" FORCE
     )
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                 ${imgtool_sign} ${imgtool_args} ${output}.bin ${output}.signed.bin)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
-      list(APPEND confirmed_args --bin --sbin ${output}.signed.confirmed.bin)
       list(APPEND byproducts ${output}.signed.confirmed.bin)
       set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_BIN_NAME "${output}.signed.confirmed.bin"
           CACHE FILEPATH "Signed and confirmed kernel bin file" FORCE
       )
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --pad --confirm ${output}.bin
+                   ${output}.signed.confirmed.bin)
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
-      list(APPEND encrypted_args --bin --sbin ${output}.signed.encrypted.bin)
       list(APPEND byproducts ${output}.signed.encrypted.bin)
       set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_BIN_NAME "${output}.signed.encrypted.bin"
           CACHE FILEPATH "Signed and encrypted kernel bin file" FORCE
       )
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.bin
+                   ${output}.signed.encrypted.bin)
     endif()
   endif()
 
   # Set up .hex outputs.
   if(CONFIG_BUILD_OUTPUT_HEX)
-    list(APPEND unconfirmed_args --hex --shex ${output}.signed.hex)
     list(APPEND byproducts ${output}.signed.hex)
     zephyr_runner_file(hex ${output}.signed.hex)
     set(BYPRODUCT_KERNEL_SIGNED_HEX_NAME "${output}.signed.hex"
         CACHE FILEPATH "Signed kernel hex file" FORCE
     )
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                 ${imgtool_sign} ${imgtool_args} ${output}.hex ${output}.signed.hex)
 
     if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
-      list(APPEND confirmed_args --hex --shex ${output}.signed.confirmed.hex)
       list(APPEND byproducts ${output}.signed.confirmed.hex)
       set(BYPRODUCT_KERNEL_SIGNED_CONFIRMED_HEX_NAME "${output}.signed.confirmed.hex"
           CACHE FILEPATH "Signed and confirmed kernel hex file" FORCE
       )
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --pad --confirm ${output}.hex
+                   ${output}.signed.confirmed.hex)
     endif()
 
     if(NOT "${keyfile_enc}" STREQUAL "")
-      list(APPEND encrypted_args --hex --shex ${output}.signed.encrypted.hex)
       list(APPEND byproducts ${output}.signed.encrypted.hex)
       set(BYPRODUCT_KERNEL_SIGNED_ENCRYPTED_HEX_NAME "${output}.signed.encrypted.hex"
           CACHE FILEPATH "Signed and encrypted kernel hex file" FORCE
       )
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
+                   ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.hex
+                   ${output}.signed.encrypted.hex)
     endif()
   endif()
 
-  # Add the west sign calls and their byproducts to the post-processing
-  # steps for zephyr.elf.
-  #
-  # CMake guarantees that multiple COMMANDs given to
-  # add_custom_command() are run in order, so adding the 'west sign'
-  # calls to the "extra_post_build_commands" property ensures they run
-  # after the commands which generate the unsigned versions.
-  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-    ${west_sign} ${unconfirmed_args} ${imgtool_args})
-  if(confirmed_args)
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${west_sign} ${confirmed_args} ${imgtool_args} --pad --confirm)
-  endif()
-  if(encrypted_args)
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-      ${west_sign} ${encrypted_args} ${imgtool_args} --encrypt "${keyfile_enc}")
-  endif()
   set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${byproducts})
 endfunction()
 

@@ -15,7 +15,7 @@
 /**
  * @brief Volume Control Profile (VCP)
  *
- * @defgroup bt_gatt_vcp Volume Control Profile (VCP)
+ * @defgroup bt_vcp Volume Control Profile (VCP)
  *
  * @since 2.7
  * @version 0.8.0

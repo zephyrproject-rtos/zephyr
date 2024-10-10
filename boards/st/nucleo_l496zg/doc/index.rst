@@ -127,6 +127,8 @@ The Zephyr nucleo_l496zg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| OTG FS    | on-chip    | USB OTG Full-speed                  |
++-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | System Window Watchdog              |
 +-----------+------------+-------------------------------------+
 
@@ -207,7 +209,7 @@ Flashing an application to Nucleo L496ZG
 
 Connect the Nucleo L496ZG to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -232,7 +234,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

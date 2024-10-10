@@ -4,7 +4,7 @@ ETSI 303-645
 ############
 
 
-`ETSI EN 303 645`, also known as "Cyber Security for Consumer Internet
+**ETSI EN 303 645**, also known as "Cyber Security for Consumer Internet
 of Things: Baseline Requirements," is a standard developed by the
 European Telecommunications Standards Institute (ETSI).
 

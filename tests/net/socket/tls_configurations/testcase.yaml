@@ -1,0 +1,52 @@
+common:
+  tags:
+    - crypto.mbedtls
+    - net.socket
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  harness: pytest
+tests:
+  net.sockets.tls12.rsa_kex:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-tls12.conf;overlay-rsa.conf
+    extra_configs:
+      - CONFIG_MBEDTLS_KEY_EXCHANGE_RSA_ENABLED=y
+      - CONFIG_SERVER_PORT=4000
+    harness_config:
+      pytest_args: ["--server-type", "1.2-rsa", "--port", "4000"]
+  net.sockets.tls12.ec_kex:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-tls12.conf;overlay-ec.conf
+    extra_configs:
+      - CONFIG_MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED=y
+      - CONFIG_SERVER_PORT=4001
+    harness_config:
+      pytest_args: ["--server-type", "1.2-ec", "--port", "4001"]
+  net.sockets.tls13.ephemeral_kex:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-tls13.conf;overlay-ec.conf
+    extra_configs:
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
+      - CONFIG_SERVER_PORT=4002
+    harness_config:
+      pytest_args: ["--server-type", "1.3-ephemeral", "--port", "4002"]
+  net.sockets.tls13.ephemeral_kex.tickets:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-tls13.conf;overlay-ec.conf
+    extra_configs:
+      - CONFIG_MBEDTLS_TLS_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED=y
+      - CONFIG_SERVER_PORT=4003
+    harness_config:
+      pytest_args: ["--server-type", "1.3-ephemeral-tickets", "--port", "4003"]
+  net.sockets.tls13.psk_kex.tickets:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-tls13.conf
+    extra_configs:
+      - CONFIG_MBEDTLS_TLS_SESSION_TICKETS=y
+      - CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED=y
+      - CONFIG_SERVER_PORT=4004
+    harness_config:
+      pytest_args: ["--server-type", "1.3-psk-tickets", "--port", "4004"]

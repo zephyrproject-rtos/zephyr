@@ -9,6 +9,7 @@
 /{
 	chosen {
 		zephyr,display = &st7796s;
+		zephyr,touch = &gt911_lcd_par_s035;
 	};
 
 	lvgl_pointer {
@@ -24,12 +25,12 @@
 	gt911_lcd_par_s035: gt911-lcd_par_s035@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
-		alt-addr = <0x14>;
 		irq-gpios = <&nxp_lcd_8080_connector 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&nxp_lcd_8080_connector 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
-&nxp_flexio_lcd {
+&zephyr_mipi_dbi_parallel {
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;

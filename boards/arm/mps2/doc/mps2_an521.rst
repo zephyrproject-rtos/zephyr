@@ -489,7 +489,7 @@ MPS2+ AN521 provides:
 - A Serial Port which is J10 on MPS2+ board
 
 Build applications as described above.
-Here is an example for the :ref:`hello_world` application built as
+Here is an example for the :zephyr:code-sample:`hello_world` application built as
 a secure-only application for CPU0.
 
 .. zephyr-app-commands::

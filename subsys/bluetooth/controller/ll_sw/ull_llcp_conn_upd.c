@@ -676,6 +676,42 @@ static void lp_cu_st_wait_instant(struct ll_conn *conn, struct proc_ctx *ctx, ui
 	case LP_CU_EVT_RUN:
 		lp_cu_check_instant(conn, ctx, evt, param);
 		break;
+	case LP_CU_EVT_REJECT:
+		/* In case of a central overtaking a peripheral initiated connection
+		 * param request the following will occur:
+		 * Since CONNECTION_UPDATE_IND PDU is used both as response to the peripheral
+		 * connection param request AND as initiation of a remote connection update
+		 * the peripheral cannot tell the difference in the case when there is a
+		 * collision. Ie when the central and peripheral 'exchange' CONNECTION_PARAM_REQ
+		 * and CONNECTION_UPDATE_IND in the same connection event. In this case
+		 * the central should follow the CONNECTION_UPDATE_IND with a REJECT_IND to
+		 * signal procedure collision and then complete procedure as initiated.
+		 * The peer on the other hand, should abandon the local initiated procedure
+		 * and instead run the remote connection update to completion. What happens
+		 * instead is that the peripheral reaches WAIT_FOR_INSTANT state as it
+		 * assumes the UPDATE_IND was a response to the local procedure. As a result
+		 * the REJECT_IND will be passed into the local procedure RX path and end up
+		 * 'here'. See test case: test_conn_update_periph_loc_reject_central_overlap
+		 * in unit test: tests/bluetooth/controller/ctrl_conn_update/src/main.c
+		 *
+		 * In the current implementation of LLCP there is no way of handling
+		 * this transition from local initiated to remote initiated procedure and thus
+		 * the only way to handle this 'corner' case is to allow the local procedure to
+		 * complete and accept impact of not having it complete as a remote procedure.
+		 *
+		 * The impact being:
+		 *  -> since it runs as a local procedure it will block other local procedures
+		 *     from being initiated while non-complete. Since non-instant based procedures
+		 *     are allowed this is a limitation
+		 *  -> since procedure continues as local initiated the procedure timeout will
+		 *     be off (too short) by as much as the time between CONNECTION_PARAM_REQ
+		 *     and CONNECTION_UPDATE_IND pdus
+		 *
+		 * The work around for this is to ignore the REJECT_IND at this stage and
+		 * ensure proper function of RX node retention mechanism.
+		 * (see comment in ull_llcp_local.c::llcp_lr_rx() for details on this)
+		 */
+		/* Fall through to ignore */
 	default:
 		/* Ignore other evts */
 		break;

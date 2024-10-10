@@ -1,5 +1,3 @@
-# Silicon Labs EFR32MG24 (Mighty Gecko) MCU configuration options
-
 # Copyright (c) 2021 Sateesh Kotapati
 # SPDX-License-Identifier: Apache-2.0
 
@@ -19,4 +17,4 @@ choice PM_POLICY
 	depends on PM
 endchoice
 
-endif # SOC_SERIES_EFR32MG24
+endif

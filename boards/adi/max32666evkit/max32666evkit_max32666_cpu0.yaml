@@ -15,5 +15,7 @@ supported:
   - trng
   - watchdog
   - adc
+  - counter
+  - pwm
 ram: 560
 flash: 1024

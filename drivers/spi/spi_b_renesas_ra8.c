@@ -729,8 +729,8 @@ static void ra_spi_eri_isr(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(index)),                            \
 		.clock_subsys =                                                                    \
 			{                                                                          \
-				.mstp = (uint32_t *)DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk,     \
-										mstp),             \
+				.mstp = (uint32_t)DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk,       \
+									      mstp),               \
 				.stop_bit = DT_INST_CLOCKS_CELL_BY_NAME(index, spiclk, stop_bit),  \
 			},                                                                         \
 	};                                                                                         \

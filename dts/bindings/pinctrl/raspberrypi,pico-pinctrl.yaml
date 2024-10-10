@@ -58,7 +58,7 @@ description: |
     - bias-pull-up: Enable pull-up resistor.
     - bias-pull-down: Enable pull-down resistor.
     - input-enable: Enable input from the pin.
-    - input-schmitt-enable: Enable input hysteresys.
+    - input-schmitt-enable: Enable input hysteresis.
     - drive-strength: Set the drive strength of the pin, in milliamps. Possible
       values are: 2, 4, 8, 12 (default: 4mA)
     - slew-rate: If set to 0, slew rate is set to slow. If set to 1, it is set

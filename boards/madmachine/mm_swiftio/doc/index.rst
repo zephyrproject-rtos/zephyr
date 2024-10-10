@@ -206,7 +206,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect a USB cable from your PC to "Serial" port of SwiftIO.
 On Ubuntu, DAPLink debug probes appear on the host

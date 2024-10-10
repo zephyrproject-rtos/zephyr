@@ -71,3 +71,23 @@ endif()
 
 list(APPEND TOOLCHAIN_C_FLAGS -mabi=${riscv_mabi} -march=${riscv_march})
 list(APPEND TOOLCHAIN_LD_FLAGS NO_SPLIT -mabi=${riscv_mabi} -march=${riscv_march})
+
+# Flags not supported by llext linker
+# (regexps are supported and match whole word)
+set(LLEXT_REMOVE_FLAGS
+  -fno-pic
+  -fno-pie
+  -ffunction-sections
+  -fdata-sections
+  -g.*
+  -Os
+)
+
+# Flags to be added to llext code compilation
+# mno-relax is needed to stop gcc from generating R_RISCV_ALIGN relocations,
+# which are currently not supported
+set(LLEXT_APPEND_FLAGS
+  -mabi=${riscv_mabi}
+  -march=${riscv_march}
+  -mno-relax
+)

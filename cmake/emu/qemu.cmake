@@ -257,26 +257,27 @@ elseif(QEMU_NET_STACK)
     set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../tools/net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
-      COMMAND
       #Disable Ctrl-C to ensure that users won't accidentally exit
       #w/o killing the monitor.
-      stty intr ^d
-      COMMAND
+      COMMAND stty intr ^d
+
       #This command is run in the background using '&'. This prevents
       #chaining other commands with '&&'. The command is enclosed in '{}'
       #to fix this.
-      {
-      ${NET_TOOLS}/monitor_15_4
-      ${PCAP}
-      /tmp/ip-stack-server
-      /tmp/ip-stack-client
-      > /dev/null &
+      COMMAND {
+        ${NET_TOOLS}/monitor_15_4
+        ${PCAP}
+        /tmp/ip-stack-server
+        /tmp/ip-stack-client
+        > /dev/null &
       }
       )
     set(POST_QEMU_COMMANDS_FOR_server
-      COMMAND
+      # Re-enable Ctrl-C.
+      COMMAND stty intr ^c
+
       # Kill the monitor_15_4 sub-process
-      pkill -P $$$$
+      COMMAND pkill -P $$$$
       )
   endif()
 endif(QEMU_PIPE_STACK)

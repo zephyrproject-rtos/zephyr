@@ -1,10 +1,5 @@
-.. _modbus-samples:
+.. zephyr:code-sample-category:: modbus
+   :name: Modbus
+   :show-listing:
 
-Modbus Samples
-##############
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   **/*
+   Samples that demonstrate the :ref:`modbus` subsystem.

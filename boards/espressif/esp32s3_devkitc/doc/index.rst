@@ -76,7 +76,7 @@ Asymmetric Multiprocessing (AMP)
 
 ESP32S3-DevKitC allows 2 different applications to be executed in ESP32-S3 SoC. Due to its dual-core
 architecture, each core can be enabled to execute customized tasks in stand-alone mode
-and/or exchanging data over OpenAMP framework. See :ref:`ipc_samples` folder as code reference.
+and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
 
 For more information, check the datasheet at `ESP32-S3 Datasheet`_ or the technical reference
 manual at `ESP32-S3 Technical Reference Manual`_.
@@ -231,7 +231,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s3_devkitc`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::
@@ -262,14 +262,14 @@ ESP32-S3 has a built-in JTAG circuitry and can be debugged without any additiona
 
 Further documentation can be obtained from the SoC vendor in `JTAG debugging for ESP32-S3`_.
 
-Here is an example for building the :ref:`hello_world` application.
+Here is an example for building the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: esp32s3_devkitc/esp32s3/procpu
    :goals: build flash
 
-You can debug an application in the usual way. Here is an example for the :ref:`hello_world` application.
+You can debug an application in the usual way. Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

@@ -37,6 +37,14 @@ static struct coredump_backend_api
 #define DT_DRV_COMPAT zephyr_coredump
 #endif
 
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+__weak void arch_coredump_priv_stack_dump(struct k_thread *thread)
+{
+	/* Stub if architecture has not implemented this. */
+	ARG_UNUSED(thread);
+}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
+
 static void dump_header(unsigned int reason)
 {
 	struct coredump_hdr_t hdr = {
@@ -81,6 +89,12 @@ static void dump_thread(struct k_thread *thread)
 	end_addr = thread->stack_info.start + thread->stack_info.size;
 
 	coredump_memory_dump(thread->stack_info.start, end_addr);
+
+#if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
+	if ((thread->base.user_options & K_USER) == K_USER) {
+		arch_coredump_priv_stack_dump(thread);
+	}
+#endif /* CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK */
 }
 #endif
 

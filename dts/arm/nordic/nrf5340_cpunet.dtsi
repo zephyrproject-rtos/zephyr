@@ -205,6 +205,7 @@
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <16>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		spi0: spi@41013000 {
@@ -347,12 +348,14 @@
 	/* Default IPC description */
 	ipc {
 		ipc0: ipc0 {
-			compatible = "zephyr,ipc-openamp-static-vrings";
-			memory-region = <&sram0_shared>;
+			compatible = "zephyr,ipc-icbmsg";
+			status = "okay";
 			mboxes = <&mbox 0>, <&mbox 1>;
 			mbox-names = "rx", "tx";
-			role = "remote";
-			status = "okay";
+			tx-region = <&cpunet_cpuapp_ipc_shm>;
+			rx-region = <&cpuapp_cpunet_ipc_shm>;
+			tx-blocks = <32>;
+			rx-blocks = <32>;
 		};
 	};
 };

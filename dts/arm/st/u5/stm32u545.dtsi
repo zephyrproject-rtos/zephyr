@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2024 Opito
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u5/stm32u5.dtsi>
+
+
+/ {
+	soc {
+		/* USB-C PD is not available on this part. */
+		/delete-node/ ucpd@4000dc00;
+
+		compatible = "st,stm32u545", "st,stm32u5", "simple-bus";
+
+		usb: usb@40006000 {
+			compatible = "st,stm32-usb";
+			reg = <0x40006000 0x400>;
+			interrupts = <73 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			status = "disabled";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x01000000>,
+				 <&rcc STM32_SRC_HSI48 ICKLK_SEL(0)>;
+			phys = <&usb_fs_phy>;
+		};
+	};
+
+	usb_fs_phy: usb_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+	};
+};

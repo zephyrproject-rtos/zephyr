@@ -10,6 +10,7 @@
 / {
 	chosen {
 		zephyr,display = &gc9a01_xiao_round_display;
+		zephyr,touch = &chsc6x_xiao_round_display;
 	};
 
 	vbatt {

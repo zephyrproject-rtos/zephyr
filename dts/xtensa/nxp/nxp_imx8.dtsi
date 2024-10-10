@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 NXP
+ * Copyright 2021, 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,6 +176,15 @@
 		interrupts = <3>;
 		/* this is actually LPUART2 clock but the macro indexing starts at 1 */
 		clocks = <&ccm IMX_CCM_LPUART3_CLK 0x0 0x0>;
+		status = "disabled";
+	};
+
+	mailbox0: mailbox@5d310000 {
+		compatible = "nxp,imx-mu";
+		reg = <0x5d310000 0x10000>;
+		interrupt-parent = <&clic>;
+		interrupts = <7 0 0>;
+		rdc = <0>;
 		status = "disabled";
 	};
 };

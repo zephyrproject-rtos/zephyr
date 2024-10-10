@@ -73,7 +73,7 @@
 	lcko->margin.exp = CLKOUT_MARGIN_EXP(N);
 
 /* Devicetree clkout defines */
-#define CLKOUT_EXIST(N)		DT_NODE_HAS_STATUS(DT_NODELABEL(clk##N), okay)
+#define CLKOUT_EXIST(N)		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk##N))
 #define CLKOUT_ID(N)		DT_REG_ADDR(DT_NODELABEL(clk##N))
 #define CLKOUT_FREQ(N)		DT_PROP(DT_NODELABEL(clk##N), \
 				litex_clock_frequency)

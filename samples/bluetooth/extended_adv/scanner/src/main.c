@@ -79,7 +79,7 @@ BT_CONN_CB_DEFINE(conn_cb) = {
 
 static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *buf)
 {
-	if (info->adv_type & BT_GAP_ADV_TYPE_EXT_ADV &&
+	if (info->adv_type == BT_GAP_ADV_TYPE_EXT_ADV &&
 	    info->adv_props & BT_GAP_ADV_PROP_EXT_ADV &&
 	    info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) {
 		/* Attempt connection request for device with extended advertisements */

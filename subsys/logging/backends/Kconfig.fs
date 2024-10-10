@@ -4,7 +4,6 @@
 config LOG_BACKEND_FS
 	bool "File system backend"
 	depends on FILE_SYSTEM
-	select LOG_OUTPUT
 	select LOG_BACKEND_SUPPORTS_FORMAT_TIMESTAMP
 	help
 	  When enabled, backend is using the configured file system to output logs.

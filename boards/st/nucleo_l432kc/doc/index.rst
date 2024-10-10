@@ -199,7 +199,7 @@ then run a serial host program to connect with your Nucleo board.
    $ minicom -D /dev/ttyACM0
 
 Now build and flash an application. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -217,7 +217,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

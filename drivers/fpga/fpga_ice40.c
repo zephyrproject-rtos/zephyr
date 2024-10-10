@@ -519,7 +519,7 @@ static int fpga_ice40_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = gpio_pin_configure_dt(&config->cdone, 0);
+	ret = gpio_pin_configure_dt(&config->cdone, GPIO_INPUT);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize CDONE: %d", ret);
 		return ret;

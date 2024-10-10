@@ -135,6 +135,12 @@ struct llext_load_param {
 	 * the memory buffer, when calculating relocation targets.
 	 */
 	bool pre_located;
+	/**
+	 * Extensions can implement custom ELF sections to be loaded in specific
+	 * memory regions, detached from other sections of compatible types.
+	 * This optional callback checks whether a section should be detached.
+	 */
+	bool (*section_detached)(const elf_shdr_t *shdr);
 };
 
 /** Default initializer for @ref llext_load_param */
@@ -177,7 +183,7 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg);
  * @retval -ENOTSUP Unsupported ELF features
  */
 int llext_load(struct llext_loader *loader, const char *name, struct llext **ext,
-	       struct llext_load_param *ldr_parm);
+	       const struct llext_load_param *ldr_parm);
 
 /**
  * @brief Unload an extension
@@ -293,7 +299,7 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
  * @param[in] domain Memory domain to add partitions to
  *
  * @returns 0 on success, or a negative error code.
- * @retval -ENOSYS @kconfig{CONFIG_USERSPACE} is not enabled or supported
+ * @retval -ENOSYS Option @kconfig{CONFIG_USERSPACE} is not enabled or supported
  */
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 

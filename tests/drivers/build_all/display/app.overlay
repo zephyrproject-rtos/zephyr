@@ -135,8 +135,90 @@
 				width = <240>;
 				height = <240>;
 			};
+
+			test_spi_ssd1327fb: ssd1327fb@7 {
+				compatible = "solomon,ssd1327fb";
+				reg = <7>;
+				mipi-max-frequency = <100000000>;
+
+				width = <240>;
+				height = <240>;
+				oscillator-freq = <0>;
+				display-offset = <0>;
+				start-line = <0>;
+				multiplex-ratio = <0>;
+				prechargep = <0>;
+				remap-value = <0>;
+			};
 		};
 
+		test_mipi_dsi {
+			compatible = "vnd,mipi-dsi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			test_hx8394: hx8394@0 {
+				status = "okay";
+				compatible = "himax,hx8394";
+				reg = <0x0>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <720>;
+				height = <1280>;
+				pixel-format = <0>;
+			};
+
+			test_nt35510: nt35510@1 {
+				status = "okay";
+				compatible = "frida,nt35510";
+				reg = <0x1>;
+				height = <800>;
+				width = <480>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <90>;
+			};
+
+			test_otm8009a: otm8009a@2 {
+				status = "okay";
+				compatible = "orisetech,otm8009a";
+				reg = <0x2>;
+				height = <800>;
+				width = <480>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				pixel-format = <0>;
+				rotation = <90>;
+			};
+
+			test_rm67162: rm67162@3 {
+				status = "okay";
+				compatible = "raydium,rm67162";
+				reg = <0x3>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				te-gpios = <&test_gpio 0 0>;
+				data-lanes = <1>;
+				width = <400>;
+				height = <392>;
+				pixel-format = <0>;
+			};
+
+			test_rm68200: rm68200@4 {
+				status = "okay";
+				compatible = "raydium,rm68200";
+				reg = <0x4>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <720>;
+				height = <1280>;
+				pixel-format = <0>;
+			};
+		};
 
 		test_spi: spi@33334444 {
 			#address-cells = <1>;
@@ -151,7 +233,7 @@
 			 */
 			cs-gpios = <&test_gpio 0 0 &test_gpio 0 1 &test_gpio 0 2
 				&test_gpio 0 3 &test_gpio 0 4 &test_gpio 0 5
-				&test_gpio 0 6>;
+				&test_gpio 0 6 &test_gpio 0 7 &test_gpio 0 8>;
 
 			test_led_strip_0: lpd8806@0 {
 				compatible = "greeled,lpd8806";
@@ -172,6 +254,26 @@
 				chain-length = <256>;
 				color-mapping = <0 1 2>;
 				reset-delay = <280>;
+			};
+
+			test_ls0xx: ls0xx@7 {
+				compatible = "sharp,ls0xx";
+				spi-max-frequency = <2000000>;
+				reg = <0x7>;
+				width = <128>;
+				height = <128>;
+				extcomin-gpios = <&test_gpio 0 0>;
+				extcomin-frequency = <60>;
+				disp-en-gpios = <&test_gpio 0 0>;
+			};
+
+			test_max7219: max7219@8 {
+				compatible = "maxim,max7219";
+				reg = <0x8>;
+				spi-max-frequency = <1000000>;
+				num-cascading = <1>;
+				intensity = <0>;
+				scan-limit = <7>;
 			};
 		};
 
@@ -197,8 +299,8 @@
 			status="okay";
 			clock-frequency=<100000>;
 
-			test_ist3931:ist3931@3f{
-				reg=<0x3f>;
+			test_ist3931:ist3931@0 {
+				reg=<0x0>;
 				width=<64>;
 				height=<32>;
 				compatible = "istech,ist3931";
@@ -212,6 +314,20 @@
 				duty-ratio=<64>;
 				frame-control=<400>;
 				reverse-com-output;
+			};
+
+			test_ssd1306: ssd1306@1 {
+				compatible = "solomon,ssd1306fb";
+				reg = <0x1>;
+				width = <128>;
+				height = <64>;
+				segment-offset = <0>;
+				page-offset = <0>;
+				display-offset = <0>;
+				multiplex-ratio = <63>;
+				segment-remap;
+				com-invdir;
+				prechargep = <0x22>;
 			};
 		};
 	};

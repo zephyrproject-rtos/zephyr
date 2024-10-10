@@ -25,7 +25,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		xtal: clock-xtal {
+		xtal: clock-main-osc {
 			compatible = "renesas,ra-cgc-external-clock";
 			clock-frequency = <DT_FREQ_M(12)>;
 			#clock-cells = <0>;
@@ -64,33 +64,33 @@
 			reg-names = "MSTPA", "MSTPB","MSTPC",
 				    "MSTPD";
 			#clock-cells = <0>;
-			sysclock-src = <RA_CLOCK_SOURCE_HOCO>;
+			clocks = <&hoco>;
 			status = "okay";
 
 			iclk: iclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkb: pclkb {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_2>;
+				div = <2>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			pclkd: pclkd {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};
 
 			fclk: fclk {
 				compatible = "renesas,ra-cgc-pclk";
-				clk_div = <RA_SYS_CLOCK_DIV_1>;
+				div = <1>;
 				#clock-cells = <2>;
 				status = "okay";
 			};

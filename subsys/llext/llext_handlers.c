@@ -60,7 +60,8 @@ ssize_t z_impl_llext_get_fn_table(struct llext *ext, bool is_init, void *buf, si
 
 		for (int i = 0; i < table_size / sizeof(void *); i++) {
 			if (fn_ptrs[i] < text_start || fn_ptrs[i] >= text_end) {
-				LOG_ERR("init function %i (%p) outside text region",
+				LOG_ERR("%s function %i (%p) outside text region",
+					is_init ? "bringup" : "teardown",
 					i, fn_ptrs[i]);
 				return -EFAULT;
 			}

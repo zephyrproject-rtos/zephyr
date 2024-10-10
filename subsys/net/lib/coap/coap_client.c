@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define COAP_VERSION 1
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
+#define COAP_EXCHANGE_LIFETIME_FACTOR 3
 #define BLOCK1_OPTION_SIZE 4
 #define PAYLOAD_MARKER_SIZE 1
 
@@ -86,6 +87,21 @@ static int coap_client_schedule_poll(struct coap_client *client, int sock,
 	return 0;
 }
 
+static bool exchange_lifetime_exceeded(struct coap_client_internal_request *internal_req)
+{
+	int64_t time_since_t0, exchange_lifetime;
+
+	if (coap_header_get_type(&internal_req->request) == COAP_TYPE_NON_CON) {
+		return true;
+	}
+
+	time_since_t0 = k_uptime_get() - internal_req->pending.t0;
+	exchange_lifetime =
+		(internal_req->pending.params.ack_timeout * COAP_EXCHANGE_LIFETIME_FACTOR);
+
+	return time_since_t0 > exchange_lifetime;
+}
+
 static bool has_ongoing_request(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
@@ -97,10 +113,23 @@ static bool has_ongoing_request(struct coap_client *client)
 	return false;
 }
 
+static bool has_ongoing_exchange(struct coap_client *client)
+{
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		if (client->requests[i].request_ongoing == true ||
+		    !exchange_lifetime_exceeded(&client->requests[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static struct coap_client_internal_request *get_free_request(struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing == false) {
+		if (client->requests[i].request_ongoing == false &&
+		    exchange_lifetime_exceeded(&client->requests[i])) {
 			return &client->requests[i];
 		}
 	}
@@ -110,13 +139,24 @@ static struct coap_client_internal_request *get_free_request(struct coap_client 
 
 static bool has_ongoing_requests(void)
 {
-	bool has_requests = false;
-
 	for (int i = 0; i < num_clients; i++) {
-		has_requests |= has_ongoing_request(clients[i]);
+		if (has_ongoing_request(clients[i])) {
+			return true;
+		}
 	}
 
-	return has_requests;
+	return false;
+}
+
+static bool has_ongoing_exchanges(void)
+{
+	for (int i = 0; i < num_clients; i++) {
+		if (has_ongoing_exchange(clients[i])) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static enum coap_block_size coap_client_default_block_size(void)
@@ -552,14 +592,21 @@ static int recv_response(struct coap_client *client, struct coap_packet *respons
 	int total_len;
 	int available_len;
 	int ret;
+	int flags = ZSOCK_MSG_DONTWAIT;
+
+	if (IS_ENABLED(CONFIG_COAP_CLIENT_TRUNCATE_MSGS)) {
+		flags |= ZSOCK_MSG_TRUNC;
+	}
 
 	memset(client->recv_buf, 0, sizeof(client->recv_buf));
-	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf),
-			    ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_TRUNC, &client->address,
-			    &client->socklen);
+	total_len = receive(client->fd, client->recv_buf, sizeof(client->recv_buf), flags,
+			    &client->address, &client->socklen);
 
 	if (total_len < 0) {
 		LOG_ERR("Error reading response: %d", errno);
+		if (errno == EOPNOTSUPP) {
+			return -errno;
+		}
 		return -EINVAL;
 	} else if (total_len == 0) {
 		LOG_ERR("Zero length recv");
@@ -611,7 +658,8 @@ static struct coap_client_internal_request *get_request_with_token(
 	response_tkl = coap_header_get_token(resp, response_token);
 
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing) {
+		if (client->requests[i].request_ongoing ||
+		    !exchange_lifetime_exceeded(&client->requests[i])) {
 			if (client->requests[i].request_tkl != response_tkl) {
 				continue;
 			}
@@ -887,7 +935,7 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 		for (int i = 0; i < num_clients; i++) {
 			if (clients[i]->response_ready) {
 				struct coap_packet response;
-				bool response_truncated;
+				bool response_truncated = false;
 
 				k_mutex_lock(&clients[i]->lock, K_FOREVER);
 
@@ -896,6 +944,10 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 					LOG_ERR("Error receiving response");
 					clients[i]->response_ready = false;
 					k_mutex_unlock(&clients[i]->lock);
+					if (ret == -EOPNOTSUPP) {
+						LOG_ERR("Socket misconfigured.");
+						goto idle;
+					}
 					continue;
 				}
 
@@ -910,7 +962,7 @@ static void coap_client_recv(void *coap_cl, void *a, void *b)
 		}
 
 		/* There are more messages coming */
-		if (has_ongoing_requests()) {
+		if (has_ongoing_exchanges()) {
 			continue;
 		} else {
 idle:

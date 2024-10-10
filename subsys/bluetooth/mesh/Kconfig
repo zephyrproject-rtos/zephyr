@@ -664,12 +664,20 @@ menu "Replay Protection List"
 
 config BT_MESH_CRPL
 	int "Maximum capacity of the replay protection list"
+	default 26 if BT_MESH_BRG_CFG_SRV
 	default 10
 	range 2 $(UINT16_MAX)
 	help
-	  This options specifies the maximum capacity of the replay
+	  This option specifies the maximum capacity of the replay
 	  protection list. This option is similar to the network message
-	  cache size, but has a different purpose.
+	  cache size, but has a purpose of preventing replay attacks.
+
+	  Note that: To ensure sufficient space in CRPL for normal node
+	  operations and as specified by other Bluetooth specification
+	  requirements, when subnet bridge functionality is enabled on a node,
+	  you should increase the CRPL capacity in your project configuration
+	  file with the number of bridging table entries
+	  (BT_MESH_BRG_TABLE_ITEMS_MAX) specified for the project as a minimum.
 
 choice BT_MESH_RPL_STORAGE_MODE
 	prompt "Replay protection list storage mode"
@@ -934,6 +942,18 @@ config BT_MESH_TX_BLOB_CHUNK_SIZE
 	  possible and will be clamped to the max possible if set above.
 	  see also: BT_MESH_TX_SEG_MAX,
 	  and the maximum SDU a node can receive.
+
+config BT_MESH_TX_BLOB_CHUNK_SEND_INTERVAL
+	int "BLOB Client chunk send interval"
+	default 0
+	range 0 2147483647
+	help
+	  Set the interval in milliseconds in which chunks are sent during the BLOB transfer.
+	  Note: Without a delay between each sent chunk, the network might become too busy with the
+	  BLOB transfer for other communications to succeed.
+	  Note: Timing restrictions, like the timeout base, should be considered or changed
+	  accordingly when setting this interval. Otherwise, the interval might be too big for the
+	  timeout settings and cause timeouts.
 
 endif # BT_MESH_BLOB_CLI
 
@@ -1255,6 +1275,43 @@ config BT_MESH_SOL_PDU_RPL_CLI_TIMEOUT
 	  for a response message to arrive. This value can be changed at runtime
 	  using @ref bt_mesh_sol_pdu_rpl_cli_timeout_set.
 
+config BT_MESH_BRG_CFG_SRV
+	bool "Support for Bridge Configuration Server model"
+	depends on BT_MESH_MODEL_EXTENSIONS
+	help
+	  The Bridge Configuration Server model is used to support the configuration
+	  of the subnet bridge functionality of a node.
+
+menu "Subnet Bridge configuration"
+	visible if BT_MESH_BRG_CFG_SRV
+
+config BT_MESH_BRG_TABLE_ITEMS_MAX
+	int "Maximum number of entries in the bridging table"
+	default 16
+	range 16 255
+	help
+	  The maximum number of entries in the bridging table.
+
+endmenu
+
+config BT_MESH_BRG_CFG_CLI
+	bool "Support for Bridge Configuration Client model"
+	help
+	  The Bridge Configuration Client is used to support the functionality of a
+	  node that can configure the subnet bridge functionality of another node.
+
+if BT_MESH_BRG_CFG_CLI
+
+config BT_MESH_BRG_CFG_CLI_TIMEOUT
+	int "Bridge Configuration Client model timeout in milliseconds"
+	default 5000
+	help
+	  This timeout controls how long the bridge configuration client waits for a
+	  response message to arrive. This value can be changed at runtime using
+	  @ref bt_mesh_brg_cfg_cli_timeout_set.
+
+endif # BT_MESH_BRG_CFG_CLI
+
 endmenu # Models
 
 menu "Proxy"
@@ -1366,7 +1423,8 @@ config BT_MESH_USES_MBEDTLS_PSA
 	select MBEDTLS_ENTROPY_POLL_ZEPHYR
 	select MBEDTLS_PSA_CRYPTO_C
 	select MBEDTLS_USE_PSA_CRYPTO
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
 	select PSA_WANT_ALG_CMAC

@@ -190,7 +190,7 @@ static uint8_t btp_cap_discover(const void *cmd, uint16_t cmd_len,
 
 static int cap_unicast_setup_ase(struct bt_conn *conn, uint8_t ase_id, uint8_t cis_id,
 				 uint8_t cig_id, struct bt_audio_codec_cfg *codec_cfg,
-				 struct bt_audio_codec_qos *qos)
+				 struct bt_bap_qos_cfg *qos)
 {
 	struct btp_bap_unicast_group *group;
 	struct btp_bap_unicast_stream *u_stream;
@@ -232,7 +232,7 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_cap_unicast_setup_ase_cmd *cp = cmd;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	struct bt_conn *conn;
 	const uint8_t *ltv_ptr;
 	int err;
@@ -247,7 +247,7 @@ static uint8_t btp_cap_unicast_setup_ase(const void *cmd, uint16_t cmd_len,
 	}
 
 	memset(&qos, 0, sizeof(qos));
-	qos.phy = BT_AUDIO_CODEC_QOS_2M;
+	qos.phy = BT_BAP_QOS_CFG_2M;
 	qos.framing = cp->framing;
 	qos.rtn = cp->retransmission_num;
 	qos.sdu = sys_le16_to_cpu(cp->max_sdu);
@@ -438,6 +438,7 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 	param.streams = streams;
 	param.count = stream_cnt;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.release = true;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -604,7 +605,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	struct btp_cap_broadcast_source_setup_rp *rp = rsp;
 	struct btp_bap_broadcast_local_source *source =
 		btp_bap_broadcast_local_source_get(cp->source_id);
-	struct bt_audio_codec_qos *qos = &source->qos;
+	struct bt_bap_qos_cfg *qos = &source->qos;
 
 	LOG_DBG("");
 
@@ -650,7 +651,7 @@ static uint8_t btp_cap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 	}
 
 	memset(qos, 0, sizeof(*qos));
-	qos->phy = BT_AUDIO_CODEC_QOS_2M;
+	qos->phy = BT_BAP_QOS_CFG_2M;
 	qos->framing = cp->framing;
 	qos->rtn = cp->retransmission_num;
 	qos->sdu = sys_le16_to_cpu(cp->max_sdu);

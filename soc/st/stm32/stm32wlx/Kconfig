@@ -11,3 +11,4 @@ config SOC_SERIES_STM32WLX
 	select CPU_HAS_ARM_MPU
 	select HAS_PM
 	select HAS_POWEROFF
+	select SOC_EARLY_INIT_HOOK

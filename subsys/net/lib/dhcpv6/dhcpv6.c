@@ -1417,21 +1417,28 @@ static void dhcpv6_enter_state(struct net_if *iface, enum net_dhcpv6_state state
 	case NET_DHCPV6_DISABLED:
 		break;
 	case NET_DHCPV6_INIT:
-		return dhcpv6_enter_init(iface);
+		dhcpv6_enter_init(iface);
+		break;
 	case NET_DHCPV6_SOLICITING:
-		return dhcpv6_enter_soliciting(iface);
+		dhcpv6_enter_soliciting(iface);
+		break;
 	case NET_DHCPV6_REQUESTING:
-		return dhcpv6_enter_requesting(iface);
+		dhcpv6_enter_requesting(iface);
+		break;
 	case NET_DHCPV6_CONFIRMING:
-		return dhcpv6_enter_confirming(iface);
+		dhcpv6_enter_confirming(iface);
+		break;
 	case NET_DHCPV6_RENEWING:
-		return dhcpv6_enter_renewing(iface);
+		dhcpv6_enter_renewing(iface);
+		break;
 	case NET_DHCPV6_REBINDING:
-		return dhcpv6_enter_rebinding(iface);
+		dhcpv6_enter_rebinding(iface);
+		break;
 	case NET_DHCPV6_INFO_REQUESTING:
 		break;
 	case NET_DHCPV6_BOUND:
-		return dhcpv6_enter_bound(iface);
+		dhcpv6_enter_bound(iface);
+		break;
 	}
 }
 

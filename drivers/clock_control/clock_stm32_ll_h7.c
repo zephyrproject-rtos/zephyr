@@ -160,10 +160,6 @@
 #error "APB4 frequency is too high!"
 #endif
 
-#if SYSCLK_FREQ != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
-#error "SYS clock frequency for M7 core doesn't match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC"
-#endif
-
 /* end of clock feasibility check */
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
@@ -360,7 +356,7 @@ static uint32_t get_vco_output_range(uint32_t vco_input_range)
 #endif /* ! CONFIG_CPU_CORTEX_M4 */
 
 /** @brief Verifies clock is part of active clock configuration */
-static int enabled_clock(uint32_t src_clk)
+int enabled_clock(uint32_t src_clk)
 {
 
 	if ((src_clk == STM32_SRC_SYSCLK) ||
@@ -679,9 +675,18 @@ static void set_up_fixed_clock_sources(void)
 	}
 
 	if (IS_ENABLED(STM32_HSI_ENABLED)) {
-		/* Enable HSI oscillator */
-		LL_RCC_HSI_Enable();
-		while (LL_RCC_HSI_IsReady() != 1) {
+		if (IS_ENABLED(STM32_PLL_SRC_HSI) || IS_ENABLED(STM32_PLL2_SRC_HSI) ||
++		    IS_ENABLED(STM32_PLL3_SRC_HSI)) {
+			/* HSI calibration */
+			LL_RCC_HSI_SetCalibTrimming(RCC_HSICALIBRATION_DEFAULT);
+		}
+		/* Enable HSI if not enabled */
+		if (LL_RCC_HSI_IsReady() != 1) {
+			/* Enable HSI oscillator */
+			LL_RCC_HSI_Enable();
+			while (LL_RCC_HSI_IsReady() != 1) {
+			/* Wait for HSI ready */
+			}
 		}
 		/* HSI divider configuration */
 		LL_RCC_HSI_SetDivider(hsi_divider(STM32_HSI_DIVISOR));
@@ -800,8 +805,11 @@ static int set_up_plls(void)
 
 	LL_RCC_PLL1_SetN(STM32_PLL_N_MULTIPLIER);
 
-	/* FRACN disable DIVP,DIVQ,DIVR enable*/
 	LL_RCC_PLL1FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL_FRACN_ENABLED)) {
+		LL_RCC_PLL1_SetFRACN(STM32_PLL_FRACN_VALUE);
+		LL_RCC_PLL1FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL_P_ENABLED)) {
 		LL_RCC_PLL1_SetP(STM32_PLL_P_DIVISOR);
@@ -846,6 +854,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL2_SetN(STM32_PLL2_N_MULTIPLIER);
 
 	LL_RCC_PLL2FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL2_FRACN_ENABLED)) {
+		LL_RCC_PLL2_SetFRACN(STM32_PLL2_FRACN_VALUE);
+		LL_RCC_PLL2FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL2_P_ENABLED)) {
 		LL_RCC_PLL2_SetP(STM32_PLL2_P_DIVISOR);
@@ -896,6 +908,10 @@ static int set_up_plls(void)
 	LL_RCC_PLL3_SetN(STM32_PLL3_N_MULTIPLIER);
 
 	LL_RCC_PLL3FRACN_Disable();
+	if (IS_ENABLED(STM32_PLL3_FRACN_ENABLED)) {
+		LL_RCC_PLL3_SetFRACN(STM32_PLL3_FRACN_VALUE);
+		LL_RCC_PLL3FRACN_Enable();
+	}
 
 	if (IS_ENABLED(STM32_PLL3_P_ENABLED)) {
 		LL_RCC_PLL3_SetP(STM32_PLL3_P_DIVISOR);

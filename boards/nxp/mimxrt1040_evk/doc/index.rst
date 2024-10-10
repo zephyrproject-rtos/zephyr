@@ -118,6 +118,8 @@ already supported, which can also be re-used on this mimxrt1040_evk board:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| GPT       | on-chip    | gpt                                 |
++-----------+------------+-------------------------------------+
 | DISPLAY   | on-chip    | eLCDIF. Tested with                 |
 |           |            | :ref:`rk043fn02h_ct`, and           |
 |           |            | :ref:`rk043fn66hs_ctg` shields      |
@@ -252,7 +254,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -270,7 +272,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -335,7 +337,7 @@ Remove resistors from R497, R498, R456 and R457.
 
 And due to pin conflict issue, the PCM interface of Bluetooth module cannot be supported.
 
-For the debugger fails to connect with the following error, please refer to section `WiFi Module`.
+For the debugger fails to connect with the following error, please refer to the next section.
 
 WiFi Module
 -----------

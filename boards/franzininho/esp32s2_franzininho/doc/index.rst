@@ -148,7 +148,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
    :goals: build
 
 The usual ``flash`` target will work with the ``esp32s2_franzininho`` board
-configuration. Here is an example for the :ref:`hello_world`
+configuration. Here is an example for the :zephyr:code-sample:`hello_world`
 application.
 
 .. zephyr-app-commands::

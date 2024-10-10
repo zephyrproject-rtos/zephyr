@@ -52,4 +52,8 @@
 			#io-channel-cells = <1>;
 		};
 	};
+
+	die_temp: dietemp {
+		v25 = <1410>;
+	};
 };

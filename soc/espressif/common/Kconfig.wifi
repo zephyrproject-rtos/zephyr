@@ -29,6 +29,23 @@ config ESP32_PHY_MAX_TX_POWER
 	int
 	default ESP32_PHY_MAX_WIFI_TX_POWER
 
+choice ESP_WIFI_HEAP
+	prompt "Wifi adapter heap in use"
+	default ESP_WIFI_HEAP_RUNTIME
+
+	config ESP_WIFI_HEAP_RUNTIME
+		bool "Wifi adapter use ESP runtime heap"
+		depends on ESP_RUNTIME_HEAP
+
+	config ESP_WIFI_HEAP_SPIRAM
+		bool "Wifi adapter use SPIRAM heap"
+		depends on ESP_SPIRAM
+
+	config ESP_WIFI_HEAP_SYSTEM
+		bool "Wifi adapter use system heap"
+
+endchoice # ESP_WIFI_HEAP
+
 endmenu # ESP32 Wi-Fi config
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

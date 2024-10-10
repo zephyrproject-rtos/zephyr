@@ -364,7 +364,16 @@ int adxl372_get_status(const struct device *dev,
 	}
 
 	if (fifo_entries) {
-		length += 2U;
+		if (status2) {
+			length += 2U;
+		} else {
+			/* Registers STATUS1, STATUS2, FIFO_ENTRIES2 and FIFO_ENTRIES1
+			 * are one after the other. If user wants fifo_entries and
+			 * not status2, to get the correct values, STATUS2 register
+			 * also must be read but read value will be ignored.
+			 */
+			length += 3U;
+		}
 	}
 
 	ret = data->hw_tf->read_reg_multiple(dev, ADXL372_STATUS_1, buf, length);

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024 Jacob Winther
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	/*
+	 * Default flash layout for nrf52840 using UF2 and SoftDevice s140 v6
+	 *
+	 * 0x00000000 SoftDevice s140 v6    (152 kB)
+	 * 0x00026000 Application partition (792 kB)
+	 * 0x000ec000 Storage partition     (32 kB)
+	 * 0x000f4000 UF2 boot partition    (48 kB)
+	 *
+	 * See https://learn.adafruit.com/introducing-the-adafruit-nrf52840-feather/hathach-memory-map
+	 */
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		reserved_partition_0: partition@0 {
+			label = "SoftDevice";
+			read-only;
+			reg = <0x00000000 0x00026000>;
+		};
+		code_partition: partition@26000 {
+			label = "Application";
+			reg = <0x00026000 0x000C6000>;
+		};
+
+		storage_partition: partition@ec000 {
+			label = "Storage";
+			reg = <0x000ec000 0x00008000>;
+		};
+
+		boot_partition: partition@f4000 {
+			label = "UF2";
+			read-only;
+			reg = <0x000f4000 0x0000c000>;
+		};
+	};
+};

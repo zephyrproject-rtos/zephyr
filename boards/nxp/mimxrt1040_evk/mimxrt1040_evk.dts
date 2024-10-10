@@ -19,6 +19,7 @@
 		sw0 = &user_button;
 		pwm-0 = &flexpwm1_pwm3;
 		accel0 = &fxls8974;
+		mcuboot-button0 = &user_button;
 	};
 
 	chosen {

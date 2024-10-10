@@ -9,7 +9,6 @@
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
 #include <pa_conversions_efr32.h>
-#include <sl_bt_ll_zephyr.h>
 #include <rail.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -33,6 +32,17 @@ struct hci_data {
 
 static K_KERNEL_STACK_DEFINE(slz_ll_stack, SL_BT_SILABS_LL_STACK_SIZE);
 static struct k_thread slz_ll_thread;
+
+/* Semaphore for Link Layer */
+K_SEM_DEFINE(slz_ll_sem, 0, 1);
+
+/* Events mask for Link Layer */
+static atomic_t sli_btctrl_events;
+
+/* FIXME: these functions should come from the SiSDK headers! */
+void BTLE_LL_EventRaise(uint32_t events);
+void BTLE_LL_Process(uint32_t events);
+bool sli_pending_btctrl_events(void);
 
 void rail_isr_installer(void)
 {
@@ -72,11 +82,11 @@ uint32_t hci_common_transport_transmit(uint8_t *data, int16_t len)
 	len -= 1;
 
 	switch (packet_type) {
-	case h4_event:
+	case BT_HCI_H4_EVT:
 		event_code = data[0];
 		buf = bt_buf_get_evt(event_code, false, K_FOREVER);
 		break;
-	case h4_acl:
+	case BT_HCI_H4_ACL:
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
 		break;
 	default:
@@ -100,10 +110,10 @@ static int slz_bt_send(const struct device *dev, struct net_buf *buf)
 
 	switch (bt_buf_get_type(buf)) {
 	case BT_BUF_ACL_OUT:
-		net_buf_push_u8(buf, h4_acl);
+		net_buf_push_u8(buf, BT_HCI_H4_ACL);
 		break;
 	case BT_BUF_CMD:
-		net_buf_push_u8(buf, h4_command);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 		break;
 	default:
 		rv = -EINVAL;
@@ -120,13 +130,25 @@ done:
 	return rv;
 }
 
+/**
+ * The HCI driver thread simply waits for the LL semaphore to signal that
+ * it has an event to handle, whether it's from the radio, its own scheduler,
+ * or an HCI event to pass upstairs. The BTLE_LL_Process function call will
+ * take care of all of them, and add HCI events to the HCI queue when applicable.
+ */
 static void slz_thread_func(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	slz_ll_thread_func();
+	while (true) {
+		uint32_t events;
+
+		k_sem_take(&slz_ll_sem, K_FOREVER);
+		events = atomic_clear(&sli_btctrl_events);
+		BTLE_LL_Process(events);
+	}
 }
 
 static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
@@ -143,6 +165,10 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 
 	rail_isr_installer();
 	sl_rail_util_pa_init();
+
+	/* Disable 2M and coded PHYs, they do not work with the current configuration */
+	sl_btctrl_disable_2m_phy();
+	sl_btctrl_disable_coded_phy();
 
 	/* sl_btctrl_init_mem returns the number of memory buffers allocated */
 	ret = sl_btctrl_init_mem(SL_BT_CONTROLLER_BUFFER_MEMORY);
@@ -162,6 +188,7 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	sl_btctrl_init_adv();
 	sl_btctrl_init_scan();
 	sl_btctrl_init_conn();
+	sl_btctrl_init_phy();
 	sl_btctrl_init_adv_ext();
 	sl_btctrl_init_scan_ext();
 
@@ -204,6 +231,23 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 deinit:
 	sli_btctrl_deinit_mem();
 	return ret;
+}
+
+bool sli_pending_btctrl_events(void)
+{
+	return false; /* TODO: check if this should really return false! */
+}
+
+/* Store event flags and increment the LL semaphore */
+void BTLE_LL_EventRaise(uint32_t events)
+{
+	atomic_or(&sli_btctrl_events, events);
+	k_sem_give(&slz_ll_sem);
+}
+
+void sl_bt_controller_init(void)
+{
+	/* No extra initialization procedure required */
 }
 
 static const struct bt_hci_driver_api drv = {

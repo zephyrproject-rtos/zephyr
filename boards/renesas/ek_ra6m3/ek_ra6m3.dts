@@ -72,8 +72,8 @@
 };
 
 &pll {
-	source = <RA_PLL_SOURCE_MAIN_OSC>;
-	div = <RA_PLL_DIV_2>;
+	clocks = <&xtal>;
+	div = <2>;
 	mul = <20 0>;
 	status = "okay";
 };

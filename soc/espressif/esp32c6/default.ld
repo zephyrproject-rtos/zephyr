@@ -93,6 +93,8 @@ REGION_ALIAS("rtc_reserved_seg", lp_reserved_seg );
 /*  Default entry point:  */
 ENTRY(CONFIG_KERNEL_ENTRY)
 
+_heap_sentry = DRAM_RESERVED_START;
+
 SECTIONS
 {
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
@@ -133,6 +135,10 @@ SECTIONS
 #endif /* CONFIG_BOOTLOADER_MCUBOOT */
 
   #include <zephyr/linker/rel-sections.ld>
+
+#ifdef CONFIG_LLEXT
+  #include <zephyr/linker/llext-sections.ld>
+#endif
 
   /* --- START OF RTC --- */
 
@@ -651,7 +657,7 @@ SECTIONS
   _image_ram_start = _iram_start;
   #include <zephyr/linker/ram-end.ld>
 
-  ASSERT(((__bss_end - ORIGIN(sram0_0_seg)) <= LENGTH(sram0_0_seg)), "DRAM segment data does not fit.")
+  ASSERT(((_end - ORIGIN(sram0_0_seg)) <= LENGTH(sram0_0_seg)), "SRAM code/data does not fit.")
 
   /* --- END OF DRAM --- */
 

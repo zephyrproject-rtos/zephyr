@@ -102,7 +102,7 @@
 			status = "disabled";
 		};
 
-		uuid: flash@9fc70 {
+		uuid: flash@3fc70 {
 			compatible = "nxp,lpc-uid";
 			reg = <0x3fc70 0x10>;
 		};
@@ -319,7 +319,7 @@
 		status = "okay";
 	};
 
-	usbhs: usbhs@144000 {
+	usbhs: usbhs@94000 {
 		compatible = "nxp,lpcip3511";
 		reg = <0x94000 0x1000>;
 		interrupts = <47 1>;

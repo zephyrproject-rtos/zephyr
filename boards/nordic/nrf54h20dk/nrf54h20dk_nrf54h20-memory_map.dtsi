@@ -183,16 +183,16 @@
 
 			cpuapp_dma_region: memory@e80 {
 				compatible = "zephyr,memory-region";
-				reg = <0xe80 DT_SIZE_K(4)>;
+				reg = <0xe80 DT_SIZE_K(3)>;
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM3x_APP";
 				zephyr,memory-attr = <( DT_MEM_DMA )>;
 			};
 
-			cpurad_dma_region: memory@1e80 {
+			cpurad_dma_region: memory@1a80 {
 				compatible = "zephyr,memory-region";
-				reg = <0x1e80 0x80>;
+				reg = <0x1a80 0x480>;
 				status = "disabled";
 				#memory-region-cells = <0>;
 				zephyr,memory-region = "DMA_RAM3x_RAD";
@@ -249,11 +249,11 @@
 		#size-cells = <1>;
 
 		dfu_partition: partition@100000 {
-			reg = < 0x100000 DT_SIZE_K(892) >;
+			reg = < 0x100000 DT_SIZE_K(908) >;
 		};
 
-		storage_partition: partition@1df000 {
-			reg = < 0x1df000 DT_SIZE_K(24) >;
+		storage_partition: partition@1e3000 {
+			reg = < 0x1e3000 DT_SIZE_K(24) >;
 		};
 	};
 };

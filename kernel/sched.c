@@ -905,7 +905,7 @@ static inline void set_current(struct k_thread *new_thread)
  * function.
  *
  * @warning
- * The @ref _current value may have changed after this call and not refer
+ * The _current value may have changed after this call and not refer
  * to the interrupted thread anymore. It might be necessary to make a local
  * copy before calling this function.
  *
@@ -1598,4 +1598,14 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	}
 
 	return status;
+}
+
+/* This routine exists for benchmarking purposes. It is not used in
+ * general production code.
+ */
+void z_unready_thread(struct k_thread *thread)
+{
+	K_SPINLOCK(&_sched_spinlock) {
+		unready_thread(thread);
+	}
 }

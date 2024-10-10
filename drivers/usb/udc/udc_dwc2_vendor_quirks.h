@@ -249,6 +249,36 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 	return !k_event_test(&usbhs_events, USBHS_VBUS_READY);
 }
 
+static inline int usbhs_post_hibernation_entry(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_set_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	sys_write32(0x87, (mem_addr_t)wrapper + 0xC80);
+	sys_write32(0x87, (mem_addr_t)wrapper + 0xC84);
+	sys_write32(1, (mem_addr_t)wrapper + 0x004);
+
+	return 0;
+}
+
+static inline int usbhs_pre_hibernation_exit(const struct device *dev)
+{
+	const struct udc_dwc2_config *const config = dev->config;
+	struct usb_dwc2_reg *const base = config->base;
+	NRF_USBHS_Type *wrapper = USBHS_DT_WRAPPER_REG_ADDR(0);
+
+	sys_clear_bits((mem_addr_t)&base->pcgcctl, USB_DWC2_PCGCCTL_GATEHCLK);
+
+	wrapper->TASKS_START = 1;
+	sys_write32(0, (mem_addr_t)wrapper + 0xC80);
+	sys_write32(0, (mem_addr_t)wrapper + 0xC84);
+
+	return 0;
+}
+
 #define QUIRK_NRF_USBHS_DEFINE(n)						\
 	struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {			\
 		.init = usbhs_enable_nrfs_service,				\
@@ -258,6 +288,8 @@ static inline int usbhs_is_phy_clk_off(const struct device *dev)
 		.irq_clear = usbhs_irq_clear,					\
 		.caps = usbhs_init_caps,					\
 		.is_phy_clk_off = usbhs_is_phy_clk_off,				\
+		.post_hibernation_entry = usbhs_post_hibernation_entry,		\
+		.pre_hibernation_exit = usbhs_pre_hibernation_exit,		\
 	};
 
 DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)

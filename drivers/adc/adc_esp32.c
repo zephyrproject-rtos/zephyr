@@ -654,6 +654,12 @@ static int adc_esp32_init(const struct device *dev)
 
 	adc_hw_calibration(conf->unit);
 
+#if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
+	if (conf->unit == ADC_UNIT_2) {
+		adc2_init_code_calibration();
+	}
+#endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
+
 #if defined(CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->gpio_port)) {
 		LOG_ERR("gpio0 port not ready");

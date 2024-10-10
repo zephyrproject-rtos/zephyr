@@ -26,15 +26,19 @@ BUILD_ASSERT(sizeof(void *) == sizeof(uint32_t));
 
 #define STMESP_FLUSH_WORD 0xaabbccdd
 
-#define STM_FLAG(reg) \
+#define STM_FLAG(reg)                                                                              \
 	stmesp_flag(reg, 1, false, IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS))
 
-#define STM_D8(reg, data, timestamp, marked)       \
-	stmesp_data8(reg, data, timestamp, marked, \
+#define STM_D8(reg, data, timestamp, marked)                                                       \
+	stmesp_data8(reg, data, timestamp, marked,                                                 \
 		     IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS))
 
-#define STM_D32(reg, data, timestamp, marked)       \
-	stmesp_data32(reg, data, timestamp, marked, \
+#define STM_D16(reg, data, timestamp, marked)                                                      \
+	stmesp_data16(reg, data, timestamp, marked,                                                \
+		      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS))
+
+#define STM_D32(reg, data, timestamp, marked)                                                      \
+	stmesp_data32(reg, data, timestamp, marked,                                                \
 		      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS))
 
 /* Buffer for storing frontend data before STM/ETR is ready for usage.
@@ -95,7 +99,7 @@ union stm_log_dict_hdr {
 /* Dictionary header initializer. */
 #define DICT_HDR_INITIALIZER(_level, _source_id, _data_len)                                        \
 	{                                                                                          \
-		.hdr = {.ver = CONFIG_LOG_FRONTEND_STMESP_DICT_VER,                         \
+		.hdr = {.ver = CONFIG_LOG_FRONTEND_STMESP_DICT_VER,                                \
 			.type = STM_MSG_TYPE_LOG_DICT,                                             \
 			.level = _level,                                                           \
 			.data_len = _data_len,                                                     \
@@ -211,18 +215,72 @@ static int early_package_cb(const void *buf, size_t len, void *ctx)
 
 static inline void write_data(const void *data, size_t len, STMESP_Type *const stm_esp)
 {
-	uint32_t *p32 = (uint32_t *)data;
+	const uint8_t *p8 = data;
+	const uint32_t *p32;
+	uint32_t unaligned;
 
+	if (!len) {
+		return;
+	}
+
+	/* Start by writing using D8 or D16 until pointer is word aligned. */
+	unaligned = (uintptr_t)data & 0x00000003UL;
+	if (unaligned != 0) {
+		unaligned = 4 - unaligned;
+		unaligned = MIN(len, unaligned);
+
+		len -= unaligned;
+
+		switch (unaligned) {
+		case 3:
+			STM_D8(stm_esp, *p8++, false, false);
+			STM_D16(stm_esp, *(uint16_t *)p8, false, false);
+			p8 += sizeof(uint16_t);
+			break;
+		case 2:
+			if (len) {
+				STM_D16(stm_esp, *(uint16_t *)p8, false, false);
+				p8 += sizeof(uint16_t);
+			} else {
+				/* If len 0 then it means that even though 2 bytes are
+				 * to be copied we can have address which is not aligned
+				 * to 2 bytes.
+				 */
+				STM_D8(stm_esp, *p8++, false, false);
+				STM_D8(stm_esp, *p8++, false, false);
+			}
+			break;
+		default:
+			/* 1 byte to align. */
+			STM_D8(stm_esp, *p8++, false, false);
+		}
+	}
+
+	p32 = (const uint32_t *)p8;
+
+	/* Use D32 to write as much data as possible. */
 	while (len >= sizeof(uint32_t)) {
 		STM_D32(stm_esp, *p32++, false, false);
 		len -= sizeof(uint32_t);
 	}
 
-	uint8_t *p8 = (uint8_t *)p32;
-
-	while (len > 0) {
-		STM_D8(stm_esp, *p8++, false, false);
-		len--;
+	/* Write tail using D16 or D8. Address is word aligned at that point. */
+	if (len) {
+		p8 = (const uint8_t *)p32;
+		switch (len) {
+		case 2:
+			STM_D16(stm_esp, *(uint16_t *)p8, false, false);
+			p8 += sizeof(uint16_t);
+			break;
+		case 3:
+			STM_D16(stm_esp, *(uint16_t *)p8, false, false);
+			p8 += sizeof(uint16_t);
+			/* fallthrough */
+		default:
+			/* 1 byte to align. */
+			STM_D8(stm_esp, *p8++, false, false);
+			break;
+		}
 	}
 }
 
@@ -246,9 +304,7 @@ static inline uint16_t get_channel(void)
 static inline int16_t get_source_id(const void *source)
 {
 	if (source != NULL) {
-		return IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)
-			       ? log_dynamic_source_id((void *)source)
-			       : log_const_source_id(source);
+		return log_source_id(source);
 	}
 
 	return LOG_FRONTEND_STM_NO_SOURCE;
@@ -281,8 +337,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 	size_t sname_len;
 	int package_len;
 	int total_len;
-	static const uint32_t flags = CBPRINTF_PACKAGE_CONVERT_RW_STR |
-				      CBPRINTF_PACKAGE_CONVERT_RO_STR;
+	static const uint32_t flags =
+		CBPRINTF_PACKAGE_CONVERT_RW_STR | CBPRINTF_PACKAGE_CONVERT_RO_STR;
 
 	sname = log_source_name_get(0, get_source_id(source));
 	if (sname) {
@@ -293,8 +349,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 	}
 	total_len = desc.data_len + sname_len /* null terminator */;
 
-	package_len = cbprintf_package_convert(package, desc.package_len, NULL, NULL, flags,
-					       strl, ARRAY_SIZE(strl));
+	package_len = cbprintf_package_convert(package, desc.package_len, NULL, NULL, flags, strl,
+					       ARRAY_SIZE(strl));
 	hdr.log.total_len = total_len + package_len;
 	hdr.log.package_len = package_len;
 
@@ -308,8 +364,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		}
 
 		STM_D32(stm_esp, hdr.raw, use_timestamp, true);
-		(void)cbprintf_package_convert(package, desc.package_len,
-					       package_cb, stm_esp, flags, strl, ARRAY_SIZE(strl));
+		(void)cbprintf_package_convert(package, desc.package_len, package_cb, stm_esp,
+					       flags, strl, ARRAY_SIZE(strl));
 		write_data(sname, sname_len, stm_esp);
 		if (data) {
 			write_data(data, desc.data_len, stm_esp);
@@ -327,8 +383,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		}
 
 		early_buf_put_data((const uint8_t *)&hdr, sizeof(hdr));
-		(void)cbprintf_package_convert(package, desc.package_len, early_package_cb,
-					       NULL, flags, strl, ARRAY_SIZE(strl));
+		(void)cbprintf_package_convert(package, desc.package_len, early_package_cb, NULL,
+					       flags, strl, ARRAY_SIZE(strl));
 		early_buf_put_data(sname, sname_len);
 		if (data) {
 			early_buf_put_data(data, desc.data_len);
@@ -357,8 +413,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		}
 
 		STM_D32(stm_esp, dict_desc.raw, true, true);
-		(void)cbprintf_package_convert(package, desc.package_len, package_cb,
-					       stm_esp, flags, NULL, 0);
+		(void)cbprintf_package_convert(package, desc.package_len, package_cb, stm_esp,
+					       flags, NULL, 0);
 		if (data) {
 			package_cb(data, desc.data_len, stm_esp);
 		}
@@ -370,8 +426,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		key = k_spin_lock(&lock);
 		len_loc = early_buf_len_loc();
 		early_package_cb(&dict_desc.raw, sizeof(dict_desc.raw), NULL);
-		(void)cbprintf_package_convert(package, desc.package_len, early_package_cb,
-					       NULL, flags, NULL, 0);
+		(void)cbprintf_package_convert(package, desc.package_len, early_package_cb, NULL,
+					       flags, NULL, 0);
 		if (data) {
 			early_package_cb(data, desc.data_len, NULL);
 		}
@@ -383,8 +439,8 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 /* Common function for optimized message (log with 0-2 arguments) which is used in
  * case when STMESP is not yet ready.
  */
-static inline uint32_t *early_msg_start(uint32_t level, const void *source,
-					uint32_t package_hdr, const char *fmt)
+static inline uint32_t *early_msg_start(uint32_t level, const void *source, uint32_t package_hdr,
+					const char *fmt)
 {
 	union stm_log_dict_hdr dict_desc = DICT_HDR_INITIALIZER(level, get_source_id(source), 0);
 	uint32_t fmt32 = (uint32_t)fmt;
@@ -398,8 +454,8 @@ static inline uint32_t *early_msg_start(uint32_t level, const void *source,
 }
 
 /* Common function for optimized message (log with 0-2 arguments) which writes to STMESP */
-static inline void msg_start(STMESP_Type *stm_esp, uint32_t level,
-			     const void *source, uint32_t package_hdr, const char *fmt)
+static inline void msg_start(STMESP_Type *stm_esp, uint32_t level, const void *source,
+			     uint32_t package_hdr, const char *fmt)
 
 {
 	union stm_log_dict_hdr dict_desc = DICT_HDR_INITIALIZER(level, get_source_id(source), 0);

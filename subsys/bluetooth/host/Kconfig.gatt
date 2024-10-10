@@ -285,8 +285,7 @@ config DEVICE_NAME_GATT_WRITABLE_AUTHEN
 endif #BT_DEVICE_NAME_GATT_WRITABLE
 
 config BT_GATT_AUTHORIZATION_CUSTOM
-	bool "Custom authorization of GATT operations [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Custom authorization of GATT operations"
 	help
 	  This option allows the user to define application-specific
 	  authorization logic for GATT operations that can be registered

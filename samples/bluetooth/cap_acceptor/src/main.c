@@ -19,6 +19,7 @@
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -41,9 +42,10 @@ LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-	BT_DATA_BYTES(BT_DATA_UUID16_SOME, BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
-		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA_BYTES(BT_DATA_UUID16_SOME,
+		      BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),
+		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL)),
 	BT_DATA_BYTES(BT_DATA_SVC_DATA16,
 		      BT_UUID_16_ENCODE(BT_UUID_CAS_VAL),
 		      BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED),
@@ -54,6 +56,10 @@ static const struct bt_data ad[] = {
 				  BT_BYTES_LIST_LE16(SINK_CONTEXT),
 				  BT_BYTES_LIST_LE16(SOURCE_CONTEXT),
 				  0x00, /* Metadata length */),
+	))
+	IF_ENABLED(CONFIG_BT_BAP_SCAN_DELEGATOR,
+		   (BT_DATA_BYTES(BT_DATA_SVC_DATA16,
+				  BT_UUID_16_ENCODE(BT_UUID_BASS_VAL)),
 	))
 };
 
@@ -308,6 +314,13 @@ int main(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+		err = init_cap_acceptor_broadcast();
+		if (err != 0) {
+			return 0;
+		}
+	}
+
 	LOG_INF("CAP Acceptor initialized");
 
 	while (true) {
@@ -341,8 +354,6 @@ int main(void)
 			break;
 		}
 	}
-
-	/* TODO: Add CAP acceptor broadcast support */
 
 	return 0;
 }

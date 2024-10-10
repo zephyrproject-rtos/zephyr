@@ -24,13 +24,25 @@ config MCUMGR_TRANSPORT_BT_REASSEMBLY
 	  When enabled, the SMP BT transport will buffer and reassemble received
 	  packet fragments before passing it for further processing.
 
-config MCUMGR_TRANSPORT_BT_AUTHEN
-	bool "Authenticated requirement for Bluetooth mcumgr SMP transport"
-	depends on BT_SMP
-	default y
+choice MCUMGR_TRANSPORT_BT_PERM
+	prompt "Permission used for the SMP service"
+	default MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN if BT_SMP
+	default MCUMGR_TRANSPORT_BT_PERM_RW
 	help
-	  Enables encrypted and authenticated connection requirement to
-	  Bluetooth SMP transport.
+	  Permission settings for GATT characteristics of the SMP service.
+
+config MCUMGR_TRANSPORT_BT_PERM_RW
+	bool "Read and write allowed"
+
+config MCUMGR_TRANSPORT_BT_PERM_RW_ENCRYPT
+	bool "Require encryption for access"
+	depends on BT_SMP
+
+config MCUMGR_TRANSPORT_BT_PERM_RW_AUTHEN
+	bool "Require encryption and authentication for access"
+	depends on BT_SMP
+
+endchoice
 
 config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 	bool "Request specific connection parameters for SMP packet exchange"

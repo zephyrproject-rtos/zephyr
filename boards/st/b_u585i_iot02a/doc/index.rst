@@ -220,7 +220,7 @@ The BOARD options are summarized below:
 +-------------------------------+-------------------------------------------+
 
 Here are the instructions to build Zephyr with a non-secure configuration,
-using `tfm_ipc_` sample:
+using :zephyr:code-sample:`tfm_ipc` sample:
 
    .. code-block:: bash
 
@@ -236,7 +236,7 @@ option bit TZEN will be set).
       $ west flash
 
 Please note that, after having run a TFM sample on the board, you will need to
-run `./build/tfm/api_ns/regression.sh` once more to clean up the board from secure
+run ``./build/tfm/api_ns/regression.sh`` once more to clean up the board from secure
 options and get back the platform back to a "normal" state and be able to run
 usual, non-TFM, binaries.
 Also note that, even then, TZEN will remain set, and you will need to use
@@ -317,7 +317,7 @@ board. For example:
    $ minicom -D /dev/ttyACM0
 
 Then, build and flash in the usual way. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

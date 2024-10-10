@@ -4,20 +4,24 @@
 
 #include "asm_memory_management.h"
 
+	.section .cached.hpsram_mask, "w"
+	.align 64
+hpsram_mask:
+	.rept MAX_MEMORY_SEGMENTS
+		.word 0
+	.endr
+
+	.global hpsram_mask
+
 	.section .text, "ax"
 	.align 64
 power_down_literals:
 	.literal_position
 ipc_flag:
 	.word 0x80000000 // IPC_DIPCTDR_BUSY
-hpsram_mask:
-	.rept MAX_MEMORY_SEGMENTS
-		.word 0
-	.endr
 sram_dis_loop_cnt:
 	.word 4096
 
-	.global hpsram_mask
 	.global power_down
 	.type power_down, @function
 

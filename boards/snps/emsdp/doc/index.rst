@@ -161,7 +161,7 @@ Building Sample Applications
 ==============================
 
 You can try many of the sample applications or tests, but let us discuss
-the one called :ref:`hello_world`.
+the one called :zephyr:code-sample:`hello_world`.
 It is found in :zephyr_file:`samples/hello_world`.
 
 Configuring
@@ -184,7 +184,7 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world` for the em4.
+:zephyr:code-sample:`hello_world` for the em4.
 
 .. zephyr-app-commands::
    :board: emsdp/emsdp_em4

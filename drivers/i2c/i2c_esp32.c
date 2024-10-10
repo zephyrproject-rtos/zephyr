@@ -800,8 +800,8 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
 #define I2C_ESP32_TIMEOUT(inst)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, scl_timeout_us),	\
-		    (DT_INST_PROP(inst, scl_timeout_us)), (0))
+	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
+		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
 #define I2C_ESP32_FREQUENCY(bitrate)					\
 	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
@@ -833,9 +833,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
 			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
 		},										   \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),				   \
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),		   \
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags),				   \
+		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),				   \
+		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),		   \
+		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
 		.bitrate = I2C_FREQUENCY(idx),							   \
 		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
 	};											   \
@@ -843,7 +843,7 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
 			     &i2c_esp32_driver_api);
 
-#if DT_NODE_HAS_STATUS(I2C(0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(I2C(0))
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 #if !DT_NODE_HAS_PROP(I2C(0), sda_gpios) || !DT_NODE_HAS_PROP(I2C(0), scl_gpios)
 #error "Missing <sda-gpios> and <scl-gpios> properties to build for this target."
@@ -854,9 +854,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #endif
 #endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(0);
-#endif /* DT_NODE_HAS_STATUS(I2C(0), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(I2C(0)) */
 
-#if DT_NODE_HAS_STATUS(I2C(1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(I2C(1))
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
 #if !DT_NODE_HAS_PROP(I2C(1), sda_gpios) || !DT_NODE_HAS_PROP(I2C(1), scl_gpios)
 #error "Missing <sda-gpios> and <scl-gpios> properties to build for this target."
@@ -867,4 +867,4 @@ ESP32_I2C_INIT(0);
 #endif
 #endif /* !SOC_I2C_SUPPORT_HW_CLR_BUS */
 ESP32_I2C_INIT(1);
-#endif /* DT_NODE_HAS_STATUS(I2C(1), okay) */
+#endif /* DT_NODE_HAS_STATUS_OKAY(I2C(1)) */

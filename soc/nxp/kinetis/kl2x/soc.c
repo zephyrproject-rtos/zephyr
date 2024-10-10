@@ -70,7 +70,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow, 0);
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart0))
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
 #if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
@@ -79,12 +79,10 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 }
 
-static int kl2x_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize system clock to 48 MHz */
 	clock_init();
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -95,5 +93,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(kl2x_init, PRE_KERNEL_1, 0);

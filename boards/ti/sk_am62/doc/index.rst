@@ -94,16 +94,18 @@ The board can using remoteproc, and uses the OpenAMP resource table to accomplis
 
 The testing requires the binary to be copied to the SD card to allow the A53 cores to load it while booting using remoteproc.
 
-To test the M4F core, we build the `hello_world` sample with the following command.
+To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. code-block:: console
 
    # From the root of the Zephyr repository
    west build -p -b sk_am62/am6234/m4 samples/hello_world
 
-This builds the program and the binary is present in the `build/zephyr` directory as `zephyr.elf`.
+This builds the program and the binary is present in the :file:`build/zephyr` directory as
+:file:`zephyr.elf`.
 
-We now copy this binary onto the SD card in the `/lib/firmware` directory and name it as `am62-mcu-m4f0_0-fw`.
+We now copy this binary onto the SD card in the :file:`/lib/firmware` directory and name it as
+:file:`am62-mcu-m4f0_0-fw`.
 
 .. code-block:: console
 
@@ -122,7 +124,7 @@ The binary will run and print Hello world to the MCU_UART0 port.
 Debugging
 *********
 
-The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the `debug` build target:
+The board is equipped with an XDS110 JTAG debugger. To debug a binary, utilize the ``debug`` build target:
 
 .. zephyr-app-commands::
    :app: <my_app>

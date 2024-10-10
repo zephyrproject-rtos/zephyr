@@ -1,6 +1,6 @@
 .. zephyr:code-sample:: bluetooth_cap_initiator
-   :name: Common Audio Profile Initiator
-   :relevant-api: bt_cap bt_bap bluetooth
+   :name: Common Audio Profile (CAP) Initiator
+   :relevant-api: bluetooth bt_bap bt_cap bt_conn
 
    Connect to CAP Acceptors and setup unicast audio streaming or broadcast audio streams.
 
@@ -13,7 +13,7 @@ audio streams, sets up a broadcast audio stream, or both.
 
 This sample can be found under :zephyr_file:`samples/bluetooth/cap_initiator` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************
@@ -62,7 +62,7 @@ Similarly to how you would for real HW, you can do:
    :goals: build
    :west-args: --sysbuild
 
-Note this will produce a Linux executable in `./build/zephyr/zephyr.exe`.
+Note this will produce a Linux executable in :file:`./build/zephyr/zephyr.exe`.
 For more information, check :ref:`this board documentation <nrf5340bsim>`.
 
 Building for a simulated nrf52_bsim

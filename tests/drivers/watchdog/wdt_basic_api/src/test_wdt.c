@@ -66,7 +66,7 @@
  * 'watchdog0' property, or one of the following watchdog compatibles
  * must have an enabled node.
  */
-#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
@@ -148,7 +148,7 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define NOINIT_SECTION ".dtcm_noinit.test_wdt"
 #else
 #define NOINIT_SECTION ".noinit.test_wdt"

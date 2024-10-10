@@ -69,3 +69,9 @@ type:
 .. code-block:: console
 
    $ ping -I eth1 169.254.218.128
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

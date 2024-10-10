@@ -362,7 +362,7 @@ You should see the following confirmation on your Linux host:
    usb 3-1: SerialNumber: 207136863530
 
 You can build and flash the provided sample application
-(:ref:`steval_stwinbx1_sample_sensors`) that reads sensors data and outputs
+(:zephyr:code-sample:`stwinbx1_sensors`) that reads sensors data and outputs
 values on the console.
 
 .. _STEVAL-STWINBX1 Development kit website:

@@ -39,7 +39,7 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 		return 0;
 	}
 
-	dev->pm->usage = 0;
+	dev->pm->base.usage = 0;
 	(void)pm_device_action_run(dev, visitor_context->action);
 	return 0;
 }

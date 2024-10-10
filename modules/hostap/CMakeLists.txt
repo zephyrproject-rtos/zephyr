@@ -503,6 +503,13 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
 	${HOSTAP_SRC_BASE}/crypto/milenage.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_TEST
+	${HOSTAP_SRC_BASE}/crypto/crypto_module_tests.c
+	${HOSTAP_SRC_BASE}/crypto/fips_prf_internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-internal.c
+	${HOSTAP_SRC_BASE}/crypto/sha1-tlsprf.c
+)
 endif()
 
 zephyr_library_link_libraries_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE

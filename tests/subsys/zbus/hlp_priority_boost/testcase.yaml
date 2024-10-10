@@ -1,6 +1,22 @@
 tests:
   message_bus.zbus.hlp_priority_boost:
-    platform_exclude: fvp_base_revc_2xaemv8a//smp/ns
+    platform_exclude:
+      - fvp_base_revc_2xaemv8a//smp/ns
+      # All Intel Audio DSP platforms have non-coherent cache
+      # between CPUs. So the zbus_channel struct data goes
+      # out-of-sync between CPUs with multiple producer and
+      # consumer threads running concurrently on multiple CPUs,
+      # resulting in bad pointer being used, e.g. passed to
+      # memcpy(). So exclude these platforms from running in
+      # twister as they are certain to fail.
+      - intel_adsp/ace15_mtpm/sim
+      - intel_adsp/ace15_mtpm
+      - intel_adsp/ace20_lnl/sim
+      - intel_adsp/ace20_lnl
+      - intel_adsp/ace30/ptl/sim
+      - intel_adsp/ace30/ptl
+      - intel_adsp/cavs25/tgph
+      - intel_adsp/cavs25
     tags: zbus
     integration_platforms:
       - native_sim

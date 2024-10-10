@@ -1,0 +1,13 @@
+identifier: nucleo_wb05kz
+name: ST Nucleo WB05KZ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 24
+flash: 192
+supported:
+  - gpio
+vendor: st

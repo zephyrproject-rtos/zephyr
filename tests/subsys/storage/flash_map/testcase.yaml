@@ -4,8 +4,6 @@ tests:
       - nrf51dk/nrf51822
       - nrf9160dk/nrf9160/ns
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
@@ -29,8 +27,6 @@ tests:
     platform_allow:
       - nrf51dk/nrf51822
       - qemu_x86
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3
@@ -41,8 +37,6 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay-psa.conf
     platform_allow:
       - nrf51dk/nrf51822
-      - native_posix
-      - native_posix/native/64
       - native_sim
       - native_sim/native/64
       - mr_canhubk3

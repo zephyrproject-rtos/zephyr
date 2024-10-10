@@ -258,7 +258,7 @@ void bt_bas_bls_set_charging_fault_reason(enum bt_bas_bls_charging_fault_reason 
 /**
  * @brief Set the identifier of the battery.
  *
- * kconfig_dep{CONFIG_BT_BAS_BLS_IDENTIFIER_PRESENT}
+ * @kconfig_dep{CONFIG_BT_BAS_BLS_IDENTIFIER_PRESENT}
  *
  * @param identifier Identifier to set.
  */
@@ -267,7 +267,7 @@ void bt_bas_bls_set_identifier(uint16_t identifier);
 /**
  * @brief Set the service required status.
  *
- * kconfig_dep{CONFIG_BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT}
+ * @kconfig_dep{CONFIG_BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT}
  *
  * @param value Service required status to set.
  */
@@ -276,7 +276,7 @@ void bt_bas_bls_set_service_required(enum bt_bas_bls_service_required value);
 /**
  * @brief Set the battery fault status.
  *
- * kconfig_dep{CONFIG_BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT}
+ * @kconfig_dep{CONFIG_BT_BAS_BLS_ADDITIONAL_STATUS_PRESENT}
  *
  * @param value Battery fault status to set.
  */

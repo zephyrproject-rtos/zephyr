@@ -69,6 +69,7 @@ config IMG_BLOCK_BUF_SIZE
 config IMG_ERASE_PROGRESSIVELY
 	bool "Erase flash progressively when receiving new firmware"
 	select STREAM_FLASH_ERASE
+	depends on FLASH_HAS_EXPLICIT_ERASE
 	help
 	  If enabled, flash is erased as necessary when receiving new firmware,
 	  instead of erasing the whole image slot at once. This is necessary

@@ -24,6 +24,7 @@ config INFINEON_CAT1_QSPI_FLASH
 	select FLASH_HAS_DRIVER_ENABLED
 	select USE_INFINEON_FLASH
 	select USE_INFINEON_SMIF
+	select PINCTRL
 	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the QSPI Flash driver for Infineon CAT1 family.

@@ -36,7 +36,7 @@ def extract_fields_from_arg_list(target_fields: set, arg_list: Union[str, list])
             # Move to other_fields
             other_fields.append(field)
 
-    return extracted_fields, " ".join(other_fields)
+    return extracted_fields, other_fields
 
 class TwisterConfigParser:
     """Class to read testsuite yaml files with semantic checking

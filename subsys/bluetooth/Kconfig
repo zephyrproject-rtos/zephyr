@@ -189,16 +189,37 @@ config BT_SUBRATING
 	  Enable support for LE Connection Subrating feature that is defined in the
 	  Bluetooth Core specification, Version 5.4 | Vol 6, Part B, Section 4.6.35.
 
+config BT_CHANNEL_SOUNDING
+	bool "Channel Sounding [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on !BT_CTLR || BT_CTLR_CHANNEL_SOUNDING_SUPPORT
+	help
+	  Enable support for Bluetooth 6.0 Channel Sounding feature.
+
+config BT_CHANNEL_SOUNDING_TEST
+	bool "Channel Sounding Test [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on BT_CHANNEL_SOUNDING
+	help
+	  Enable support for Channel Sounding test mode.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
 rsource "common/Kconfig"
 rsource "host/Kconfig"
 rsource "controller/Kconfig"
-rsource "shell/Kconfig"
 rsource "crypto/Kconfig"
 rsource "lib/Kconfig"
 rsource "Kconfig.logging"
+
+config BT_SHELL
+	bool "Bluetooth shell"
+	select SHELL
+	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
+	help
+	  Activate shell module that provides Bluetooth commands to the
+	  console.
 
 config BT_USE_PSA_API
 	bool "Use PSA APIs instead of TinyCrypt for crypto operations"

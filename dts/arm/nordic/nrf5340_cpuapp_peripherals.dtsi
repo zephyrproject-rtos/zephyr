@@ -12,10 +12,21 @@ dcnf: dcnf@0 {
 	status = "okay";
 };
 
-oscillators: oscillator@4000 {
-	compatible = "nordic,nrf-oscillators";
+oscillators: clock-controller@4000 {
+	compatible = "nordic,nrf53-oscillators";
 	reg = <0x4000 0x1000>;
-	status = "okay";
+
+	lfxo: lfxo {
+		compatible = "nordic,nrf53-lfxo";
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+	};
+
+	hfxo: hfxo {
+		compatible = "nordic,nrf53-hfxo";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(32)>;
+	};
 };
 
 regulators: regulator@4000 {
@@ -108,6 +119,7 @@ i2c0: i2c@8000 {
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi0: spi@8000 {
@@ -149,6 +161,7 @@ i2c1: i2c@9000 {
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi1: spi@9000 {
@@ -203,6 +216,7 @@ i2c2: i2c@b000 {
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi2: spi@b000 {
@@ -244,6 +258,7 @@ i2c3: i2c@c000 {
 	interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 	easydma-maxcnt-bits = <16>;
 	status = "disabled";
+	zephyr,pm-device-runtime-auto;
 };
 
 spi3: spi@c000 {

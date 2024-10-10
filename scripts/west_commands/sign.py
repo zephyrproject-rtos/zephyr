@@ -129,7 +129,7 @@ class Sign(Forceable):
         group = parser.add_argument_group('tool control options')
         group.add_argument('-t', '--tool', choices=['imgtool', 'rimage'],
                            help='''image signing tool name; imgtool and rimage
-                           are currently supported''')
+                           are currently supported (imgtool is deprecated)''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
@@ -245,6 +245,8 @@ class ImgtoolSigner(Signer):
 
         args = command.args
         b = pathlib.Path(build_dir)
+
+        log.wrn("west sign using imgtool is deprecated and will be removed in a future release")
 
         imgtool = self.find_imgtool(command, args)
         # The vector table offset and application version are set in Kconfig:
@@ -485,7 +487,7 @@ class RimageSigner(Signer):
         kernel_name = build_conf.get('CONFIG_KERNEL_BIN_NAME', 'zephyr')
 
         # TODO: make this a new sign.py --bootloader option.
-        if target in ('imx8', 'imx8m', 'imx8ulp'):
+        if target in ('imx8', 'imx8m', 'imx8ulp', 'imx95'):
             bootloader = None
             kernel = str(b / 'zephyr' / f'{kernel_name}.elf')
             out_bin = str(b / 'zephyr' / f'{kernel_name}.ri')

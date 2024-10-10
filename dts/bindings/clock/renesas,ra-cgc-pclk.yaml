@@ -8,10 +8,7 @@ compatible: "renesas,ra-cgc-pclk"
 include: [clock-controller.yaml, base.yaml]
 
 properties:
-  clk_src:
-    type: int
-
-  clk_div:
+  div:
     type: int
     required: true
     description: Prescale divider to calculate the subclock frequency from the

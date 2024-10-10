@@ -290,6 +290,7 @@ static void client_release_resources(struct http_client_ctx *client)
 {
 	struct http_resource_detail *detail;
 	struct http_resource_detail_dynamic *dynamic_detail;
+	struct http_response_ctx response_ctx;
 
 	HTTP_SERVICE_FOREACH(service) {
 		HTTP_SERVICE_FOREACH_RESOURCE(service, resource) {
@@ -315,8 +316,8 @@ static void client_release_resources(struct http_client_ctx *client)
 				continue;
 			}
 
-			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED,
-					   NULL, 0, dynamic_detail->user_data);
+			dynamic_detail->cb(client, HTTP_SERVER_DATA_ABORTED, NULL, 0, &response_ctx,
+					   dynamic_detail->user_data);
 		}
 	}
 }
@@ -782,6 +783,29 @@ int http_server_sendall(struct http_client_ctx *client, const void *buf, size_t 
 	}
 
 	return 0;
+}
+
+bool http_response_is_final(struct http_response_ctx *rsp, enum http_data_status status)
+{
+	if (status != HTTP_SERVER_DATA_FINAL) {
+		return false;
+	}
+
+	if (rsp->final_chunk ||
+	    (rsp->status == 0 && rsp->header_count == 0 && rsp->body_len == 0)) {
+		return true;
+	}
+
+	return false;
+}
+
+bool http_response_is_provided(struct http_response_ctx *rsp)
+{
+	if (rsp->status != 0 || rsp->header_count > 0 || rsp->body_len > 0) {
+		return true;
+	}
+
+	return false;
 }
 
 int http_server_start(void)

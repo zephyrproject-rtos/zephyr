@@ -155,7 +155,7 @@ static struct net_buf *get_data_frag(struct net_buf *outside, size_t winsize)
 	window = bt_buf_make_view(window, outside,
 				  winsize, &get_frag_md(window)->view_meta);
 
-	LOG_DBG("get-acl-frag: outside %p window %p size %d", outside, window, winsize);
+	LOG_DBG("get-acl-frag: outside %p window %p size %zu", outside, window, winsize);
 
 	return window;
 }
@@ -651,7 +651,7 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		return -EIO;
 	}
 
-	LOG_DBG("conn %p buf %p len %u buf->len %u cb %p ud %p",
+	LOG_DBG("conn %p buf %p len %zu buf->len %u cb %p ud %p",
 		conn, buf, len, buf->len, cb, ud);
 
 	/* Acquire the right to send 1 packet to the controller */
@@ -1475,6 +1475,18 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 	return conn;
 }
 
+static K_SEM_DEFINE(pending_recycled_events, 0, K_SEM_MAX_LIMIT);
+
+static void recycled_work_handler(struct k_work *work)
+{
+	if (k_sem_take(&pending_recycled_events, K_NO_WAIT) == 0) {
+		notify_recycled_conn_slot();
+		k_work_submit(work);
+	}
+}
+
+static K_WORK_DEFINE(recycled_work, recycled_work_handler);
+
 void bt_conn_unref(struct bt_conn *conn)
 {
 	atomic_val_t old;
@@ -1505,7 +1517,8 @@ void bt_conn_unref(struct bt_conn *conn)
 	 * to claim connection object as only the first claim will be served.
 	 */
 	if (deallocated) {
-		notify_recycled_conn_slot();
+		k_sem_give(&pending_recycled_events);
+		k_work_submit(&recycled_work);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn_type == BT_CONN_TYPE_LE &&
@@ -1660,16 +1673,17 @@ int bt_conn_disconnect(struct bt_conn *conn, uint8_t reason)
 
 /* Group Connected BT_CONN only in this */
 #if defined(CONFIG_BT_CONN)
+
 /* We don't want the application to get a PHY update callback upon connection
  * establishment on 2M PHY. Therefore we must prevent issuing LE Set PHY
  * in this scenario.
+ *
+ * It is ifdef'd because the struct fields don't exist in some configs.
  */
-static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
+static bool uses_symmetric_2mbit_phy(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		if (conn->le.phy.tx_phy == BT_HCI_LE_PHY_2M &&
 		    conn->le.phy.rx_phy == BT_HCI_LE_PHY_2M) {
 			return true;
@@ -1677,9 +1691,33 @@ static bool skip_auto_phy_update_on_conn_establishment(struct bt_conn *conn)
 	}
 #else
 	ARG_UNUSED(conn);
-#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif
 
 	return false;
+}
+
+static bool can_initiate_feature_exchange(struct bt_conn *conn)
+{
+	/* Spec says both central and peripheral can send the command. However,
+	 * peripheral-initiated feature exchange is an optional feature.
+	 *
+	 * We provide an optimization if we are in the same image as the
+	 * controller, as we know at compile time whether it supports or not
+	 * peripheral feature exchange.
+	 */
+	bool onboard_controller = IS_ENABLED(CONFIG_BT_CTLR);
+	bool supports_peripheral_feature_exchange = IS_ENABLED(CONFIG_BT_CTLR_PER_INIT_FEAT_XCHG);
+	bool is_central = IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL;
+
+	if (is_central) {
+		return true;
+	}
+
+	if (onboard_controller && supports_peripheral_feature_exchange) {
+		return true;
+	}
+
+	return BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features);
 }
 
 static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused)
@@ -1704,8 +1742,7 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 	}
 
 	if (!atomic_test_bit(conn->flags, BT_CONN_LE_FEATURES_EXCHANGED) &&
-	    ((conn->role == BT_HCI_ROLE_CENTRAL) ||
-	     BT_FEAT_LE_PER_INIT_FEAT_XCHG(bt_dev.le.features))) {
+	    can_initiate_feature_exchange(conn)) {
 		err = bt_hci_le_read_remote_features(conn);
 		if (err) {
 			LOG_ERR("Failed read remote features (%d)", err);
@@ -1726,11 +1763,9 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
-	    BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
-	    !skip_auto_phy_update_on_conn_establishment(conn)) {
-		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_PREFER_2M,
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) && BT_FEAT_LE_PHY_2M(bt_dev.le.features) &&
+	    !uses_symmetric_2mbit_phy(conn)) {
+		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M, BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_CODED_ANY);
 		if (err) {
 			LOG_ERR("Failed LE Set PHY (%d)", err);
@@ -1740,23 +1775,19 @@ static void perform_auto_initiated_procedures(struct bt_conn *conn, void *unused
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
-	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		if (bt_drv_quirk_no_auto_dle()) {
-			uint16_t tx_octets, tx_time;
+	/* Data length should be automatically updated to the maximum by the
+	 * controller. Not updating it is a quirk and this is the workaround.
+	 */
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) && BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	    bt_drv_quirk_no_auto_dle()) {
+		uint16_t tx_octets, tx_time;
 
-			err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
-			if (!err) {
-				err = bt_le_set_data_len(conn,
-						tx_octets, tx_time);
-				if (err) {
-					LOG_ERR("Failed to set data len (%d)", err);
-				}
+		err = bt_hci_le_read_max_data_len(&tx_octets, &tx_time);
+		if (!err) {
+			err = bt_le_set_data_len(conn, tx_octets, tx_time);
+			if (err) {
+				LOG_ERR("Failed to set data len (%d)", err);
 			}
-		} else {
-			/* No need to auto-initiate DLE procedure.
-			 * It is done by the controller.
-			 */
 		}
 	}
 
@@ -2579,8 +2610,10 @@ static void reset_pairing(struct bt_conn *conn)
 #if defined(CONFIG_BT_CLASSIC)
 	if (conn->type == BT_CONN_TYPE_BR) {
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRED);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR);
 		atomic_clear_bit(conn->flags, BT_CONN_BR_LEGACY_SECURE);
+		atomic_clear_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING);
 	}
 #endif /* CONFIG_BT_CLASSIC */
 
@@ -3288,6 +3321,93 @@ int bt_conn_le_subrate_request(struct bt_conn *conn,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SUBRATE_REQUEST, buf, NULL);
 }
 #endif /* CONFIG_BT_SUBRATING */
+
+#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+void notify_remote_cs_capabilities(struct bt_conn *conn, struct bt_conn_le_cs_capabilities params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_remote_capabilities_available) {
+			callback->le_cs_remote_capabilities_available(conn, &params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_remote_capabilities_available) {
+			cb->le_cs_remote_capabilities_available(conn, &params);
+		}
+	}
+}
+
+void notify_remote_cs_fae_table(struct bt_conn *conn, struct bt_conn_le_cs_fae_table params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_remote_fae_table_available) {
+			callback->le_cs_remote_fae_table_available(conn, &params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_remote_fae_table_available) {
+			cb->le_cs_remote_fae_table_available(conn, &params);
+		}
+	}
+}
+
+void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_config_created) {
+			callback->le_cs_config_created(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_config_created) {
+			cb->le_cs_config_created(conn, params);
+		}
+	}
+}
+
+void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_config_removed) {
+			callback->le_cs_config_removed(conn, config_id);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_config_removed) {
+			cb->le_cs_config_removed(conn, config_id);
+		}
+	}
+}
+
+void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_subevent_data_available) {
+			callback->le_cs_subevent_data_available(conn, result);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_subevent_data_available) {
+			cb->le_cs_subevent_data_available(conn, result);
+		}
+	}
+}
+#endif /* CONFIG_BT_CHANNEL_SOUNDING */
 
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param)

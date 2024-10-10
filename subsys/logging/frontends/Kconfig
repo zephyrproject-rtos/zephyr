@@ -46,7 +46,8 @@ config LOG_FRONTEND_STMESP_DICT
 
 config LOG_FRONTEND_STMESP_FSC
 	bool "Send fully self-contained messages"
-	select LOG_MSG_APPEND_RO_STRING_LOC if !NRF_ETR
+	select LOG_MSG_APPEND_RO_STRING_LOC if (!NRF_ETR && !SOC_NRF54H20_CPUPPR && \
+			!SOC_NRF54H20_CPUFLPR)
 
 config LOG_FRONTEND_STMESP_FLUSH_COUNT
 	int "Number of flushing words"
@@ -94,6 +95,12 @@ config LOG_FRONTEND_STMESP_DEMUX_BUFFER_SIZE
 
 config LOG_FRONTEND_STMESP_DEMUX_MAX_UTILIZATION
 	bool "Track maximum utilization"
+
+config LOG_FRONTEND_STMESP_DEMUX_GC_TIMEOUT
+	int "Message timeout (in milliseconds)"
+	default 100
+	help
+	  If log message is not completed within that time frame it is discarded.
 
 endif # LOG_FRONTEND_STMESP_DEMUX
 

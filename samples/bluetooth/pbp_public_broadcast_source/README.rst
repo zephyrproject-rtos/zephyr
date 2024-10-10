@@ -1,13 +1,13 @@
 .. zephyr:code-sample:: bluetooth_public_broadcast_source
-   :name: Public Broadcast Source
-   :relevant-api: bluetooth
+   :name: Public Broadcast Profile (PBP) Public Broadcast Source
+   :relevant-api: bluetooth bt_audio bt_bap bt_pbp
 
-   Bluetooth: Public Broadcast Source
+   Use PBP Public Broadcast Source functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Public Broadcast Profile source functionality.
+Application demonstrating the PBP Public Broadcast Source functionality.
 Will start advertising extended advertising and includes a Broadcast Audio Announcement.
 The advertised broadcast audio stream quality will cycle between high and standard quality
 every 15 seconds.
@@ -15,7 +15,7 @@ every 15 seconds.
 This sample can be found under
 :zephyr_file:`samples/bluetooth/pbp_public_broadcast_source` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************
@@ -27,7 +27,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use `-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf` to enable the required ISO
+use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
 Building for an nrf5340dk
@@ -64,7 +64,7 @@ Similarly to how you would for real HW, you can do:
    :goals: build
    :west-args: --sysbuild
 
-Note this will produce a Linux executable in `./build/zephyr/zephyr.exe`.
+Note this will produce a Linux executable in :file:`./build/zephyr/zephyr.exe`.
 For more information, check :ref:`this board documentation <nrf5340bsim>`.
 
 Building for a simulated nrf52_bsim

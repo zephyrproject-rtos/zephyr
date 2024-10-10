@@ -18,7 +18,7 @@ emulated environment, for example, with the :zephyr:code-sample:`synchronization
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :host-os: unix
-   :board: qemu_xtensa
+   :board: qemu_xtensa/dc233c
    :goals: run
 
 This will build an image with the synchronization sample app, boot it using

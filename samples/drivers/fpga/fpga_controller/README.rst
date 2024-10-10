@@ -82,8 +82,8 @@ To upload the bitstream again you need to reset the FPGA:
     FPGA: resetting FPGA
 
 You can also use your own bitstream.
-To load a bitstream into device memory, use `devmem load` command.
-It is important to use the -e option when sending a bitstream via `xxd`:
+To load a bitstream into device memory, use ``devmem load`` command.
+It is important to use the -e option when sending a bitstream via ``xxd``:
 
 .. code-block:: console
 
@@ -92,14 +92,14 @@ It is important to use the -e option when sending a bitstream via `xxd`:
     Press ctrl-x + ctrl-q to stop
 
 Now, the loader is waiting for data.
-You can either type it directly from the console or send it from the host PC (replace `ttyX` with the appropriate one for your shell console):
+You can either type it directly from the console or send it from the host PC (replace ``ttyX`` with the appropriate one for your shell console):
 
 .. code-block:: console
 
     xxd -p data > /dev/ttyX
 
 (It is important to use plain-style hex dump)
-Once the data is transferred, use `ctrl-x + ctrl-q` to quit loader.
+Once the data is transferred, use :kbd:`Ctrl-X Ctrl-Q` to quit loader.
 It will print the sum of the read bytes and return to the shell:
 
 .. code-block:: console

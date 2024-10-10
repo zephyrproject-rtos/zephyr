@@ -20,7 +20,7 @@
 #include <hal/cam_ll.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(video_esp32_lcd_cam, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(video_esp32_lcd_cam, CONFIG_VIDEO_LOG_LEVEL);
 
 #define VIDEO_ESP32_DMA_BUFFER_MAX_SIZE 4095
 
@@ -89,7 +89,6 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 			     int status)
 {
 	struct video_esp32_data *data = user_data;
-	int ret = 0;
 
 	if (status == DMA_STATUS_BLOCK) {
 		LOG_DBG("received block");
@@ -194,6 +193,10 @@ static int video_esp32_stream_start(const struct device *dev)
 
 	cam_hal_start_streaming(&data->hal);
 
+	if (video_stream_start(cfg->source_dev)) {
+		return -EIO;
+	}
+
 	data->is_streaming = true;
 
 	return 0;
@@ -206,6 +209,10 @@ static int video_esp32_stream_stop(const struct device *dev)
 	int ret = 0;
 
 	LOG_DBG("Stop streaming");
+
+	if (video_stream_stop(cfg->source_dev)) {
+		return -EIO;
+	}
 
 	data->is_streaming = false;
 	ret = dma_stop(cfg->dma_dev, cfg->rx_dma_channel);
@@ -270,7 +277,6 @@ static int video_esp32_set_fmt(const struct device *dev, enum video_endpoint_id 
 static int video_esp32_enqueue(const struct device *dev, enum video_endpoint_id ep,
 			       struct video_buffer *vbuf)
 {
-	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
 
 	if (ep != VIDEO_EP_OUT) {

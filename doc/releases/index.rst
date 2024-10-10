@@ -73,7 +73,7 @@ Release Notes
 Release notes contain a list of changes that have been made to the different
 areas of the project during the development cycle of the release.
 Changes that require the user to modify their own application to support the new
-release may be mentioned in the release notes, but the details regarding `what`
+release may be mentioned in the release notes, but the details regarding *what*
 needs to be changed are to be detailed in the release's migration guide.
 
 .. toctree::

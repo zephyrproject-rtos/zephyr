@@ -1061,6 +1061,7 @@ static struct fs_littlefs fs_data_##inst = { \
 		.prog_size = DT_INST_PROP(inst, prog_size), \
 		.cache_size = DT_INST_PROP(inst, cache_size), \
 		.lookahead_size = DT_INST_PROP(inst, lookahead_size), \
+		.block_cycles = DT_INST_PROP(inst, block_cycles), \
 		.read_buffer = read_buffer_##inst, \
 		.prog_buffer = prog_buffer_##inst, \
 		.lookahead_buffer = lookahead_buffer_##inst, \

@@ -201,7 +201,7 @@ the ``--runner`` (or ``-r``) option:
    $ west flash --runner openocd
    $ west flash --runner jlink
 
-Build the :ref:`hello_world` application and flash it using the on-board
+Build the :zephyr:code-sample:`hello_world` application and flash it using the on-board
 ST-LINK interface:
 
 .. zephyr-app-commands::

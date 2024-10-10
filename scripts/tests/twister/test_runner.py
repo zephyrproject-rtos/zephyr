@@ -369,9 +369,9 @@ TESTDATA_2_2 = [
      True, True, False,
      TwisterStatus.NONE, None,
      [os.path.join('dummy', 'cmake'),
-      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
+      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=y',
-      '-DEXTRA_GEN_DEFINES_ARGS=--edtlib-Werror', '-Gdummy_generator',
+      '-DEXTRA_GEN_EDT_ARGS=--edtlib-Werror', '-Gdummy_generator',
       '-S' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
       '-DBOARD=<platform name>',
@@ -383,9 +383,9 @@ TESTDATA_2_2 = [
      True, False, True,
      TwisterStatus.ERROR, 'Cmake build failure',
      [os.path.join('dummy', 'cmake'),
-      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1',
+      '-B' + os.path.join('build', 'dir'), '-DTC_RUNID=1', '-DTC_NAME=testcase',
       '-DSB_CONFIG_COMPILER_WARNINGS_AS_ERRORS=n',
-      '-DEXTRA_GEN_DEFINES_ARGS=', '-Gdummy_generator',
+      '-DEXTRA_GEN_EDT_ARGS=', '-Gdummy_generator',
       '-Szephyr_base/share/sysbuild',
       '-DAPP_DIR=' + os.path.join('source', 'dir'),
       'arg1', 'arg2',
@@ -442,6 +442,7 @@ def test_cmake_run_cmake(
     instance_mock.status = TwisterStatus.NONE
     instance_mock.reason = None
     instance_mock.testsuite = mock.Mock()
+    instance_mock.testsuite.name = 'testcase'
     instance_mock.testsuite.required_snippets = ['dummy snippet 1', 'ds2']
     instance_mock.testcases = [mock.Mock(), mock.Mock()]
     instance_mock.testcases[0].status = TwisterStatus.NONE
@@ -2007,9 +2008,13 @@ def test_projectbuilder_report_out(
     instance_mock.status = status
     instance_mock.reason = 'dummy reason'
     instance_mock.testsuite.name = 'dummy.testsuite.name'
-    instance_mock.testsuite.testcases = [mock.Mock() for _ in range(25)]
-    instance_mock.testcases = [mock.Mock() for _ in range(24)] + \
-                              [mock.Mock(status=TwisterStatus.SKIP)]
+    skip_mock_tc = mock.Mock(status=TwisterStatus.SKIP, reason='?')
+    skip_mock_tc.name = '?'
+    unknown_mock_tc = mock.Mock(status=mock.Mock(value='?'), reason='?')
+    unknown_mock_tc.name = '?'
+    instance_mock.testsuite.testcases = [unknown_mock_tc for _ in range(25)]
+    instance_mock.testcases = [unknown_mock_tc for _ in range(24)] + \
+                              [skip_mock_tc]
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)

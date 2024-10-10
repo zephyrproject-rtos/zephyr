@@ -777,7 +777,7 @@ class ZephyrBinaryRunner(abc.ABC):
             raise MissingProgram(program)
         return ret
 
-    def get_rtt_address(self) -> int | None:
+    def get_rtt_address(self) -> Optional[int]:
         '''Helper method for extracting a the RTT control block address.
 
         If args.rtt_address was supplied, returns that.

@@ -125,9 +125,7 @@ static void subscribe(struct bt_conn *conn,
 	sub_params.subscribe = sub_cb;
 	sub_params.value = BT_GATT_CCC_NOTIFY;
 	sub_params.value_handle = handle;
-
-	/* Set-up auto-discovery of the CCC handle */
-	sub_params.ccc_handle = 0;
+	sub_params.ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 	sub_params.disc_params = &ccc_disc_params;
 	sub_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 

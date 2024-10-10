@@ -7,6 +7,12 @@
  * visual identity. Many colors are also overridden to use CSS variables.
  */
 
+ :root {
+     /* Use system font stacks for better performance (no Web fonts required) */
+     --system-font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+     --header-font-family: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
+ }
+
 body,
 h1,
 h2,
@@ -23,8 +29,7 @@ legend,
 .btn,
 .rst-content .toctree-wrapper p.caption,
 .rst-versions {
-    /* Use a system font stack for better performance (no Web fonts required) */
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: var(--system-font-family);
 }
 
 h1,
@@ -35,8 +40,9 @@ h5,
 h6,
 legend,
 .rst-content .toctree-wrapper p.caption {
-    /* Use a lighter font for headers (Medium instead of Bold) */
-    font-weight: 500;
+    /* Use a lighter font for headers (Semi-Bold instead of Bold) */
+    font-weight: 600;
+    font-family: var(--header-font-family);
 }
 
 .rst-content div.figure p.caption {
@@ -172,6 +178,7 @@ a.icon-home:visited {
 .wy-nav-content {
     background-color: var(--content-background-color);
     min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
 }
 
@@ -496,6 +503,58 @@ kbd, .kbd,
     border-color: var(--guiitems-border-color);
 }
 
+/* heading tweaks to make document hierarchy easier to grasp */
+
+.rst-content section > h1 {
+    font-weight: 700;
+    margin-bottom: 2.5rem;
+    position: relative;
+    line-height: 1;
+    z-index: 1;
+}
+
+.rst-content section > h1::before {
+    content: '';
+    position: absolute;
+    z-index:-1;
+    left: 0;
+    right: 0;
+    height: 4px;
+    bottom: -1px;
+    background: linear-gradient(to right, var(--admonition-note-title-background-color), var(--admonition-note-title-background-color) 50%, var(--admonition-note-background-color) 80%, transparent); /* Example gradient */
+    opacity:50%;
+}
+
+.rst-content section > h2,
+.rst-content section > h3,
+.rst-content section > h4,
+.rst-content section > h5 {
+    font-weight: 500;
+    padding-inline-start: 8px;
+    margin-inline-start: 0px;
+    border-inline-start: 8px solid;
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
+}
+
+.rst-content section > h2 {
+    border-color: var(--admonition-note-title-background-color);
+}
+
+.rst-content section > h3 {
+    border-color: var(--admonition-note-background-color);
+}
+
+.rst-content section > h4 {
+    border-color: transparent;
+    font-weight: 400;
+}
+
+.rst-content section > h5 {
+    border-color: transparent;
+    font-weight: 100;
+}
+
 /* Buttons */
 
 .btn-neutral {
@@ -760,6 +819,7 @@ kbd, .kbd,
         max-height: initial;
     }
     .wy-nav-content {
+        min-height: calc(100vh - 64px);
         min-height: calc(100dvh - 64px);
     }
 }
@@ -992,4 +1052,12 @@ dark-mode-toggle::part(toggleLabel){
     content: '\F0A9'; /* arrow-circle-right */
     font-family: 'FontAwesome';
     padding-right: 0.5em;
+}
+
+li>a.code-sample-link.reference.internal {
+    font-weight: 100;
+}
+
+li>a.code-sample-link.reference.internal.current {
+    text-decoration: underline;
 }

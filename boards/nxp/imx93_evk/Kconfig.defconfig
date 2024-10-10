@@ -5,6 +5,18 @@ if BOARD_IMX93_EVK
 
 if BOARD_IMX93_EVK_MIMX9352_A55
 
+if CAN
+
+# Enable board mux configure during init
+config BOARD_MIMX93_EVK_EXP_SEL_INIT
+	default y
+
+# CAN Phy must be initialized after board mux
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
+endif # CAN
+
 if BOARD_MIMX93_EVK_EXP_SEL_INIT
 
 # Enable I2C, MFD, MFD_APD5585 and GPIO_ADP5585

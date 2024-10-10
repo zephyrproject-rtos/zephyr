@@ -481,7 +481,7 @@ STM32CubeProgrammer Flash Host Tools
 ************************************
 
 STMicroelectronics provides `STM32CubeProgrammer`_ (STM32CubeProg) as an official programming tool
-for STM32 boards on Linux|r|, macOS|r|, and Windows|r| operating systems.
+for STM32 boards on Linux |reg|, macOS |reg|, and Windows |reg| operating systems.
 
 It provides an easy-to-use and efficient environment for reading, writing, and verifying device memory
 through both the debug interface (JTAG and SWD) and the bootloader interface (UART and USB DFU, I2C, SPI, and CAN).

@@ -1,19 +1,19 @@
 .. zephyr:code-sample:: bluetooth_bap_unicast_client
-   :name: Unicast Audio Client
-   :relevant-api: bt_bap bt_audio
+   :name: Basic Audio Profile (BAP) Unicast Audio Client
+   :relevant-api: bluetooth bt_audio bt_bap bt_conn
 
-   Use LE Audio Unicast Client functionality.
+   Use BAP Unicast Client functionality.
 
 Overview
 ********
 
-Application demonstrating the LE Audio unicast client functionality. Scans for and
-connects to a LE Audio unicast server and establishes an audio stream.
+Application demonstrating the BAP Unicast Client functionality. Scans for and
+connects to a BAP Unicast Server and establishes an audio stream.
 
 This sample can be found under
 :zephyr_file:`samples/bluetooth/bap_unicast_client` in the Zephyr tree.
 
-Check the :ref:`bluetooth samples section <bluetooth-samples>` for general information.
+Check the :zephyr:code-sample-category:`bluetooth` samples for general information.
 
 Requirements
 ************
@@ -25,7 +25,7 @@ Building and Running
 ********************
 
 When building targeting an nrf52 series board with the Zephyr Bluetooth Controller,
-use `-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf` to enable the required ISO
+use ``-DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf`` to enable the required ISO
 feature support.
 
 Building for an nrf52840dk
@@ -71,7 +71,7 @@ Similarly to how you would for real HW, you can do:
    :goals: build
    :gen-args: -DOVERLAY_CONFIG=overlay-bt_ll_sw_split.conf
 
-Note this will produce a Linux executable in `./build/zephyr/zephyr.exe`.
+Note this will produce a Linux executable in :file:`./build/zephyr/zephyr.exe`.
 For more information, check :ref:`this board documentation <nrf52_bsim>`.
 
 Building for a simulated nrf5340bsim

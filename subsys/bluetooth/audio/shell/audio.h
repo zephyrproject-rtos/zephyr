@@ -32,7 +32,7 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #define SHELL_PRINT_INDENT_LEVEL_SIZE 2
 #define MAX_CODEC_FRAMES_PER_SDU      4U
@@ -93,7 +93,7 @@ struct named_lc3_preset {
 struct shell_stream {
 	struct bt_cap_stream stream;
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 	bool is_tx;
 	bool is_rx;
 
@@ -177,7 +177,7 @@ struct broadcast_source {
 		struct bt_cap_broadcast_source *cap_source;
 	};
 	struct bt_audio_codec_cfg codec_cfg;
-	struct bt_audio_codec_qos qos;
+	struct bt_bap_qos_cfg qos;
 };
 
 struct broadcast_sink {
@@ -236,7 +236,7 @@ int cap_ac_unicast(const struct shell *sh, const struct bap_unicast_ac_param *pa
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
-static inline void print_qos(const struct shell *sh, const struct bt_audio_codec_qos *qos)
+static inline void print_qos(const struct shell *sh, const struct bt_bap_qos_cfg *qos)
 {
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST)
 	shell_print(sh,

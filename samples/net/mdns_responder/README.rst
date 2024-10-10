@@ -74,3 +74,9 @@ If the query is successful, then the following information is printed:
        address = [192.0.2.1]
        port = [4242]
        txt = []
+
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.

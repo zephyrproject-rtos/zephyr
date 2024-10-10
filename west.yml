@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 2960684fda406b573a827d6f6ff022c673be55dd
+      revision: ef9d884533208005468a118c7ada56e92ae9ba8b
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -178,7 +178,7 @@ manifest:
       groups:
         - hal
     - name: hal_intel
-      revision: 0905a528623de56b1bedf817536321bcdbc0efae
+      revision: 8876a1815bc59e0464d285459b71e3d69872edfd
       path: modules/hal/intel
       groups:
         - hal
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: af7b21c4f875bea26689307daa8e52e9a8e8323c
+      revision: 4a3ba8eaca8f5255f550db7bc54dc3e23212da64
       path: modules/hal/nordic
       groups:
         - hal
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 30bdef6d5a304abfa95cc19af4d3ba699aac456e
+      revision: 9702923eeb6f4a9ca063ca3b200324b118d3e843
       path: modules/hal/nxp
       groups:
         - hal
@@ -214,16 +214,16 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 1ec88911defaba8aebe265d57497cacfbb6afeb8
+      revision: 3dafd030046f8d6f8a26080e9b9c1bcc92d45999
       groups:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: fba7162cc7bee06d0149622bbcaac4e41062d368
+      revision: 79ee0f9e058a6327fc943d2f2a19cf3ade107cec
       groups:
         - hal
     - name: hal_silabs
-      revision: 4c813a1f6c0bba03dec45a3878ba06cfb385565d
+      revision: d07d744a933bada3a87377dc46241960f620011f
       path: modules/hal/silabs
       groups:
         - hal
@@ -233,7 +233,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 4c1adf8a2e2e9888f3b43374bf6521b0788aa82d
+      revision: 1ff820533c1b1c17f1a4d7d28ab99a94a234883b
       path: modules/hal/stm32
       groups:
         - hal
@@ -253,13 +253,13 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: a2d658525b16c57bea8dd565f5bd5167e4b9f1ee
+      revision: baa56aa3e119b5aae43d16f9b2d2c8112e052871
       path: modules/hal/xtensa
       groups:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7761b17eea9a2442af6ea9df830904fa4ba7bbca
+      revision: cdc0782c6ec76d75456e637bff78004c2c6eae87
     - name: libmetal
       revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
       path: modules/hal/libmetal
@@ -280,12 +280,12 @@ manifest:
       revision: 2b498e6f36d6b82ae1da12c8b7742e318624ecf5
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: fb36f3fe20f9f62e67b1a20c0cfe0a6788ec2bf6
+      revision: eb55f4734585dfd8cd3da6d4b01a6e372f073ee1
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 52e2afc2f809c424b0f337f56059d1dfcc7e6d98
+      revision: 3a195f2207d5eadf45a5c989a870e91aff020d86
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -295,18 +295,18 @@ manifest:
         - debug
       revision: 71ace1f5caa03e56c8740a09863e685efb4b2360
     - name: net-tools
-      revision: a1fb781b67c33e9a6868b0915b627315c5cac668
+      revision: 93acc8bac4661e74e695eb1aea94c7c5262db2e2
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: d2a119a9c7600ce06033a794de042e0ad9a38702
+      revision: bf8e45bd1f870e49cc15392e045c28d54ea12285
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 76d2168bcdfcd23a9a7dce8c21f2083b90a1e60a
+      revision: b735edbc739ad59156eb55bb8ce2583d74537719
       path: modules/lib/open-amp
     - name: openthread
-      revision: e10a92570f94ff1e0bc5e0da9ecf0ee135d955a6
+      revision: 2aeb8b833ba760ec29d5f340dd1ce7bcb61c5d56
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -315,7 +315,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 764ef4e401a8f4c6a86ab723533841f072885a5b
+      revision: 27746bbc246841852912fc3bb5b45094cd8a505a
     - name: segger
       revision: b011c45b585e097d95d9cf93edf4f2e01588d3cd
       path: modules/debug/segger

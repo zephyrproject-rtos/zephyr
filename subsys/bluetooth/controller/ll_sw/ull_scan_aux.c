@@ -116,6 +116,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	struct pdu_adv_adi *adi;
 	struct node_rx_ftr *ftr;
 	uint32_t ready_delay_us;
+	uint16_t window_size_us;
 	uint32_t aux_offset_us;
 	uint32_t ticker_status;
 	struct lll_scan *lll;
@@ -511,6 +512,22 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		goto ull_scan_aux_rx_flush;
 	}
 
+	/* Determine the window size */
+	if (aux_ptr->offs_units) {
+		window_size_us = OFFS_UNIT_300_US;
+	} else {
+		window_size_us = OFFS_UNIT_30_US;
+	}
+
+	/* Calculate received aux offset we need to have ULL schedule a reception */
+	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * window_size_us;
+
+	/* Skip reception if invalid aux offset */
+	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
+	if (unlikely(!AUX_OFFSET_IS_VALID(aux_offset_us, window_size_us, pdu_us))) {
+		goto ull_scan_aux_rx_flush;
+	}
+
 	if (!aux) {
 		aux = aux_acquire();
 		if (!aux) {
@@ -628,6 +645,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 	 */
 	if (ftr->aux_lll_sched) {
 		if (IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) && sync_lll) {
+			/* Associate Sync context with the Aux context so that
+			 * it can continue reception in LLL scheduling.
+			 */
 			sync_lll->lll_aux = lll_aux;
 
 			/* AUX_ADV_IND/AUX_CHAIN_IND PDU reception is being
@@ -644,8 +664,8 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			 */
 			LL_ASSERT(!lll->lll_aux || (lll->lll_aux == lll_aux));
 
-			/* scan context get the aux context so that it can
-			 * continue reception in LLL scheduling.
+			/* Associate Scan context with the Aux context so that
+			 * it can continue reception in LLL scheduling.
 			 */
 			lll->lll_aux = lll_aux;
 
@@ -671,11 +691,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		if (unlikely(scan->is_stop)) {
 			goto ull_scan_aux_rx_flush;
 		}
-
-		/* Remove auxiliary context association with scan context so
-		 * that LLL can differentiate it to being ULL scheduling.
-		 */
-		lll->lll_aux = NULL;
 	} else {
 		struct ll_sync_set *sync_set;
 
@@ -688,28 +703,19 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 			goto ull_scan_aux_rx_flush;
 		}
 
-		/* Associate the auxiliary context with sync context */
+		/* Associate the auxiliary context with sync context, we do this
+		 * for ULL scheduling also in constrast to how extended
+		 * advertising only associates when LLL scheduling is used.
+		 * Each Periodic Advertising chain is received by unique sync
+		 * context, hence LLL and ULL scheduling is always associated
+		 * with same unique sync context.
+		 */
 		sync_lll->lll_aux = lll_aux;
 
 		/* Backup the node rx to be dispatch on successfully ULL
 		 * scheduling setup.
 		 */
 		aux->rx_head = rx;
-	}
-
-	/* Determine the window size */
-	if (aux_ptr->offs_units) {
-		lll_aux->window_size_us = OFFS_UNIT_300_US;
-	} else {
-		lll_aux->window_size_us = OFFS_UNIT_30_US;
-	}
-
-	aux_offset_us = (uint32_t)PDU_ADV_AUX_PTR_OFFSET_GET(aux_ptr) * lll_aux->window_size_us;
-
-	/* Skip reception if invalid aux offset */
-	pdu_us = PDU_AC_US(pdu->len, phy, ftr->phy_flags);
-	if (aux_offset_us < pdu_us) {
-		goto ull_scan_aux_rx_flush;
 	}
 
 	/* CA field contains the clock accuracy of the advertiser;
@@ -722,6 +728,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_pdu *rx)
 		window_widening_us = SCA_DRIFT_500_PPM_US(aux_offset_us);
 	}
 
+	lll_aux->window_size_us = window_size_us;
 	lll_aux->window_size_us += ((EVENT_TICKER_RES_MARGIN_US + EVENT_JITTER_US +
 				     window_widening_us) << 1);
 
@@ -1277,19 +1284,9 @@ static void flush(void *param)
 	scan = HDR_LLL2ULL(lll);
 	scan = ull_scan_is_valid_get(scan);
 	if (!IS_ENABLED(CONFIG_BT_CTLR_SYNC_PERIODIC) || scan) {
-		lll->lll_aux = NULL;
 #if defined(CONFIG_BT_CTLR_JIT_SCHEDULING)
 		lll->scan_aux_score = aux->lll.hdr.score;
 #endif /* CONFIG_BT_CTLR_JIT_SCHEDULING */
-	} else {
-		struct lll_sync *sync_lll;
-		struct ll_sync_set *sync;
-
-		sync_lll = aux->parent;
-		sync = HDR_LLL2ULL(sync_lll);
-
-		LL_ASSERT(sync->is_stop || sync_lll->lll_aux);
-		sync_lll->lll_aux = NULL;
 	}
 
 	aux_release(aux);

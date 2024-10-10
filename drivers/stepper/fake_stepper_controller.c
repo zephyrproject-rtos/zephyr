@@ -1,0 +1,147 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/stepper/stepper_fake.h>
+#include <zephyr/fff.h>
+
+#ifdef CONFIG_ZTEST
+#include <zephyr/ztest.h>
+#endif /* CONFIG_ZTEST */
+
+#define DT_DRV_COMPAT zephyr_fake_stepper
+
+struct fake_stepper_data {
+	enum micro_step_resolution micro_step_res;
+	int32_t actual_position;
+};
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable, const struct device *, const bool);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_is_moving, const struct device *, bool *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_move, const struct device *, const int32_t,
+		       struct k_poll_signal *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_max_velocity, const struct device *, const uint32_t);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_micro_step_res, const struct device *,
+		       const enum micro_step_resolution);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_micro_step_res, const struct device *,
+		       enum micro_step_resolution *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_actual_position, const struct device *, const int32_t);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_get_actual_position, const struct device *, int32_t *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_set_target_position, const struct device *, const int32_t,
+		       struct k_poll_signal *);
+
+DEFINE_FAKE_VALUE_FUNC(int, fake_stepper_enable_constant_velocity_mode, const struct device *,
+		       const enum stepper_direction, const uint32_t);
+
+static int fake_stepper_set_micro_step_res_delegate(const struct device *dev,
+						    const enum micro_step_resolution res)
+{
+	struct fake_stepper_data *data = dev->data;
+
+	data->micro_step_res = res;
+
+	return 0;
+}
+
+static int fake_stepper_get_micro_step_res_delegate(const struct device *dev,
+						    enum micro_step_resolution *res)
+{
+	struct fake_stepper_data *data = dev->data;
+
+	*res = data->micro_step_res;
+
+	return 0;
+}
+
+static int fake_stepper_set_actual_position_delegate(const struct device *dev, const int32_t pos)
+{
+	struct fake_stepper_data *data = dev->data;
+
+	data->actual_position = pos;
+
+	return 0;
+}
+
+static int fake_stepper_get_actual_position_delegate(const struct device *dev, int32_t *pos)
+{
+	struct fake_stepper_data *data = dev->data;
+
+	*pos = data->actual_position;
+
+	return 0;
+}
+
+#ifdef CONFIG_ZTEST
+static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
+{
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
+	RESET_FAKE(fake_stepper_enable);
+	RESET_FAKE(fake_stepper_move);
+	RESET_FAKE(fake_stepper_is_moving);
+	RESET_FAKE(fake_stepper_set_max_velocity);
+	RESET_FAKE(fake_stepper_set_micro_step_res);
+	RESET_FAKE(fake_stepper_get_micro_step_res);
+	RESET_FAKE(fake_stepper_set_actual_position);
+	RESET_FAKE(fake_stepper_get_actual_position);
+	RESET_FAKE(fake_stepper_set_target_position);
+	RESET_FAKE(fake_stepper_enable_constant_velocity_mode);
+
+	/* Install custom fakes for the setter and getter functions */
+	fake_stepper_set_micro_step_res_fake.custom_fake = fake_stepper_set_micro_step_res_delegate;
+	fake_stepper_get_micro_step_res_fake.custom_fake = fake_stepper_get_micro_step_res_delegate;
+	fake_stepper_set_actual_position_fake.custom_fake =
+		fake_stepper_set_actual_position_delegate;
+	fake_stepper_get_actual_position_fake.custom_fake =
+		fake_stepper_get_actual_position_delegate;
+}
+
+ZTEST_RULE(fake_stepper_reset_rule, fake_stepper_reset_rule_before, NULL);
+#endif /* CONFIG_ZTEST */
+
+static int fake_stepper_init(const struct device *dev)
+{
+	fake_stepper_set_micro_step_res_fake.custom_fake = fake_stepper_set_micro_step_res_delegate;
+	fake_stepper_get_micro_step_res_fake.custom_fake = fake_stepper_get_micro_step_res_delegate;
+	fake_stepper_set_actual_position_fake.custom_fake =
+		fake_stepper_set_actual_position_delegate;
+	fake_stepper_get_actual_position_fake.custom_fake =
+		fake_stepper_get_actual_position_delegate;
+
+	return 0;
+}
+
+static const struct stepper_driver_api fake_stepper_driver_api = {
+	.enable = fake_stepper_enable,
+	.move = fake_stepper_move,
+	.is_moving = fake_stepper_is_moving,
+	.set_max_velocity = fake_stepper_set_max_velocity,
+	.set_micro_step_res = fake_stepper_set_micro_step_res,
+	.get_micro_step_res = fake_stepper_get_micro_step_res,
+	.set_actual_position = fake_stepper_set_actual_position,
+	.get_actual_position = fake_stepper_get_actual_position,
+	.set_target_position = fake_stepper_set_target_position,
+	.enable_constant_velocity_mode = fake_stepper_enable_constant_velocity_mode,
+};
+
+#define FAKE_STEPPER_INIT(inst)                                                                    \
+                                                                                                   \
+	static struct fake_stepper_data fake_stepper_data_##inst;                                  \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, fake_stepper_init, NULL, &fake_stepper_data_##inst, NULL,      \
+			      POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,                           \
+			      &fake_stepper_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_INIT)

@@ -87,6 +87,21 @@ struct llext_symtable {
 };
 
 
+/** @cond ignore */
+#ifdef LL_EXTENSION_BUILD
+/* Extension build: add exported symbols to llext table */
+#define Z_LL_EXTENSION_SYMBOL(x)						\
+	static const struct llext_const_symbol					\
+			Z_GENERIC_SECTION(".exported_sym") __used		\
+			__llext_sym_ ## x = {					\
+		.name = STRINGIFY(x), .addr = (const void *)&x,			\
+	}
+#else
+/* No-op when not building an extension */
+#define Z_LL_EXTENSION_SYMBOL(x)
+#endif
+/** @endcond */
+
 /**
  * @brief Exports a symbol from an extension to the base image
  *
@@ -94,45 +109,50 @@ struct llext_symtable {
  * to the extension's exported symbol table, so that it may be referenced by
  * the base image.
  *
+ * When not building an extension, this macro is a no-op.
+ *
  * @param x Extension symbol to export to the base image
  */
-#if defined(CONFIG_LLEXT) && defined(LL_EXTENSION_BUILD)
-#define LL_EXTENSION_SYMBOL(x)							\
-	static const struct llext_const_symbol					\
-			Z_GENERIC_SECTION(".exported_sym") __used		\
-			x ## _sym = {						\
-		.name = STRINGIFY(x), .addr = (const void *)&x,			\
-	}
-#else
-#define LL_EXTENSION_SYMBOL(x)
-#endif
+#define LL_EXTENSION_SYMBOL(x) Z_LL_EXTENSION_SYMBOL(x)
 
-/**
- * @brief Export a constant symbol to extensions
- *
- * Takes a symbol (function or object) by symbolic name and adds the name
- * and address of the symbol to a table of symbols that may be referenced
- * by extensions.
- *
- * @param x Symbol to export to extensions
- */
+/** @cond ignore */
 #if defined(LL_EXTENSION_BUILD)
-#define EXPORT_SYMBOL(x) LL_EXTENSION_SYMBOL(x)
+/* Extension build: EXPORT_SYMBOL maps to LL_EXTENSION_SYMBOL */
+#define Z_EXPORT_SYMBOL(x) Z_LL_EXTENSION_SYMBOL(x)
 #elif defined(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
-#define EXPORT_SYMBOL(x)							\
+/* SLID-enabled LLEXT application: export symbols, names in separate section */
+#define Z_EXPORT_SYMBOL(x)							\
 	static const char Z_GENERIC_SECTION("llext_exports_strtab") __used	\
 		x ## _sym_name[] = STRINGIFY(x);				\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
+					     __llext_sym_ ## x) = {	        \
 		.name = x ## _sym_name, .addr = (const void *)&x,		\
 	}
 #elif defined(CONFIG_LLEXT)
-#define EXPORT_SYMBOL(x)							\
-	static const STRUCT_SECTION_ITERABLE(llext_const_symbol, x ## _sym) = {	\
+/* LLEXT application: export symbols */
+#define Z_EXPORT_SYMBOL(x)							\
+	static const STRUCT_SECTION_ITERABLE(llext_const_symbol,                \
+					     __llext_sym_ ## x) = {	        \
 		.name = STRINGIFY(x), .addr = (const void *)&x,			\
 	}
 #else
-#define EXPORT_SYMBOL(x)
+/* No extension support in this build */
+#define Z_EXPORT_SYMBOL(x)
 #endif
+/** @endcond */
+
+/**
+ * @brief Export a constant symbol from the current build
+ *
+ * Takes a symbol (function or object) by symbolic name and adds the name
+ * and address of the symbol to a table of symbols that may be referenced
+ * by extensions or by the base image, depending on the current build type.
+ *
+ * When @c CONFIG_LLEXT is not enabled, this macro is a no-op.
+ *
+ * @param x Symbol to export
+ */
+#define EXPORT_SYMBOL(x) Z_EXPORT_SYMBOL(x)
 
 /**
  * @}

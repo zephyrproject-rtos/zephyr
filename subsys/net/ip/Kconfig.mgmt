@@ -105,6 +105,13 @@ config NET_MGMT_EVENT_MONITOR
 	  NET_MGMT_EVENT_QUEUE_SIZE from the default in order not to miss
 	  any events.
 
+config NET_MGMT_EVENT_MONITOR_STACK_SIZE
+	int "Size of the stack allocated for the event_mon_stack thread"
+	depends on NET_MGMT_EVENT_MONITOR
+	default 1024
+	help
+	  Sets the size of the stack for event_mon_stack_thread.
+
 config NET_MGMT_EVENT_MONITOR_AUTO_START
 	bool "Start the event monitor automatically at boot"
 	depends on NET_MGMT_EVENT_MONITOR && SHELL_BACKEND_SERIAL

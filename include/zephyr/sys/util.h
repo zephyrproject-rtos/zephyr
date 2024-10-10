@@ -77,22 +77,6 @@ extern "C" {
 #define GENMASK64(h, l) \
 	(((~0ULL) - (1ULL << (l)) + 1) & (~0ULL >> (BITS_PER_LONG_LONG - 1 - (h))))
 
-/** @brief Extract the Least Significant Bit from @p value. */
-#define LSB_GET(value) ((value) & -(value))
-
-/**
- * @brief Extract a bitfield element from @p value corresponding to
- *	  the field mask @p mask.
- */
-#define FIELD_GET(mask, value)  (((value) & (mask)) / LSB_GET(mask))
-
-/**
- * @brief Prepare a bitfield element using @p value with @p mask representing
- *	  its field position and width. The result should be combined
- *	  with other fields using a logical OR.
- */
-#define FIELD_PREP(mask, value) (((value) * LSB_GET(mask)) & (mask))
-
 /** @brief 0 if @p cond is true-ish; causes a compile error otherwise. */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 

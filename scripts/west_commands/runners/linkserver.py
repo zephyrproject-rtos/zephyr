@@ -189,7 +189,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
 
         # Use hex, bin or elf file provided by the buildsystem.
         # Preferring .hex over .bin and .elf
-        if self.supports_hex and self.hex_name is not None and os.path.isfile(self.hex_name):
+        if self.supports_hex() and self.hex_name is not None and os.path.isfile(self.hex_name):
             flash_cmd = (["load", self.hex_name])
         # Preferring .bin over .elf
         elif self.bin_name is not None and os.path.isfile(self.bin_name):

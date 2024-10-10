@@ -17,6 +17,8 @@ config SOC_SERIES_S32ZE
 	select HAS_MCUX
 	select HAS_MCUX_PIT
 	select HAS_MCUX_FLEXCAN
+	select HAS_MCUX_LPI2C
+	select SOC_EARLY_INIT_HOOK
 
 if SOC_SERIES_S32ZE
 

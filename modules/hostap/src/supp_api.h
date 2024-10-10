@@ -82,6 +82,14 @@ int supplicant_scan(const struct device *dev, struct wifi_scan_params *params,
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_get_stats(const struct device *dev, struct net_stats_wifi *stats);
+/**
+ * @brief Reset Wi-Fi statistics
+ *
+ * @param dev Wi-Fi interface name to use
+ *
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_reset_stats(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI || __DOXYGEN__ */
 
 /** Flush PMKSA cache entries
@@ -177,6 +185,15 @@ int supplicant_channel(const struct device *dev, struct wifi_channel_info *chann
  */
 int supplicant_set_rts_threshold(const struct device *dev, unsigned int rts_threshold);
 
+/**
+ * @brief Get Wi-Fi RTS threshold
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param rts_threshold Pointer to the RTS threshold value.
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_WNM
 /** Send bss transition query
  *
@@ -198,6 +215,15 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason);
 int supplicant_get_wifi_conn_params(const struct device *dev,
 			 struct wifi_connect_req_params *params);
 
+/** Start a WPS PBC/PIN connection
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param params wps operarion parameters
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
+
 #ifdef CONFIG_AP
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 /**
@@ -208,6 +234,15 @@ int supplicant_get_wifi_conn_params(const struct device *dev,
  * @return 0 for OK; -1 for ERROR
  */
 int hapd_state(const struct device *dev, int *state);
+
+/**
+ * @brief Wi-Fi AP configuration parameter.
+ *
+ * @param dev Wi-Fi device
+ * @param params AP parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params);
 #else
 static inline int hapd_state(const struct device *dev, int *state)
 {
@@ -243,13 +278,25 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 
 #endif /* CONFIG_AP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 /**
- * @brief Dispatch DPP operations
+ * @brief Dispatch DPP operations for STA
  *
  * @param dev Wi-Fi interface name to use
  * @param dpp_params DPP action enum and params in string
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_dpp_dispatch(const struct device *dev,
-			    struct wifi_dpp_params *params);
+int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+/**
+ * @brief Dispatch DPP operations for AP
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param dpp_params DPP action enum and params in string
+ * @return 0 for OK; -1 for ERROR
+ */
+int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+#endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
 #endif /* ZEPHYR_SUPP_MGMT_H */

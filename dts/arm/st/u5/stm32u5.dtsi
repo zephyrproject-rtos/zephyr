@@ -148,6 +148,13 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			compatible = "st,stm32-clock-mco";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
@@ -774,7 +781,8 @@
 		adc1: adc@42028000 {
 			compatible = "st,stm32-adc";
 			reg = <0x42028000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000400>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			interrupts = <37 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;
@@ -790,7 +798,8 @@
 		adc4: adc@46021000 {
 			compatible = "st,stm32-adc";
 			reg = <0x46021000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000020>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000020>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
 			interrupts = <113 0>;
 			status = "disabled";
 			#io-channel-cells = <1>;

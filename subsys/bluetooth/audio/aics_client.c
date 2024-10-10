@@ -732,10 +732,8 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 struct bt_aics *bt_aics_client_free_instance_get(void)
 {
 	for (int i = 0; i < ARRAY_SIZE(aics_insts); i++) {
-		if (!atomic_test_bit(aics_insts[i].cli.flags, BT_AICS_CLIENT_FLAG_ACTIVE)) {
+		if (!atomic_test_and_set_bit(aics_insts[i].cli.flags, BT_AICS_CLIENT_FLAG_ACTIVE)) {
 			aics_insts[i].client_instance = true;
-			atomic_set_bit(aics_insts[i].cli.flags, BT_AICS_CLIENT_FLAG_ACTIVE);
-
 			return &aics_insts[i];
 		}
 	}

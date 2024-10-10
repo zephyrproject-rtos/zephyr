@@ -152,6 +152,7 @@ zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler-cpp,
 # Extra warnings options for twister run
 if (CONFIG_COMPILER_WARNINGS_AS_ERRORS)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,warnings_as_errors>>)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:$<TARGET_PROPERTY:asm,warnings_as_errors>>)
   zephyr_link_libraries($<TARGET_PROPERTY:linker,warnings_as_errors>)
 endif()
@@ -2232,3 +2233,12 @@ add_subdirectory_ifdef(
   CONFIG_MAKEFILE_EXPORTS
   cmake/makefile_exports
   )
+
+toolchain_linker_finalize()
+
+yaml_context(EXISTS NAME build_info result)
+if(result)
+  build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
+  build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
+  yaml_save(NAME build_info)
+endif()

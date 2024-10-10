@@ -96,7 +96,7 @@ if not installed yet.
 Also, J-Link can be used to program the board via the SWD interface
 (PA13/SWDIO and PA14/SWCLK in the JP6 header).
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

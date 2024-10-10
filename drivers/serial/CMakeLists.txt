@@ -79,6 +79,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_RA8_SCI_B uart_renesas_ra8_sci_b.c)
 zephyr_library_sources_ifdef(CONFIG_UART_SI32_USART uart_si32_usart.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_UART_SCI_RA uart_renesas_ra_sci.c)
+zephyr_library_sources_ifdef(CONFIG_UART_SY1XX uart_sy1xx.c)
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)

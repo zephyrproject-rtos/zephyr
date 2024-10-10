@@ -407,6 +407,10 @@ module = BT_MESH_NET
 module-str = "Network layer"
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
+module = BT_MESH_BRG
+module-str = "Subnet Bridging layer"
+source "subsys/logging/Kconfig.template.log_config_inherit"
+
 module = BT_MESH_RPL
 module-str = "Replay protection list"
 source "subsys/logging/Kconfig.template.log_config_inherit"

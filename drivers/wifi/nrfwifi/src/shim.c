@@ -585,7 +585,7 @@ static void *zep_shim_work_alloc(int type)
 
 static void zep_shim_work_free(void *item)
 {
-	return work_free(item);
+	work_free(item);
 }
 
 static void zep_shim_work_init(void *item, void (*callback)(unsigned long data),

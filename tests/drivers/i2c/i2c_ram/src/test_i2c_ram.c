@@ -20,7 +20,7 @@
 
 #define RAM_ADDR (0b10100010 >> 1)
 
-#if DT_NODE_HAS_STATUS(DT_ALIAS(i2c_ram), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_ALIAS(i2c_ram))
 #define I2C_DEV_NODE	DT_ALIAS(i2c_ram)
 #define TX_DATA_OFFSET 2
 static uint8_t tx_data[9] = {0x00, 0x00, 'Z', 'e', 'p', 'h', 'y', 'r', '\n'};

@@ -26,14 +26,37 @@ tests:
 
   drivers.gpio.build.adc_ads1145s0x_gpio:
     min_ram: 32
-    platform_allow: m5stack_core2/esp32/procpu nrf52840dk/nrf52840
+    platform_allow:
+      - m5stack_core2/esp32/procpu
+      - nrf52840dk/nrf52840
+      - native_sim
+      - native_sim/native/64
     depends_on:
       - gpio
       - adc
       - spi
     extra_args:
-      - DTC_OVERLAY_FILE="app.overlay;adc_ads1145s0x_gpio.overlay"
-      - CONF_FILE="adc_ads1145s0x_gpio.conf"
+      - DTC_OVERLAY_FILE="adc_ads1145s0x_gpio.overlay"
+    extra_configs:
+      - CONFIG_ADC=y
+      - CONFIG_ADC_INIT_PRIORITY=80
+      - CONFIG_ADC_ADS114S0X_GPIO=y
+
+  drivers.gpio.build.adc_lmp90xxx_gpio:
+    min_ram: 32
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    depends_on:
+      - gpio
+      - adc
+      - spi
+    extra_args:
+      - DTC_OVERLAY_FILE="adc_lmp90xxx_gpio.overlay"
+    extra_configs:
+      - CONFIG_ADC=y
+      - CONFIG_ADC_INIT_PRIORITY=80
+      - CONFIG_ADC_LMP90XXX_GPIO=y
 
   drivers.gpio.build.iproc:
     platform_allow: qemu_cortex_m3

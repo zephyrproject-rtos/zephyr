@@ -293,7 +293,7 @@ static struct bt_bap_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t i
 
 static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 					 struct bt_audio_codec_cfg *codec_cfg,
-					 struct bt_audio_codec_qos *qos,
+					 struct bt_bap_qos_cfg *qos,
 					 struct bt_bap_broadcast_source *source)
 {
 	struct bt_bap_iso *iso;
@@ -314,7 +314,7 @@ static int broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *st
 	bt_bap_iso_init(iso, &broadcast_source_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
 
-	bt_audio_codec_qos_to_iso_qos(iso->chan.qos->tx, qos);
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
 	bt_bap_iso_configure_data_path(ep, codec_cfg);
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	iso->chan.qos->num_subevents = qos->num_subevents;
@@ -509,7 +509,7 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_param *param,
 					 const struct bt_bap_broadcast_source *source)
 {
-	const struct bt_audio_codec_qos *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	CHECKIF(param == NULL) {
 		LOG_DBG("param is NULL");
@@ -716,7 +716,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t stream_count;
 	uint8_t index;
 	uint8_t bis_count;
@@ -864,7 +864,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 {
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_audio_codec_qos *qos;
+	struct bt_bap_qos_cfg *qos;
 	size_t subgroup_cnt;
 	uint8_t bis_count;
 
@@ -1020,7 +1020,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			struct bt_iso_chan_io_qos *iso_qos;
 
 			iso_qos = stream->ep->iso->chan.qos->tx;
-			bt_audio_codec_qos_to_iso_qos(iso_qos, qos);
+			bt_bap_qos_cfg_to_iso_qos(iso_qos, qos);
 			stream->qos = qos;
 		}
 	}

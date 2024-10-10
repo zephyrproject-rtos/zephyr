@@ -59,6 +59,17 @@ Supported Features
 +-----------+------------+-----------------------------------+
 | OS_TIMER  | on-chip    | os timer                          |
 +-----------+------------+-----------------------------------+
+| PM        | on-chip    | power management; uses SoC Power  |
+|           |            | Modes 1 and 2                     |
++-----------+------------+-----------------------------------+
+| BLE       | on-chip    | Bluetooth                         |
++-----------+------------+-----------------------------------+
+| ADC       | on-chip    | adc                               |
++-----------+------------+-----------------------------------+
+| DAC       | on-chip    | dac                               |
++-----------+------------+-----------------------------------+
+| ENET      | on-chip    | ethernet                          |
++-----------+------------+-----------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -102,7 +113,7 @@ Connect a USB cable from your PC to J10, and use the serial terminal of your cho
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -121,7 +132,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::

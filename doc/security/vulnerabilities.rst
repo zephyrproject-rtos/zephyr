@@ -1745,44 +1745,149 @@ This has been fixed in main for v3.7.0
 CVE-2024-5754
 -------------
 
-Under embargo until 2024-09-04
+BT: Encryption procedure host vulnerability
+
+- `Zephyr project bug tracker GHSA-gvv5-66hw-5qrc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gvv5-66hw-5qrc>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 7395 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/7395>`_
+
+- `PR 74124 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74124>`_
+
+- `PR 74123 fix for 3.5
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74123>`_
+
+- `PR 74122 fix for 2.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74122>`_
 
 CVE-2024-5931
 -------------
 
-Under embargo until 2024-09-10
+BT: Unchecked user input in bap_broadcast_assistant
+
+- `Zephyr project bug tracker GHSA-r8h3-64gp-wv7f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r8h3-64gp-wv7f>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74062 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74062>`_
+
+- `PR 77966 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77966>`_
+
 
 CVE-2024-6135
 -------------
 
-Under embargo until 2024-09-11
+BT:Classic: Multiple missing buf length checks
+
+- `Zephyr project bug tracker GHSA-2mp4-4g6f-cqcx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-2mp4-4g6f-cqcx>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74283 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74283>`_
+
+- `PR 77964 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77964>`_
 
 CVE-2024-6137
 -------------
 
-Under embargo until 2024-09-11
+BT: Classic: SDP OOB access in get_att_search_list
+
+- `Zephyr project bug tracker GHSA-pm38-7g85-cf4f
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pm38-7g85-cf4f>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 75575 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/75575>`_
 
 CVE-2024-6258
 -------------
 
-Under embargo until 2024-09-05
+BT: Missing length checks of net_buf in rfcomm_handle_data
+
+- `Zephyr project bug tracker GHSA-7833-fcpm-3ggm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-7833-fcpm-3ggm>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74640 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74640>`_
 
 CVE-2024-6259
 -------------
 
-Under embargo until 2024-09-12
+BT: HCI: adv_ext_report Improper discarding in adv_ext_report
+
+- `Zephyr project bug tracker GHSA-p5j7-v26w-wmcp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-p5j7-v26w-wmcp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74639 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74639>`_
+
+- `PR 77960 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77960>`_
 
 CVE-2024-6442
 -------------
 
-Under embargo until 2024-09-22
+Bluetooth: ASCS Unchecked tailroom of the response buffer
+
+- `Zephyr project bug tracker GHSA-m22j-ccg7-4v4h
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m22j-ccg7-4v4h>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74976 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74976>`_
+
+- `PR 77958 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77958>`_
 
 CVE-2024-6443
 -------------
 
-Under embargo until 2024-09-22
+zephyr: out-of-bound read in utf8_trunc
+
+- `Zephyr project bug tracker GHSA-gg46-3rh2-v765
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-gg46-3rh2-v765>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74949 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74949>`_
+
+- `PR 78286 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/78286>`_
 
 CVE-2024-6444
 -------------
 
-Under embargo until 2024-09-22
+Bluetooth: ots: missing buffer length check
+
+- `Zephyr project bug tracker GHSA-qj4r-chj6-h7qp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qj4r-chj6-h7qp>`_
+
+This has been fixed in main for v3.7.0
+
+- `PR 74944 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/74944>`_
+
+- `PR 77954 fix for 3.6
+  <https://github.com/zephyrproject-rtos/zephyr/pull/77954>`_
+
+CVE-2024-8798
+-------------
+
+Under embargo until 2024-11-22

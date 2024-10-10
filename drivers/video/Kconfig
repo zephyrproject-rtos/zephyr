@@ -35,6 +35,21 @@ config VIDEO_BUFFER_POOL_ALIGN
 	int "Alignment of the video pool’s buffer"
 	default 64
 
+config VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
+	bool "Use shared multi heap for video buffer"
+	default n
+
+config VIDEO_BUFFER_SMH_ATTRIBUTE
+	int "Shared multi heap attribute for video buffer"
+	depends on VIDEO_BUFFER_USE_SHARED_MULTI_HEAP
+	default 0
+	range 0 2
+	help
+	  Shared multi heap attribute for video buffer:
+	  0: SMH_REG_ATTR_CACHEABLE
+	  1: SMH_REG_ATTR_NON_CACHEABLE
+	  2: SMH_REG_ATTR_EXTERNAL
+
 source "drivers/video/Kconfig.esp32_dvp"
 
 source "drivers/video/Kconfig.mcux_csi"
@@ -54,5 +69,7 @@ source "drivers/video/Kconfig.stm32_dcmi"
 source "drivers/video/Kconfig.ov5640"
 
 source "drivers/video/Kconfig.ov7670"
+
+source "drivers/video/Kconfig.gc2145"
 
 endif # VIDEO

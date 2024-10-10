@@ -197,7 +197,7 @@ The stack is split up as follows in the source tree:
   have their own drivers.
 
 ``samples/bluetooth/``
-  :ref:`Sample Bluetooth code <bluetooth-samples>`. This is a good reference to
+  :zephyr:code-sample-category:`Sample Bluetooth code <bluetooth>`. This is a good reference to
   get started with Bluetooth application development.
 
 ``tests/bluetooth/``

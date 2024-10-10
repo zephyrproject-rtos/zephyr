@@ -18,8 +18,8 @@
 extern void (*x86_irq_funcs[NR_IRQ_VECTORS])(const void *arg);
 extern const void *x86_irq_args[NR_IRQ_VECTORS];
 
-static void (*irq_offload_funcs[CONFIG_MP_NUM_CPUS])(const void *arg);
-static const void *irq_offload_args[CONFIG_MP_NUM_CPUS];
+static void (*irq_offload_funcs[CONFIG_MP_MAX_NUM_CPUS])(const void *arg);
+static const void *irq_offload_args[CONFIG_MP_MAX_NUM_CPUS];
 
 static void dispatcher(const void *arg)
 {
@@ -44,11 +44,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	arch_irq_unlock(key);
 }
 
-int irq_offload_init(void)
+void arch_irq_offload_init(void)
 {
 	x86_irq_funcs[CONFIG_IRQ_OFFLOAD_VECTOR - IV_IRQS] = dispatcher;
-
-	return 0;
 }
-
-SYS_INIT(irq_offload_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

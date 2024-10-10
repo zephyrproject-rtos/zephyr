@@ -36,6 +36,7 @@
 #include "cfg.h"
 #include "statistic.h"
 #include "sar_cfg_internal.h"
+#include "brg_cfg.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_NET_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -53,6 +54,13 @@ LOG_MODULE_REGISTER(bt_mesh_net);
 #define SEQ(pdu)           (sys_get_be24(&pdu[2]))
 #define SRC(pdu)           (sys_get_be16(&(pdu)[5]))
 #define DST(pdu)           (sys_get_be16(&(pdu)[7]))
+
+/* Information needed for bridging the network PDUs */
+struct pdu_ctx {
+	struct net_buf_simple *sbuf;
+	struct net_buf_simple_state *state;
+	struct bt_mesh_net_rx *rx;
+};
 
 /* Mesh network information for persistent storage. */
 struct net_val {
@@ -674,8 +682,7 @@ static bool relay_to_adv(enum bt_mesh_net_if net_if)
 	}
 }
 
-static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
-			      struct bt_mesh_net_rx *rx)
+static void bt_mesh_net_relay(struct net_buf_simple *sbuf, struct bt_mesh_net_rx *rx, bool bridge)
 {
 	const struct bt_mesh_net_cred *cred;
 	struct bt_mesh_adv *adv;
@@ -685,8 +692,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		return;
 	}
 
-	if (rx->net_if == BT_MESH_NET_IF_ADV &&
-	    !rx->friend_cred &&
+	if (rx->net_if == BT_MESH_NET_IF_ADV && !rx->friend_cred && !bridge &&
 	    bt_mesh_relay_get() != BT_MESH_RELAY_ENABLED &&
 	    bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_ENABLED &&
 	    bt_mesh_priv_gatt_proxy_get() != BT_MESH_PRIV_GATT_PROXY_ENABLED) {
@@ -722,8 +728,8 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
 	LOG_DBG("Relaying packet. TTL is now %u", TTL(adv->b.data));
 
-	/* Update NID if RX or RX was with friend credentials */
-	if (rx->friend_cred) {
+	/* Update NID if RX, RX was with friend credentials or when bridging the message */
+	if (rx->friend_cred || bridge) {
 		adv->b.data[0] &= 0x80; /* Clear everything except IVI */
 		adv->b.data[0] |= cred->nid;
 	}
@@ -748,13 +754,42 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		bt_mesh_proxy_relay(adv, rx->ctx.recv_dst);
 	}
 
-	if (relay_to_adv(rx->net_if) || rx->friend_cred) {
+	if (relay_to_adv(rx->net_if) || rx->friend_cred || bridge) {
 		bt_mesh_adv_send(adv, NULL, NULL);
 	}
 
 done:
 	bt_mesh_adv_unref(adv);
 }
+
+#if IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)
+static bool find_subnet_cb(struct bt_mesh_subnet *sub, void *cb_data)
+{
+	uint16_t *net_idx = cb_data;
+
+	return sub->net_idx == *net_idx;
+}
+
+static void bt_mesh_sbr_check_cb(uint16_t new_net_idx, void *user_data)
+{
+	struct pdu_ctx *ctx = (struct pdu_ctx *)user_data;
+
+	if (new_net_idx < BT_MESH_BRG_CFG_NETIDX_NOMATCH) {
+		struct bt_mesh_subnet *subnet = bt_mesh_subnet_find(find_subnet_cb, &new_net_idx);
+
+		if (!subnet) {
+			LOG_ERR("Failed to find subnet 0x%04x", new_net_idx);
+			return;
+		}
+
+		ctx->rx->sub = subnet;
+		ctx->rx->ctx.net_idx = new_net_idx;
+
+		net_buf_simple_restore(ctx->sbuf, ctx->state);
+		bt_mesh_net_relay(ctx->sbuf, ctx->rx, true);
+	}
+}
+#endif
 
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
 			      struct bt_mesh_net_rx *rx)
@@ -891,8 +926,28 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 	if (!BT_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
 	    (!rx.local_match && !rx.friend_match)) {
 		net_buf_simple_restore(&buf, &state);
-		bt_mesh_net_relay(&buf, &rx);
+		bt_mesh_net_relay(&buf, &rx, false);
 	}
+
+#if IS_ENABLED(CONFIG_BT_MESH_BRG_CFG_SRV)
+	struct pdu_ctx tx_ctx = {
+		.sbuf = &buf,
+		.state = &state,
+		.rx = &rx,
+	};
+
+	/* Bridge the traffic if enabled */
+	if (!bt_mesh_brg_cfg_enable_get()) {
+		return;
+	}
+
+	if (bt_mesh_rpl_check(&rx, NULL, true)) {
+		return;
+	}
+
+	bt_mesh_brg_cfg_tbl_foreach_subnet(rx.ctx.addr, rx.ctx.recv_dst, rx.ctx.net_idx,
+					   bt_mesh_sbr_check_cb, &tx_ctx);
+#endif
 }
 
 static void ivu_refresh(struct k_work *work)

@@ -515,6 +515,8 @@
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			spi121: spi@8e7000 {
@@ -819,6 +821,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi130: spi@9a5000 {
@@ -844,6 +847,8 @@
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c131: i2c@9a6000 {
@@ -856,6 +861,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi131: spi@9a6000 {
@@ -881,6 +887,8 @@
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic134: dppic@9b1000 {
@@ -927,6 +935,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi132: spi@9b5000 {
@@ -952,6 +961,8 @@
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c133: i2c@9b6000 {
@@ -964,6 +975,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi133: spi@9b6000 {
@@ -989,6 +1001,8 @@
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic135: dppic@9c1000 {
@@ -1035,6 +1049,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi134: spi@9c5000 {
@@ -1060,6 +1075,8 @@
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c135: i2c@9c6000 {
@@ -1072,6 +1089,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi135: spi@9c6000 {
@@ -1097,6 +1115,8 @@
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			dppic136: dppic@9d1000 {
@@ -1143,6 +1163,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi136: spi@9d5000 {
@@ -1168,6 +1189,8 @@
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c137: i2c@9d6000 {
@@ -1180,6 +1203,7 @@
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
 							 <NRF_FUN_TWIM_SCL>;
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi137: spi@9d6000 {
@@ -1205,6 +1229,8 @@
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 		};
 	};

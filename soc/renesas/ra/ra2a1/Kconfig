@@ -10,3 +10,4 @@ config SOC_SERIES_RA2A1
 	select HAS_SWO
 	select XIP
 	select HAS_RENESAS_RA_FSP
+	select SOC_EARLY_INIT_HOOK

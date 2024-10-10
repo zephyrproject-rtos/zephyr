@@ -131,13 +131,10 @@ config NRF_WIFI_IF_AUTO_START
 config NRF_WIFI_PATCHES_BUILTIN
 	bool "Store nRF70 FW patches as part of the driver"
 	default y
+	depends on !NRF_WIFI_BUILD_ONLY_MODE
 	help
 	  Select this option to store nRF70 FW patches as part of the driver.
 	  This option impacts the code memory footprint of the driver.
-
-config CUSTOM_LINKER_SCRIPT
-	string "Custom linker script for nRF70 FW patches"
-	default "${ZEPHYR_BASE}/../nrf/drivers/wifi/nrf70/rpu_fw_patches.ld"
 
 config NRF_WIFI_LOW_POWER
 	bool "low power mode in nRF Wi-Fi chipsets"
@@ -663,13 +660,6 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	# Doing interface down and up even with delay puts a lot of events in the queue
 	default 16
 endif # NRF_WIFI_RPU_RECOVERY
-
-config NRF_WIFI_COMBINED_BUCKEN_IOVDD_GPIO
-	bool
-	help
-	  Enable this option to use a single GPIO to control both buck enable and IOVDD enable,
-	  there will be a internal hardware switch to add delay between the two operations. This
-	  is typically 4ms delay for nRF70.
 
 config NRF_WIFI_FEAT_WMM
 	bool "WMM/QoS support"

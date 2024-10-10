@@ -7,6 +7,7 @@
 #include <dt-bindings/clock/imx_ccm_rev2.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	cpus {
@@ -324,6 +325,38 @@
 		interrupts = <203 0>;
 		status = "disabled";
 		#io-channel-cells = <2>;
+	};
+
+	lpadc1: lpadc@2600000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x2600000 0x304>;
+		interrupts = <93 0>;
+		status = "disabled";
+		clk-divider = <7>;
+		clk-source = <1>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		no-power-level;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		clocks = <&ccm IMX_CCM_LPADC1_CLK 0 0>;
+	};
+
+	lpadc2: lpadc@2e00000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x2e00000 0x304>;
+		interrupts = <189 0>;
+		status = "disabled";
+		clk-divider = <8>;
+		clk-source = <0>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		no-power-level;
+		offset-value-a = <10>;
+		offset-value-b = <10>;
+		#io-channel-cells = <1>;
+		clocks = <&ccm IMX_CCM_LPADC2_CLK 0 0>;
 	};
 };
 

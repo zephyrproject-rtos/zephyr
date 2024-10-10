@@ -79,6 +79,7 @@ Simply change the board/target appropriately when building.
 
    If an MCU is booted without any image, it will automatically set itself to sleep.
 
+.. _nrf5340bsim_multi_mcu_build:
 
 Assembling both MCUs images into a single executable
 ****************************************************

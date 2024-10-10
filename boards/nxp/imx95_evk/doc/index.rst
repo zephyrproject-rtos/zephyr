@@ -76,7 +76,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr imx95_evk_m7 board configuration supports the following hardware features:
+The Zephyr ``imx95_evk/mimx9596/m7`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -91,8 +91,13 @@ The Zephyr imx95_evk_m7 board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | tpm                                 |
++-----------+------------+-------------------------------------+
 
-The Zephyr imx95_evk_a55 board configuration supports the following hardware features:
+The Zephyr ``imx95_evk/mimx9596/a55`` and ``imx95_evk/mimx9596/a55/smp`` board targets support
+the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -121,6 +126,15 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, UART3 for Cortex-M7.
 
+TPM
+---
+
+Two channels are enabled on TPM2 for PWM for M7. Signals can be observerd with
+oscilloscope.
+Channel 2 signal routed to resistance R881.
+Channel 3 signal routed to resistance R882.
+
+
 Programming and Debugging (A55)
 *******************************
 
@@ -133,7 +147,7 @@ for example, with the :zephyr:code-sample:`synchronization` sample:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: imx95_evk/mimx9596/a55
-   :goals: run
+   :goals: build
 
 This will build an image (zephyr.bin) with the synchronization sample app.
 
@@ -172,7 +186,7 @@ It will display the following console output:
    :zephyr-app: samples/synchronization
    :host-os: unix
    :board: imx95_evk/mimx9596/a55/smp
-   :goals: run
+   :goals: build
 
 This will build an image (zephyr.bin) with the synchronization sample app.
 
@@ -223,25 +237,45 @@ multiple elements required, like ELE+V2X firmware, System Manager, TCM OEI, Cort
 image and so on.
 
 The steps making flash.bin and programming should refer to ``Getting Started with
-MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_.
+MCUXpresso SDK for IMX95LPD5EVK-19.pdf`` in i.MX95 `MCUX SDK release`_. Note that
+for the DDR variant, one should use the Makefile targets containing the ``ddr`` keyword.
 
 See ``4.2 Run an example application``, just rename ``zephyr.bin`` to ``m7_image.bin``
 to make flash.bin and program to SD/eMMC.
 
-Here is an example for the :ref:`hello_world` application.
+Zephyr supports two M7-based i.MX95 boards: ``imx95_evk/mimx9596/m7`` and
+``imx95_evk/mimx9596/m7/ddr``. The main difference between them is the memory
+used. ``imx95_evk/mimx9596/m7`` uses TCM (ITCM for code and, generally, read-only
+data and DTCM for R/W data), while ``imx95_evk/mimx9596/m7/ddr`` uses DDR.
+
+1. Building the :zephyr:code-sample:`hello_world` application for the TCM-based board
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: imx95_evk/mimx9596/m7
    :goals: build
 
-After making flash.bin and program to SD/eMMC, open a serial terminal, reset the board,
-and you should see the following message in the terminal:
+2. Building the :zephyr:code-sample:`hello_world` application for the DDR-based board
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: imx95_evk/mimx9596/m7/ddr
+   :goals: build
+
+After making flash.bin and program to SD/eMMC, open a serial terminal, and reset the
+board. For the ``imx95_evk/mimx9596/m7`` board you should see something like:
 
 .. code-block:: console
 
    *** Booting Zephyr OS build v3.6.0-4569-g483c01ca11a7 ***
    Hello World! imx95_evk/mimx9596/m7
+
+while, for the ``imx95_evk/mimx9596/m7/ddr`` board, you should get the following output:
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v3.6.0-4569-g483c01ca11a7 ***
+   Hello World! imx95_evk/mimx9596/m7/ddr
 
 .. _System Control and Management Interface (SCMI):
    https://developer.arm.com/documentation/den0056/latest/

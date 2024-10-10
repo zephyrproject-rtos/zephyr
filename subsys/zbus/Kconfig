@@ -72,6 +72,13 @@ config ZBUS_ASSERT_MOCK
 	  parameters.
 
 
+config HEAP_MEM_POOL_ADD_SIZE_ZBUS
+	int
+	default 2048 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && !ZBUS_RUNTIME_OBSERVERS
+	default 1024 if !ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
+	default 3072 if ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC && ZBUS_RUNTIME_OBSERVERS
+
+
 module = ZBUS
 module-str = zbus
 source "subsys/logging/Kconfig.template.log_config"

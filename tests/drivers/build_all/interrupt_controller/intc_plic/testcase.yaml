@@ -3,7 +3,9 @@ common:
   filter: CONFIG_PLIC
   platform_allow:
     - qemu_riscv32
+    - qemu_riscv32/qemu_virt_riscv32/smp
     - qemu_riscv64
+    - qemu_riscv64/qemu_virt_riscv64/smp
   tags:
     - drivers
     - interrupt
@@ -25,5 +27,13 @@ tests:
       - CONFIG_MULTI_LEVEL_INTERRUPTS=y
       - CONFIG_DYNAMIC_INTERRUPTS=y
       - CONFIG_NUM_2ND_LEVEL_AGGREGATORS=2
-      - CONFIG_2ND_LVL_INTR_01_OFFSET=3
+      - CONFIG_2ND_LVL_INTR_01_OFFSET=8
       - CONFIG_UART_INTERRUPT_DRIVEN=y
+  drivers.interrupt_controller.intc_plic.irq_affinity.build:
+    filter: CONFIG_SMP
+    tags:
+      - smp
+    extra_configs:
+      - CONFIG_MP_MAX_NUM_CPUS=4
+      - CONFIG_PLIC_IRQ_AFFINITY=y
+      - CONFIG_PLIC_IRQ_AFFINITY_MASK=0xf

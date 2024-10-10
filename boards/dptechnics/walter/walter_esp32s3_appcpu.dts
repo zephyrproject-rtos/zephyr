@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2024 DPTechnics bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_appcpu.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+
+/ {
+	model = "DPTechnics Walter APPCPU";
+	compatible = "espressif,esp32s3";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};

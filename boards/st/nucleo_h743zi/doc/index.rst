@@ -148,7 +148,7 @@ and a ST morpho connector. Board is configured as follows:
 - UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
 - USER_PB : PC13
 - LD1 : PB0
-- LD2 : PB7
+- LD2 : PE1
 - LD3 : PB14
 - I2C : PB8, PB9
 - ADC1_INP15 : PA3
@@ -208,7 +208,7 @@ the ``--runner`` (or ``-r``) option:
 Flashing an application to Nucleo H743ZI
 ----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board.
 
@@ -233,7 +233,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

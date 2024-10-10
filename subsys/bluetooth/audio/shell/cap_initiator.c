@@ -33,7 +33,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 #include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
@@ -532,6 +532,7 @@ static int cmd_cap_initiator_unicast_stop(const struct shell *sh, size_t argc,
 
 	param.streams = streams;
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
+	param.release = true;
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {

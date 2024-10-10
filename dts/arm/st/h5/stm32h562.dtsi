@@ -465,6 +465,13 @@
 			interrupts = <79 0>;
 			status = "disabled";
 		};
+
+		fmc: memory-controller@47000400 {
+			compatible = "st,stm32-fmc";
+			reg = <0x47000400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB4 0x00010000>;
+			status = "disabled";
+		};
 	};
 
 	smbus3: smbus3 {

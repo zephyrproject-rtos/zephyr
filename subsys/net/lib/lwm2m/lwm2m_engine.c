@@ -1070,7 +1070,7 @@ int lwm2m_set_default_sockopt(struct lwm2m_ctx *ctx)
 			}
 		}
 
-		if (ctx->hostname_verify && (ctx->desthostname != NULL)) {
+		if (ctx->desthostname != NULL && lwm2m_security_mode(ctx) == LWM2M_SECURITY_CERT) {
 			/** store character at len position */
 			tmp = ctx->desthostname[ctx->desthostnamelen];
 

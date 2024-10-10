@@ -216,7 +216,7 @@ the ``--runner`` (or ``-r``) option:
 Flashing an application to Disco L475 IoT
 -----------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Connect the Disco L475 IoT to your host computer using the USB port, then
 run a serial host program to connect with your Nucleo board. For example:
@@ -242,7 +242,7 @@ Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

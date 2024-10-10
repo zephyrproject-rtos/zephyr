@@ -21,6 +21,7 @@
 #define FLASH_ERASE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define FLASH_WRITE_SIZE     DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 
+#define WRITE_BUFFER_LEN     (32)
 
 struct flash_priv {
 	struct k_sem mutex;
@@ -161,6 +162,26 @@ static int flash_cc13xx_cc26xx_erase(const struct device *dev, off_t offs,
 	return rc;
 }
 
+static int flash_cc13xx_cc26xx_buffered_write(off_t offs, const void *data, size_t size)
+{
+	uint8_t write_buffer[WRITE_BUFFER_LEN];
+	int rc;
+
+	for (int i = 0; i < size; i += WRITE_BUFFER_LEN) {
+		size_t len = MIN(size - i, WRITE_BUFFER_LEN);
+
+		memcpy(write_buffer, (uint8_t *)data + i, len);
+		rc = FlashProgram(write_buffer, offs, len);
+		if (rc != FAPI_STATUS_SUCCESS) {
+			rc = -EIO;
+			break;
+		}
+		offs += len;
+	}
+
+	return rc;
+}
+
 static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 				     const void *data, size_t size)
 {
@@ -181,16 +202,6 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 		return -EINVAL;
 	}
 
-	/*
-	 * From TI's HAL 'driverlib/flash.h':
-	 *
-	 * The pui8DataBuffer pointer can not point to flash.
-	 */
-	if ((data >= (void *)FLASH_ADDR) &&
-	    (data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
-		return -EINVAL;
-	}
-
 	if (flash_cc13xx_cc26xx_range_protected(offs, size)) {
 		return -EINVAL;
 	}
@@ -206,9 +217,21 @@ static int flash_cc13xx_cc26xx_write(const struct device *dev, off_t offs,
 	while (FlashCheckFsmForReady() != FAPI_STATUS_FSM_READY) {
 		;
 	}
-	rc = FlashProgram((uint8_t *)data, offs, size);
-	if (rc != FAPI_STATUS_SUCCESS) {
-		rc = -EIO;
+
+	/*
+	 * From TI's HAL 'driverlib/flash.h':
+	 *
+	 * The pui8DataBuffer pointer can not point to flash.
+	 * Use a buffer in this situation.
+	 */
+	if ((data >= (void *)FLASH_ADDR) &&
+		(data <= (void *)(FLASH_ADDR + FLASH_SIZE))) {
+		rc = flash_cc13xx_cc26xx_buffered_write(offs, data, size);
+	} else {
+		rc = FlashProgram((uint8_t *)data, offs, size);
+		if (rc != FAPI_STATUS_SUCCESS) {
+			rc = -EIO;
+		}
 	}
 
 	irq_unlock(key);

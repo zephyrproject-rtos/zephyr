@@ -84,21 +84,27 @@ CPU's UART4.
 Programming and Debugging
 *************************
 
+U-Boot "cpu" command is used to load and kick Zephyr to Cortex-A secondary Core, Currently
+it has been supported in latest U-Boot version by `patch serials`_.
+
+.. _patch serials:
+   https://patchwork.ozlabs.org/project/uboot/list/?series=417536&archive=both&state=*
+
 Copy the compiled ``zephyr.bin`` to the first FAT partition of the SD card and
 plug the SD card into the board. Power it up and stop the u-boot execution at
 prompt.
 
-Use U-Boot to load and kick zephyr.bin:
+Use U-Boot to load and kick zephyr.bin to Cortex-A53 Core0:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; go 0x93c00000
+    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; go 0x93c00000
 
-Or kick SMP zephyr.bin:
+Or kick zephyr.bin to the other Cortex-A53 Core, for example Core2:
 
 .. code-block:: console
 
-    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; dcache off; icache off; cpu 2 release 0x93c00000
+    fatload mmc 1:1 0x93c00000 zephyr.bin; dcache flush; icache flush; cpu 2 release 0x93c00000
 
 
 Use this configuration to run basic Zephyr applications and kernel tests,

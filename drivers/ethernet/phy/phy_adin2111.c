@@ -7,7 +7,7 @@
 
 #include <zephyr/logging/log.h>
 
-#if DT_NODE_HAS_STATUS(DT_INST(0, adi_adin2111_phy), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, adi_adin2111_phy))
 #define DT_DRV_COMPAT adi_adin2111_phy
 #else
 #define DT_DRV_COMPAT adi_adin1100_phy

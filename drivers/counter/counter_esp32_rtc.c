@@ -148,11 +148,11 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(chan_id);
 
-	/* RTC main timer interrupt disable */
-	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
-
 	/* RTC main timer set alarm disable */
 	CLEAR_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN);
+
+	/* RTC main timer interrupt disable */
+	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
 
 	return 0;
 }
@@ -235,9 +235,6 @@ static void counter_esp32_isr(void *arg)
 	if (data->alarm_cfg.callback) {
 		data->alarm_cfg.callback(dev, 0, now, data->alarm_cfg.user_data);
 	}
-
-	/* RTC timer clear interrupt status */
-	SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR);
 }
 
 DEVICE_DT_INST_DEFINE(0,

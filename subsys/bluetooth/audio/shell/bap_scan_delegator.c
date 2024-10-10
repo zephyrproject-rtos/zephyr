@@ -31,7 +31,7 @@
 #include <zephyr/types.h>
 
 #include <audio/bap_internal.h>
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
@@ -436,8 +436,19 @@ static int cmd_bap_scan_delegator_init(const struct shell *sh, size_t argc,
 	static bool registered;
 
 	if (!registered) {
-		bt_le_per_adv_sync_cb_register(&pa_sync_cb);
-		bt_bap_scan_delegator_register_cb(&scan_delegator_cb);
+		int err;
+
+		err = bt_bap_scan_delegator_register(&scan_delegator_cb);
+		if (err) {
+			shell_error(sh, "Failed to register scan delegator (err: %d)", err);
+			return -ENOEXEC;
+		}
+
+		err = bt_le_per_adv_sync_cb_register(&pa_sync_cb);
+		if (err) {
+			shell_error(sh, "Failed to register PA sync callbacks (err: %d)", err);
+			return -ENOEXEC;
+		}
 
 		registered = true;
 	}

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
- * Copyright (c) 2020 Alexander Kozhinov <AlexanderKozhinov@yandex.com>
+ * Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
  * Copyright (c) 2021 Carbon Robotics
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    !DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+	    !DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
 
@@ -91,7 +91,7 @@ static const struct device *eth_stm32_phy_dev = DEVICE_PHY_BY_NAME(0);
 #define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+	    DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
 #define __eth_stm32_desc __dtcm_noinit_section
 #define __eth_stm32_buf  __dtcm_noinit_section
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -1331,7 +1331,9 @@ static void eth_iface_init(struct net_if *iface)
 		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
 				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
 				rx_thread, (void *) dev, NULL, NULL,
-				K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
+				IS_ENABLED(CONFIG_NET_TC_THREAD_PREEMPTIVE)
+					? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
+					: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 				0, K_NO_WAIT);
 
 		k_thread_name_set(&dev_data->rx_thread, "stm_eth");

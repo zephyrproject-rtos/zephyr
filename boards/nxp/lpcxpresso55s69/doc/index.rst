@@ -299,7 +299,7 @@ board.
 -----------------------------------------
 
         1. Install the :ref:`linkserver-debug-host-tools` and make sure they are in your search path.
-        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`
+        2. To update the debug firmware, please follow the instructions on `LPCXPRESSO55S69 Debug Firmware`_
 
 :ref:`opensda-daplink-onboard-debug-probe`
 ------------------------------------------
@@ -322,7 +322,7 @@ Connect a USB cable from your PC to P6, and use the serial terminal of your choi
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::
@@ -365,7 +365,7 @@ an example of building for both cores with sysbuild, see
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application. This example uses the
+Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
 :ref:`jlink-debug-host-tools` as default.
 
 .. zephyr-app-commands::

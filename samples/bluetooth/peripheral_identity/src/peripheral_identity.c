@@ -33,8 +33,7 @@ static void adv_start(struct k_work *work)
 		.id = BT_ID_DEFAULT,
 		.sid = 0,
 		.secondary_max_skip = 0,
-		.options = (BT_LE_ADV_OPT_CONNECTABLE |
-			    BT_LE_ADV_OPT_ONE_TIME),
+		.options = BT_LE_ADV_OPT_CONN,
 		.interval_min = 0x0020, /* 20 ms */
 		.interval_max = 0x0020, /* 20 ms */
 		.peer = NULL,

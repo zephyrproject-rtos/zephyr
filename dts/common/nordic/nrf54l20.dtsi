@@ -105,6 +105,8 @@
 				reg = <0x4d000 0x1000>;
 				interrupts = <77 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			gpio2: gpio@50400 {
@@ -191,6 +193,7 @@
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
 				status = "disabled";
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi20: spi@c6000 {
@@ -217,6 +220,8 @@
 				reg = <0xc6000 0x1000>;
 				interrupts = <198 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c21: i2c@c7000 {
@@ -228,6 +233,7 @@
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
 				status = "disabled";
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi21: spi@c7000 {
@@ -254,6 +260,8 @@
 				reg = <0xc7000 0x1000>;
 				interrupts = <199 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			i2c22: i2c@c8000 {
@@ -265,6 +273,7 @@
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
 				status = "disabled";
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi22: spi@c8000 {
@@ -291,6 +300,8 @@
 				reg = <0xc8000 0x1000>;
 				interrupts = <200 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			egu20: egu@c9000 {
@@ -464,6 +475,7 @@
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 				easydma-maxcnt-bits = <16>;
 				status = "disabled";
+				zephyr,pm-device-runtime-auto;
 			};
 
 			spi30: spi@104000 {
@@ -490,6 +502,8 @@
 				reg = <0x104000 0x1000>;
 				interrupts = <260 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+				endtx-stoptx-supported;
+				frame-timeout-supported;
 			};
 
 			wdt30: watchdog@108000 {

@@ -11,11 +11,11 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/zbus/zbus.h>
 
-#if defined(CONFIG_BOARD_NATIVE_POSIX)
+#if defined(CONFIG_BOARD_NATIVE_SIM)
 #include "native_rtc.h"
 #define GET_ARCH_TIME_NS() (native_rtc_gettime_us(RTC_CLOCK_PSEUDOHOSTREALTIME) * NSEC_PER_USEC)
 #elif defined(CONFIG_ARCH_POSIX)
-#error "This sample cannot be built for other POSIX arch boards than native_posix"
+#error "This sample cannot be built for other POSIX arch boards than native_sim"
 #else
 #define GET_ARCH_TIME_NS() (k_cyc_to_ns_near64(sys_clock_cycle_get_32()))
 #endif

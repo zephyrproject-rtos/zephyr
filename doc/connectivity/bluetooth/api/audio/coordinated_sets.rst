@@ -7,4 +7,4 @@ Bluetooth Coordinated Sets
 API Reference
 *************
 
-.. doxygengroup:: bt_gatt_csip
+.. doxygengroup:: bt_csip

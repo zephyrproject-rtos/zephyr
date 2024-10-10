@@ -85,9 +85,9 @@ tests:
 
   sample.drivers.mbox.nrf54l15:
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
     sysbuild: true
@@ -96,14 +96,14 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"
 
   sample.drivers.mbox.nrf54l15_no_multithreading:
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
       mbox_CONFIG_MULTITHREADING=n
@@ -114,14 +114,14 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"
 
   sample.drivers.mbox.nrf54l15_remote_no_multithreading:
     platform_allow:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
-      - nrf54l15pdk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       mbox_SNIPPET=nordic-flpr
       remote_CONFIG_MULTITHREADING=n
@@ -131,5 +131,5 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "Ping \\(on channel 16\\)"
-        - "Pong \\(on channel 15\\)"
+        - "Ping \\(on channel 21\\)"
+        - "Pong \\(on channel 20\\)"

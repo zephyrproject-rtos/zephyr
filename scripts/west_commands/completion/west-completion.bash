@@ -1064,6 +1064,7 @@ __comp_west_twister()
 		--coverage-tool
 		--exclude-platform -P
 		--filter
+                --log-level
 		--platform -p
 		--runtime-artifact-cleanup -M
 	"
@@ -1111,6 +1112,11 @@ __comp_west_twister()
 
 		--filter)
 		        __set_comp "buildable runnable"
+			return
+		        ;;
+
+		--log-level)
+		        __set_comp "CRITICAL DEBUG ERROR INFO NOTSET WARNING"
 			return
 		        ;;
 

@@ -1,0 +1,18 @@
+identifier: frdm_mcxw71
+name: NXP FRDM_MCXW71
+type: mcu
+arch: arm
+ram: 64
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - uart
+  - counter
+  - pwm
+  - watchdog
+  - pinctrl
+  - flash

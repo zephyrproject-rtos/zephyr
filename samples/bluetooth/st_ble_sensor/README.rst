@@ -29,7 +29,7 @@ To connect click on the device shown in the Device List.
 After connected, tap LED image on Android to test LED service.
 Push SW0 button on embedded device to test button service.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 .. _ST Bluetooth LE Sensor Android app:
     https://play.google.com/store/apps/details?id=com.st.bluems

@@ -73,7 +73,7 @@ Flashing
 Here is an example for building and flashing the \`hello\_world\`
 application for the board:
 
-Here is an example for building and flashing the :ref:`hello_world` application
+Here is an example for building and flashing the :zephyr:code-sample:`hello_world` application
 for the default design:
 
 .. zephyr-app-commands::
@@ -94,7 +94,7 @@ above steps. It was merely written to internal RAM in the FPGA.
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

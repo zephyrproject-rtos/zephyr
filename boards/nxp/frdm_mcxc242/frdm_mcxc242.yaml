@@ -17,6 +17,8 @@ toolchain:
 supported:
   - gpio
   - i2c
+  - pwm
+  - adc
 testing:
   ignore_tags:
     - net

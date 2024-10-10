@@ -218,6 +218,82 @@
 			vref-mv = <1220>;
 			status = "disabled";
 		};
+
+		timer0: timer@40010000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40010000 0x1000>;
+			interrupts = <5 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer1: timer@40011000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40011000 0x1000>;
+			interrupts = <6 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer2: timer@40012000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40012000 0x1000>;
+			interrupts = <7 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
+
+		timer3: timer@40013000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40013000 0x1000>;
+			interrupts = <8 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
+			pwm {
+				compatible = "adi,max32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+		};
 	};
 };
 

@@ -53,6 +53,8 @@ config ARM64
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select BARRIER_OPERATIONS_ARCH
 	select ARCH_HAS_DIRECTED_IPIS
+	select ARCH_HAS_DEMAND_PAGING
+	select ARCH_HAS_DEMAND_MAPPING
 	help
 	  ARM64 (AArch64) architecture
 
@@ -81,6 +83,7 @@ config X86
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !X86_64
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE && !X86_COMMON_PAGE_TABLE
@@ -89,6 +92,7 @@ config X86
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING if !X86_64
+	select ARCH_HAS_DEMAND_MAPPING if ARCH_HAS_DEMAND_PAGING
 	select IRQ_OFFLOAD_NESTED if IRQ_OFFLOAD
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
@@ -112,6 +116,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
@@ -184,8 +189,9 @@ config BIG_ENDIAN
 	  Little-endian architecture is the default and should leave this option
 	  unselected.  This option is selected by arch/$ARCH/Kconfig,
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally avoid
-	  modifying it.  The option is used to select linker script OUTPUT_FORMAT
-	  and command line option for gen_isr_tables.py.
+	  modifying it.  The option is used to select linker script OUTPUT_FORMAT,
+	  the toolchain flags (TOOLCHAIN_C_FLAGS, TOOLCHAIN_LD_FLAGS), and command
+	  line option for gen_isr_tables.py.
 
 config LITTLE_ENDIAN
 	# Hidden Kconfig option representing the default little-endian architecture
@@ -676,6 +682,9 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
+config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
+	bool
+
 config ARCH_SUPPORTS_ARCH_HW_INIT
 	bool
 
@@ -816,7 +825,7 @@ config CPU_CACHE_INCOHERENT
 	help
 	  This hidden configuration should be selected when the CPU has
 	  incoherent cache. This applies to intra-CPU multiprocessing
-	  incoherence and makes only sense when MP_NUM_CPUS > 1.
+	  incoherence and makes only sense when MP_MAX_NUM_CPUS > 1.
 
 config CPU_HAS_ICACHE
 	bool
@@ -1022,7 +1031,7 @@ config CACHE_DOUBLEMAP
 	  point to the same cached/uncached memory at different locations.
 
 	  This applies to intra-CPU multiprocessing incoherence and makes only
-	  sense when MP_NUM_CPUS > 1.
+	  sense when MP_MAX_NUM_CPUS > 1.
 
 config CACHE_MANAGEMENT
 	bool "Cache management features"

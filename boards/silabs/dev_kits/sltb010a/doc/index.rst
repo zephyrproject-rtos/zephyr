@@ -131,7 +131,7 @@ Flashing an application
 -----------------------
 
 Connect your device to your host computer using the USB port.
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application, then flash it to the device:
 
 BRD4184A:
@@ -149,7 +149,7 @@ BRD4184B:
    :goals: flash
 
 .. note::
-   `west flash` requires `SEGGER J-Link software`_ to be installed on you host
+   ``west flash`` requires `SEGGER J-Link software`_ to be installed on you host
    computer.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:

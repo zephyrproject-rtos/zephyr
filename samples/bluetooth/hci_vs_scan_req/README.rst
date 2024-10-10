@@ -28,4 +28,4 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/hci_vs_scan_req`
 in the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

@@ -407,8 +407,8 @@ static void broadcast_complete(struct bt_mesh_blob_cli *cli)
 
 static void tx_complete(struct k_work *work)
 {
-	struct bt_mesh_blob_cli *cli =
-		CONTAINER_OF(work, struct bt_mesh_blob_cli, tx.complete);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_mesh_blob_cli *cli = CONTAINER_OF(dwork, struct bt_mesh_blob_cli, tx.complete);
 
 	if (!cli->tx.ctx.is_inited || !cli->tx.sending) {
 		return;
@@ -540,7 +540,7 @@ void blob_cli_broadcast(struct bt_mesh_blob_cli *cli,
 
 void blob_cli_broadcast_tx_complete(struct bt_mesh_blob_cli *cli)
 {
-	k_work_submit(&cli->tx.complete);
+	k_work_schedule(&cli->tx.complete, K_MSEC(cli->tx.ctx.post_send_delay_ms));
 }
 
 void blob_cli_broadcast_rsp(struct bt_mesh_blob_cli *cli,
@@ -932,6 +932,7 @@ static void chunk_send(struct bt_mesh_blob_cli *cli)
 		.send = chunk_tx,
 		.next = chunk_send_end,
 		.acked = false,
+		.post_send_delay_ms = cli->chunk_interval_ms,
 	};
 
 	if (cli->xfer->mode == BT_MESH_BLOB_XFER_MODE_PULL) {
@@ -1462,9 +1463,10 @@ static int blob_cli_init(const struct bt_mesh_model *mod)
 
 	cli->mod = mod;
 
+	bt_mesh_blob_cli_set_chunk_interval_ms(cli, CONFIG_BT_MESH_TX_BLOB_CHUNK_SEND_INTERVAL);
 	cli->tx.cli_timestamp = 0ll;
 	k_work_init_delayable(&cli->tx.retry, retry_timeout);
-	k_work_init(&cli->tx.complete, tx_complete);
+	k_work_init_delayable(&cli->tx.complete, tx_complete);
 
 	return 0;
 }
@@ -1648,4 +1650,9 @@ uint8_t bt_mesh_blob_cli_xfer_progress_active_get(struct bt_mesh_blob_cli *cli)
 bool bt_mesh_blob_cli_is_busy(struct bt_mesh_blob_cli *cli)
 {
 	return cli->state != BT_MESH_BLOB_CLI_STATE_NONE;
+}
+
+void bt_mesh_blob_cli_set_chunk_interval_ms(struct bt_mesh_blob_cli *cli, uint32_t interval_ms)
+{
+	cli->chunk_interval_ms = interval_ms;
 }

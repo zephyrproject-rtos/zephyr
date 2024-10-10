@@ -61,6 +61,8 @@ following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| DCMI      | on-chip    | Parallel Camera interface           |
++-----------+------------+-------------------------------------+
 | IPM       | on-chip    | virtual mailbox based on HSEM       |
 +-----------+------------+-------------------------------------+
 | RADIO     | Murata 1DX | WiFi and Bluetooth module           |
@@ -137,7 +139,7 @@ First, connect the Arduino Nicla Vision board to your host computer using the US
 port to prepare it for flashing. Double click the ``RST`` button to put the
 board into the Arduino Bootloader mode. Then build and flash your application.
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

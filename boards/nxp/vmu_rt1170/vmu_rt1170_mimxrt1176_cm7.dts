@@ -22,6 +22,7 @@
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
 		pwm-led0 = &buzzer0;
+		mcuboot-button0 = &arming_button;
 	};
 
 	chosen {

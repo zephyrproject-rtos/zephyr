@@ -298,7 +298,7 @@ Flashing an application to STM32H573I-DK Discovery
 
 Connect the STM32H573I-DK Discovery to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 
@@ -331,7 +331,7 @@ requires to enable "pack" support with the following pyOCD command:
    $ pyocd pack --install stm32h5
 
 Once installed, you can debug an application in the usual way. Here is an
-example for the :ref:`hello_world` application.
+example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

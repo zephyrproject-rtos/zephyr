@@ -22,6 +22,8 @@
 
 /delete-node/ &uart2;
 
+/delete-node/ &timer3;
+
 &adc {
 	compatible = "adi,max32-adc-sar", "adi,max32-adc";
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
@@ -99,6 +101,20 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 7>;
 			interrupts = <17 0>;
 			status = "disabled";
+		};
+
+		lptimer0: timer@40113000 {
+			compatible = "adi,max32-timer";
+			reg = <0x40113000 0x2000>;
+			interrupts = <8 0>;
+			status = "disabled";
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			prescaler = <1>;
+			counter {
+				compatible = "adi,max32-counter";
+				status = "disabled";
+			};
 		};
 	};
 };

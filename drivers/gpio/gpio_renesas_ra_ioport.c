@@ -176,7 +176,7 @@ static const struct gpio_driver_api gpio_ra_drv_api_funcs = {
 			 DT_REG_ADDR(DT_NODELABEL(ioport##suffix)))
 
 #define GPIO_DEVICE_INIT_RA_IF_OKAY(suffix)                                                        \
-	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(ioport##suffix), okay),                        \
+	COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ioport##suffix)),                         \
 		    (GPIO_DEVICE_INIT_RA(suffix)),                                                 \
 		    ())
 

@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_NRF9160DK_LOG_LEVEL);
 				 GET_PORT(reset_input, gpios, 0) == 0 && \
 				 GET_PIN(reset_input, gpios, 0) == 18)
 #define USE_RESET_GPIO \
-	(DT_NODE_HAS_STATUS(DT_NODELABEL(reset_input), okay) && \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(reset_input)) && \
 	 !RESET_INPUT_IS_PINRESET)
 
 struct switch_cfg {
@@ -47,7 +47,7 @@ struct switch_cfg {
 #endif
 };
 
-#define ROUTING_ENABLED(_name) DT_NODE_HAS_STATUS(DT_NODELABEL(_name), okay)
+#define ROUTING_ENABLED(_name) DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(_name))
 #define SWITCH_CFG(_name, _idx)					\
 {								\
 	.gpio  = GET_DEV(_name, control_gpios, _idx),		\

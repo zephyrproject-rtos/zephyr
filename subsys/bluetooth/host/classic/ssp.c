@@ -213,6 +213,14 @@ static int ssp_confirm_neg_reply(struct bt_conn *conn)
 
 static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 {
+	/* When the ssp pairing complete event notified,
+	 * clear the pairing flag.
+	 */
+	atomic_clear_bit(conn->flags, BT_CONN_BR_PAIRING);
+	atomic_set_bit_to(conn->flags, BT_CONN_BR_PAIRED, !status);
+
+	LOG_DBG("Pairing completed status %d", status);
+
 	if (!status) {
 		bool bond = !atomic_test_bit(conn->flags, BT_CONN_BR_NOBOND);
 		struct bt_conn_auth_info_cb *listener, *next;
@@ -228,8 +236,8 @@ static void ssp_pairing_complete(struct bt_conn *conn, uint8_t status)
 
 		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
 						  next, node) {
-			if (listener->pairing_complete) {
-				listener->pairing_complete(conn, status);
+			if (listener->pairing_failed) {
+				listener->pairing_failed(conn, status);
 			}
 		}
 	}
@@ -345,10 +353,6 @@ int bt_ssp_start_security(struct bt_conn *conn)
 {
 	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING)) {
 		return -EBUSY;
-	}
-
-	if (conn->required_sec_level > BT_SECURITY_L3) {
-		return -ENOTSUP;
 	}
 
 	if (get_io_capa() == BT_IO_NO_INPUT_OUTPUT &&
@@ -471,11 +475,6 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 		conn->br.link_key->flags |= BT_LINK_KEY_AUTHENTICATED;
 		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P192:
-		/* Mark no-bond so that link-key is removed on disconnection */
-		if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
-			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
-		}
-
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
 	case BT_LK_AUTH_COMBINATION_P256:
@@ -483,11 +482,6 @@ void bt_hci_link_key_notify(struct net_buf *buf)
 		__fallthrough;
 	case BT_LK_UNAUTH_COMBINATION_P256:
 		conn->br.link_key->flags |= BT_LINK_KEY_SC;
-
-		/* Mark no-bond so that link-key is removed on disconnection */
-		if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
-			atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
-		}
 
 		memcpy(conn->br.link_key->val, evt->link_key, 16);
 		break;
@@ -634,6 +628,9 @@ void bt_hci_io_capa_resp(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+/* Clear Bonding flag */
+#define BT_HCI_SET_NO_BONDING(auth) ((auth) & 0x01)
+
 void bt_hci_io_capa_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_io_capa_req *evt = (void *)buf->data;
@@ -666,12 +663,25 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 	 */
 	if (atomic_test_bit(conn->flags, BT_CONN_BR_PAIRING_INITIATOR)) {
 		if (get_io_capa() != BT_IO_NO_INPUT_OUTPUT) {
-			auth = BT_HCI_DEDICATED_BONDING_MITM;
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING)) {
+				auth = BT_HCI_GENERAL_BONDING_MITM;
+			} else {
+				auth = BT_HCI_DEDICATED_BONDING_MITM;
+			}
 		} else {
-			auth = BT_HCI_DEDICATED_BONDING;
+			if (atomic_test_bit(conn->flags, BT_CONN_BR_GENERAL_BONDING)) {
+				auth = BT_HCI_GENERAL_BONDING;
+			} else {
+				auth = BT_HCI_DEDICATED_BONDING;
+			}
 		}
 	} else {
 		auth = ssp_get_auth(conn);
+	}
+
+	if (!atomic_test_bit(conn->flags, BT_CONN_BR_BONDABLE)) {
+		/* If bondable is false, clear bonding flag. */
+		auth = BT_HCI_SET_NO_BONDING(auth);
 	}
 
 	cp = net_buf_add(resp_buf, sizeof(*cp));
@@ -694,6 +704,11 @@ void bt_hci_ssp_complete(struct net_buf *buf)
 	if (!conn) {
 		LOG_ERR("Can't find conn for %s", bt_addr_str(&evt->bdaddr));
 		return;
+	}
+
+	/* Mark no-bond so that link-key will be removed on disconnection */
+	if (ssp_get_auth(conn) < BT_HCI_DEDICATED_BONDING) {
+		atomic_set_bit(conn->flags, BT_CONN_BR_NOBOND);
 	}
 
 	ssp_pairing_complete(conn, bt_security_err_get(evt->status));

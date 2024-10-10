@@ -419,6 +419,12 @@ enum bt_audio_active_state {
 	BT_AUDIO_ACTIVE_STATE_ENABLED        = 0x01,
 };
 
+/** Assisted Listening Stream defined by the Generic Audio assigned numbers (bluetooth.com). */
+enum bt_audio_assisted_listening_stream {
+	/** Unspecified audio enhancement */
+	BT_AUDIO_ASSISTED_LISTENING_STREAM_UNSPECIFIED = 0x00,
+};
+
 /**
  * @brief Codec metadata type IDs
  *
@@ -435,7 +441,7 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT        = 0x01,
+	BT_AUDIO_METADATA_TYPE_PREF_CONTEXT = 0x01,
 
 	/**
 	 * @brief Streaming audio context.
@@ -447,10 +453,10 @@ enum bt_audio_metadata_type {
 	 *
 	 * See the BT_AUDIO_CONTEXT_* for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT      = 0x02,
+	BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT = 0x02,
 
 	/** UTF-8 encoded title or summary of stream content */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO        = 0x03,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO = 0x03,
 
 	/**
 	 * @brief Language
@@ -458,30 +464,37 @@ enum bt_audio_metadata_type {
 	 * 3 octet lower case language code defined by ISO 639-3
 	 * Possible values can be found at https://iso639-3.sil.org/code_tables/639/data
 	 */
-	BT_AUDIO_METADATA_TYPE_LANG                = 0x04,
+	BT_AUDIO_METADATA_TYPE_LANG = 0x04,
 
 	/** Array of 8-bit CCID values */
-	BT_AUDIO_METADATA_TYPE_CCID_LIST           = 0x05,
+	BT_AUDIO_METADATA_TYPE_CCID_LIST = 0x05,
 
 	/**
 	 * @brief Parental rating
 	 *
 	 * See @ref bt_audio_parental_rating for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING     = 0x06,
+	BT_AUDIO_METADATA_TYPE_PARENTAL_RATING = 0x06,
 
 	/** UTF-8 encoded URI for additional Program information */
-	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI    = 0x07,
+	BT_AUDIO_METADATA_TYPE_PROGRAM_INFO_URI = 0x07,
 
 	/**
 	 * @brief Audio active state
 	 *
 	 * See @ref bt_audio_active_state for valid values.
 	 */
-	BT_AUDIO_METADATA_TYPE_AUDIO_STATE         = 0x08,
+	BT_AUDIO_METADATA_TYPE_AUDIO_STATE = 0x08,
 
 	/** Broadcast Audio Immediate Rendering flag  */
 	BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE = 0x09,
+
+	/**
+	 * @brief Assisted listening stream
+	 *
+	 * See @ref bt_audio_assisted_listening_stream for valid values.
+	 */
+	BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM = 0x0A,
 
 	/** Extended metadata */
 	BT_AUDIO_METADATA_TYPE_EXTENDED            = 0xFE,
@@ -775,251 +788,6 @@ enum bt_audio_dir {
 	 * For a BAP Unicast Server or Broadcast Sink this is considered outgoing audio (TX).
 	 */
 	BT_AUDIO_DIR_SOURCE = 0x02,
-};
-
-/**
- * @brief Helper to declare elements of bt_audio_codec_qos
- *
- * @param _interval SDU interval (usec)
- * @param _framing Framing
- * @param _phy Target PHY
- * @param _sdu Maximum SDU Size
- * @param _rtn Retransmission number
- * @param _latency Maximum Transport Latency (msec)
- * @param _pd Presentation Delay (usec)
- */
-#define BT_AUDIO_CODEC_QOS(_interval, _framing, _phy, _sdu, _rtn, _latency, _pd)                   \
-	((struct bt_audio_codec_qos){                                                              \
-		.interval = _interval,                                                             \
-		.framing = _framing,                                                               \
-		.phy = _phy,                                                                       \
-		.sdu = _sdu,                                                                       \
-		.rtn = _rtn,                                                                       \
-		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE),                     \
-				   IS_ENABLED(CONFIG_BT_BAP_UNICAST)),                             \
-			   (.latency = _latency,))                                                 \
-		.pd = _pd,                                                                         \
-	})
-
-/** @brief Codec QoS Framing */
-enum bt_audio_codec_qos_framing {
-	/** Packets may be framed or unframed */
-	BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED = 0x00,
-	/** Packets are always framed */
-	BT_AUDIO_CODEC_QOS_FRAMING_FRAMED = 0x01,
-};
-
-/** @brief Codec QoS Preferred PHY */
-enum {
-	/** LE 1M PHY */
-	BT_AUDIO_CODEC_QOS_1M = BIT(0),
-	/** LE 2M PHY */
-	BT_AUDIO_CODEC_QOS_2M = BIT(1),
-	/** LE Coded PHY */
-	BT_AUDIO_CODEC_QOS_CODED = BIT(2),
-};
-
-/**
- * @brief Helper to declare Input Unframed bt_audio_codec_qos
- *
- * @param _interval SDU interval (usec)
- * @param _sdu Maximum SDU Size
- * @param _rtn Retransmission number
- * @param _latency Maximum Transport Latency (msec)
- * @param _pd Presentation Delay (usec)
- */
-#define BT_AUDIO_CODEC_QOS_UNFRAMED(_interval, _sdu, _rtn, _latency, _pd)                          \
-	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_FRAMING_UNFRAMED, BT_AUDIO_CODEC_QOS_2M,  \
-			   _sdu, _rtn, _latency, _pd)
-
-/**
- * @brief Helper to declare Input Framed bt_audio_codec_qos
- *
- * @param _interval SDU interval (usec)
- * @param _sdu Maximum SDU Size
- * @param _rtn Retransmission number
- * @param _latency Maximum Transport Latency (msec)
- * @param _pd Presentation Delay (usec)
- */
-#define BT_AUDIO_CODEC_QOS_FRAMED(_interval, _sdu, _rtn, _latency, _pd)                            \
-	BT_AUDIO_CODEC_QOS(_interval, BT_AUDIO_CODEC_QOS_FRAMING_FRAMED, BT_AUDIO_CODEC_QOS_2M,    \
-			   _sdu, _rtn, _latency, _pd)
-
-/** @brief Codec QoS structure. */
-struct bt_audio_codec_qos {
-	/**
-	 * @brief Presentation Delay in microseconds
-	 *
-	 * This value can be changed up and until bt_bap_stream_qos() has been called.
-	 * Once a stream has been QoS configured, modifying this field does not modify the value.
-	 * It is however possible to modify this field and call bt_bap_stream_qos() again to update
-	 * the value, assuming that the stream is in the correct state.
-	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
-	 */
-	uint32_t pd;
-
-	/**
-	 * @brief Connected Isochronous Group (CIG) parameters
-	 *
-	 * The fields in this struct affect the value sent to the controller via HCI
-	 * when creating the CIG. Once the group has been created with
-	 * bt_bap_unicast_group_create(), modifying these fields will not affect the group.
-	 */
-	struct {
-		/** QoS Framing */
-		enum bt_audio_codec_qos_framing framing;
-
-		/**
-		 * @brief PHY
-		 *
-		 * Allowed values are @ref BT_AUDIO_CODEC_QOS_1M, @ref BT_AUDIO_CODEC_QOS_2M and
-		 * @ref BT_AUDIO_CODEC_QOS_CODED.
-		 */
-		uint8_t phy;
-
-		/**
-		 * @brief Retransmission Number
-		 *
-		 * This a recommendation to the controller, and the actual retransmission number
-		 * may be different than this.
-		 */
-		uint8_t rtn;
-
-		/**
-		 * @brief Maximum SDU size
-		 *
-		 * Value range @ref BT_ISO_MIN_SDU to @ref BT_ISO_MAX_SDU.
-		 */
-		uint16_t sdu;
-
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(CONFIG_BT_BAP_UNICAST) ||                   \
-	defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum Transport Latency
-		 *
-		 * Not used for the @kconfig{CONFIG_BT_BAP_BROADCAST_SINK} role.
-		 */
-		uint16_t latency;
-#endif /*  CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
-
-		/**
-		 * @brief SDU Interval
-		 *
-		 * Value range @ref BT_ISO_SDU_INTERVAL_MIN to @ref BT_ISO_SDU_INTERVAL_MAX
-		 */
-		uint32_t interval;
-
-#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
-		/**
-		 * @brief Maximum PDU size
-		 *
-		 * Maximum size, in octets, of the payload from link layer to link layer.
-		 *
-		 *  Value range @ref BT_ISO_CONNECTED_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  connected ISO.
-		 *
-		 *  Value range @ref BT_ISO_BROADCAST_PDU_MIN to @ref BT_ISO_PDU_MAX for
-		 *  broadcast ISO.
-		 */
-		uint16_t max_pdu;
-
-		/**
-		 * @brief Burst number
-		 *
-		 * Value range @ref BT_ISO_BN_MIN to @ref BT_ISO_BN_MAX.
-		 */
-		uint8_t burst_number;
-
-		/**
-		 * @brief Number of subevents
-		 *
-		 * Maximum number of subevents in each CIS or BIS event.
-		 *
-		 * Value range @ref BT_ISO_NSE_MIN to @ref BT_ISO_NSE_MAX.
-		 */
-		uint8_t num_subevents;
-#endif /* CONFIG_BT_ISO_TEST_PARAMS */
-	};
-};
-
-/**
- * @brief Helper to declare elements of @ref bt_audio_codec_qos_pref
- *
- * @param _unframed_supported Unframed PDUs supported
- * @param _phy Preferred Target PHY
- * @param _rtn Preferred Retransmission number
- * @param _latency Preferred Maximum Transport Latency (msec)
- * @param _pd_min Minimum Presentation Delay (usec)
- * @param _pd_max Maximum Presentation Delay (usec)
- * @param _pref_pd_min Preferred Minimum Presentation Delay (usec)
- * @param _pref_pd_max Preferred Maximum Presentation Delay (usec)
- */
-#define BT_AUDIO_CODEC_QOS_PREF(_unframed_supported, _phy, _rtn, _latency, _pd_min, _pd_max,       \
-				_pref_pd_min, _pref_pd_max)                                        \
-	{                                                                                          \
-		.unframed_supported = _unframed_supported,                                         \
-		.phy = _phy,                                                                       \
-		.rtn = _rtn,                                                                       \
-		.latency = _latency,                                                               \
-		.pd_min = _pd_min,                                                                 \
-		.pd_max = _pd_max,                                                                 \
-		.pref_pd_min = _pref_pd_min,                                                       \
-		.pref_pd_max = _pref_pd_max,                                                       \
-	}
-
-/** @brief Audio Stream Quality of Service Preference structure. */
-struct bt_audio_codec_qos_pref {
-	/**
-	 * @brief Unframed PDUs supported
-	 *
-	 *  Unlike the other fields, this is not a preference but whether
-	 *  the codec supports unframed ISOAL PDUs.
-	 */
-	bool unframed_supported;
-
-	/** Preferred PHY */
-	uint8_t phy;
-
-	/** Preferred Retransmission Number */
-	uint8_t rtn;
-
-	/** Preferred Transport Latency */
-	uint16_t latency;
-
-	/**
-	 * @brief Minimum Presentation Delay in microseconds
-	 *
-	 * Unlike the other fields, this is not a preference but a minimum requirement.
-	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX, or @ref BT_AUDIO_PD_PREF_NONE
-	 * to indicate no preference.
-	 */
-	uint32_t pd_min;
-
-	/**
-	 * @brief Maximum Presentation Delay
-	 *
-	 * Unlike the other fields, this is not a preference but a maximum requirement.
-	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX, or @ref BT_AUDIO_PD_PREF_NONE
-	 * to indicate no preference.
-	 */
-	uint32_t pd_max;
-
-	/**
-	 * @brief Preferred minimum Presentation Delay
-	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
-	 */
-	uint32_t pref_pd_min;
-
-	/**
-	 * @brief Preferred maximum Presentation Delay
-	 *
-	 * Value range 0 to @ref BT_AUDIO_PD_MAX.
-	 */
-	uint32_t pref_pd_max;
 };
 
 /**
@@ -1572,6 +1340,34 @@ int bt_audio_codec_cfg_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cfg *codec_cfg);
 
 /**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cfg The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cfg_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cfg *codec_cfg);
+
+/**
+ * @brief Set the assisted listening stream value of a codec configuration metadata.
+ *
+ * @param codec_cfg The codec configuration to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cfg_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cfg *codec_cfg, enum bt_audio_assisted_listening_stream val);
+
+/**
  * @brief Extract extended metadata
  *
  * See @ref BT_AUDIO_METADATA_TYPE_EXTENDED for more information about this value.
@@ -2113,6 +1909,34 @@ int bt_audio_codec_cap_meta_get_bcast_audio_immediate_rend_flag(
  */
 int bt_audio_codec_cap_meta_set_bcast_audio_immediate_rend_flag(
 	struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Extract assisted listening stream
+ *
+ * See @ref BT_AUDIO_METADATA_TYPE_ASSISTED_LISTENING_STREAM for more information about this value.
+ *
+ * @param codec_cap The codec data to search in.
+ *
+ * @retval value The assisted listening stream value if positive or 0
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENODATA if not found
+ * @retval -EBADMSG if found value has invalid size
+ */
+int bt_audio_codec_cap_meta_get_assisted_listening_stream(
+	const struct bt_audio_codec_cap *codec_cap);
+
+/**
+ * @brief Set the assisted listening stream value of a codec capability metadata.
+ *
+ * @param codec_cap The codec capability to set data for.
+ * @param val       The assisted listening stream value to set.
+ *
+ * @retval length The data_len of @p codec_cap on success
+ * @retval -EINVAL if arguments are invalid
+ * @retval -ENOMEM if the new value could not set or added due to memory
+ */
+int bt_audio_codec_cap_meta_set_assisted_listening_stream(
+	struct bt_audio_codec_cap *codec_cap, enum bt_audio_assisted_listening_stream val);
 
 /**
  * @brief Extract extended metadata

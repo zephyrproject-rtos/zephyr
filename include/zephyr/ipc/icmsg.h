@@ -66,7 +66,7 @@ struct icmsg_data_t {
  *  completed.
  *  This function is intended to be called late in the initialization process,
  *  possibly from a thread which can be safely blocked while handshake with the
- *  remote instance is being pefromed.
+ *  remote instance is being performed.
  *
  *  @param[in] conf Structure containing configuration parameters for the icmsg
  *                  instance.

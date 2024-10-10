@@ -206,11 +206,12 @@ remaining are not used.
 Programming and Debugging
 *************************
 
-This board supports 2 debug host tools. Please install your preferred host
+This board supports 3 debug host tools. Please install your preferred host
 tool, then follow the instructions in `Configuring a Debug Probe`_ to
 configure the board appropriately.
 
-* :ref:`jlink-debug-host-tools` (Default, Supported by NXP)
+* :ref:`linkserver-debug-host-tools` (Default, Supported by NXP)
+* :ref:`jlink-debug-host-tools` (Supported by NXP)
 * :ref:`pyocd-debug-host-tools` (Not supported by NXP)
 
 Configuring a Debug Probe
@@ -243,7 +244,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -261,7 +262,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

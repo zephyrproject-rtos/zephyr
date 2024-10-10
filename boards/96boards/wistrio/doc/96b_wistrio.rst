@@ -148,7 +148,7 @@ More detailed information on activating the ROM bootloader can be found in
 Chapter 29 of Application note `AN2606`_. The ROM bootloader supports flashing
 via UART, and I2C protocols.
 
-Here is an example for building and flashing the :ref:`hello_world` application using `stm32flash`_ command line utility:
+Here is an example for building and flashing the :zephyr:code-sample:`hello_world` application using `stm32flash`_ command line utility:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

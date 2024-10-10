@@ -216,14 +216,14 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC1_CLK:
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc1Div) + 1U);
 		break;
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2)) && CONFIG_IMX_USDHC
 	case IMX_CCM_USDHC2_CLK:
 		*rate = CLOCK_GetSysPfdFreq(kCLOCK_Pfd0) /
 				(CLOCK_GetDiv(kCLOCK_Usdhc2Div) + 1U);
@@ -339,12 +339,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				/ (CLOCK_GetDiv(kCLOCK_Sai3Div) + 1);
 		break;
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	case IMX_CCM_FLEXSPI_CLK:
 		*rate = CLOCK_GetClockRootFreq(kCLOCK_FlexspiClkRoot);
 		break;
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi2))
 	case IMX_CCM_FLEXSPI2_CLK:
 		*rate = CLOCK_GetClockRootFreq(kCLOCK_Flexspi2ClkRoot);
 		break;
@@ -354,7 +354,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = CLOCK_GetFreq(kCLOCK_PerClk);
 		break;
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexio1), okay) && CONFIG_MCUX_FLEXIO
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio1)) && CONFIG_MCUX_FLEXIO
 	case IMX_CCM_FLEXIO1_CLK:
 	{
 		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio1Mux);
@@ -376,8 +376,8 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 					/ (CLOCK_GetDiv(kCLOCK_Flexio1Div) + 1);
 	} break;
 #endif
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(flexio2), okay) \
-		 || DT_NODE_HAS_STATUS(DT_NODELABEL(flexio3), okay)) && CONFIG_MCUX_FLEXIO
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio2)) \
+		 || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio3))) && CONFIG_MCUX_FLEXIO
 	case IMX_CCM_FLEXIO2_3_CLK:
 	{
 		uint32_t flexio_mux = CLOCK_GetMux(kCLOCK_Flexio2Mux);

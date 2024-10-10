@@ -17,10 +17,17 @@
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
-		led2 = &red_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		accel0 = &fxls8974;
+		pwm-0 = &tpm1;
 	};
 
 	chosen {
@@ -43,6 +50,23 @@
 		blue_led: led_2 {
 			gpios = <&gpioa 13 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+		red_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Red LED";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Green LED";
+		};
+		blue_pwm_led: pwm_led_2 {
+			pwms = <&tpm1 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM Blue LED";
 		};
 	};
 
@@ -110,4 +134,22 @@ i2c1: &i2c1 {
 		int1-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
 		int2-gpios = <&gpioc 3 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&tpm1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm1>;
+	pinctrl-names = "default";
+};
+
+&tpm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm2>;
+	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_adc0>;
+	pinctrl-names = "default";
 };

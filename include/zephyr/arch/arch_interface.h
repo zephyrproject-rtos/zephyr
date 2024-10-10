@@ -455,6 +455,13 @@ bool arch_irq_is_used(unsigned int irq);
  * @param parameter Value to pass to the function when invoked
  */
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter);
+
+
+/**
+ * Initialize the architecture-specific portion of the irq_offload subsystem
+ */
+void arch_irq_offload_init(void);
+
 #endif /* CONFIG_IRQ_OFFLOAD */
 
 /** @} */

@@ -18,7 +18,8 @@ static uintptr_t fiu_insts[] = {
 	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_fiu_qspi, NPCX_FIU_INST_INIT)
 };
 
-static int soc_npcx4_init(void)
+extern void scfg_init(void);
+void soc_early_init_hook(void)
 {
 	/*
 	 * Make sure UMA_ADDR_SIZE field of UMA_ECTS register is zero in npcx4
@@ -29,8 +30,5 @@ static int soc_npcx4_init(void)
 
 		SET_FIELD(inst->UMA_ECTS, NPCX_UMA_ECTS_UMA_ADDR_SIZE, 0);
 	}
-
-	return 0;
+	scfg_init();
 }
-
-SYS_INIT(soc_npcx4_init, PRE_KERNEL_1, 0);

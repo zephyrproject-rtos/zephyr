@@ -57,9 +57,12 @@ enum {
 	 */
 	BT_CONN_AUTO_CONNECT,
 	BT_CONN_BR_LEGACY_SECURE,             /* 16 digits legacy PIN tracker */
+	BT_CONN_BR_BONDABLE,                  /* BR connection is bondable */
 	BT_CONN_USER,                         /* user I/O when pairing */
 	BT_CONN_BR_PAIRING,                   /* BR connection in pairing context */
+	BT_CONN_BR_PAIRED,                    /* BR connection pairing is done */
 	BT_CONN_BR_NOBOND,                    /* SSP no bond pairing tracker */
+	BT_CONN_BR_GENERAL_BONDING,           /* BR general bonding */
 	BT_CONN_BR_PAIRING_INITIATOR,         /* local host starts authentication */
 	BT_CONN_CLEANUP,                      /* Disconnected, pending cleanup */
 	BT_CONN_AUTO_INIT_PROCEDURES_DONE,    /* Auto-initiated procedures have run */
@@ -491,6 +494,18 @@ void notify_path_loss_threshold_report(struct bt_conn *conn,
 
 void notify_subrate_change(struct bt_conn *conn,
 			   struct bt_conn_le_subrate_changed params);
+
+void notify_remote_cs_capabilities(struct bt_conn *conn,
+			   struct bt_conn_le_cs_capabilities params);
+
+void notify_remote_cs_fae_table(struct bt_conn *conn,
+			   struct bt_conn_le_cs_fae_table params);
+
+void notify_cs_config_created(struct bt_conn *conn, struct bt_conn_le_cs_config *params);
+
+void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id);
+
+void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result);
 
 #if defined(CONFIG_BT_SMP)
 /* If role specific LTK is present */

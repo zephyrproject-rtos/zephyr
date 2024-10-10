@@ -102,7 +102,7 @@ provided you install the necessary CMSIS-Pack:
 J-Link can also be used to program the board using the JTAG interface exposed in
 the JP2 header.
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
+#. Build the Zephyr kernel and the :zephyr:code-sample:`hello_world` sample application:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

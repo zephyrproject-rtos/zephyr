@@ -101,7 +101,7 @@ static void bt_ready(void)
 
 	LOG_DBG("Peripheral Bluetooth initialized\n");
 
-	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad), NULL, 0);
+	err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
 		TEST_FAIL("Advertising failed to start (err %d)\n", err);
 		return;

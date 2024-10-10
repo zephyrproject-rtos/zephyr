@@ -769,7 +769,7 @@ static void initialize_net_buf_read_buffer(struct bt_tbs_instance *inst)
 static void tbs_client_gatt_read_complete(struct bt_tbs_instance *inst)
 {
 	(void)memset(&inst->read_params, 0, sizeof(inst->read_params));
-	inst->busy = false;
+	atomic_clear_bit(inst->flags, BT_TBS_CLIENT_FLAG_BUSY);
 }
 
 static int tbs_client_gatt_read(struct bt_conn *conn, struct bt_tbs_instance *inst, uint16_t handle,
@@ -777,7 +777,9 @@ static int tbs_client_gatt_read(struct bt_conn *conn, struct bt_tbs_instance *in
 {
 	int err;
 
-	if (inst->busy) {
+	if (atomic_test_and_set_bit(inst->flags, BT_TBS_CLIENT_FLAG_BUSY)) {
+		LOG_DBG("Instance is busy");
+
 		return -EBUSY;
 	}
 
@@ -787,7 +789,6 @@ static int tbs_client_gatt_read(struct bt_conn *conn, struct bt_tbs_instance *in
 	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = handle;
 	inst->read_params.single.offset = 0U;
-	inst->busy = true;
 
 	err = bt_gatt_read(conn, &inst->read_params);
 	if (err != 0) {
@@ -826,6 +827,15 @@ static void tbs_client_discover_complete(struct bt_conn *conn, int err)
 
 	/* Clear the current instance in discovery */
 	srv_inst->current_inst = NULL;
+
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	atomic_clear_bit(srv_inst->gtbs_inst.flags, BT_TBS_CLIENT_FLAG_BUSY);
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	for (size_t i = 0U; i < ARRAY_SIZE(srv_inst->tbs_insts); i++) {
+		atomic_clear_bit(srv_inst->tbs_insts[i].flags, BT_TBS_CLIENT_FLAG_BUSY);
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tbs_client_cbs, listener, next, _node) {
 		if (listener->discover != NULL) {
@@ -1682,8 +1692,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 			if (sub_params->value != 0) {
 				int err;
 
-				/* Setting ccc_handle = will use auto discovery feature */
-				sub_params->ccc_handle = 0;
+				sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
 				sub_params->end_handle = current_inst->end_handle;
 				sub_params->notify = notify_handler;
 				atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
@@ -2381,6 +2390,48 @@ int bt_tbs_client_read_friendly_name(struct bt_conn *conn, uint8_t inst_index)
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME) */
 
+static bool check_and_set_all_busy(struct bt_tbs_server_inst *srv_inst)
+{
+	bool all_idle = true;
+
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	if (atomic_test_and_set_bit(srv_inst->gtbs_inst.flags, BT_TBS_CLIENT_FLAG_BUSY)) {
+		LOG_DBG("GTBS is busy");
+
+		return false;
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	size_t num_free;
+
+	for (num_free = 0U; num_free < ARRAY_SIZE(srv_inst->tbs_insts); num_free++) {
+		struct bt_tbs_instance *tbs_inst = &srv_inst->tbs_insts[num_free];
+
+		if (atomic_test_and_set_bit(tbs_inst->flags, BT_TBS_CLIENT_FLAG_BUSY)) {
+			LOG_DBG("inst[%zu] (%p) is busy", num_free, tbs_inst);
+			all_idle = false;
+
+			break;
+		}
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+
+	/* If any is busy, revert any busy states we've set */
+	if (!all_idle) {
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+		atomic_clear_bit(srv_inst->gtbs_inst.flags, BT_TBS_CLIENT_FLAG_BUSY);
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+		for (uint8_t i = 0U; i < num_free; i++) {
+			atomic_clear_bit(srv_inst->tbs_insts[i].flags, BT_TBS_CLIENT_FLAG_BUSY);
+		}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+	}
+
+	return all_idle;
+}
+
 int bt_tbs_client_discover(struct bt_conn *conn)
 {
 	uint8_t conn_index;
@@ -2393,7 +2444,10 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 	conn_index = bt_conn_index(conn);
 	srv_inst = &srv_insts[conn_index];
 
-	if (srv_inst->current_inst) {
+	/* Before we do discovery we ensure that all TBS instances are currently not busy as to not
+	 * interfere with any procedures in progress
+	 */
+	if (!check_and_set_all_busy(srv_inst)) {
 		return -EBUSY;
 	}
 

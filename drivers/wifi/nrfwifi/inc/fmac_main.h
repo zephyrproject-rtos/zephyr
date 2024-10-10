@@ -83,6 +83,7 @@ struct nrf_wifi_vif_ctx_zep {
 #ifdef CONFIG_NRF_WIFI_RPU_RECOVERY
 	struct k_work nrf_wifi_rpu_recovery_work;
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
+	int rts_threshold_value;
 };
 
 struct nrf_wifi_vif_ctx_map {

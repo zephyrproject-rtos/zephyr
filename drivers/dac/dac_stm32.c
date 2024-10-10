@@ -89,7 +89,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 {
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
-	uint32_t output_buffer;
+	uint32_t cfg_setting, channel;
 
 	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
 			data->channel_count) ||
@@ -106,18 +106,33 @@ static int dac_stm32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	channel = table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL];
+
 	if (channel_cfg->buffered) {
-		output_buffer = LL_DAC_OUTPUT_BUFFER_ENABLE;
+		cfg_setting = LL_DAC_OUTPUT_BUFFER_ENABLE;
 	} else {
-		output_buffer = LL_DAC_OUTPUT_BUFFER_DISABLE;
+		cfg_setting = LL_DAC_OUTPUT_BUFFER_DISABLE;
 	}
 
-	LL_DAC_SetOutputBuffer(cfg->base,
-		table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL],
-		output_buffer);
+	LL_DAC_SetOutputBuffer(cfg->base, channel, cfg_setting);
 
-	LL_DAC_Enable(cfg->base,
-		table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL]);
+#if defined(LL_DAC_OUTPUT_CONNECT_INTERNAL)
+	/* If the DAC supports internal connections set it based on configuration */
+	if (channel_cfg->internal) {
+		cfg_setting = LL_DAC_OUTPUT_CONNECT_INTERNAL;
+	} else {
+		cfg_setting = LL_DAC_OUTPUT_CONNECT_GPIO;
+	}
+
+	LL_DAC_SetOutputConnection(cfg->base, channel, cfg_setting);
+#else
+	if (channel_cfg->internal) {
+		LOG_ERR("Internal connections not supported");
+		return -ENOTSUP;
+	}
+#endif /* LL_DAC_OUTPUT_CONNECT_INTERNAL */
+
+	LL_DAC_Enable(cfg->base, channel);
 
 	LOG_DBG("Channel setup succeeded!");
 
@@ -144,7 +159,7 @@ static int dac_stm32_init(const struct device *dev)
 
 	/* Configure dt provided device signals when available */
 	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
+	if ((err < 0) && (err != -ENOENT)) {
 		LOG_ERR("DAC pinctrl setup failed (%d)", err);
 		return err;
 	}

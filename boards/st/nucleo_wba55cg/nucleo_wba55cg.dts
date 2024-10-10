@@ -71,6 +71,7 @@
 		sw2 = &user_button_3;
 		mcuboot-led0 = &blue_led_1;
 		mcuboot-button0 = &user_button_1;
+		die-temp0 = &die_temp;
 	};
 };
 
@@ -144,10 +145,14 @@
 };
 
 &adc4 {
-	pinctrl-0 = <&adc4_in8_pa1>;
+	pinctrl-0 = <&adc4_in8_pa1 &adc4_in9_pa0>;
 	pinctrl-names = "default";
 	st,adc-clock-source = <ASYNC>;
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 

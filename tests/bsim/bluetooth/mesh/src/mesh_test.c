@@ -88,7 +88,7 @@ static int ra_rx(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx *ctx,
 	LOG_INF("\trssi: %d", ctx->recv_rssi);
 
 	if (ra_cb) {
-		ra_cb(net_buf_simple_pull_mem(buf, buf->len), buf->len);
+		ra_cb(buf->data, buf->len);
 	}
 
 	return 0;
@@ -186,6 +186,10 @@ static struct bt_mesh_priv_beacon_cli priv_beacon_cli;
 static struct bt_mesh_od_priv_proxy_cli priv_proxy_cli;
 #endif
 
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+static struct bt_mesh_brg_cfg_cli brg_cfg_cli;
+#endif
+
 static const struct bt_mesh_model models[] = {
 	BT_MESH_MODEL_CFG_SRV,
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -204,6 +208,12 @@ static const struct bt_mesh_model models[] = {
 #endif
 #if defined(CONFIG_BT_MESH_OD_PRIV_PROXY_CLI)
 	BT_MESH_MODEL_OD_PRIV_PROXY_CLI(&priv_proxy_cli),
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_SRV)
+	BT_MESH_MODEL_BRG_CFG_SRV,
+#endif
+#if defined(CONFIG_BT_MESH_BRG_CFG_CLI)
+	BT_MESH_MODEL_BRG_CFG_CLI(&brg_cfg_cli),
 #endif
 };
 

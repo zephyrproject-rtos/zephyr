@@ -1,7 +1,7 @@
-.. _tfm_ipc:
+.. zephyr:code-sample:: tfm_ipc
+   :name: TF-M IPC
 
-TF-M IPC
-########
+   Implement communication between the secure and non-secure images using IPC.
 
 Overview
 ********

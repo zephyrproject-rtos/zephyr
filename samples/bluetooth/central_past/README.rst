@@ -29,4 +29,4 @@ Use the sample found under :zephyr_file:`samples/bluetooth/peripheral_past` in
 the Zephyr tree on another board that will advertise and await a periodic
 advertising sync transfer.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

@@ -9,6 +9,11 @@ endif()
 zephyr_library()
 zephyr_library_link_libraries(subsys__bluetooth)
 
+if(CONFIG_BT_SHELL AND CONFIG_BT_LL_SW_SPLIT)
+  add_subdirectory(ticker/shell)
+  add_subdirectory(ll_sw/shell)
+endif()
+
 zephyr_library_sources(
   util/mem.c
   util/memq.c

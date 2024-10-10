@@ -24,7 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 static struct bt_vcp_included vcp_included;
 

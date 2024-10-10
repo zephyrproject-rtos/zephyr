@@ -81,3 +81,54 @@
 	ahb-prescaler = <1>;
 	apb1-prescaler = <1>;
 };
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pa7 &i2c2_sda_pa6>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pc0 &adc1_in1_pc1>;
+	pinctrl-names = "default";
+	st,adc-clock-source = <SYNC>;
+	st,adc-prescaler = <4>;
+	status = "okay";
+	vref-mv = <3300>;
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+	};
+};
+
+&timers2 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm2: pwm {
+		pinctrl-0 = <&tim2_ch1_pa5>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};

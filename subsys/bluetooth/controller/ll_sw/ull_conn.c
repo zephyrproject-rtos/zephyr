@@ -943,6 +943,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 	struct lll_conn *lll;
 	struct ll_conn *conn;
 	uint8_t reason_final;
+	uint8_t force_lll;
 	uint16_t lazy;
 	uint8_t force;
 
@@ -1014,11 +1015,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 #else
 	latency_event = lll->latency_event;
 #endif
-	if (lll->latency_prepare) {
-		elapsed_event = latency_event + lll->latency_prepare;
-	} else {
-		elapsed_event = latency_event + 1U;
-	}
 
 	/* Peripheral drift compensation calc and new latency or
 	 * central terminate acked
@@ -1053,8 +1049,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 		conn->connect_expire = 0U;
 	}
 
+	elapsed_event = latency_event + lll->lazy_prepare + 1U;
+
 	/* Reset supervision countdown */
-	if (done->extra.crc_valid) {
+	if (done->extra.crc_valid && !done->extra.is_aborted) {
 		conn->supervision_expire = 0U;
 	}
 
@@ -1085,6 +1083,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 	/* check supervision timeout */
 	force = 0U;
+	force_lll = 0U;
 	if (conn->supervision_expire) {
 		if (conn->supervision_expire > elapsed_event) {
 			conn->supervision_expire -= elapsed_event;
@@ -1096,6 +1095,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 			 * supervision timeout.
 			 */
 			if (conn->supervision_expire <= 6U) {
+				force_lll = 1U;
+
 				force = 1U;
 			}
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
@@ -1122,6 +1123,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 			return;
 		}
 	}
+
+	lll->forced = force_lll;
 
 	/* check procedure timeout */
 	uint8_t error_code;
@@ -1233,26 +1236,41 @@ void ull_conn_done(struct node_rx_event_done *done)
 		uint32_t ready_delay, rx_time, tx_time, ticks_slot, slot_us;
 
 		lll->evt_len_upd = 0;
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		ready_delay = (lll->role) ?
 			lll_radio_rx_ready_delay_get(lll->phy_rx, PHY_FLAGS_S8) :
 			lll_radio_tx_ready_delay_get(lll->phy_tx, lll->phy_flags);
+
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		tx_time = lll->dle.eff.max_tx_time;
 		rx_time = lll->dle.eff.max_rx_time;
-#else /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#else /* CONFIG_BT_CTLR_DATA_LENGTH */
 		tx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, 0),
 			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
 		rx_time = MAX(PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, 0),
 			      PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+		rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+
 #else /* CONFIG_BT_CTLR_PHY */
 		ready_delay = (lll->role) ?
 			lll_radio_rx_ready_delay_get(0, 0) :
 			lll_radio_tx_ready_delay_get(0, 0);
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		tx_time = PDU_DC_MAX_US(lll->dle.eff.max_tx_octets, 0);
 		rx_time = PDU_DC_MAX_US(lll->dle.eff.max_rx_octets, 0);
+
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+		rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* Calculate event time reservation */
@@ -2344,7 +2362,7 @@ static inline void dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 void ull_dle_max_time_get(struct ll_conn *conn, uint16_t *max_rx_time,
 				    uint16_t *max_tx_time)
 {
-	return dle_max_time_get(conn, max_rx_time, max_tx_time);
+	dle_max_time_get(conn, max_rx_time, max_tx_time);
 }
 
 /*

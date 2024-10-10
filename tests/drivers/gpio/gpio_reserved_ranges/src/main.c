@@ -33,12 +33,12 @@ ZTEST(gpio_reserved_ranges, test_path_props)
 
 ZTEST(gpio_reserved_ranges, test_has_status)
 {
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_1, okay), 1, "");
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_2, okay), 1, "");
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_3, okay), 1, "");
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_4, okay), 1, "");
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_5, okay), 1, "");
-	zassert_equal(DT_NODE_HAS_STATUS(TEST_GPIO_6, okay), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_1), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_2), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_3), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_4), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_5), 1, "");
+	zassert_equal(DT_NODE_HAS_STATUS_OKAY(TEST_GPIO_6), 1, "");
 }
 
 ZTEST(gpio_reserved_ranges, test_reserved_ranges)

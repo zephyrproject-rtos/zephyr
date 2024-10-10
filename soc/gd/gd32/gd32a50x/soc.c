@@ -19,11 +19,7 @@ void soc_reset_hook(void)
 	}
 }
 
-static int gd32a50x_soc_init(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-
-	return 0;
 }
-
-SYS_INIT(gd32a50x_soc_init, PRE_KERNEL_1, 0);

@@ -1549,6 +1549,11 @@ static int isr_rx_scan_report(struct lll_scan *lll, uint8_t devmatch_ok,
 			{
 				struct node_rx_ftr *ftr;
 
+				/* Reset Scan context association with any Aux context as a new
+				 * extended advertising chain is being setup for reception here.
+				 */
+				lll->lll_aux = NULL;
+
 				ftr = &(node_rx->rx_ftr);
 				ftr->param = lll;
 				ftr->ticks_anchor = radio_tmr_start_get();

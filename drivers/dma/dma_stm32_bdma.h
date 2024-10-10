@@ -28,6 +28,7 @@ struct bdma_stm32_channel {
 	uint32_t dst_size;
 	void *user_data; /* holds the client data */
 	dma_callback_t bdma_callback;
+	bool cyclic;
 };
 
 struct bdma_stm32_data {

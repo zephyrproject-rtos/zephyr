@@ -10,7 +10,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/logging/log.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2s2))
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2s)
 #define DT_DRV_COMPAT st_stm32_i2s

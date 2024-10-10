@@ -101,7 +101,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 
@@ -124,10 +124,9 @@ static ALWAYS_INLINE void clock_init(void)
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
  *
- * @return 0
  */
 
-static int k6x_init(void)
+void soc_early_init_hook(void)
 {
 #if !defined(CONFIG_ARM_MPU)
 	uint32_t temp_reg;
@@ -162,8 +161,6 @@ static int k6x_init(void)
 #endif
 	/* Initialize PLL/system clock up to 180 MHz */
 	clock_init();
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -174,5 +171,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(k6x_init, PRE_KERNEL_1, 0);

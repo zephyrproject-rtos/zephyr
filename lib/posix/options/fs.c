@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <limits.h>
@@ -64,6 +66,7 @@ static int posix_mode_to_zephyr(int mf)
 	int mode = (mf & O_CREAT) ? FS_O_CREATE : 0;
 
 	mode |= (mf & O_APPEND) ? FS_O_APPEND : 0;
+	mode |= (mf & O_TRUNC) ? FS_O_TRUNC : 0;
 
 	switch (mf & O_ACCMODE) {
 	case O_RDONLY:

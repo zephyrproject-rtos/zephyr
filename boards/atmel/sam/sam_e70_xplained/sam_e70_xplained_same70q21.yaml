@@ -20,7 +20,6 @@ supported:
   - pwm
   - netif:eth
   - spi
-  - usb
   - usb_device
   - watchdog
 vendor: atmel

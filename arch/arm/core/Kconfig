@@ -167,7 +167,6 @@ config RUNTIME_NMI
 
 config PLATFORM_SPECIFIC_INIT
 	bool "Platform (SOC) specific startup hook [DEPRECATED]"
-	default y if SOC_RESET_HOOK
 	select DEPRECATED
 	help
 	  The platform specific initialization code (z_arm_platform_init) is

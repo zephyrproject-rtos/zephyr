@@ -28,7 +28,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
 
-#include "shell/bt.h"
+#include "host/shell/bt.h"
 
 #include "../media_proxy_internal.h"
 

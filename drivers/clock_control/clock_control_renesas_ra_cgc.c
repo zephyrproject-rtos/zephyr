@@ -12,7 +12,7 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(pclkblock), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pclkblock))
 #define MSTP_REGS_ELEM(node_id, prop, idx)                                                         \
 	[DT_STRING_TOKEN_BY_IDX(node_id, prop, idx)] =                                             \
 		(volatile uint32_t *)DT_REG_ADDR_BY_IDX(node_id, idx),
@@ -90,10 +90,11 @@ static const struct clock_control_driver_api clock_control_reneas_ra_api = {
 #define INIT_PCLK(node_id)                                                                         \
 	IF_ENABLED(DT_NODE_HAS_COMPAT(node_id, renesas_ra_cgc_pclk),                               \
 		   (static const struct clock_control_ra_pclk_cfg node_id##_cfg =                  \
-			    {.clk_src = DT_PROP_OR(node_id, clk_src,                               \
-						   DT_PROP_OR(DT_PARENT(node_id), sysclock_src,    \
-							      RA_CLOCK_SOURCE_DISABLE)),           \
-			     .clk_div = DT_PROP_OR(node_id, clk_div, RA_SYS_CLOCK_DIV_1)};         \
+			    {.clk_src = COND_CODE_1(                                               \
+				     DT_NODE_HAS_PROP(node_id, clocks),                            \
+				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(node_id))),                    \
+				     (RA_CGC_CLK_SRC(DT_CLOCKS_CTLR(DT_PARENT(node_id))))),        \
+			     .clk_div = RA_CGC_CLK_DIV(node_id, div, 1)};                          \
 		    DEVICE_DT_DEFINE(node_id, &clock_control_ra_init_pclk, NULL, NULL,             \
 				     &node_id##_cfg, PRE_KERNEL_1,                                 \
 				     CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,                          \

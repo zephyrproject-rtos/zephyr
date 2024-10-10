@@ -37,7 +37,7 @@ static int efr32mg_sltb004a_init(void)
 
 #define CCS811 DT_NODELABEL(ccs811)
 
-#if DT_NODE_HAS_STATUS(CCS811, okay)
+#if DT_NODE_HAS_STATUS_OKAY(CCS811)
 	cfg = (struct supply_cfg){
 		.gpio = DEVICE_DT_GET(DT_GPIO_CTLR(CCS811, supply_gpios)),
 		.pin = DT_GPIO_PIN(CCS811, supply_gpios),

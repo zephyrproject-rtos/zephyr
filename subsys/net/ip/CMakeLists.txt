@@ -19,7 +19,7 @@ zephyr_library_sources(
   )
 
 if(CONFIG_NET_OFFLOAD)
-zephyr_library_sources(net_context.c net_pkt.c net_tc.c)
+zephyr_library_sources(net_context.c net_pkt.c)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)

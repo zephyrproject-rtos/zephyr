@@ -188,6 +188,8 @@ testing:
 
 .. _twister_default_testing_board:
 
+  binaries:
+    A list of custom binaries to be kept for device testing.
   default: [True|False]:
     This is a default board, it will tested with the highest priority and is
     covered when invoking the simplified twister without any additional
@@ -261,11 +263,11 @@ test application and has to follow basic rules:
    two sections:
 
    * Ztest tests: The individual test cases in the ztest testsuite will be
-     concatenated by dot (`.`) to the identifier in the ``testcase.yaml`` file
+     concatenated by dot (``.``) to the identifier in the ``testcase.yaml`` file
      generating unique identifiers for every test case in the suite.
 
    * Standalone tests and samples: This type of test should at least have 3
-     sections concatnated by dot (`.`) in the test scenario identifier in the
+     sections concatnated by dot (``.``) in the test scenario identifier in the
      ``testcase.yaml`` (or ``sample.yaml``) file.
      The last section of the name shall signify the test case itself.
 
@@ -851,10 +853,10 @@ Command line arguments define the initial scope in the following way:
 * ``-l/--all``: all available platforms;
 * ``-G/--integration``: all platforms from an ``integration_platforms`` list in
   a given test configuration file. If a test has no ``integration_platforms``
-  `"scope presumption"` will happen;
-* No scope argument: `"scope presumption"` will happen.
+  *"scope presumption"* will happen;
+* No scope argument: *"scope presumption"* will happen.
 
-`"Scope presumption"`: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
+*"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
 is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
 is used as the initial scope.
 
@@ -1338,7 +1340,7 @@ locally. As of now, those options are available:
   CI)
 - Option to specify your own list of default platforms overriding what
   upstream defines.
-- Ability to override `build_on_all` options used in some test scenarios.
+- Ability to override ``build_on_all`` options used in some test scenarios.
   This will treat tests or sample as any other just build for default
   platforms you specify in the configuration file or on the command line.
 - Ignore some logic in twister to expand platform coverage in cases where
@@ -1350,16 +1352,16 @@ Platform Configuration
 
 The following options control platform filtering in twister:
 
-- `override_default_platforms`: override default key a platform sets in board
+- ``override_default_platforms``: override default key a platform sets in board
   configuration and instead use the list of platforms provided in the
   configuration file as the list of default platforms. This option is set to
   False by default.
-- `increased_platform_scope`: This option is set to True by default, when
+- ``increased_platform_scope``: This option is set to True by default, when
   disabled, twister will not increase platform coverage automatically and will
   only build and run tests on the specified platforms.
-- `default_platforms`: A list of additional default platforms to add. This list
+- ``default_platforms``: A list of additional default platforms to add. This list
   can either be used to replace the existing default platforms or can extend it
-  depending on the value of `override_default_platforms`.
+  depending on the value of ``override_default_platforms``.
 
 And example platforms configuration:
 

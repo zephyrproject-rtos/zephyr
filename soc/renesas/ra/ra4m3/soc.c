@@ -30,11 +30,8 @@ volatile uint32_t g_protect_pfswe_counter BSP_SECTION_EARLY_INIT;
  * @brief Perform basic hardware initialization at boot.
  *
  * This needs to be run from the very beginning.
- * So the init priority has to be 0 (zero).
- *
- * @return 0
  */
-static int renesas_ra4m3_init(void)
+void soc_early_init_hook(void)
 {
 	extern volatile uint16_t g_protect_counters[];
 
@@ -62,8 +59,4 @@ static int renesas_ra4m3_init(void)
 
 	SystemCoreClock = BSP_MOCO_HZ;
 	g_protect_pfswe_counter = 0;
-
-	return 0;
 }
-
-SYS_INIT(renesas_ra4m3_init, PRE_KERNEL_1, 0);

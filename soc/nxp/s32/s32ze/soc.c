@@ -44,11 +44,7 @@ void soc_reset_hook(void)
 	}
 }
 
-static int soc_init(void)
+void soc_early_init_hook(void)
 {
 	OsIf_Init(NULL);
-
-	return 0;
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

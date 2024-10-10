@@ -43,6 +43,7 @@ jobs:
           git config --global user.email "actions@zephyrproject.org"
           git config --global user.name "Github Actions"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log --graph --oneline HEAD...${PR_HEAD}
 
       - name: Set up Python ${{ matrix.python-version }}

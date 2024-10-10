@@ -1,7 +1,5 @@
 common:
   platform_allow:
-    - native_posix
-    - native_posix/native/64
     - native_sim
     - native_sim/native/64
   integration_platforms:
@@ -13,14 +11,10 @@ tests:
     extra_args:
       - CONFIG_STREAM_FLASH_ERASE=n
       - CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE=n
-    platform_allow:
-      - native_posix
-      - native_posix/native/64
-      - native_sim
-      - native_sim/native/64
     tags: stream_flash
   storage.stream_flash.no_explicit_erase:
     platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15pdk/nrf54l15/cpuapp
   storage.stream_flash.dword_wbs:
     extra_args: DTC_OVERLAY_FILE=unaligned_flush.overlay

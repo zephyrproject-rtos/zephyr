@@ -153,8 +153,8 @@ static void rule_test_teardown(void *data)
 	 * after_each function was called.
 	 */
 	zassert_equal(fixture->state, RULE_STATE_AFTER_EACH, "Unexpected state");
-#ifdef CONFIG_ZTEST_SHUFFLE
-	zassert_equal(fixture->run_count, CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT);
+#ifdef CONFIG_ZTEST_REPEAT
+	zassert_equal(fixture->run_count, CONFIG_ZTEST_TEST_REPEAT_COUNT);
 #endif
 }
 

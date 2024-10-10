@@ -276,7 +276,7 @@
 			reg = <0x40100000 0x20000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			interrupts = <38 2>, <39 2>;
+			interrupts = <49 1>, <50 1>;
 			interrupt-names = "frdyi", "fiferr";
 		};
 

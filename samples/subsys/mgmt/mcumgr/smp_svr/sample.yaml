@@ -48,6 +48,35 @@ tests:
   sample.mcumgr.smp_svr.serial:
     extra_args: OVERLAY_CONFIG="overlay-serial.conf"
     platform_allow:
+      - frdm_k22f
+      - frdm_k64f
+      - frdm_k82f
+      - frdm_ke17z
+      - frdm_ke17z512
+      - rddrone_fmuk66
+      - twr_ke18f
+      - twr_kv58f220m
+      - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1010_evk
+      - mimxrt1015_evk
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk
+      - mimxrt1060_evk
+      - mimxrt1062_fmurt6
+      - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - vmu_rt1170/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+      - rd_rw612_bga
       - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
@@ -77,9 +106,36 @@ tests:
   sample.mcumgr.smp_svr.shell:
     extra_args: OVERLAY_CONFIG="overlay-shell.conf"
     platform_allow:
-      - nrf52840dk/nrf52840
+      - frdm_k22f
+      - frdm_k64f
+      - frdm_k82f
+      - frdm_ke17z
+      - frdm_ke17z512
+      - rddrone_fmuk66
+      - twr_ke18f
+      - twr_kv58f220m
+      - frdm_mcxn947/mcxn947/cpu0
+      - lpcxpresso55s06
+      - lpcxpresso55s16
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1010_evk
+      - mimxrt1015_evk
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk
       - mimxrt1060_evk
+      - mimxrt1062_fmurt6
       - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - vmu_rt1170/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+      - rd_rw612_bga
+      - nrf52840dk/nrf52840
       - pinnacle_100_dvk
       - mg100
     integration_platforms:

@@ -50,3 +50,10 @@ bool ll_data_path_source_create(uint16_t handle,
 
 /* Must be implemented by vendor if vendor-specific data path is supported */
 void ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx);
+
+void ull_iso_resume_ticker_start(struct lll_event *resume_event,
+				 uint16_t group_handle,
+				 uint16_t stream_handle,
+				 uint8_t  role,
+				 uint32_t ticks_anchor,
+				 uint32_t resume_timeout);

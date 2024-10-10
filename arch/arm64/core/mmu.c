@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/mm/demand_paging.h>
 #include <kernel_arch_func.h>
 #include <kernel_arch_interface.h>
 #include <kernel_internal.h>
@@ -21,8 +22,10 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
+#include <mmu.h>
 
 #include "mmu.h"
+#include "paging.h"
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -139,6 +142,12 @@ int arm64_mmu_tables_total_usage(void)
 
 static inline bool is_free_desc(uint64_t desc)
 {
+	return desc == 0;
+}
+
+static inline bool is_inval_desc(uint64_t desc)
+{
+	/* invalid descriptors aren't necessarily free */
 	return (desc & PTE_DESC_TYPE_MASK) == PTE_INVALID_DESC;
 }
 
@@ -203,8 +212,10 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 
 	if (is_block_desc(*pte)) {
 		MMU_DEBUG("[Block] ");
-	} else {
+	} else if (!is_inval_desc(*pte)) {
 		MMU_DEBUG("[Page] ");
+	} else {
+		MMU_DEBUG("[paged-out] ");
 	}
 
 	uint8_t mem_type = (*pte >> 2) & MT_TYPE_MASK;
@@ -216,6 +227,7 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_AP_ELx) ? "-ELx" : "-ELh");
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_PXN) ? "-PXN" : "-PX");
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_UXN) ? "-UXN" : "-UX");
+	MMU_DEBUG((*pte & PTE_SW_WRITABLE) ? "-WRITABLE" : "");
 	MMU_DEBUG("\n");
 }
 #else
@@ -231,8 +243,15 @@ static void set_pte_table_desc(uint64_t *pte, uint64_t *table, unsigned int leve
 
 static void set_pte_block_desc(uint64_t *pte, uint64_t desc, unsigned int level)
 {
-	if (desc) {
-		desc |= (level == XLAT_LAST_LEVEL) ? PTE_PAGE_DESC : PTE_BLOCK_DESC;
+	if (level != XLAT_LAST_LEVEL) {
+		desc |= PTE_BLOCK_DESC;
+	} else if (!IS_ENABLED(CONFIG_DEMAND_PAGING) || (desc & PTE_BLOCK_DESC_AF) != 0) {
+		desc |= PTE_PAGE_DESC;
+	} else {
+		/*
+		 * Demand paging configured and AF unset: leave the descriptor
+		 * type to "invalid" as in arch_mem_page_out().
+		 */
 	}
 	*pte = desc;
 	debug_show_pte(pte, level);
@@ -656,6 +675,8 @@ static uint64_t get_region_desc(uint32_t attrs)
 
 	/* AP bits for Data access permission */
 	desc |= (attrs & MT_RW) ? PTE_BLOCK_DESC_AP_RW : PTE_BLOCK_DESC_AP_RO;
+	desc |= (IS_ENABLED(CONFIG_DEMAND_PAGING) && (attrs & MT_RW)) ?
+		PTE_SW_WRITABLE : 0;
 
 	/* Mirror permissions to EL0 */
 	desc |= (attrs & MT_RW_AP_ELx) ?
@@ -663,6 +684,11 @@ static uint64_t get_region_desc(uint32_t attrs)
 
 	/* the access flag */
 	desc |= PTE_BLOCK_DESC_AF;
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING) && (attrs & MT_PAGED_OUT) != 0) {
+		/* set it up for demand paging like arch_mem_page_out() */
+		desc &= ~PTE_BLOCK_DESC_AF;
+		desc |= PTE_BLOCK_DESC_AP_RO;
+	}
 
 	/* memory attribute index field */
 	mem_type = MT_TYPE(attrs);
@@ -755,6 +781,12 @@ static void invalidate_tlb_all(void)
 	__asm__ volatile (
 	"dsb ishst; tlbi vmalle1; dsb ish; isb"
 	: : : "memory");
+}
+
+static inline void invalidate_tlb_page(uintptr_t virt)
+{
+	/* to be refined */
+	invalidate_tlb_all();
 }
 
 /* zephyr execution regions with appropriate attributes */
@@ -1070,6 +1102,10 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		entry_flags |= MT_RW_AP_ELx;
 	}
 
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING) && (flags & K_MEM_MAP_UNPAGED) != 0) {
+		entry_flags |= MT_PAGED_OUT;
+	}
+
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
 }
 
@@ -1350,3 +1386,311 @@ void z_arm64_swap_mem_domains(struct k_thread *incoming)
 }
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_DEMAND_PAGING
+
+static uint64_t *get_pte_location(struct arm_mmu_ptables *ptables,
+				  uintptr_t virt)
+{
+	uint64_t *pte;
+	uint64_t *table = ptables->base_xlat_table;
+	unsigned int level = BASE_XLAT_LEVEL;
+
+	for (;;) {
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+		if (level == XLAT_LAST_LEVEL) {
+			return pte;
+		}
+
+		if (is_table_desc(*pte, level)) {
+			level++;
+			table = pte_desc_table(*pte);
+			continue;
+		}
+
+		/* anything else is unexpected */
+		return NULL;
+	}
+}
+
+void arch_mem_page_out(void *addr, uintptr_t location)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+
+	__ASSERT(pte != NULL, "");
+	desc = *pte;
+
+	/* mark the entry invalid to the hardware */
+	desc &= ~PTE_DESC_TYPE_MASK;
+	desc |= PTE_INVALID_DESC;
+
+	/* store the location token in place of the physical address */
+	__ASSERT((location & ~PTE_PHYSADDR_MASK) == 0, "");
+	desc &= ~PTE_PHYSADDR_MASK;
+	desc |= location;
+
+	/*
+	 * The location token may be 0. Make sure the whole descriptor
+	 * doesn't end up being zero as this would be seen as a free entry.
+	 */
+	desc |= PTE_BLOCK_DESC_AP_RO;
+
+	*pte = desc;
+	MMU_DEBUG("page_out: virt=%#lx location=%#lx\n", virt, location);
+	debug_show_pte(pte, XLAT_LAST_LEVEL);
+
+	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_out");
+	invalidate_tlb_page(virt);
+}
+
+void arch_mem_page_in(void *addr, uintptr_t phys)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+
+	__ASSERT((phys & ~PTE_PHYSADDR_MASK) == 0, "");
+
+	__ASSERT(pte != NULL, "");
+	desc = *pte;
+	__ASSERT(!is_free_desc(desc), "");
+
+	/* mark the entry valid again to the hardware */
+	desc &= ~PTE_DESC_TYPE_MASK;
+	desc |= PTE_PAGE_DESC;
+
+	/* store the physical address */
+	desc &= ~PTE_PHYSADDR_MASK;
+	desc |= phys;
+
+	/* mark as clean */
+	desc |= PTE_BLOCK_DESC_AP_RO;
+
+	/* and make it initially unaccessible to track unaccessed pages */
+	desc &= ~PTE_BLOCK_DESC_AF;
+
+	*pte = desc;
+	MMU_DEBUG("page_in: virt=%#lx phys=%#lx\n", virt, phys);
+	debug_show_pte(pte, XLAT_LAST_LEVEL);
+
+	sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "page_in");
+	invalidate_tlb_page(virt);
+}
+
+enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+	enum arch_page_location status;
+
+	if (!pte) {
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+	desc = *pte;
+	if (is_free_desc(desc)) {
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+
+	switch (desc & PTE_DESC_TYPE_MASK) {
+	case PTE_PAGE_DESC:
+		status = ARCH_PAGE_LOCATION_PAGED_IN;
+		break;
+	case PTE_INVALID_DESC:
+		status = ARCH_PAGE_LOCATION_PAGED_OUT;
+		break;
+	default:
+		return ARCH_PAGE_LOCATION_BAD;
+	}
+
+	*location = desc & PTE_PHYSADDR_MASK;
+	return status;
+}
+
+uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
+{
+	uintptr_t virt = (uintptr_t)addr;
+	uint64_t *pte = get_pte_location(&kernel_ptables, virt);
+	uint64_t desc;
+	uintptr_t status = 0;
+
+	if (!pte) {
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+	desc = *pte;
+	if (is_free_desc(desc)) {
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+
+	switch (desc & PTE_DESC_TYPE_MASK) {
+	case PTE_PAGE_DESC:
+		status |= ARCH_DATA_PAGE_LOADED;
+		break;
+	case PTE_INVALID_DESC:
+		/* page not loaded */
+		break;
+	default:
+		return ARCH_DATA_PAGE_NOT_MAPPED;
+	}
+
+	if (phys) {
+		*phys = desc & PTE_PHYSADDR_MASK;
+	}
+
+	if ((status & ARCH_DATA_PAGE_LOADED) == 0) {
+		return status;
+	}
+
+	if ((desc & PTE_BLOCK_DESC_AF) != 0) {
+		status |= ARCH_DATA_PAGE_ACCESSED;
+	}
+
+	if ((desc & PTE_BLOCK_DESC_AP_RO) == 0) {
+		status |= ARCH_DATA_PAGE_DIRTY;
+	}
+
+	if (clear_accessed) {
+		desc &= ~PTE_BLOCK_DESC_AF;
+		*pte = desc;
+		MMU_DEBUG("page_info: virt=%#lx (clearing AF)\n", virt);
+		debug_show_pte(pte, XLAT_LAST_LEVEL);
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "unaccessible");
+		invalidate_tlb_page(virt);
+	}
+
+	return status;
+}
+
+#define MT_SCRATCH (MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE)
+
+void arch_mem_scratch(uintptr_t phys)
+{
+	uintptr_t virt = (uintptr_t)K_MEM_SCRATCH_PAGE;
+	size_t size = CONFIG_MMU_PAGE_SIZE;
+	int ret = add_map(&kernel_ptables, "scratch", phys, virt, size, MT_SCRATCH);
+
+	if (ret) {
+		LOG_ERR("add_map() returned %d", ret);
+	} else {
+		sync_domains(virt, size, "scratch");
+		invalidate_tlb_page(virt);
+	}
+}
+
+static bool do_mem_page_fault(struct arch_esf *esf, uintptr_t virt)
+{
+	/*
+	 * The k_mem_page_fault() code expects to be called with IRQs enabled
+	 * if the fault happened in a context where IRQs were enabled.
+	 */
+	if (arch_irq_unlocked(esf->spsr)) {
+		enable_irq();
+	}
+
+	bool ok = k_mem_page_fault((void *)virt);
+
+	disable_irq();
+	return ok;
+}
+
+/* Called from the fault handler. Returns true if the fault is resolved. */
+bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
+{
+	uintptr_t virt = far;
+	uint64_t *pte, desc;
+	uintptr_t phys;
+
+	/* filter relevant exceptions */
+	switch (GET_ESR_EC(esr)) {
+	case 0x21: /* insn abort from current EL */
+	case 0x25: /* data abort from current EL */
+		break;
+	default:
+		return false;
+	}
+
+	/* make sure the fault happened in the expected range */
+	if (!IN_RANGE(virt,
+		      (uintptr_t)K_MEM_VIRT_RAM_START,
+		      ((uintptr_t)K_MEM_VIRT_RAM_END - 1))) {
+		return false;
+	}
+
+	virt = ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE);
+
+	pte = get_pte_location(&kernel_ptables, virt);
+	if (!pte) {
+		/* page mapping doesn't exist, let the core code do its thing */
+		return do_mem_page_fault(esf, virt);
+	}
+	desc = *pte;
+	if ((desc & PTE_DESC_TYPE_MASK) != PTE_PAGE_DESC) {
+		/* page is not loaded/mapped */
+		return do_mem_page_fault(esf, virt);
+	}
+
+	/*
+	 * From this point, we expect only 2 cases:
+	 *
+	 * 1) the Access Flag was not set so we set it marking the page
+	 *    as accessed;
+	 *
+	 * 2) the page was read-only and a write occurred so we clear the
+	 *    RO flag marking the page dirty.
+	 *
+	 * We bail out on anything else.
+	 *
+	 * Fault status codes for Data aborts (DFSC):
+	 *  0b0010LL	Access flag fault
+	 *  0b0011LL	Permission fault
+	 */
+	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
+	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
+
+	if (dfsc == (0b001000 | XLAT_LAST_LEVEL) &&
+	    (desc & PTE_BLOCK_DESC_AF) == 0) {
+		/* page is being accessed: set the access flag */
+		desc |= PTE_BLOCK_DESC_AF;
+		if (write) {
+			if ((desc & PTE_SW_WRITABLE) == 0) {
+				/* we don't actually have write permission */
+				return false;
+			}
+			/*
+			 * Let's avoid another fault immediately after
+			 * returning by making the page read-write right away
+			 * effectively marking it "dirty" as well.
+			 */
+			desc &= ~PTE_BLOCK_DESC_AP_RO;
+		}
+		*pte = desc;
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "accessed");
+		/* no TLB inval needed after setting AF */
+
+		/* tell the eviction algorithm about it */
+		phys = desc & PTE_PHYSADDR_MASK;
+		k_mem_paging_eviction_accessed(phys);
+		return true;
+	}
+
+	if (dfsc == (0b001100 | XLAT_LAST_LEVEL) && write &&
+	    (desc & PTE_BLOCK_DESC_AP_RO) != 0 &&
+	    (desc & PTE_SW_WRITABLE) != 0) {
+		/* make it "dirty" i.e. read-write */
+		desc &= ~PTE_BLOCK_DESC_AP_RO;
+		*pte = desc;
+		sync_domains(virt, CONFIG_MMU_PAGE_SIZE, "dirtied");
+		invalidate_tlb_page(virt);
+
+		/* this also counts as an access refresh */
+		phys = desc & PTE_PHYSADDR_MASK;
+		k_mem_paging_eviction_accessed(phys);
+		return true;
+	}
+
+	return false;
+}
+
+#endif /* CONFIG_DEMAND_PAGING */

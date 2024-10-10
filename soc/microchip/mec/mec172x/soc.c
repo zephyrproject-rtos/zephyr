@@ -38,12 +38,8 @@ static void configure_debug_interface(void)
 #endif /* CONFIG_SOC_MEC172X_DEBUG_DISABLED */
 }
 
-static int soc_init(void)
+void soc_early_init_hook(void)
 {
 
 	configure_debug_interface();
-
-	return 0;
 }
-
-SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

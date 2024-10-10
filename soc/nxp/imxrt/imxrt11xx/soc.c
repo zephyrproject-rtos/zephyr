@@ -334,9 +334,9 @@ static ALWAYS_INLINE void clock_init(void)
 	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #elif defined(CONFIG_SOC_MIMXRT1166_CM7)
-	/* Configure root bus clock at 200M */
-	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll1Div5;
-	rootCfg.div = 1;
+	/* Configure root bus clock at 198M */
+	rootCfg.mux = kCLOCK_BUS_ClockRoot_MuxSysPll2Pfd3;
+	rootCfg.div = 2;
 	CLOCK_SetRootClock(kCLOCK_Root_Bus, &rootCfg);
 #endif
 
@@ -409,7 +409,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if CONFIG_ETH_MCUX || CONFIG_ETH_NXP_ENET
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	/* 50 MHz ENET clock */
 	rootCfg.mux = kCLOCK_ENET1_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 10;
@@ -424,7 +424,7 @@ static ALWAYS_INLINE void clock_init(void)
 		(IOMUXC_GPR_GPR4_ENET_REF_CLK_DIR(0x01U) | IOMUXC_GPR_GPR4_ENET_TX_CLK_SEL(0x1U));
 #endif
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet1g), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet1g))
 	rootCfg.mux = kCLOCK_ENET2_ClockRoot_MuxSysPll1Div2;
 #if DT_ENUM_HAS_VALUE(DT_CHILD(DT_NODELABEL(enet1g), ethernet), phy_connection_type, rgmii)
 	/* 125 MHz ENET1G clock */
@@ -491,13 +491,13 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_CAN_MCUX_FLEXCAN
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
 	/* Configure CAN1 using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_CAN1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
 	CLOCK_SetRootClock(kCLOCK_Root_Can1, &rootCfg);
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan3), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan3))
 	/* Configure CAN1 using Osc48MDiv2 */
 	rootCfg.mux = kCLOCK_CAN3_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -506,7 +506,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #ifdef CONFIG_MCUX_ACMP
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(acmp1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp1))
 	/* Configure ACMP1 using Osc48MDiv2*/
 	rootCfg.mux = kCLOCK_ACMP_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;
@@ -532,28 +532,28 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
 	CLOCK_EnableUsbhs0PhyPllClock(
 		kCLOCK_Usb480M, DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb2), okay) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
 	CLOCK_EnableUsbhs1PhyPllClock(
 		kCLOCK_Usb480M, DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usb1), okay) && CONFIG_USB_DC_NXP_EHCI
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
 	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 #endif
 
 #if CONFIG_IMX_USDHC
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1))
 	/* Configure USDHC1 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC1_ClockRoot_MuxSysPll2Pfd2;
 	rootCfg.div = 2;
@@ -561,7 +561,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Usdhc1);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc2), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc2))
 	/* Configure USDHC2 using  SysPll2Pfd2*/
 	rootCfg.mux = kCLOCK_USDHC2_ClockRoot_MuxSysPll2Pfd2;
 	rootCfg.div = 2;
@@ -571,7 +571,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if !(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_flash), nxp_imx_flexspi)) &&                             \
-	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi), okay)
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
 	/* Configure FLEXSPI1 using OSC_RC_48M_DIV2 */
 	rootCfg.mux = kCLOCK_FLEXSPI1_ClockRoot_MuxOscRc48MDiv2;
 	rootCfg.div = 1;

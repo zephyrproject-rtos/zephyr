@@ -64,8 +64,8 @@ static struct bt_le_per_adv_sync *pa_sync;
 static uint32_t broadcaster_broadcast_id;
 static struct audio_test_stream broadcast_sink_streams[CONFIG_BT_BAP_BROADCAST_SNK_STREAM_COUNT];
 
-static const struct bt_audio_codec_qos_pref unicast_qos_pref =
-	BT_AUDIO_CODEC_QOS_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
+static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0u, 60u, 20000u, 40000u, 20000u, 40000u);
 
 static bool auto_start_sink_streams;
 
@@ -452,7 +452,7 @@ static struct bt_bap_stream *unicast_stream_alloc(void)
 static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *ep,
 				 enum bt_audio_dir dir, const struct bt_audio_codec_cfg *codec_cfg,
 				 struct bt_bap_stream **stream,
-				 struct bt_audio_codec_qos_pref *const pref,
+				 struct bt_bap_qos_cfg_pref *const pref,
 				 struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
@@ -478,7 +478,7 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 
 static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 				   const struct bt_audio_codec_cfg *codec_cfg,
-				   struct bt_audio_codec_qos_pref *const pref,
+				   struct bt_bap_qos_cfg_pref *const pref,
 				   struct bt_bap_ascs_rsp *rsp)
 {
 	printk("ASE Codec Reconfig: stream %p\n", stream);
@@ -493,7 +493,7 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 	return -ENOEXEC;
 }
 
-static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_audio_codec_qos *qos,
+static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 			      struct bt_bap_ascs_rsp *rsp)
 {
 	printk("QoS: stream %p qos %p\n", stream, qos);
@@ -638,7 +638,7 @@ void test_start_adv(void)
 	struct bt_le_ext_adv *ext_adv;
 
 	/* Create a connectable non-scannable advertising set */
-	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_ONE_TIME, NULL, &ext_adv);
+	err = bt_le_ext_adv_create(BT_LE_ADV_CONN_FAST_1, NULL, &ext_adv);
 	if (err != 0) {
 		FAIL("Failed to create advertising set (err %d)\n", err);
 
@@ -752,7 +752,7 @@ static void init(void)
 			bt_cap_stream_ops_register(&unicast_streams[i], &unicast_stream_ops);
 		}
 
-		err = bt_le_adv_start(BT_LE_ADV_CONN_ONE_TIME, cap_acceptor_ad,
+		err = bt_le_adv_start(BT_LE_ADV_CONN_FAST_1, cap_acceptor_ad,
 				      ARRAY_SIZE(cap_acceptor_ad), NULL, 0);
 		if (err != 0) {
 			FAIL("Advertising failed to start (err %d)\n", err);
@@ -774,10 +774,16 @@ static void init(void)
 			return;
 		}
 
+		err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
+		if (err != 0) {
+			FAIL("Scan deligator register failed (err %d)\n", err);
+
+			return;
+		}
+
 		bt_bap_broadcast_sink_register_cb(&broadcast_sink_cbs);
 		bt_le_per_adv_sync_cb_register(&bap_pa_sync_cb);
 		bt_le_scan_cb_register(&bap_scan_cb);
-		bt_bap_scan_delegator_register_cb(&scan_delegator_cbs);
 
 		UNSET_FLAG(flag_broadcaster_found);
 		UNSET_FLAG(flag_broadcast_code);
@@ -1045,7 +1051,7 @@ static void test_cap_acceptor_broadcast_reception(void)
 	sink_wait_for_data();
 
 	/* Since we are re-using the BAP broadcast source test
-	 * we get a metadata udate, and we need to send an extra
+	 * we get a metadata update, and we need to send an extra
 	 * backchannel sync
 	 */
 	base_wait_for_metadata_update();

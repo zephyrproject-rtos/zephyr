@@ -386,7 +386,7 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 				(struct wifi_ap_sta_info *)supplicant_status);
 		break;
 #endif /* CONFIG_AP */
-	case NET_EVENT_SUPPLICANT_CMD_INT_EVENT:
+	case NET_EVENT_WIFI_CMD_SUPPLICANT:
 		event_data.data = &data;
 		if (supplicant_process_status(&event_data, (char *)supplicant_status) > 0) {
 			net_mgmt_event_notify_with_info(NET_EVENT_SUPPLICANT_INT_EVENT,
@@ -437,3 +437,42 @@ int supplicant_generate_state_event(const char *ifname,
 
 	return 0;
 }
+
+#if defined(CONFIG_WIFI_NM_HOSTAPD_AP) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP)
+void hostapd_handle_dpp_event(void *ctx, char *buf, size_t len)
+{
+	struct hostapd_data *hapd = (struct hostapd_data *)ctx;
+
+	if (hapd == NULL) {
+		return;
+	}
+
+	struct hostapd_bss_config *conf = hapd->conf;
+
+	if (conf == NULL || !(conf->wpa_key_mgmt & WPA_KEY_MGMT_DPP)) {
+		return;
+	}
+
+	/* check hostapd */
+	if (!strncmp(buf, DPP_EVENT_CONNECTOR, sizeof(DPP_EVENT_CONNECTOR) - 1)) {
+		if (conf->dpp_connector) {
+			os_free(conf->dpp_connector);
+		}
+
+		conf->dpp_connector = os_strdup(buf + sizeof(DPP_EVENT_CONNECTOR) - 1);
+	} else if (!strncmp(buf, DPP_EVENT_C_SIGN_KEY, sizeof(DPP_EVENT_C_SIGN_KEY) - 1)) {
+		if (conf->dpp_csign) {
+			wpabuf_free(conf->dpp_csign);
+		}
+
+		conf->dpp_csign = wpabuf_parse_bin(buf + sizeof(DPP_EVENT_C_SIGN_KEY) - 1);
+	} else if (!strncmp(buf, DPP_EVENT_NET_ACCESS_KEY, sizeof(DPP_EVENT_NET_ACCESS_KEY) - 1)) {
+		if (conf->dpp_netaccesskey) {
+			wpabuf_free(conf->dpp_netaccesskey);
+		}
+
+		conf->dpp_netaccesskey =
+			wpabuf_parse_bin(buf + sizeof(DPP_EVENT_NET_ACCESS_KEY) - 1);
+	}
+}
+#endif /* CONFIG_WIFI_NM_HOSTAPD_AP && CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */

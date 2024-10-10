@@ -1813,7 +1813,7 @@ int net_dhcpv4_remove_option_vendor_callback(struct net_dhcpv4_option_callback *
 
 void net_dhcpv4_start(struct net_if *iface)
 {
-	return dhcpv4_start_internal(iface, true);
+	dhcpv4_start_internal(iface, true);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)

@@ -20,7 +20,7 @@ Building and Running
 
 This sample can be found under :zephyr_file:`samples/bluetooth/bthome_sensor_template` in the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 When the sample is running, navigate to Devices & Services under settings in Home
 Assistant. There you will be asked to configure the BTHome sensor if everything

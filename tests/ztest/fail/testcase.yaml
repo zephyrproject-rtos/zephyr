@@ -6,7 +6,6 @@ common:
     - test_framework
   # test has dependencies on host libc
   platform_allow:
-    - native_posix
     - native_sim
     - native_sim/native/64
   integration_platforms:

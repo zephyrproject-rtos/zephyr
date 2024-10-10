@@ -151,15 +151,20 @@ Prerequisites:
 
 #. Install OpenOCD
 
-   You can obtain OpenOCD by following these
-   :ref:`installing the latest Zephyr SDK instructions <toolchain_zephyr_sdk>`.
+   Currently, OpenOCD doesn't support the CC1352P7.
+   Until its support get merged, we have to builld a downstream version that could found `here <https://github.com/anobli/openocd>`_.
+   Please refer to OpenOCD documentation to build and install OpenOCD.
 
-   After the installation, add the directory containing the OpenOCD executable
-   to your environment's PATH variable. For example, use this command in Linux:
+   For your convenience, we provide a `prebuilt binary <https://github.com/anobli/openocd/actions/runs/10566225265>`_.
 
-   .. code-block:: console
+.. code-block:: console
 
-      export PATH=$ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/openocd:$PATH
+   $ unzip openocd-810cb5b21-x86_64-linux-gnu.zip
+   $ chmod +x openocd-x86_64-linux-gnu/bin/openocd
+   $ export OPENOCD_DIST=$PWD/openocd-x86_64-linux-gnu
+
+By default, zephyr will try to use the OpenOCD binary from SDK.
+You will have to define :code:`OPENOCD` and :code:`OPENOCD_DEFAULT_PATH` to use the custom OpenOCD binary.
 
 Flashing
 ========
@@ -168,7 +173,7 @@ Applications for the ``CC1352P7 LaunchPad`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 First, run your favorite terminal program to listen for output.
 
@@ -185,18 +190,20 @@ Then build and flash the application in the usual way.
    :zephyr-app: samples/hello_world
    :board: cc1352p7_lp
    :goals: build flash
+   :gen-args: -DOPENOCD=$OPENOCD_DIST/bin/openocd -DOPENOCD_DEFAULT_PATH=$OPENOCD_DIST/share/openocd
 
 Debugging
 =========
 
 You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: cc1352p7_lp
    :maybe-skip-config:
    :goals: debug
+   :gen-args: -DOPENOCD=$OPENOCD_DIST/bin/openocd -DOPENOCD_DEFAULT_PATH=$OPENOCD_DIST/share/openocd
 
 Bootloader
 ==========

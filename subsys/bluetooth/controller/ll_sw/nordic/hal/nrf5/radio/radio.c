@@ -79,9 +79,6 @@ BUILD_ASSERT(NRF_DT_GPIOTE_INST(FEM_NODE, HAL_RADIO_GPIO_PA_PROP) ==
 static const nrfx_gpiote_t gpiote_pdn = NRFX_GPIOTE_INSTANCE(
 	NRF_DT_GPIOTE_INST(FEM_NODE, pdn_gpios));
 static uint8_t gpiote_ch_pdn;
-static const nrfx_gpiote_t gpiote_csn = NRFX_GPIOTE_INSTANCE(
-	NRF_DT_GPIOTE_INST(DT_BUS(FEM_SPI_DEV_NODE), cs_gpios));
-static uint8_t gpiote_ch_csn;
 #endif
 
 /* These headers require the above gpiote-related variables to be declared. */
@@ -133,20 +130,6 @@ BUILD_ASSERT(!BAD_FLAGS(NRF_GPIO_LNA_FLAGS),
 #define NRF_GPIO_PDN_OFFSET DT_PROP(FEM_NODE, pdn_settle_time_us)
 NRF_DT_CHECK_GPIO_CTLR_IS_SOC(FEM_NODE, pdn_gpios, "pdn-gpios");
 #endif	/* DT_NODE_HAS_PROP(FEM_NODE, pdn_gpios) */
-
-/* CSN is special because it comes from the spi-if property. */
-#if defined(HAL_RADIO_FEM_NRF21540_HAS_CSN)
-#define NRF_GPIO_CSN_CTLR  DT_SPI_DEV_CS_GPIOS_CTLR(FEM_SPI_DEV_NODE)
-#define NRF_GPIO_CSN       ((NRF_GPIO_Type *)DT_REG_ADDR(NRF_GPIO_CSN_CTLR))
-#define NRF_GPIO_CSN_PIN   DT_SPI_DEV_CS_GPIOS_PIN(FEM_SPI_DEV_NODE)
-#define NRF_GPIO_CSN_FLAGS DT_SPI_DEV_CS_GPIOS_FLAGS(FEM_SPI_DEV_NODE)
-#define NRF_GPIO_CSN_PSEL  (NRF_GPIO_CSN_PIN + \
-			    (DT_PROP(NRF_GPIO_CSN_CTLR, port) << 5))
-BUILD_ASSERT(DT_NODE_HAS_COMPAT(NRF_GPIO_CSN_CTLR, nordic_nrf_gpio),
-	     "fem node " DT_NODE_PATH(FEM_NODE) " has a spi-if property, "
-	     " but the chip select pin is not on the SoC. Check cs-gpios in "
-	     DT_NODE_PATH(DT_BUS(FEM_SPI_DEV_NODE)));
-#endif	/* HAL_RADIO_FEM_NRF21540_HAS_CSN */
 
 #endif	/* HAL_RADIO_FEM_IS_NRF21540 */
 
@@ -207,15 +190,6 @@ void radio_setup(void)
 		NRF_GPIO_PDN->OUTCLR = BIT(NRF_GPIO_PDN_PIN);
 	}
 #endif /* NRF_GPIO_PDN_PIN */
-
-#if defined(NRF_GPIO_CSN_PIN)
-	NRF_GPIO_CSN->DIRSET = BIT(NRF_GPIO_CSN_PIN);
-	if (ACTIVE_LOW(NRF_GPIO_CSN_FLAGS)) {
-		NRF_GPIO_CSN->OUTSET = BIT(NRF_GPIO_CSN_PIN);
-	} else {
-		NRF_GPIO_CSN->OUTCLR = BIT(NRF_GPIO_CSN_PIN);
-	}
-#endif /* NRF_GPIO_CSN_PIN */
 
 	hal_radio_ram_prio_setup();
 }
@@ -1841,12 +1815,6 @@ int radio_gpio_pa_lna_init(void)
 	}
 #endif
 
-#if defined(NRF_GPIO_CSN_PIN)
-	if (nrfx_gpiote_channel_alloc(&gpiote_csn, &gpiote_ch_csn) != NRFX_SUCCESS) {
-		return -ENOMEM;
-	}
-#endif
-
 	return 0;
 }
 
@@ -1858,10 +1826,6 @@ void radio_gpio_pa_lna_deinit(void)
 
 #if defined(NRF_GPIO_PDN_PIN)
 	(void)nrfx_gpiote_channel_free(&gpiote_pdn, gpiote_ch_pdn);
-#endif
-
-#if defined(NRF_GPIO_CSN_PIN)
-	(void)nrfx_gpiote_channel_free(&gpiote_csn, gpiote_ch_csn);
 #endif
 }
 
@@ -1881,7 +1845,6 @@ void radio_gpio_pa_setup(void)
 #if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_pa_ppi_setup();
 	radio_gpio_pdn_setup();
-	radio_gpio_csn_setup();
 #endif
 }
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
@@ -1902,7 +1865,6 @@ void radio_gpio_lna_setup(void)
 #if defined(HAL_RADIO_FEM_IS_NRF21540)
 	hal_lna_ppi_setup();
 	radio_gpio_pdn_setup();
-	radio_gpio_csn_setup();
 #endif
 }
 
@@ -1920,22 +1882,6 @@ void radio_gpio_pdn_setup(void)
 		(OUTINIT_INACTIVE(NRF_GPIO_PDN_FLAGS) <<
 		 GPIOTE_CONFIG_OUTINIT_Pos);
 #endif /* NRF_GPIO_PDN_PIN */
-}
-
-void radio_gpio_csn_setup(void)
-{
-	/* Note: the spi-if property is optional. */
-#if defined(NRF_GPIO_CSN_PIN)
-	gpiote_csn.p_reg->CONFIG[gpiote_ch_csn] =
-		(GPIOTE_CONFIG_MODE_Task <<
-		 GPIOTE_CONFIG_MODE_Pos) |
-		(NRF_GPIO_CSN_PSEL <<
-		 GPIOTE_CONFIG_PSEL_Pos) |
-		(GPIOTE_CONFIG_POLARITY_Toggle <<
-		 GPIOTE_CONFIG_POLARITY_Pos) |
-		(OUTINIT_INACTIVE(NRF_GPIO_CSN_FLAGS) <<
-		 GPIOTE_CONFIG_OUTINIT_Pos);
-#endif /* NRF_GPIO_CSN_PIN */
 }
 
 void radio_gpio_lna_on(void)
@@ -1981,7 +1927,6 @@ void radio_gpio_pa_lna_disable(void)
 					   BIT(HAL_DISABLE_FEM_PPI));
 	gpiote_palna.p_reg->CONFIG[gpiote_ch_palna] = 0;
 	gpiote_pdn.p_reg->CONFIG[gpiote_ch_pdn] = 0;
-	gpiote_csn.p_reg->CONFIG[gpiote_ch_csn] = 0;
 #else
 	hal_radio_nrf_ppi_channels_disable(BIT(HAL_ENABLE_PALNA_PPI) |
 					   BIT(HAL_DISABLE_PALNA_PPI));
@@ -2107,7 +2052,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
-	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
@@ -2182,7 +2127,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	NRF_CCM->SCRATCHPTR = (uint32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDKSGEN);
-	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ENDCRYPT);
+	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);

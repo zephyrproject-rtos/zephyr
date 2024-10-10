@@ -111,6 +111,12 @@
 					#io-channel-cells = <1>;
 				};
 			};
+
+			test_i2c_tla2021: tla2021@a {
+				compatible = "ti,tla2021";
+				reg = <0xa>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {

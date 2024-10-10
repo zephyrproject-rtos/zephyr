@@ -30,12 +30,15 @@
 /** Fixed clocks  */
 /* Low speed clocks defined in stm32_common_clocks.h */
 #define STM32_SRC_HSI		(STM32_SRC_LSI + 1)
+#define STM32_SRC_HSE           (STM32_SRC_HSI + 1)
 /** PLL clock outputs */
-#define STM32_SRC_PLL_P		(STM32_SRC_HSI + 1)
+#define STM32_SRC_PLL_P		(STM32_SRC_HSE + 1)
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 /** Peripheral bus clock */
 #define STM32_SRC_PCLK		(STM32_SRC_PLL_R + 1)
+
+#define STM32_SRC_PLLI2S_R      (STM32_SRC_PCLK + 1)
 
 
 #define STM32_CLOCK_REG_MASK    0xFFU
@@ -75,6 +78,10 @@
 /** @brief Device domain clocks selection helpers */
 /** CFGR devices */
 #define I2S_SEL(val)		STM32_CLOCK(val, 1, 23, CFGR_REG)
+#define MCO1_SEL(val)           STM32_MCO_CFGR(val, 0x3, 21, CFGR_REG)
+#define MCO1_PRE(val)           STM32_MCO_CFGR(val, 0x7, 24, CFGR_REG)
+#define MCO2_SEL(val)           STM32_MCO_CFGR(val, 0x3, 30, CFGR_REG)
+#define MCO2_PRE(val)           STM32_MCO_CFGR(val, 0x7, 27, CFGR_REG)
 /** BDCR devices */
 #define RTC_SEL(val)		STM32_CLOCK(val, 3, 8, BDCR_REG)
 

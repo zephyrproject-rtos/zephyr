@@ -45,9 +45,7 @@ tests:
     extra_args: CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
     platform_allow:
       - nrf7002dk/nrf5340/cpuapp
-      - nrf7002dk/nrf5340/cpuapp/ns
       - nrf7002dk/nrf5340/cpuapp/nrf7001
-      - nrf7002dk/nrf5340/cpuapp/nrf7001/ns
     integration_platforms:
       - nrf7002dk/nrf5340/cpuapp
       - nrf7002dk/nrf5340/cpuapp/nrf7001
@@ -57,8 +55,15 @@ tests:
       - SHIELD=nrf7002ek
     platform_allow:
       - nrf5340dk/nrf5340/cpuapp
-      - nrf5340dk/nrf5340/cpuapp/ns
       - nucleo_h723zg
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nucleo_h723zg
+  sample.net.wifi.nrf7002eb:
+    extra_args:
+      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - SHIELD=nrf7002eb
+    platform_allow:
+      - thingy53/nrf5340/cpuapp
+    integration_platforms:
+      - thingy53/nrf5340/cpuapp

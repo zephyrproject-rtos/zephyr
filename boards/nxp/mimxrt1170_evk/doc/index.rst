@@ -111,8 +111,8 @@ NXP considers the MIMXRT1170-EVK as the superset board for the i.MX RT11xx
 family of MCUs.  This board is a focus for NXP's Full Platform Support for
 Zephyr, to better enable the entire RT11xx family.  NXP prioritizes enabling
 this board with new support for Zephyr features. Note that this table
-covers two boards: the RT1170 EVK (`mimxrt1170_evk//cm7/cm4`), and
-RT1170 EVKB (`mimxrt1170_evk@B//cm7/cm4`)
+covers two boards: the RT1170 EVK (``mimxrt1170_evk//cm7/cm4``), and
+RT1170 EVKB (``mimxrt1170_evk@B//cm7/cm4``)
 
 +-----------+------------+-------------------------------------+-----------------+-----------------+
 | Interface | Controller | Driver/Component                    | RT1170 EVK      | RT1170 EVKB     |
@@ -410,7 +410,7 @@ etc.):
 Flashing
 ========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 Before powering the board, make sure SW1 is set to 0001b
 
@@ -431,7 +431,7 @@ see the following message in the terminal:
 Debugging
 =========
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -478,4 +478,4 @@ ENET1G Driver
 
 Current default of ethernet driver is to use 100M Ethernet instance ENET.
 To use the 1G Ethernet instance ENET1G, include the overlay to west build with
-the option `-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay` instead.
+the option ``-DEXTRA_DTC_OVERLAY_FILE=nxp,enet1g.overlay`` instead.

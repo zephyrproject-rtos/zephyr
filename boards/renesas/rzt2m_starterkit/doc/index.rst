@@ -67,7 +67,7 @@ By default, the board is configured for use with:
 
 * UART0 connected to the USB serial port (pins K18, K19),
 * UART3 connected to the PMOD Header (J25, pins H16, G20),
-* LEDs defined as `led0`, `led1`, `led2` and `led3`,
+* LEDs defined as ``led0``, ``led1``, ``led2`` and ``led3``,
 
 The Zephyr console uses UART0.
 
@@ -78,7 +78,7 @@ Debugging
 =========
 
 Connect to the board using the J-Link On-board USB connector.
-Use `west` to start the debug server:
+Use ``west`` to start the debug server:
 
 .. code-block:: console
 

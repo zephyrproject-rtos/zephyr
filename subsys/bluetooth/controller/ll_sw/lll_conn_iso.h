@@ -93,6 +93,7 @@ struct lll_conn_iso_group {
 
 	/* Accumulates LLL prepare callback latencies */
 	uint16_t latency_prepare;
+	uint16_t lazy_prepare;
 	uint16_t latency_event;
 
 #if defined(CONFIG_BT_CTLR_PERIPHERAL_ISO)

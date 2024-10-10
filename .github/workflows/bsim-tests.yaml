@@ -8,6 +8,8 @@ on:
       - "west.yml"
       - "subsys/bluetooth/**"
       - "tests/bsim/**"
+      - "boards/nordic/nrf5*/*dt*"
+      - "dts/*/nordic/**"
       - "tests/bluetooth/common/testlib/**"
       - "samples/bluetooth/**"
       - "boards/posix/**"
@@ -16,6 +18,7 @@ on:
       - "include/zephyr/arch/posix/**"
       - "scripts/native_simulator/**"
       - "samples/net/sockets/echo_*/**"
+      - "modules/mbedtls/**"
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
       - "include/zephyr/net/openthread.h"
@@ -75,6 +78,7 @@ jobs:
           git config --global user.name "Zephyr Bot"
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
+          git clean -f -d
           git log  --pretty=oneline | head -n 10
           west init -l . || true
           west config manifest.group-filter -- +ci
@@ -98,6 +102,9 @@ jobs:
             include/zephyr/arch/posix/
             scripts/native_simulator/
             tests/bsim/*
+            boards/nordic/nrf5*/*dt*
+            dts/*/nordic/
+            modules/mbedtls/**
 
       - name: Check if Bluethooth files changed
         uses: tj-actions/changed-files@v45

@@ -30,6 +30,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_PWT
 	select HAS_MCUX_RCM
 	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
 
 config SOC_MKE16F16

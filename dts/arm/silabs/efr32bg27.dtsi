@@ -5,7 +5,12 @@
  */
 
 #include "efr32bg2x.dtsi"
+#include <dt-bindings/clock/silabs/xg27-clock.h>
 #include <mem.h>
+
+&cmu {
+	interrupts = <52 0>;
+};
 
 &msc {
 	flash0: flash@8000000 {
@@ -22,32 +27,40 @@
 
 &gpio {
 	interrupts = <30 2 31 2>;
+	clocks = <&cmu CLOCK_GPIO CLOCK_BRANCH_PCLK>;
 };
 
 &i2c0 {
 	interrupts = <32 0>;
+	clocks = <&cmu CLOCK_I2C0 CLOCK_BRANCH_LSPCLK>;
 };
 
 &i2c1 {
 	interrupts = <33 0>;
+	clocks = <&cmu CLOCK_I2C1 CLOCK_BRANCH_PCLK>;
 };
 
 &usart0 {
 	interrupts = <16 0>, <17 0>;
+	clocks = <&cmu CLOCK_USART0 CLOCK_BRANCH_PCLK>;
 };
 
 &usart1 {
 	interrupts = <18 0>, <19 0>;
+	clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
 };
 
 &burtc0 {
 	interrupts = <23 0>;
+	clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 };
 
 &stimer0 {
 	interrupts = <15 0>;
+	clocks = <&cmu CLOCK_RTCC CLOCK_BRANCH_RTCCCLK>;
 };
 
 &adc0 {
 	interrupts = <54 0>;
+	clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 };

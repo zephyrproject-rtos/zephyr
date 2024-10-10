@@ -38,7 +38,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install wheel
-        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff
+        pip3 install python-magic lxml junitparser gitlint pylint pykwalify yamllint clang-format unidiff sphinx-lint
         pip3 install west
 
     - name: west setup
@@ -52,6 +52,7 @@ jobs:
         [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
         (echo "::error ::Merge commits not allowed, rebase instead";false)
         git rebase origin/${BASE_REF}
+        git clean -f -d
         # debug
         git log  --pretty=oneline | head -n 10
         west init -l . || true

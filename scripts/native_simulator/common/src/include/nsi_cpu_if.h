@@ -14,12 +14,16 @@ extern "C" {
 #include "nsi_cpu_if_internal.h"
 
 /*
- * Any symbol annotated by this macro will be visible outside of the
+ * Any symbol annotated by these macros will be visible outside of the
  * embedded SW library, both by the native simulator runner,
  * and other possible embedded CPU's SW.
  */
-#define NATIVE_SIMULATOR_IF __attribute__((visibility("default"))) \
-	__attribute__((__section__(".native_sim_if")))
+#define NATIVE_SIMULATOR_IF_SECT(sect) __attribute__((visibility("default"))) \
+	__attribute__((__section__(sect)))
+#define NATIVE_SIMULATOR_IF NATIVE_SIMULATOR_IF_SECT(".native_sim_if")
+#define NATIVE_SIMULATOR_IF_DATA NATIVE_SIMULATOR_IF_SECT(".native_sim_if.data")
+#define NATIVE_SIMULATOR_IF_TEXT NATIVE_SIMULATOR_IF_SECT(".native_sim_if.text")
+
 /*
  * Implementation note:
  * The interface between the embedded SW and the native simulator is allocated in its

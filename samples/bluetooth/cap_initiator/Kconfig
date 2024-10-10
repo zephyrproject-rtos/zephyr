@@ -7,6 +7,7 @@ config SAMPLE_UNICAST
 	bool "Whether or not to search for CAP acceptors for unicast audio"
 	default y
 	select BT_CENTRAL
+	select BT_ISO_CENTRAL
 	select BT_SMP
 	select BT_KEYS_OVERWRITE_OLDEST
 	select BT_CSIP_SET_COORDINATOR

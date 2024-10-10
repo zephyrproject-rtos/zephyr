@@ -191,7 +191,7 @@ class TestFilter:
     def test_arch(self, capfd, out_path, arch, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
         test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        args = ['--outdir', out_path, '-T', path, '-vv', '-ll', 'DEBUG'] + \
                ['--arch', arch] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms
@@ -224,7 +224,7 @@ class TestFilter:
     def test_vendor(self, capfd, out_path, vendor, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
         test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
-        args = ['--outdir', out_path, '-T', path, '-vv'] + \
+        args = ['--outdir', out_path, '-T', path, '-vv', '-ll', 'DEBUG'] + \
                ['--vendor', vendor] + \
                [val for pair in zip(
                    ['-p'] * len(test_platforms), test_platforms

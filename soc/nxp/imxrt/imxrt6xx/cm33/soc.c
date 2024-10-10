@@ -286,7 +286,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
 	/* Make sure USDHC ram buffer has been power up*/
 	POWER_DisablePD(kPDRUNCFG_APD_USDHC0_SRAM);
 	POWER_DisablePD(kPDRUNCFG_PPD_USDHC0_SRAM);
@@ -307,6 +307,13 @@ static ALWAYS_INLINE void clock_init(void)
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(i3c0), nxp_mcux_i3c, okay))
 	CLOCK_AttachClk(kFFRO_to_I3C_CLK);
 	CLOCK_AttachClk(kLPOSC_to_I3C_TC_CLK);
+
+	CLOCK_SetClkDiv(kCLOCK_DivI3cClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cSlowClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_slow));
+	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk,
+			DT_PROP(DT_NODELABEL(i3c0), clk_divider_tc));
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
@@ -317,7 +324,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetClkDiv(kCLOCK_DivAdcClk, DT_PROP(DT_NODELABEL(lpadc0), clk_divider));
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(dmic0), nxp_dmic, okay) && CONFIG_INIT_AUDIO_PLL
 	/* Using the Audio PLL as input clock leads to better clock dividers
 	 * for typical PCM sample rates ({8,16,24,32,48,96} kHz.
 	 */
@@ -343,7 +350,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }
 
-#if (DT_NODE_HAS_STATUS(DT_NODELABEL(usdhc0), okay) && CONFIG_IMX_USDHC)
+#if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC)
 
 void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t speed, uint32_t strength)
 {
@@ -360,11 +367,9 @@ void imxrt_usdhc_dat3_pull(bool pullup)
  *
  * Initialize the interrupt controller device drivers.
  * Also initialize the timer device driver, if required.
- *
- * @return 0
  */
 
-static int nxp_rt600_init(void)
+void soc_early_init_hook(void)
 {
 	/* Initialize clock */
 	clock_init();
@@ -372,8 +377,6 @@ static int nxp_rt600_init(void)
 #ifndef CONFIG_IMXRT6XX_CODE_CACHE
 	CACHE64_DisableCache(CACHE64);
 #endif
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -400,5 +403,3 @@ void soc_reset_hook(void)
 }
 
 #endif
-
-SYS_INIT(nxp_rt600_init, PRE_KERNEL_1, 0);

@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STEPPER_ADI_TMC
+	bool "Trinamic Stepper Controller"
+	depends on STEPPER
+	default y
+	help
+	  Enable trinamic stepper controller
+
+if STEPPER_ADI_TMC
+
+config STEPPER_ADI_TMC_RAMP_GEN
+	bool "Use Trinamic Stepper Controller with Ramp Generator"
+	depends on STEPPER_ADI_TMC
+	default y
+	help
+	  Enable ramp generator for trinamic stepper controller
+
+config STEPPER_ADI_TMC_SPI
+	bool "Use Trinamic Stepper Controller with SPI"
+	depends on STEPPER_ADI_TMC
+	select SPI
+	help
+	  A Trinamic Stepper Controller with SPI is enabled
+
+comment "Trinamic Stepper Drivers"
+
+config STEPPER_ADI_TMC5041
+	bool "Activate trinamic tmc5041 stepper driver"
+	depends on DT_HAS_ADI_TMC5041_ENABLED && STEPPER_ADI_TMC
+	select STEPPER_ADI_TMC_SPI
+	default y
+	help
+	  Stepper driver for TMC5041.
+
+config STEPPER_ADI_TMC5041_RAMPSTAT_POLL
+	bool "TMC5041 poll ramp status"
+	depends on STEPPER_ADI_TMC5041
+	select POLL
+	default y
+	help
+	  When enabled, the ramp status will be polled on TMC5041, to check for events:
+	  - TMC5041_POS_REACHED_EVENT
+	  - TMC5041_STOP_SG_EVENT
+	  - TMC5041_STOP_LEFT_EVENT
+	  - TMC5041_STOP_RIGHT_EVENT
+
+config STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+	int "TMC5041 poll ramp status interval in ms"
+	depends on STEPPER_ADI_TMC5041_RAMPSTAT_POLL
+	default 100
+	help
+	  The interval in ms to poll the ramp status on TMC5041.
+
+endif # STEPPER_ADI_TMC

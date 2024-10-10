@@ -86,7 +86,7 @@ if NRF_GRTC_TIMER
 
 config ELV_GRTC_LFXO_ALLOWED
 	bool
-	depends on NRF_GRTC_SLEEP_ALLOWED
+	depends on POWEROFF
 	select EXPERIMENTAL
 	help
 	  This feature allows using ELV mode when GRTC operates with the LFXO as

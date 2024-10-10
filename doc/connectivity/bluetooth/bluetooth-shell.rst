@@ -218,7 +218,7 @@ Extended Advertising
 ====================
 
 Let's now have a look at some extended advertising features. To enable extended advertising, use the
-`ext-adv` parameter.
+``ext-adv`` parameter.
 
 .. code-block:: console
 

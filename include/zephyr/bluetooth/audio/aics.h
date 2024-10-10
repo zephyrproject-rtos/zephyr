@@ -15,7 +15,7 @@
 /**
  * @brief Audio Input Control Service (AICS)
  *
- * @defgroup bt_gatt_aics Audio Input Control Service (AICS)
+ * @defgroup bt_aics Audio Input Control Service (AICS)
  *
  * @since 2.6
  * @version 0.8.0

@@ -145,10 +145,11 @@ ZTEST_SUITE(cxx_tests, NULL, NULL, NULL, NULL, NULL);
  *
  * DEVICE_DEFINE(dev_id, name, * init_fn, pm, data, config, level, prio, api)
  */
-DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
-
 DEVICE_DT_DEFINE(DT_NODELABEL(test_dev1_dfr), NULL, NULL, NULL, NULL, POST_KERNEL, 33, NULL);
 
 static int fake_pm_action(const struct device *dev,
 		enum pm_device_action pm_action) { return -1; }
 PM_DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), fake_pm_action);
+
+DEVICE_DT_DEFINE(DT_NODELABEL(test_dev0_boot), NULL,
+		 PM_DEVICE_DT_GET(DT_NODELABEL(test_dev0_boot)), NULL, NULL, POST_KERNEL, 34, NULL);

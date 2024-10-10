@@ -11,6 +11,8 @@ import yaml
 
 from west import log
 from west.configuration import config
+from west.util import west_topdir
+from west.version import __version__
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
 from build_helpers import is_zephyr_build, find_build_dir, load_domains, \
     FIND_BUILD_DIR_DESCRIPTION
@@ -22,12 +24,16 @@ _ARG_SEPARATOR = '--'
 SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
                     / pathlib.Path('share/sysbuild')
 
+BUILD_INFO_LOG = 'build_info.yml'
+
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
            [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [-n] [-o BUILD_OPT] [-f]
            [--sysbuild | --no-sysbuild] [--domain DOMAIN]
+           [--extra-conf FILE.conf]
+           [--extra-dtc-overlay FILE.overlay]
            [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
@@ -150,6 +156,20 @@ class Build(Forceable):
                            Do not use this option with manually specified
                            -DSHIELD... cmake arguments: the results are
                            undefined''')
+        group.add_argument('--extra-conf', dest='extra_conf_files', metavar='EXTRA_CONF_FILE',
+                           action='append', default=[],
+                           help='''add the argument to EXTRA_CONF_FILE; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DEXTRA_CONF_FILE... cmake arguments: the results are
+                           undefined''')
+        group.add_argument('--extra-dtc-overlay', dest='extra_dtc_overlay_files',
+                           metavar='EXTRA_DTC_OVERLAY_FILE', action='append', default=[],
+                           help='''add the argument to EXTRA_DTC_OVERLAY_FILE; may be given
+                           multiple times. Forces CMake to run again if given.
+                           Do not use this option with manually specified
+                           -DEXTRA_DTC_OVERLAY_FILE... cmake arguments: the results are
+                           undefined''')
 
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--sysbuild', action='store_true',
@@ -223,12 +243,29 @@ class Build(Forceable):
                 self._update_cache()
                 if (self.args.cmake or self.args.cmake_opts or
                         self.args.cmake_only or self.args.snippets or
-                        self.args.shields):
+                        self.args.shields or self.args.extra_conf_files or
+                        self.args.extra_dtc_overlay_files):
                     self.run_cmake = True
         else:
             self.run_cmake = True
+
         self.source_dir = self._find_source_dir()
         self._sanity_check()
+
+        build_info_path = self.build_dir
+        build_info_file = os.path.join(build_info_path, BUILD_INFO_LOG)
+        west_workspace = west_topdir(self.source_dir)
+        if not os.path.exists(build_info_path):
+            os.makedirs(build_info_path)
+        if not os.path.exists(build_info_file):
+            build_command = {'west': {'command': ' '.join(sys.argv[:]),
+                                     'topdir': str(west_workspace),
+                                     'version': str(__version__)}}
+            try:
+                with open(build_info_file, "w") as f:
+                    yaml.dump(build_command, f, default_flow_style=False)
+            except Exception as e:
+                log.wrn(f'Failed to create info file: {build_info_file},', e)
 
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)
@@ -570,6 +607,13 @@ class Build(Forceable):
             cmake_opts.append(f'-DSNIPPET={";".join(self.args.snippets)}')
         if self.args.shields:
             cmake_opts.append(f'-DSHIELD={";".join(self.args.shields)}')
+        if self.args.extra_conf_files:
+            cmake_opts.append(f'-DEXTRA_CONF_FILE={";".join(self.args.extra_conf_files)}')
+        if self.args.extra_dtc_overlay_files:
+            cmake_opts.append(
+                f'-DEXTRA_DTC_OVERLAY_FILE='
+                f'{";".join(self.args.extra_dtc_overlay_files)}'
+            )
 
         user_args = config_get('cmake-args', None)
         if user_args:

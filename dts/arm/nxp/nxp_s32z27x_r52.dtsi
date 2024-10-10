@@ -8,6 +8,7 @@
 #include <arm/armv8-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/nxp_s32z2_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -1094,5 +1095,26 @@
 			status = "disabled";
 		};
 
+		lpi2c1: i2c@409d0000 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x409d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@421d0000 {
+			compatible = "nxp,imx-lpi2c";
+			reg = <0x421d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+		};
 	};
 };

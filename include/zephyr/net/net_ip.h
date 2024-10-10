@@ -78,6 +78,7 @@ enum net_ip_protocol_secure {
 	IPPROTO_TLS_1_0 = 256,     /**< TLS 1.0 protocol */
 	IPPROTO_TLS_1_1 = 257,     /**< TLS 1.1 protocol */
 	IPPROTO_TLS_1_2 = 258,     /**< TLS 1.2 protocol */
+	IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
 	IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
 	IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
 };

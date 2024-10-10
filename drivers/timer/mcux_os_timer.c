@@ -36,7 +36,7 @@ static OSTIMER_Type *base;
  * certain deep sleep modes and the time elapsed when it is powered off.
  */
 static uint64_t cyc_sys_compensated;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 static const struct device *counter_dev;
 #endif
 
@@ -71,7 +71,7 @@ void mcux_lpc_ostick_isr(const void *arg)
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 
 /* The OS Timer is disabled in certain low power modes and cannot wakeup the system
  * on timeout. This function will be called by the low power code to allow the
@@ -178,7 +178,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	if (idle) {
 		/* OS Timer may not be able to wakeup in certain low power modes.
 		 * For these cases, we start a counter that can wakeup
@@ -247,7 +247,7 @@ uint64_t sys_clock_cycle_get_64(void)
 
 void sys_clock_idle_exit(void)
 {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	/* The tick should be compensated for states where the
 	 * OS Timer is disabled
 	 */
@@ -280,7 +280,7 @@ static int sys_clock_driver_init(void)
 	irq_enable(DT_INST_IRQN(0));
 
 /* On some SoC's, OS Timer cannot wakeup from low power mode in standby modes */
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && CONFIG_PM
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	counter_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, deep_sleep_counter));
 #endif
 

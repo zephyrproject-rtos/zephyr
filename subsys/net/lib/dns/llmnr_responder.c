@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 
+#include <zephyr/net/mld.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/dns_resolve.h>
@@ -30,6 +31,7 @@ LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #include "dns_pack.h"
 #include "ipv6.h"
+#include "../../ip/net_stats.h"
 
 #include "net_private.h"
 
@@ -66,7 +68,7 @@ static struct net_mgmt_event_callback mgmt_cb;
 static struct zsock_pollfd fds[LLMNR_MAX_POLL];
 
 static void svc_handler(struct k_work *work);
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_llmnr, NULL, svc_handler, LLMNR_MAX_POLL);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_llmnr, svc_handler, LLMNR_MAX_POLL);
 
 NET_BUF_POOL_DEFINE(llmnr_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
@@ -401,6 +403,19 @@ static int send_response(int sock,
 			net_sprint_ipv4_addr(&net_sin((struct sockaddr *)&dst)->sin_addr) :
 			net_sprint_ipv6_addr(&net_sin6((struct sockaddr *)&dst)->sin6_addr),
 			ret);
+	} else {
+		struct net_if *iface = NULL;
+		struct sockaddr *addr = (struct sockaddr *)&dst;
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && src_addr->sa_family == AF_INET6) {
+			iface = net_if_ipv6_select_src_iface(&net_sin6(addr)->sin6_addr);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && src_addr->sa_family == AF_INET) {
+			iface = net_if_ipv4_select_src_iface(&net_sin(addr)->sin_addr);
+		}
+
+		if (iface != NULL) {
+			net_stats_update_dns_sent(iface);
+		}
 	}
 
 	return ret;

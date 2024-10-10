@@ -1227,11 +1227,11 @@ static int spi_smartbond_isr_connect(const struct device *dev)
 
 	switch ((uint32_t)cfg->regs) {
 	case (uint32_t)SPI:
-		COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(spi), okay),
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi)),
 			(SPI_SMARTBOND_ISR_CONNECT), (NULL));
 		break;
 	case (uint32_t)SPI2:
-		COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(spi2), okay),
+		COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi2)),
 			(SPI2_SMARTBOND_ISR_CONNECT), (NULL));
 		break;
 	default:

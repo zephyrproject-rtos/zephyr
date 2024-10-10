@@ -342,3 +342,20 @@ ZTEST(posix_fs_file_test, test_fs_fd_leak)
 		}
 	}
 }
+
+ZTEST(posix_fs_file_test, test_file_open_truncate)
+{
+	struct stat buf = {0};
+
+	zassert_ok(test_file_open());
+	zassert_ok(test_file_write());
+	zassert_ok(test_file_close());
+	file = open(TEST_FILE, O_RDWR | O_TRUNC);
+	zassert_not_equal(file, -1,
+			  "File open failed for truncate mode");
+
+	zassert_ok(test_file_close());
+	zassert_ok(stat(TEST_FILE, &buf));
+	zassert_equal(buf.st_size, 0, "Error: file is not truncated");
+	zassert_ok(test_file_delete());
+}

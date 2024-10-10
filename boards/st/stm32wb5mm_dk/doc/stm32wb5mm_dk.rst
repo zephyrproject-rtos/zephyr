@@ -142,8 +142,8 @@ For compatibility information with the various versions of these binaries,
 please check `modules/hal/stm32/lib/stm32wb/hci/README`_
 in the ``hal_stm32`` repo.
 
-Note that since STM32WB Cube package V1.13.2, `"full stack"` binaries are not
-compatible anymore for a use in Zephyr and only `"HCI Only"` versions should be
+Note that since STM32WB Cube package V1.13.2, "full stack" binaries are not
+compatible anymore for a use in Zephyr and only "HCI Only" versions should be
 used on the M0 side.
 
 Connections and IOs

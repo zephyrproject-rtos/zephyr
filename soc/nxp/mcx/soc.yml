@@ -13,9 +13,13 @@ family:
     - name: mcxc141
     - name: mcxc142
     - name: mcxc242
+    - name: mcxc444
   - name: mcxa
     socs:
     - name: mcxa156
+  - name: mcxw
+    socs:
+    - name: mcxw716c
 runners:
   run_once:
     '--erase':

@@ -307,7 +307,7 @@ Flashing an application to Nucleo H563ZI
 
 Connect the Nucleo H563ZI to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
-:ref:`hello_world` application.
+:zephyr:code-sample:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board:
 

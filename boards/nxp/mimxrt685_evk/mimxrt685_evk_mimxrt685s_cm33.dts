@@ -34,6 +34,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		dmic-dev = &dmic0;
+		mcuboot-button0 = &user_button_1;
 	};
 
 	chosen {
@@ -259,7 +260,7 @@ i2s1: &flexcomm3 {
 		status = "okay";
 		jedec-id = [c2 81 3a];
 		erase-block-size = <4096>;
-		write-block-size = <16>;
+		write-block-size = <1>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_STR set */
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -270,20 +271,20 @@ i2s1: &flexcomm3 {
 				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
 			};
-			/* The MCUBoot swap-move algorithm uses the last 98 sectors
+			/* The MCUBoot swap-move algorithm uses the last 2 sectors
 			 * of the primary slot0 for swap status and move.
 			 */
 			slot0_partition: partition@20000 {
 				label = "image-0";
-				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(98 * 4))>;
+				reg = <0x00020000 (DT_SIZE_M(3) + DT_SIZE_K(2 * 4))>;
 			};
-			slot1_partition: partition@382000 {
+			slot1_partition: partition@323000 {
 				label = "image-1";
-				reg = <0x00382000 DT_SIZE_M(3)>;
+				reg = <0x00323000 DT_SIZE_M(3)>;
 			};
-			storage_partition: partition@682000 {
+			storage_partition: partition@623000 {
 				label = "storage";
-				reg = <0x00682000 (DT_SIZE_M(58) - DT_SIZE_K(520))>;
+				reg = <0x00623000 (DT_SIZE_M(58) - DT_SIZE_K(136))>;
 			};
 		};
 	};
@@ -393,7 +394,7 @@ zephyr_udc0: &usbhs {
 
 	status = "okay";
 
-	audio_codec: wm8904@1a {
+	audio_codec: wm8904@1a0000000000000000 {
 		compatible = "wolfson,wm8904";
 		reg = <0x1a 0 0>;
 

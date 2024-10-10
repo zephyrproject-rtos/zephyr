@@ -285,6 +285,9 @@ ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
                          "req{1}=\ref ZEPH_\1 \"ZEPH-\1\"" \
                          "satisfy{1}=\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1" \
                          "verify{1}=\xrefitem verify \"Verifies requirement\" \"Requirement Verification\" \1" \
+                         "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
+                         "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
+                         "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
                          "funcprops=\par \"Function properties (list may not be complete)\"" \
                          "reschedule=\htmlonly reschedule \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_reschedule`</verbatim> \endxmlonly" \
                          "sleep=\htmlonly sleep \endhtmlonly \xmlonly <verbatim>embed:rst:inline :ref:`api_term_sleep`</verbatim> \endxmlonly" \
@@ -977,7 +980,8 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
                          @ZEPHYR_BASE@/subsys/testsuite/include/ \
-                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/
+                         @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
+                         @ZEPHYR_BASE@/subsys/secure_storage/include/ \
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses

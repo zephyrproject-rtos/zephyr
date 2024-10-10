@@ -143,7 +143,7 @@ void npcx_dbg_freeze_enable(bool enable)
 }
 
 /* Pin-control driver registration */
-static int npcx_scfg_init(void)
+void scfg_init(void)
 {
 	/* If booter doesn't set the host interface type */
 	if (!NPCX_BOOTER_IS_HIF_TYPE_SET()) {
@@ -154,8 +154,4 @@ static int npcx_scfg_init(void)
 	for (int i = 0; i < ARRAY_SIZE(def_alts); i++) {
 		npcx_pinctrl_alt_sel(&def_alts[i], 0);
 	}
-
-	return 0;
 }
-
-SYS_INIT(npcx_scfg_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

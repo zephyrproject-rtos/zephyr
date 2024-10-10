@@ -30,7 +30,7 @@ static inline void wait_controller_cycle(void)
  *
  * Note: Valid PLL VCO range is 2400MHz to 4800MHz
  */
-static int fu740_clock_init(void)
+void soc_early_init_hook(void)
 {
 
 	PRCI_REG(PRCI_COREPLLCFG) =
@@ -92,7 +92,4 @@ static int fu740_clock_init(void)
 	for (int i = 0; i < 256; i++) {
 		__asm__ volatile ("nop");
 	}
-	return 0;
 }
-
-SYS_INIT(fu740_clock_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

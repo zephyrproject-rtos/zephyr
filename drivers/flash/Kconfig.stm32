@@ -84,4 +84,12 @@ config FLASH_STM32_BLOCK_REGISTERS
 	  registers improves system security, because flash content (or
 	  protection settings) can't be changed even when exploit was found.
 
+config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
+	bool "Include patch for Microchip qspi flash when running with stm32"
+	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED
+	help
+	  Set to use Microchip qspi flash memories which supports
+	  the Global Block Protection Unlock instruction (ULBPR - 98H),
+	  and write with SPI_NOR_CMD_PP_1_1_4 on 4 lines
+
 endif # SOC_FLASH_STM32

@@ -32,6 +32,7 @@
  */
 #ifdef ZTEST_UNITTEST
 #define DT_NODE_HAS_STATUS(node, status) 0
+#define DT_NODE_HAS_STATUS_OKAY(node) 0
 #else
 #include <zephyr/devicetree.h>
 #endif
@@ -159,7 +160,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ccm)))
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -171,14 +172,14 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif
 
-#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)))
 extern char __itcm_start[];
 extern char __itcm_end[];
 extern char __itcm_size[];
 extern char __itcm_load_start[];
 #endif
 
-#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)))
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];
@@ -190,7 +191,7 @@ extern char __dtcm_start[];
 extern char __dtcm_end[];
 #endif
 
-#if (DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ocm), okay))
+#if (DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_ocm)))
 extern char __ocm_data_start[];
 extern char __ocm_data_end[];
 extern char __ocm_bss_start[];

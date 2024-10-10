@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2022-2024 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
+		zephyr,canbus = &mcp2518;
 	};
 
 	leds {
@@ -44,6 +45,37 @@
 		};
 	};
 
+};
+
+&ecspi1 {
+	status = "disabled";
+	pinctrl-0 = <&ecspi1_default>;
+	pinctrl-names = "default";
+	/* first cs is for on board MCP2518, the second for SPI on expansion header */
+	cs-gpios = <&gpio5 9 GPIO_ACTIVE_LOW>,
+				<&gpio2 20 GPIO_ACTIVE_LOW>;
+
+	/* CAN FD */
+	mcp2518: mcp2518@0 {
+		compatible = "microchip,mcp251xfd";
+		reg = <0>;
+		spi-max-frequency = <20000000>;
+		int-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+		supply-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+		osc-freq = <40000000>;
+		status = "disabled";
+	};
+};
+
+/*
+ * TPM Module TI SLB9670
+ * Currently there is no driver for the used module
+ */
+&ecspi2 {
+	status = "disabled";
+	pinctrl-0 = <&ecspi2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio5 13 GPIO_ACTIVE_LOW>;
 };
 
 /* RS232 / RS485 pinheader on the board */

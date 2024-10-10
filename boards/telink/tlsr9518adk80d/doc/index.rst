@@ -235,7 +235,7 @@ It is also possible to use the west flash command, but additional steps are requ
 Debugging
 =========
 
-This port supports UART debug and OpenOCD+GDB. The `west debug` command also supported. You may run
+This port supports UART debug and OpenOCD+GDB. The ``west debug`` command also supported. You may run
 it in a simple way, like:
 
 .. code-block:: console

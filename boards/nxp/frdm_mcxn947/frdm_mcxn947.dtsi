@@ -16,6 +16,7 @@
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
 		sdhc0 = &usdhc0;
+		mcuboot-button0 = &user_button_2;
 	};
 
 	leds {
@@ -209,7 +210,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	pinctrl-names = "default";
 };
 
-nxp_flexio_lcd: &flexio0_lcd {
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	/* DMA channels 0, muxed to FlexIO TX */
 	dmas = <&edma0 0 61>;
 	dma-names = "tx";

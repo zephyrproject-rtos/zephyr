@@ -33,10 +33,14 @@
  */
 #define IRAM_DRAM_OFFSET         0x6f0000
 #define DRAM_BUFFERS_START       0x3fcd7e00
+#define DRAM_BUFFERS_END         0x3fce9704
 #define DRAM_PROCPU_STACK_START  0x3fce9710
 #define DRAM_STACK_START DRAM_PROCPU_STACK_START
 #define DRAM_APPCPU_STACK_START  0x3fceb710
 #define DRAM_ROM_BSS_DATA_START  0x3fcf0000
+
+/* Set the limit for the application runtime dynamic allocations */
+#define DRAM_RESERVED_START      DRAM_BUFFERS_END
 
 /* Base address used for calculating memory layout
  * counted from Dbus backwards and back to the Ibus
@@ -45,9 +49,9 @@
 
 /* For safety margin between bootloader data section and startup stacks */
 #define BOOTLOADER_STACK_OVERHEAD      0x0
-#define BOOTLOADER_DRAM_SEG_LEN        0x8000
+#define BOOTLOADER_DRAM_SEG_LEN        0x9000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
-#define BOOTLOADER_IRAM_SEG_LEN        0xa800
+#define BOOTLOADER_IRAM_SEG_LEN        0xc000
 
 /* Start of the lower region is determined by region size and the end of the higher region */
 #define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_DRAM_END - BOOTLOADER_STACK_OVERHEAD + \

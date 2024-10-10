@@ -35,18 +35,6 @@ config BOOTLOADER_MCUBOOT
 
 if BOOTLOADER_MCUBOOT
 
-config MCUBOOT_CMAKE_WEST_SIGN_PARAMS
-	string "Extra parameters to west sign"
-	default "--quiet"
-	help
-	  Parameters that are passed by cmake to west sign, just after
-	  the command, before all other parameters needed for image
-	  signing.
-	  By default this is set to "--quiet" to prevent extra, non-error,
-	  diagnostic messages from west sign. This does not affect signing
-	  tool for which extra parameters are passed with
-	  MCUBOOT_EXTRA_IMGTOOL_ARGS.
-
 config MCUBOOT_SIGNATURE_KEY_FILE
 	string "Path to the mcuboot signing key file"
 	default ""
@@ -255,6 +243,16 @@ config MCUBOOT_BOOTLOADER_NO_DOWNGRADE
 	  This options should be selected when MCUboot has been built with
 	  MCUBOOT_DOWNGRADE_PREVENTION option enabled.
 endif
+
+config MCUBOOT_APPLICATION_FIRMWARE_UPDATER
+	bool "Application is firmware updater image"
+	depends on MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER
+	help
+	  Select this if the current image is the firmware updater image. This will use slot 1
+	  information when signing the image.
+
+	  Note that the zephyr chosen node ``zephyr,code-partition`` should be set to
+	  ``slot1_partition`` for this image.
 
 endmenu # On board MCUboot operation mode
 

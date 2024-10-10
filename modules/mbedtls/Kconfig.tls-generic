@@ -19,13 +19,24 @@ if MBEDTLS_TLS_VERSION_1_2
 config MBEDTLS_DTLS
 	bool "Support for DTLS"
 
-config MBEDTLS_SSL_EXPORT_KEYS
-	bool "Support for exporting SSL key block and master secret"
+endif # MBEDTLS_TLS_VERSION_1_2
+
+config MBEDTLS_TLS_VERSION_1_3
+	bool "Support for TLS 1.3"
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_TLS_SESSION_TICKETS
+	bool "Support for RFC 5077 session tickets in TLS 1.3"
+
+endif # MBEDTLS_TLS_VERSION_1_3
+
+if MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
 
 config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
-endif
+endif # MBEDTLS_TLS_VERSION_1_2 || MBEDTLS_TLS_VERSION_1_3
 
 endmenu # TLS
 
@@ -60,29 +71,21 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
 
-config MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
-	bool
-	default y
-	depends on \
-		MBEDTLS_KEY_EXCHANGE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
-		MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
 	default 32
-	depends on MBEDTLS_KEY_EXCHANGE_SOME_PSK_ENABLED
 	help
-	  Max size of TLS pre-shared keys, in bytes.
+	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
+	  PSK key exchange is used.
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	default y if UOSCORE || UEDHOC
 	select MBEDTLS_MD
 	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
-	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC if PSA_CRYPTO_CLIENT
 	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
+	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE if PSA_CRYPTO_CLIENT
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
@@ -93,7 +96,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C
+	depends on MBEDTLS_ECDH_C && MBEDTLS_ECDSA_C || (PSA_WANT_ALG_ECDH && PSA_WANT_ALG_ECDSA)
 
 config MBEDTLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
 	bool "ECDH-ECDSA based ciphersuite modes"
@@ -109,6 +112,19 @@ config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
 	depends on MBEDTLS_ECJPAKE_C
+
+if MBEDTLS_TLS_VERSION_1_3
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
+	bool "TLS 1.3 PSK key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
+	bool "TLS 1.3 ephemeral key exchange mode"
+
+config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
+	bool "TLS 1.3 PSK ephemeral key exchange mode"
+
+endif # MBEDTLS_TLS_VERSION_1_3
 
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
@@ -574,17 +590,21 @@ config MBEDTLS_DHM_C
 	  DHE-RSA, DHE-PSK
 
 config MBEDTLS_X509_CRL_PARSE_C
-	bool "X509 CRL parsing"
+	bool "X.509 CRL parsing"
 	help
-	  Used by X509 CRL parsing
+	  Used by X.509 CRL parsing
 
 config MBEDTLS_X509_CSR_WRITE_C
-	bool "X509 Certificate Signing Requests writing"
+	bool "X.509 Certificate Signing Requests writing"
 	help
 	  For X.509 certificate request writing.
 
 config MBEDTLS_X509_CSR_PARSE_C
-	bool "X509 Certificate Signing Request parsing"
+	bool "X.509 Certificate Signing Request parsing"
 	help
 	  For reading X.509 certificate request.
+
+config MBEDTLS_X509_CRT_WRITE_C
+	bool "X.509 certificate creation"
+
 endmenu

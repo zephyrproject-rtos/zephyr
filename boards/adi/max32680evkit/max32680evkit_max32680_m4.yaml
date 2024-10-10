@@ -16,5 +16,6 @@ supported:
   - watchdog
   - spi
   - adc
+  - counter
 ram: 128
 flash: 512

@@ -25,6 +25,7 @@ BUILD_ASSERT(sizeof(struct log_frontend_stmesp_demux_log_header) == sizeof(uint3
 struct log_frontend_stmesp_demux_active_entry {
 	sys_snode_t node;
 	uint32_t m_ch;
+	uint32_t ts;
 	struct log_frontend_stmesp_demux_log *packet;
 	int off;
 };
@@ -221,6 +222,36 @@ static void log_frontend_stmesp_demux_hw_event(uint64_t *ts, uint8_t data)
 	mpsc_pbuf_put_data(&demux.pbuf, (const uint32_t *)&packet, wlen);
 }
 
+/* Check if there are any active messages which are not completed for a significant
+ * amount of time. It may indicate that part of message was lost (due to reset,
+ * fault in the core or fault on the bus). In that case message shall be closed as
+ * incomplete to not block processing of other messages.
+ */
+static void garbage_collector(uint32_t now)
+{
+	sys_snode_t *node;
+
+	SYS_SLIST_FOR_EACH_NODE(&demux.active_entries, node) {
+		struct log_frontend_stmesp_demux_active_entry *entry =
+			CONTAINER_OF(node, struct log_frontend_stmesp_demux_active_entry, node);
+
+		if ((now - entry->ts) > CONFIG_LOG_FRONTEND_STMESP_DEMUX_GC_TIMEOUT) {
+			union log_frontend_stmesp_demux_packet p = {.log = entry->packet};
+
+			sys_slist_find_and_remove(&demux.active_entries, node);
+			entry->packet->content_invalid = 1;
+			mpsc_pbuf_commit(&demux.pbuf, p.generic);
+			demux.dropped++;
+			k_mem_slab_free(&demux.mslab, entry);
+			/* After removing one we need to stop as removing disrupts
+			 * iterating over the list as current node is no longer in
+			 * the list.
+			 */
+			break;
+		}
+	}
+}
+
 int log_frontend_stmesp_demux_packet_start(uint32_t *data, uint64_t *ts)
 {
 	if (skip) {
@@ -265,9 +296,10 @@ int log_frontend_stmesp_demux_packet_start(uint32_t *data, uint64_t *ts)
 	union log_frontend_stmesp_demux_header hdr = {.raw = *data};
 	uint32_t pkt_len = hdr.log.total_len + offsetof(struct log_frontend_stmesp_demux_log, data);
 	uint32_t wlen = calc_wlen(pkt_len);
+	uint32_t now = k_uptime_get_32();
 
+	garbage_collector(now);
 	err = k_mem_slab_alloc(&demux.mslab, (void **)&entry, K_NO_WAIT);
-
 	if (err < 0) {
 		goto on_nomem;
 	}
@@ -288,6 +320,7 @@ int log_frontend_stmesp_demux_packet_start(uint32_t *data, uint64_t *ts)
 	}
 	entry->packet->hdr = hdr.log;
 	entry->packet->hdr.major = m;
+	entry->ts = now;
 	demux.curr = entry;
 	sys_slist_append(&demux.active_entries, &entry->node);
 

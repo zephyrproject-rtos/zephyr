@@ -284,7 +284,7 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 
 	if (cfg->gpio_port == 0) {
 		*value = cfg->gpio_dev->in;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
 		*value = cfg->gpio_dev->in1.data;
 #endif
@@ -302,7 +302,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out = (cfg->gpio_dev->out & ~mask) | (mask & value);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
 		cfg->gpio_dev->out1.data = (cfg->gpio_dev->out1.data & ~mask) | (mask & value);
 #endif
@@ -320,7 +320,7 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out_w1ts = pins;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
 		cfg->gpio_dev->out1_w1ts.data = pins;
 #endif
@@ -336,7 +336,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out_w1tc = pins;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
 		cfg->gpio_dev->out1_w1tc.data = pins;
 #endif
@@ -353,7 +353,7 @@ static int gpio_esp32_port_toggle_bits(const struct device *port,
 
 	if (cfg->gpio_port == 0) {
 		cfg->gpio_dev->out ^= pins;
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
 		cfg->gpio_dev->out1.data ^= pins;
 #endif
@@ -531,11 +531,11 @@ static void IRAM_ATTR gpio_esp32_isr(void *param)
 {
 	ARG_UNUSED(param);
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
 	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(0));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(1));
 #endif
 }

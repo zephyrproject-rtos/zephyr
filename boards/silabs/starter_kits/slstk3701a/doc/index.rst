@@ -148,7 +148,7 @@ board. The adaptor provides:
 Flashing an application to SLSTK3701A
 -------------------------------------
 
-The sample application :ref:`hello_world` is used for this example.
+The sample application :zephyr:code-sample:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
 .. zephyr-app-commands::

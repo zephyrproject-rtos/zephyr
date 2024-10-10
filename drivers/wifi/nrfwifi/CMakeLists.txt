@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-zephyr_library()
+zephyr_library_named(nrfwifi)
 
 set(OS_AGNOSTIC_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/drivers/nrf_wifi)
 set(FW_BINS_BASE ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/zephyr/blobs/wifi_fw_bins)
@@ -63,7 +63,7 @@ zephyr_library_sources(
   src/qspi/src/ficr_prog.c
 )
 
-zephyr_library_sources_ifndef(CONFIG_NRF_WIFI_BUILD_ONLY_MODE
+zephyr_library_sources_ifdef(CONFIG_NRF_WIFI_PATCHES_BUILTIN
   src/fw_load.c
 )
 
@@ -136,39 +136,55 @@ zephyr_compile_definitions_ifdef(CONFIG_NRF70_ON_QSPI
 )
 
 if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
-message(WARNING "
-------------------------------------------------------------------------
-Building only the nRF70 driver, skipping firmware patch.
-This is only for building (CI) purposes and will not work on a real device.
-------------------------------------------------------------------------
-")
+  message(WARNING "
+  ------------------------------------------------------------------------
+  Building only the nRF70 driver, skipping firmware patch.
+  This is only for building (CI) purposes and will not work on a real device.
+  ------------------------------------------------------------------------
+  ")
 else()
-# RPU FW patch binaries based on the selected configuration
-if(CONFIG_NRF70_SYSTEM_MODE)
-  set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
-elseif(CONFIG_NRF70_RADIO_TEST)
-  set(NRF70_PATCH ${FW_BINS_BASE}/radio_test/nrf70.bin)
-elseif(CONFIG_NRF70_SCAN_ONLY)
-  set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
-elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
-  set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
-else()
-  # Error
-  message(FATAL_ERROR "Unsupported nRF70 patch configuration")
-endif()
+  # RPU FW patch binaries based on the selected configuration
+  if(CONFIG_NRF70_SYSTEM_MODE)
+    set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
+  elseif(CONFIG_NRF70_RADIO_TEST)
+    set(NRF70_PATCH ${FW_BINS_BASE}/radio_test/nrf70.bin)
+  elseif(CONFIG_NRF70_SCAN_ONLY)
+    set(NRF70_PATCH ${FW_BINS_BASE}/scan_only/nrf70.bin)
+  elseif (CONFIG_NRF70_SYSTEM_WITH_RAW_MODES)
+    set(NRF70_PATCH ${FW_BINS_BASE}/system_with_raw/nrf70.bin)
+  else()
+    # Error
+    message(FATAL_ERROR "Unsupported nRF70 patch configuration")
+  endif()
 
-if(NOT EXISTS ${NRF70_PATCH})
-  message(FATAL_ERROR "
-    ------------------------------------------------------------------------
-    Missing blobs for nRF70 device driver, please install by running:
-        $ west update
-        $ west blobs fetch hal_nordic
-    ------------------------------------------------------------------------")
-endif()
+  if(NOT EXISTS ${NRF70_PATCH})
+    message(FATAL_ERROR "
+      ------------------------------------------------------------------------
+      Missing blobs for nRF70 device driver, please install by running:
+          $ west update
+          $ west blobs fetch hal_nordic
+      ------------------------------------------------------------------------")
+  endif()
 
-zephyr_compile_definitions(
-  -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
-)
+  zephyr_compile_definitions(
+    -DCONFIG_NRF_WIFI_FW_BIN=${NRF70_PATCH}
+  )
+
+  # Rebuild fw_load.c whenever the firmware binary changes
+  # a bit crude way to do it, but it works
+  add_custom_command(
+    OUTPUT ${CMAKE_SOURCE_DIR}/src/fw_load.c
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_SOURCE_DIR}/src/fw_load.c
+    DEPENDS ${NRF70_PATCH}
+    COMMENT "Checking firmware blobs ${NRF70_PATCH}"
+  )
+
+  add_custom_target(
+    check_firmware_blobs ALL
+    DEPENDS ${CMAKE_SOURCE_DIR}/src/fw_load.c
+  )
+
+  add_dependencies(nrfwifi check_firmware_blobs)
 endif()
 
 

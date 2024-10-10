@@ -48,7 +48,7 @@ static void sjli_table_init(void)
 /*
  * @brief initialization of secureshield related functions.
  */
-static int arc_secureshield_init(void)
+void arc_secureshield_init(void)
 {
 	sjli_table_init();
 
@@ -60,9 +60,4 @@ static int arc_secureshield_init(void)
 	 *
 	 */
 	__asm__ volatile("sflag  0x20");
-
-	return 0;
 }
-
-SYS_INIT(arc_secureshield_init, PRE_KERNEL_1,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

@@ -97,8 +97,9 @@
 
 &radio {
 	status = "okay";
-	/* This feature is not yet supported by the RADIO model */
+	/* These features are not yet supported by the RADIO model */
 	/delete-property/ dfe-supported;
+	/delete-property/ cs-supported;
 };
 
 &clock {

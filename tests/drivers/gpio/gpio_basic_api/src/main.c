@@ -20,7 +20,7 @@
 
 static void board_setup(void)
 {
-#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
+#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, test_gpio_basic_api))
 	/* PIN_IN and PIN_OUT must be on same controller. */
 	const struct device *const in_dev = DEVICE_DT_GET(DEV_OUT);
 	const struct device *const out_dev = DEVICE_DT_GET(DEV_IN);

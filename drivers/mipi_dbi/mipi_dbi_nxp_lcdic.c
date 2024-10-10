@@ -72,6 +72,8 @@ struct mipi_dbi_lcdic_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	bool swap_bytes;
+	uint8_t write_active_min;
+	uint8_t write_inactive_min;
 };
 
 #ifdef CONFIG_MIPI_DBI_NXP_LCDIC_DMA
@@ -249,10 +251,6 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 		LOG_ERR("Invalid clock frequency %d", spi_cfg->frequency);
 		return ret;
 	}
-	if (!(spi_cfg->operation & SPI_HALF_DUPLEX)) {
-		LOG_ERR("LCDIC only supports half duplex operation");
-		return -ENOTSUP;
-	}
 	if (spi_cfg->slave != 0) {
 		/* Only one slave select line */
 		return -ENOTSUP;
@@ -265,13 +263,26 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	reg = base->CTRL;
 	/* Disable LCD module during configuration */
 	reg &= ~LCDIC_CTRL_LCDIC_EN_MASK;
-	/* Select SPI mode */
-	reg &= ~LCDIC_CTRL_LCDIC_MD_MASK;
-	/* Select 3 or 4 wire mode based on config selection */
-	if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
+	if (dbi_config->mode == MIPI_DBI_MODE_8080_BUS_8_BIT) {
+		/* Enable 8080 Mode */
+		reg |= LCDIC_CTRL_LCDIC_MD_MASK;
+	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_4WIRE) {
+		/* Select SPI 4 wire mode */
 		reg |= LCDIC_CTRL_SPI_MD_MASK;
+		reg &= ~LCDIC_CTRL_LCDIC_MD_MASK;
+	} else if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE) {
+		/* Select SPI 3 wire mode */
+		reg &= ~(LCDIC_CTRL_LCDIC_MD_MASK |
+			 LCDIC_CTRL_SPI_MD_MASK);
 	} else {
-		reg &= ~LCDIC_CTRL_SPI_MD_MASK;
+		/* Unsupported mode */
+		return -ENOTSUP;
+	}
+	/* If using SPI mode, validate that half-duplex was requested */
+	if ((!(reg & LCDIC_CTRL_LCDIC_MD_MASK)) &&
+	    (!(spi_cfg->operation & SPI_HALF_DUPLEX))) {
+		LOG_ERR("LCDIC only supports half duplex operation");
+		return -ENOTSUP;
 	}
 	/* Enable byte swapping if user requested it */
 	reg = (reg & ~LCDIC_CTRL_DAT_ENDIAN_MASK) |
@@ -291,6 +302,15 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 	reg = (reg & ~LCDIC_SPI_CTRL_CPOL_MASK) |
 		LCDIC_SPI_CTRL_CPOL((spi_cfg->operation & SPI_MODE_CPOL) ? 1 : 0);
 	base->SPI_CTRL = reg;
+
+	/*
+	 * Set 8080 control based on module properties. TRIW and TRAW are
+	 * set to their reset values
+	 */
+	base->I8080_CTRL1 = LCDIC_I8080_CTRL1_TRIW(0xf) |
+			LCDIC_I8080_CTRL1_TRAW(0xf) |
+			LCDIC_I8080_CTRL1_TWIW(config->write_inactive_min) |
+			LCDIC_I8080_CTRL1_TWAW(config->write_active_min);
 
 	/* Enable the module */
 	base->CTRL |= LCDIC_CTRL_LCDIC_EN_MASK;
@@ -783,6 +803,10 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 		    DT_INST_CLOCKS_CELL(n, name),			\
 		.irq_config_func = mipi_dbi_lcdic_config_func_##n,	\
 		.swap_bytes = DT_INST_PROP(n, nxp_swap_bytes),		\
+		.write_active_min =					\
+		    DT_INST_PROP(n, nxp_write_active_cycles),		\
+		.write_inactive_min =					\
+		    DT_INST_PROP(n, nxp_write_inactive_cycles),		\
 	};								\
 	static struct mipi_dbi_lcdic_data mipi_dbi_lcdic_data_##n = {	\
 		LCDIC_DMA_CHANNELS(n)					\

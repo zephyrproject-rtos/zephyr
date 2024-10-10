@@ -1,13 +1,13 @@
 .. zephyr:code-sample:: ble_peripheral_tmap_peripheral
-   :name: TMAP (Peripheral)
-   :relevant-api: bt_audio bt_bap bluetooth
+   :name: Telephone and Media Audio Profile (TMAP) Peripheral
+   :relevant-api: bluetooth bt_audio bt_bap bt_csip bt_mcc bt_tbs bt_tmap bt_vcp
 
-   Implement the LE Audio TMAP central functionality (CT and UMR roles).
+   Implement the TMAP Call Terminal (CT) and Unicast Media Receiver (UMR) roles.
 
 Overview
 ********
 
-Application demonstrating the LE Audio TMAP peripheral functionality. Implements the CT and UMR roles.
+Application demonstrating the TMAP peripheral functionality. Implements the CT and UMR roles.
 
 
 Requirements
@@ -20,4 +20,4 @@ Building and Running
 This sample can be found under
 :zephyr_file:`samples/bluetooth/tmap_peripheral` in the Zephyr tree.
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for details.
+See :zephyr:code-sample-category:`bluetooth` samples for details.

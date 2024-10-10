@@ -73,7 +73,7 @@ an emulator instance using one of the :c:func:`EMUL_DT_DEFINE()` or
 :c:func:`EMUL_DT_INST_DEFINE()` APIs.
 
 Emulators for peripheral devices reuse the same devicetree node as the real
-device driver. This means that your emulator defines `DT_DRV_COMPAT` using the
+device driver. This means that your emulator defines ``DT_DRV_COMPAT`` using the
 same ``compat`` value from the real driver.
 
 .. code-block:: C

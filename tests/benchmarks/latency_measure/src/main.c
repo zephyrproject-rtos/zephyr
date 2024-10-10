@@ -36,7 +36,7 @@ struct k_thread  busy_thread[CONFIG_MP_MAX_NUM_CPUS - 1];
 
 #define BUSY_THREAD_STACK_SIZE  (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 
-K_THREAD_STACK_DEFINE(busy_thread_stack, BUSY_THREAD_STACK_SIZE);
+K_THREAD_STACK_ARRAY_DEFINE(busy_thread_stack, CONFIG_MP_MAX_NUM_CPUS - 1, BUSY_THREAD_STACK_SIZE);
 #endif
 
 struct k_thread  start_thread;
@@ -88,7 +88,7 @@ static void test_thread(void *arg1, void *arg2, void *arg3)
 	/* Spawn busy threads that will execute on the other cores */
 
 	for (uint32_t i = 0; i < CONFIG_MP_MAX_NUM_CPUS - 1; i++) {
-		k_thread_create(&busy_thread[i], &busy_thread_stack[i],
+		k_thread_create(&busy_thread[i], busy_thread_stack[i],
 				BUSY_THREAD_STACK_SIZE, busy_thread_entry,
 				NULL, NULL, NULL,
 				K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);

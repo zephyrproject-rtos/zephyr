@@ -754,6 +754,30 @@ config BT_CTLR_CENTRAL_RESERVE_MAX
 	  Note, currently this value is only used to space multiple central
 	  connections and not for actual ticker time reservations.
 
+config BT_CTLR_PERIPHERAL_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Peripheral"
+	depends on BT_PERIPHERAL
+	default y
+	help
+	  Use the maximum data PDU size time reservation considering the Data
+	  length could be updated from default 27 bytes to maximum support size.
+
+	  If maximum time reservation is disabled then time reservation required
+	  for empty PDU transmission is used. Overlapping radio events will use
+	  the is_abort_cb mechanism to decide on continuation of the connection
+	  event.
+
+config BT_CTLR_PERIPHERAL_ISO_RESERVE_MAX
+	bool "Use maximum data PDU size time reservation for Peripheral"
+	depends on BT_CTLR_PERIPHERAL_ISO
+	default y
+	help
+	  Use the maximum Peripheral CIG event time reservation.
+
+	  If maximum Peripheral CIG event time reservation is not enabled, then
+	  only time required to transmit or receive the burst number of CIS PDUs
+	  is reserved.
+
 config BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX
 	bool "Reserve maximum event overhead in time reservations"
 	default y

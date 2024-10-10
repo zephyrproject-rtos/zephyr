@@ -9,6 +9,7 @@
 		cpusec_cpuapp_ipc: ipc-1-2 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			dcache-alignment = <32>;
 			mboxes = <&cpusec_bellboard 12>,
 				 <&cpuapp_bellboard 0>;
 		};
@@ -16,6 +17,7 @@
 		cpusec_cpurad_ipc: ipc-1-3 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			dcache-alignment = <32>;
 			mboxes = <&cpusec_bellboard 18>,
 				 <&cpurad_bellboard 0>;
 		};
@@ -30,6 +32,7 @@
 		cpuapp_cpusys_ipc: ipc-2-12 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			dcache-alignment = <32>;
 			mboxes = <&cpuapp_bellboard 6>,
 				 <&cpusys_vevif 12>;
 		};
@@ -37,6 +40,7 @@
 		cpuapp_cpuppr_ipc: ipc-2-13 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			dcache-alignment = <32>;
 			mboxes = <&cpuapp_bellboard 13>,
 				 <&cpuppr_vevif 12>;
 		};
@@ -44,6 +48,7 @@
 		cpurad_cpusys_ipc: ipc-3-12 {
 			compatible = "zephyr,ipc-icmsg";
 			status = "disabled";
+			dcache-alignment = <32>;
 			mboxes = <&cpurad_bellboard 6>,
 				 <&cpusys_vevif 18>;
 		};

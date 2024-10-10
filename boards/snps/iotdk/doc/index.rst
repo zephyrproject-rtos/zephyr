@@ -68,7 +68,7 @@ Building Sample Applications
 ==============================
 
 You can try many of the sample applications or tests, but let us discuss
-the one called :ref:`hello_world`.
+the one called :zephyr:code-sample:`hello_world`.
 It is found in :zephyr_file:`samples/hello_world`.
 
 Configuring
@@ -90,7 +90,7 @@ Building
 
 You can build an application in the usual way.  Refer to
 :ref:`build_an_application` for more details. Here is an example for
-:ref:`hello_world`.
+:zephyr:code-sample:`hello_world`.
 
 .. zephyr-app-commands::
    :board: iotdk
@@ -191,7 +191,7 @@ References
 
 .. _embARC website: https://www.embarc.org
 
-.. _Designware ARC IoT Development Kit website: <https://www.synopsys.com/dw/ipdir.php?ds=arc_iot_development_kit>`_
+.. _Designware ARC IoT Development Kit website: https://www.synopsys.com/dw/ipdir.php?ds=arc_iot_development_kit
 
 .. _Digilent Pmod Modules: http://store.digilentinc.com/pmod-modules
 

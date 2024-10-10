@@ -48,8 +48,7 @@ LOG_MODULE_REGISTER(bt_mesh_gatt);
 			       BT_LE_ADV_OPT_USE_IDENTITY : (private) ? BT_LE_ADV_OPT_USE_NRPA : 0)
 
 #define ADV_OPT_PROXY(private)                                                                     \
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private) |             \
-	 BT_LE_ADV_OPT_ONE_TIME)
+	(BT_LE_ADV_OPT_CONN | BT_LE_ADV_OPT_SCANNABLE | ADV_OPT_ADDR(private))
 
 static void proxy_send_beacons(struct k_work *work);
 static int proxy_send(struct bt_conn *conn,
@@ -277,7 +276,7 @@ static void proxy_cfg(struct bt_mesh_proxy_role *role)
 
 	rx.local_match = 1U;
 
-	if (bt_mesh_rpl_check(&rx, NULL)) {
+	if (bt_mesh_rpl_check(&rx, NULL, false)) {
 		LOG_WRN("Replay: src 0x%04x dst 0x%04x seq 0x%06x", rx.ctx.addr, rx.ctx.recv_dst,
 			rx.seq);
 		return;

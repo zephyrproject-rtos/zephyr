@@ -8,7 +8,7 @@ import re
 import textwrap
 
 ZEPHYR_BASE = Path(__file__).resolve().parents[1]
-ZEPHYR_BUILD = Path(os.environ.get("DOCS_HTML_DIR")).resolve()
+ZEPHYR_BUILD = Path(os.environ.get("OUTPUT_DIR")).resolve()
 
 # Add the '_extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
@@ -161,7 +161,8 @@ rst_epilog = f"""
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "logo_only": True,
-    "prev_next_buttons_location": None
+    "prev_next_buttons_location": None,
+    "navigation_depth": 5,
 }
 html_baseurl = "https://docs.zephyrproject.org/latest/"
 html_title = "Zephyr Project Documentation"

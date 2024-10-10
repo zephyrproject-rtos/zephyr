@@ -61,7 +61,7 @@ or as a
 that can be emulated on a host machine.
 
 Assuming that the Corstone-300 FVP has been downloaded, installed and added to
-the `PATH` variable, then building and testing can be done with following
+the :envvar:`PATH` variable, then building and testing can be done with following
 commands.
 
 ```

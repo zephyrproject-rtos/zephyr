@@ -11,5 +11,8 @@ config RISCV_HAS_CPU_IDLE
 config NUM_IRQS
 	int
 	default 287
+# As FLPR has limited memory most of tests does not fit with asserts enabled.
+config ASSERT
+	default n
 
 endif # SOC_NRF54L15_ENGA_CPUFLPR

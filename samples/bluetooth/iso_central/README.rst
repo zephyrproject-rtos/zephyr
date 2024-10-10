@@ -44,4 +44,4 @@ the Zephyr tree.
 
       ISO Channel 0x200048f8 connected
 
-See :ref:`bluetooth samples section <bluetooth-samples>` for more details.
+See :zephyr:code-sample-category:`bluetooth` samples for more details.

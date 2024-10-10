@@ -44,8 +44,6 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
-      - native_posix
-      - native_posix/native/64
   sample.net.zperf.device_next_ecm:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-usbd_next_ecm.conf"
@@ -68,8 +66,6 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
-      - native_posix
-      - native_posix/native/64
   sample.net.zperf.netusb_rndis:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
@@ -85,8 +81,6 @@ tests:
     platform_exclude:
       - native_sim
       - native_sim/native/64
-      - native_posix
-      - native_posix/native/64
   sample.net.zperf.shield:
     harness: net
     platform_allow: reel_board
@@ -105,3 +99,6 @@ tests:
       - zperf
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
+  sample.net.zperf.802154.subg:
+    extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
+    platform_allow: beagleconnect_freedom

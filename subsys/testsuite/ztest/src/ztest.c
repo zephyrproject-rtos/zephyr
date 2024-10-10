@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <zephyr/ztest.h>
 
 #include <zephyr/app_memory/app_memdomain.h>
@@ -27,15 +28,22 @@ static bool failed_expectation;
 #endif
 
 #ifdef CONFIG_ZTEST_SHUFFLE
-#include <stdlib.h>
 #include <time.h>
 #include <zephyr/random/random.h>
-
+#ifndef CONFIG_ZTEST_REPEAT
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
+#endif
+#endif /* CONFIG_ZTEST_SHUFFLE */
+
+#ifdef CONFIG_ZTEST_REPEAT
+#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SUITE_REPEAT_COUNT
+#define NUM_ITER_PER_TEST  CONFIG_ZTEST_TEST_REPEAT_COUNT
 #else
+#ifndef CONFIG_ZTEST_SHUFFLE
 #define NUM_ITER_PER_SUITE 1
 #define NUM_ITER_PER_TEST  1
+#endif
 #endif
 
 #ifdef CONFIG_ZTEST_COVERAGE_RESET_BEFORE_TESTS

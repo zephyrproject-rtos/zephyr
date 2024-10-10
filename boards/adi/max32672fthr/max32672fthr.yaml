@@ -16,5 +16,7 @@ supported:
   - watchdog
   - spi
   - adc
+  - counter
+  - pwm
 ram: 200
 flash: 1024

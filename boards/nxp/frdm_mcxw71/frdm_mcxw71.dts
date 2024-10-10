@@ -1,0 +1,93 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw71.dtsi>
+#include "frdm_mcxw71-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-MCXW71 board";
+
+	aliases {
+		led0 = &blue_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
+	};
+
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &code_partition;
+		zephyr,sram = &stcm0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	user_led {
+		compatible = "gpio-leds";
+		blue_led: led {
+			gpios = <&gpioc 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm0 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm0 2 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	status =  "okay";
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(896)>;
+			label = "code";
+			read-only;
+		};
+
+		storage_partition: partition@e0000 {
+			reg = <0xe0000 DT_SIZE_K(128)>;
+			label = "storage";
+		};
+	};
+};
+
+&fmu {
+	status = "okay";
+};
+
+&tpm0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm0>;
+	pinctrl-names = "default";
+};
+
+&lptmr0 {
+	status = "okay";
+};

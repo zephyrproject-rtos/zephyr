@@ -126,7 +126,7 @@ Flashing an application to SLTB009A
 
 Connect the SLTB009A to your host computer using the USB port.
 
-Here is an example to build and flash the :ref:`hello_world` application.
+Here is an example to build and flash the :zephyr:code-sample:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world

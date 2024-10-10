@@ -1,0 +1,13 @@
+identifier: nucleo_wb09ke
+name: ST Nucleo WB09KE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - gpio
+vendor: st

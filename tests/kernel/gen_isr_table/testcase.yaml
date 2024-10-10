@@ -20,7 +20,7 @@ tests:
   arch.interrupt.gen_isr_table.arm_mainline: &arm-mainline
     platform_allow: qemu_cortex_m3
     platform_exclude:
-      - stmf103_mini
+      - stm32f103_mini
       - nucleo_f103rb
       - olimexino_stm32
       - stm32_min_dev@black
@@ -83,18 +83,14 @@ tests:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=n
   arch.interrupt.gen_isr_table.bit_shift_2nd_level:
     platform_allow: qemu_riscv32
-    filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_MAX_IRQ_PER_AGGREGATOR=52
       - CONFIG_1ST_LEVEL_INTERRUPT_BITS=7
       - CONFIG_2ND_LEVEL_INTERRUPT_BITS=9
   arch.interrupt.gen_isr_table.bit_shift_3rd_level:
     platform_allow: qemu_riscv32
-    filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_MAX_IRQ_PER_AGGREGATOR=52
-      - CONFIG_MULTI_LEVEL_INTERRUPTS=y
-      - CONFIG_2ND_LEVEL_INTERRUPTS=y
       - CONFIG_3RD_LEVEL_INTERRUPTS=y
       - CONFIG_1ST_LEVEL_INTERRUPT_BITS=8
       - CONFIG_2ND_LEVEL_INTERRUPT_BITS=11

@@ -139,7 +139,7 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 }
 
 int llext_load(struct llext_loader *ldr, const char *name, struct llext **ext,
-	       struct llext_load_param *ldr_parm)
+	       const struct llext_load_param *ldr_parm)
 {
 	int ret;
 
@@ -297,7 +297,7 @@ static int call_fn_table(struct llext *ext, bool is_init)
 
 	for (int i = 0; i < fn_count; i++) {
 		LOG_DBG("calling %s function %p()",
-			is_init ? "bringup" : "teardown", fn_table[i]);
+			is_init ? "bringup" : "teardown", (void *)fn_table[i]);
 		fn_table[i]();
 	}
 
@@ -326,7 +326,7 @@ void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_da
 	}
 
 	/* Start extension main function */
-	LOG_DBG("calling entry function %p(%p)", entry_fn, user_data);
+	LOG_DBG("calling entry function %p(%p)", (void *)entry_fn, user_data);
 	entry_fn(user_data);
 
 	/* Call de-initialization functions */

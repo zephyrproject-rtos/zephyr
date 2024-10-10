@@ -92,7 +92,7 @@ static ALWAYS_INLINE void clk_init(void)
 #endif
 }
 
-static int k8x_init(void)
+void soc_early_init_hook(void)
 {
 #if !defined(CONFIG_ARM_MPU)
 	uint32_t temp_reg;
@@ -116,8 +116,6 @@ static int k8x_init(void)
 
 	/* Initialize system clocks and PLL */
 	clk_init();
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_RESET_HOOK
@@ -128,5 +126,3 @@ void soc_reset_hook(void)
 }
 
 #endif /* CONFIG_SOC_RESET_HOOK */
-
-SYS_INIT(k8x_init, PRE_KERNEL_1, 0);

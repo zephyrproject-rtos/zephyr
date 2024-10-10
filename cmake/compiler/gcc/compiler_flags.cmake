@@ -59,7 +59,7 @@ set_compiler_property(PROPERTY warning_dw_1
 )
 check_set_compiler_property(APPEND PROPERTY warning_dw_1
                             -Wlogical-op
-                            -Wmissing-field-initializers
+                            -Wno-missing-field-initializers
 )
 
 set_compiler_property(PROPERTY warning_dw_2
@@ -71,6 +71,7 @@ set_compiler_property(PROPERTY warning_dw_2
                       -Wpointer-arith
                       -Wredundant-decls
                       -Wswitch-default
+                      -Wmissing-field-initializers
 )
 check_set_compiler_property(APPEND PROPERTY warning_dw_2
                             -Wpacked-bitfield-compat
@@ -241,3 +242,5 @@ set_compiler_property(PROPERTY warning_shadow_variables -Wshadow)
 
 set_compiler_property(PROPERTY no_builtin -fno-builtin)
 set_compiler_property(PROPERTY no_builtin_malloc -fno-builtin-malloc)
+
+set_compiler_property(PROPERTY specs -specs=)

@@ -7,8 +7,6 @@
 #include <zephyr/ipc/ipc_static_vrings.h>
 #include <zephyr/cache.h>
 
-#define SHM_DEVICE_DEFAULT_NAME		"sram0.shm"
-
 #define RPMSG_VQ_0		(0) /* TX virtqueue queue index */
 #define RPMSG_VQ_1		(1) /* RX virtqueue queue index */
 
@@ -72,46 +70,6 @@ const static struct virtio_dispatch dispatch = {
 	.notify = ipc_virtio_notify,
 };
 
-static int libmetal_setup(struct ipc_static_vrings *vr)
-{
-	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
-	struct metal_device *device;
-	int err;
-
-	err = metal_init(&metal_params);
-	if (err != 0) {
-		return err;
-	}
-
-	err = metal_register_generic_device(&vr->shm_device);
-	if (err != 0) {
-		return err;
-	}
-
-	err = metal_device_open("generic", vr->shm_device.name, &device);
-	if (err != 0) {
-		return err;
-	}
-
-	vr->shm_io = metal_device_io_region(device, 0);
-	if (vr->shm_io == NULL) {
-		return err;
-	}
-
-	return 0;
-}
-
-static int libmetal_teardown(struct ipc_static_vrings *vr)
-{
-	vr->shm_io = 0;
-
-	metal_device_close(&vr->shm_device);
-
-	metal_finish();
-
-	return 0;
-}
-
 static int vq_setup(struct ipc_static_vrings *vr, unsigned int role)
 {
 	vr->vq[RPMSG_VQ_0] = virtqueue_allocate(vr->vring_size);
@@ -124,13 +82,13 @@ static int vq_setup(struct ipc_static_vrings *vr, unsigned int role)
 		return -ENOMEM;
 	}
 
-	vr->rvrings[RPMSG_VQ_0].io = vr->shm_io;
+	vr->rvrings[RPMSG_VQ_0].io = &vr->shm_io;
 	vr->rvrings[RPMSG_VQ_0].info.vaddr = (void *) vr->tx_addr;
 	vr->rvrings[RPMSG_VQ_0].info.num_descs = vr->vring_size;
 	vr->rvrings[RPMSG_VQ_0].info.align = MEM_ALIGNMENT;
 	vr->rvrings[RPMSG_VQ_0].vq = vr->vq[RPMSG_VQ_0];
 
-	vr->rvrings[RPMSG_VQ_1].io = vr->shm_io;
+	vr->rvrings[RPMSG_VQ_1].io = &vr->shm_io;
 	vr->rvrings[RPMSG_VQ_1].info.vaddr = (void *) vr->rx_addr;
 	vr->rvrings[RPMSG_VQ_1].info.num_descs = vr->vring_size;
 	vr->rvrings[RPMSG_VQ_1].info.align = MEM_ALIGNMENT;
@@ -160,25 +118,22 @@ static int vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
 
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 {
+	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;
 	int err = 0;
 
 	if (!vr) {
 		return -EINVAL;
 	}
 
-	if (!vr->shm_device.name) {
-		vr->shm_device.name = SHM_DEVICE_DEFAULT_NAME;
-	}
-	vr->shm_device.num_regions = 1;
-	vr->shm_physmap[0] = vr->shm_addr;
-
-	metal_io_init(vr->shm_device.regions, (void *) vr->shm_addr,
-		      vr->shm_physmap, vr->shm_size, -1, 0, NULL);
-
-	err = libmetal_setup(vr);
+	err = metal_init(&metal_params);
 	if (err != 0) {
 		return err;
 	}
+
+	vr->shm_physmap[0] = vr->shm_addr;
+
+	metal_io_init(&vr->shm_io, (void *)vr->shm_addr,
+		      vr->shm_physmap, vr->shm_size, -1, 0, NULL);
 
 	return vq_setup(vr, role);
 }
@@ -192,12 +147,9 @@ int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role)
 		return err;
 	}
 
-	err = libmetal_teardown(vr);
-	if (err != 0) {
-		return err;
-	}
+	metal_io_finish(&vr->shm_io);
 
-	metal_io_finish(vr->shm_device.regions);
+	metal_finish();
 
 	return 0;
 }

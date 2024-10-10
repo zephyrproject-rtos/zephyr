@@ -103,6 +103,9 @@ enum {
 	TICKER_ID_SCAN_SYNC_ISO_BASE,
 	TICKER_ID_SCAN_SYNC_ISO_LAST = ((TICKER_ID_SCAN_SYNC_ISO_BASE) +
 					(CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) - 1),
+	TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE,
+	TICKER_ID_SCAN_SYNC_ISO_RESUME_LAST = ((TICKER_ID_SCAN_SYNC_ISO_RESUME_BASE) +
+					       (CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET) - 1),
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
@@ -393,6 +396,7 @@ struct node_rx_iso_meta {
 	uint64_t payload_number:39; /* cisPayloadNumber */
 	uint64_t status:8;          /* Status of reception (OK/not OK) */
 	uint32_t timestamp;         /* Time of reception */
+	void     *next;             /* Pointer to next pre-transmission rx_node (BIS) */
 };
 
 /* Define invalid/unassigned Controller state/role instance handle */
@@ -505,6 +509,7 @@ struct event_done_extra {
 				struct {
 					uint16_t trx_cnt;
 					uint8_t  crc_valid:1;
+					uint8_t  is_aborted:1;
 #if defined(CONFIG_BT_CTLR_SYNC_ISO)
 					uint8_t  estab_failed:1;
 #endif /* CONFIG_BT_CTLR_SYNC_ISO */

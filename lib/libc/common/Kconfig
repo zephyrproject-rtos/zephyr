@@ -13,7 +13,6 @@ config COMMON_LIBC_ASCTIME
 
 config COMMON_LIBC_ASCTIME_R
 	bool "Thread-safe version of asctime()"
-	default y if POSIX_THREAD_SAFE_FUNCTIONS
 	select COMMON_LIBC_ASCTIME
 	help
 	  common implementation of asctime_r().
@@ -26,7 +25,6 @@ config COMMON_LIBC_CTIME
 
 config COMMON_LIBC_CTIME_R
 	bool "Thread-safe version of ctime()"
-	default y if POSIX_THREAD_SAFE_FUNCTIONS
 	select COMMON_LIBC_CTIME
 	help
 	  common implementation of ctime_r().

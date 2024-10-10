@@ -665,7 +665,7 @@ static inline k_tid_t k_current_get(void)
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
 	/* Thread-local cache of current thread ID, set in z_thread_entry() */
-	extern __thread k_tid_t z_tls_current;
+	extern Z_THREAD_LOCAL k_tid_t z_tls_current;
 
 	return z_tls_current;
 #else
@@ -4684,7 +4684,7 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  *                K_FOREVER.
  *
  * @retval 0 Message received.
- * @retval -ENOMSG Returned without waiting.
+ * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
  */
 __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
