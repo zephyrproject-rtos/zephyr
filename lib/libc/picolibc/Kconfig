@@ -65,7 +65,7 @@ config PICOLIBC_IO_MINIMAL
 
 endchoice
 
-if PICOLIBC_USE_MODULE
+if PICOLIBC_USE_MODULE || "$(TOOLCHAIN_HAS_PICOLIBC_DUAL)"
 
 choice PICOLIBC_OPTIMIZATIONS
 	prompt "Optimization level"
@@ -90,6 +90,8 @@ config PICOLIBC_SPEED_OPTIMIZATIONS
 	  Compiler optimizations will be set to -O2 independently of other
 	  options.
 
+if PICOLIBC_USE_MODULE
+
 config PICOLIBC_DEBUG_OPTIMIZATIONS
 	bool "Optimize debugging experience"
 	help
@@ -102,7 +104,13 @@ config PICOLIBC_NO_OPTIMIZATIONS
 	  Compiler optimizations will be set to -O0 independently of other
 	  options.
 
+endif
+
 endchoice
+
+endif
+
+if PICOLIBC_USE_MODULE
 
 config PICOLIBC_FAST_STRCMP
 	bool "always use fast strcmp paths"
