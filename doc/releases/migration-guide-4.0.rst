@@ -559,6 +559,14 @@ MCUmgr
 Modem
 =====
 
+Random
+======
+
+* Following the deprecation of the TinyCrypt library (:github:`79566`), usage
+  of TinyCrypt in the CTR-DRBG random number generator was removed. From now on
+  Mbed TLS is required to enable :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR`.
+  (:github:`79653`)
+
 Shell
 =====
 
