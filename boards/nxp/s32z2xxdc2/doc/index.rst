@@ -59,6 +59,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPI2C     | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| DSPI      | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
