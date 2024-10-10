@@ -37,7 +37,7 @@ Boards
   :ref:`native_sim<native_sim>` (:github:`76898`).
 * Nordic nRF53 and nRF91 based boards can use the common devicetree overlays in ``dts/common/nordic``
   to define default flash and ram partitioning based on TF-M.
-
+* Raspberry Pi: ``CONFIG_SOC_SERIES_RP2XXX`` is renamed to :kconfig:option:`CONFIG_SOC_SERIES_RP2040`.
 * STM32WBA: The command used for fetching blobs required to build ble applications is now
   ``west blobs fetch hal_stm32`` instead of ``west blobs fetch stm32``.
 
