@@ -634,6 +634,12 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
              "to verify their current status.")
 
     parser.add_argument(
+        "--quit-on-failure",
+        action="store_true",
+        help="""quit twister once there is build / run failure
+        """)
+
+    parser.add_argument(
         "--report-name",
         help="""Create a report with a custom name.
         """)
