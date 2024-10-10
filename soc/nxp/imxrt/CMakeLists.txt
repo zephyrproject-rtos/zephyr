@@ -31,6 +31,7 @@ if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
           ${boot_hdr_dcd_data_section}
           ${boot_hdr_xmcd_data_section}
     OFFSET ${CONFIG_IMAGE_VECTOR_TABLE_OFFSET}
+    FIRST
     KEEP
     PRIO 11
   )
