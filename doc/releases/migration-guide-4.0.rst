@@ -298,6 +298,10 @@ Bluetooth
 Bluetooth HCI
 =============
 
+ * The Kconfig option :kconfig:option:`BT_SPI` is now automatically selected
+   based on devicetree compatibles and can be removed from board ``.defconfig``
+   files.
+
 Bluetooth Mesh
 ==============
 
