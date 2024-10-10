@@ -154,11 +154,10 @@ static void eth_tsn_nic_iface_init(struct net_if *iface)
 		data->iface = iface;
 	}
 
+	net_if_set_link_addr(iface, data->mac_addr, 6, NET_LINK_ETHERNET);
 	ethernet_init(iface);
 
 	ARG_UNUSED(config);
-
-	/* TODO: sw-238 (Setup) */
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
