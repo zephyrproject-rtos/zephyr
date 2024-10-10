@@ -24,7 +24,7 @@ if (CONFIG_BT_MICP_MIC_DEV)
 endif()
 zephyr_library_sources_ifdef(CONFIG_BT_MICP_MIC_CTLR micp_mic_ctlr.c)
 
-zephyr_library_sources_ifdef(CONFIG_BT_CCID ccid.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CONN ccid.c)
 
 zephyr_library_link_libraries(subsys__bluetooth)
 
@@ -56,6 +56,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_BAP_BROADCAST_SOURCE bap_broadcast_source
 zephyr_library_sources_ifdef(CONFIG_BT_BAP_BROADCAST_SINK bap_broadcast_sink.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BAP_SCAN_DELEGATOR bap_scan_delegator.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BAP_BROADCAST_ASSISTANT bap_broadcast_assistant.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CCP_CLIENT ccp_client.c)
+zephyr_library_sources_ifdef(CONFIG_BT_CCP_SERVER ccp_server.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS has.c)
 zephyr_library_sources_ifdef(CONFIG_BT_HAS_CLIENT has_client.c)
 zephyr_library_sources_ifdef(CONFIG_BT_CAP cap_stream.c)

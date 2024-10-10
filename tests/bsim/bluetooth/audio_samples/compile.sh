@@ -44,6 +44,16 @@ if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf \
     exe_name=bs_${BOARD_TS}_${app}_unicast_prj_conf sysbuild=1 compile
+  app=tests/bsim/bluetooth/audio_samples/ccp/server \
+    sample=${ZEPHYR_BASE}/samples/bluetooth/ccp_server \
+    conf_file=${sample}/prj.conf \
+    conf_overlay=${sample}/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
+  app=tests/bsim/bluetooth/audio_samples/ccp/client \
+    sample=${ZEPHYR_BASE}/samples/bluetooth/ccp_client \
+    conf_file=${sample}/prj.conf \
+    conf_overlay=${sample}/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
 else
   app=samples/bluetooth/bap_unicast_server conf_overlay=overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
@@ -80,6 +90,16 @@ else
     conf_file=${sample}/prj.conf \
     conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
     exe_name=bs_${BOARD_TS}_${app}_unicast_prj_conf sysbuild=1 compile
+  app=tests/bsim/bluetooth/audio_samples/ccp/server \
+    sample=${ZEPHYR_BASE}/samples/bluetooth/ccp_server \
+    conf_file=${sample}/prj.conf \
+    conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
+  app=tests/bsim/bluetooth/audio_samples/ccp/client \
+    sample=${ZEPHYR_BASE}/samples/bluetooth/ccp_client \
+    conf_file=${sample}/prj.conf \
+    conf_overlay=${sample}/overlay-bt_ll_sw_split.conf \
+    exe_name=bs_${BOARD_TS}_${app}_prj_conf sysbuild=1 compile
 fi
 
 wait_for_background_jobs
