@@ -1,0 +1,10 @@
+tests:
+  message_bus.zbus.channel_id:
+    tags: zbus
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Channels (.*) and (.*) have matching IDs (.*)"
