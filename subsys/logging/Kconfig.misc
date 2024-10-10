@@ -6,7 +6,7 @@ menu "Misc"
 config LOG_CMDS
 	bool "Shell commands"
 	depends on SHELL
-	depends on !LOG_FRONTEND_ONLY && !LOG_MODE_MINIMAL
+	depends on !LOG_MODE_MINIMAL
 
 config LOG_TEST_CLEAR_MESSAGE_SPACE
 	bool "Clear message after allocation"
