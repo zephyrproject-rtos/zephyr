@@ -19,10 +19,90 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/device_mmio.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/controller.h>
 #include <zephyr/drivers/dma.h>
+
+#include <zephyr/posix/posix_types.h>
+#include <zephyr/posix/pthread.h>
+
+#include "eth.h"
+
+#define BUFFER_SIZE 1560
+
+#define DESC_MAGIC 0xAD4B0000UL
+
+#define DESC_STOPPED   (1UL << 0)
+#define DESC_COMPLETED (1UL << 1)
+#define DESC_EOP       (1UL << 4)
+
+#define LS_BYTE_MASK 0x000000FFUL
+
+#define PCI_DMA_H(addr) ((addr >> 16) >> 16)
+#define PCI_DMA_L(addr) (addr & 0xffffffffUL)
+
+#define DMA_ENGINE_START 16268831
+#define DMA_ENGINE_STOP  16268830
+
+struct dma_tsn_nic_engine_regs {
+	uint32_t identifier;
+	uint32_t control;
+	uint32_t control_w1s;
+	uint32_t control_w1c;
+	uint32_t reserved_1[12]; /* padding */
+
+	uint32_t status;
+	uint32_t status_rc;
+	uint32_t completed_desc_count;
+	uint32_t alignments;
+	uint32_t reserved_2[14]; /* padding */
+
+	uint32_t poll_mode_wb_lo;
+	uint32_t poll_mode_wb_hi;
+	uint32_t interrupt_enable_mask;
+	uint32_t interrupt_enable_mask_w1s;
+	uint32_t interrupt_enable_mask_w1c;
+	uint32_t reserved_3[9]; /* padding */
+
+	uint32_t perf_ctrl;
+	uint32_t perf_cyc_lo;
+	uint32_t perf_cyc_hi;
+	uint32_t perf_dat_lo;
+	uint32_t perf_dat_hi;
+	uint32_t perf_pnd_lo;
+	uint32_t perf_pnd_hi;
+} __packed;
+
+struct dma_tsn_nic_engine_sgdma_regs {
+	uint32_t identifier;
+	uint32_t reserved_1[31]; /* padding */
+
+	/* bus address to first descriptor in Root Complex Memory */
+	uint32_t first_desc_lo;
+	uint32_t first_desc_hi;
+	/* number of adjacent descriptors at first_desc */
+	uint32_t first_desc_adjacent;
+	uint32_t credits;
+} __packed;
+
+struct dma_tsn_nic_desc {
+	uint32_t control;
+	uint32_t bytes;
+	uint32_t src_addr_lo;
+	uint32_t src_addr_hi;
+	uint32_t dst_addr_lo;
+	uint32_t dst_addr_hi;
+	uint32_t next_lo;
+	uint32_t next_hi;
+};
+
+struct dma_tsn_nic_result {
+	uint32_t status;
+	uint32_t length;
+	uint32_t reserved_1[6]; /* padding */
+};
 
 struct eth_tsn_nic_config {
 	const struct device *pci_dev;
@@ -31,7 +111,38 @@ struct eth_tsn_nic_config {
 
 struct eth_tsn_nic_data {
 	struct net_if *iface;
+
+	uint8_t mac_addr[NET_ETH_ADDR_LEN];
+
+	pthread_spinlock_t tx_lock;
+	pthread_spinlock_t rx_lock;
+
+	struct dma_tsn_nic_desc tx_desc;
+	struct dma_tsn_nic_desc rx_desc;
+
+	/* TODO: Maybe this needs to be allocated dynamically */
+	uint8_t rx_buffer[BUFFER_SIZE];
+
+	struct dma_tsn_nic_result res;
 };
+
+static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
+{
+	uint32_t control_field;
+	uint32_t control;
+
+	desc->control = sys_cpu_to_le32(DESC_MAGIC);
+	control_field = DESC_STOPPED;
+	control_field |= DESC_EOP;
+	control_field |= DESC_COMPLETED;
+	control = sys_le32_to_cpu(desc->control & ~(LS_BYTE_MASK));
+	control |= control_field;
+	desc->control = sys_cpu_to_le32(control);
+
+	desc->dst_addr_lo = sys_cpu_to_le32(PCI_DMA_L(addr));
+	desc->dst_addr_hi = sys_cpu_to_le32(PCI_DMA_H(addr));
+	desc->bytes = sys_cpu_to_le32(len);
+}
 
 static void eth_tsn_nic_iface_init(struct net_if *iface)
 {
@@ -60,8 +171,33 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 
 static int eth_tsn_nic_start(const struct device *dev)
 {
-	/* TODO: sw-238 (Setup) */
-	return -ENOTSUP;
+	struct eth_tsn_nic_data *data = dev->data;
+
+	data->rx_desc.src_addr_lo = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->res));
+	data->rx_desc.src_addr_hi = sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->res));
+
+	rx_desc_set(&data->rx_desc, (uintptr_t)&data->rx_buffer, BUFFER_SIZE);
+
+	/**
+	 * TODO: Find out how to move this to dma driver
+	 * or how to access dma registers from here
+	 */
+	mm_reg_t rx_regs, rx_sgdma_regs;
+	device_map(&rx_regs, 0x1b08001000, 0x1000, K_MEM_CACHE_NONE);
+	device_map(&rx_sgdma_regs, 0x1b08005000, 0x1000, K_MEM_CACHE_NONE);
+
+	pthread_spin_lock(&data->rx_lock);
+
+	sys_read32(rx_regs + offsetof(struct dma_tsn_nic_engine_regs, status_rc)); /* Clear reg */
+	sys_write32(sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->rx_desc)),
+		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_lo));
+	sys_write32(sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->rx_desc)),
+		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_hi));
+	sys_write32(DMA_ENGINE_START, rx_regs + offsetof(struct dma_tsn_nic_engine_regs, control));
+
+	pthread_spin_unlock(&data->rx_lock);
+
+	return 0;
 }
 
 static int eth_tsn_nic_stop(const struct device *dev)
@@ -142,21 +278,30 @@ static const struct ethernet_api eth_tsn_nic_api = {
 
 static int eth_tsn_nic_init(const struct device *dev)
 {
-	const struct eth_tsn_nic_config *config = dev->config;
-	mm_reg_t test_dma_addr;
+	struct eth_tsn_nic_data *data = dev->data;
+
+	pthread_spin_init(&data->tx_lock, PTHREAD_PROCESS_PRIVATE);
+	pthread_spin_init(&data->rx_lock, PTHREAD_PROCESS_PRIVATE);
+
+	gen_random_mac(data->mac_addr, 0x0, 0x0, 0xab);
 
 	printk("Ethernet init\n");
 
+	eth_tsn_nic_start(dev); /* TODO: This is for test only: this should be called by user app */
+
 	/* Test logs */
+	/*
+	mm_reg_t test_dma_addr;
+
 	device_map(&test_dma_addr, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
 	printk("H2C engine id: 0x%x\n", sys_read32(test_dma_addr));
-	printk("H2C engine status: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
+	printk("H2C engine control: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
 	dma_start(config->dma_dev, 0);
 	printk("H2C engine start\n");
-	printk("H2C engine status: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
+	printk("H2C engine control: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
+	printk("C2H engine control: 0x%x\n", sys_read32(test_dma_addr + 0x1004));
+	*/
 
-	/* TODO: sw-238 (Setup) */
-	/* Check xdma_netdev_open() */
 	return 0;
 }
 

@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(dma_tsn_nic, LOG_LEVEL_ERR);
 #define DMA_ADDRESS_BITS_MASK      0x000000ff
 #define DMA_ADDRESS_BITS_LSB       0
 
+#define DMA_CTRL_RUN_STOP               (1UL << 0)
 #define DMA_CTRL_IE_DESC_STOPPED        (1UL << 1)
 #define DMA_CTRL_IE_DESC_COMPLETED      (1UL << 2)
 #define DMA_CTRL_IE_DESC_ALIGN_MISMATCH (1UL << 3)
@@ -37,6 +38,9 @@ LOG_MODULE_REGISTER(dma_tsn_nic, LOG_LEVEL_ERR);
 #define DMA_CTRL_IE_IDLE_STOPPED        (1UL << 6)
 #define DMA_CTRL_IE_READ_ERROR          (1UL << 9)
 #define DMA_CTRL_IE_DESC_ERROR          (1UL << 19)
+#define DMA_CTRL_NON_INCR_ADDR          (1UL << 25)
+#define DMA_CTRL_POLL_MODE_WB           (1UL << 26)
+#define DMA_CTRL_STM_MODE_WB            (1UL << 27)
 
 #define DMA_CTRL_NON_INCR_ADDR (1UL << 25)
 
@@ -87,6 +91,18 @@ struct dma_tsn_nic_engine_regs {
 	uint32_t perf_pnd_hi;
 } __packed; /* TODO: Move these to header file */
 
+struct engine_sgdma_regs {
+	uint32_t identifier;
+	uint32_t reserved_1[31]; /* padding */
+
+	/* bus address to first descriptor in Root Complex Memory */
+	uint32_t first_desc_lo;
+	uint32_t first_desc_hi;
+	/* number of adjacent descriptors at first_desc */
+	uint32_t first_desc_adjacent;
+	uint32_t credits;
+} __packed;
+
 struct dma_tsn_nic_config {
 	const struct device *pci_dev;
 };
@@ -111,9 +127,7 @@ static int dma_tsn_nic_start(const struct device *dev, uint32_t channel)
 {
 	const struct dma_tsn_nic_data *data = dev->data;
 
-	/* There is only one channel for each direction for now */
-	sys_write32(DMA_ENGINE_START, (mem_addr_t)&data->regs[DMA_H2C]->control);
-	sys_write32(DMA_ENGINE_START, (mem_addr_t)&data->regs[DMA_C2H]->control);
+	sys_write32(DMA_ENGINE_START, (mem_addr_t)&data->regs[channel]->control);
 
 	return 0;
 }
@@ -123,8 +137,7 @@ static int dma_tsn_nic_stop(const struct device *dev, uint32_t channel)
 	const struct dma_tsn_nic_data *data = dev->data;
 
 	/* There is only one channel for each direction for now */
-	sys_write32(DMA_ENGINE_STOP, (mem_addr_t)&data->regs[DMA_H2C]->control);
-	sys_write32(DMA_ENGINE_STOP, (mem_addr_t)&data->regs[DMA_C2H]->control);
+	sys_write32(DMA_ENGINE_STOP, (mem_addr_t)&data->regs[channel]->control);
 
 	return 0;
 }
@@ -209,6 +222,15 @@ static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 
 	sys_write32(tmp, (mem_addr_t)&regs->interrupt_enable_mask);
 
+	tmp = DMA_CTRL_RUN_STOP;
+	tmp |= DMA_CTRL_IE_READ_ERROR;
+	tmp |= DMA_CTRL_IE_DESC_ERROR;
+	tmp |= DMA_CTRL_IE_DESC_ALIGN_MISMATCH;
+	tmp |= DMA_CTRL_IE_MAGIC_STOPPED;
+	tmp |= DMA_CTRL_POLL_MODE_WB;
+
+	sys_write32(tmp, (mem_addr_t)&regs->control);
+
 	return 0;
 }
 
@@ -277,6 +299,7 @@ static int dma_tsn_nic_init(const struct device *dev)
 	engine_init_regs(regs);
 	data->regs[DMA_C2H] = regs;
 
+	/* TSN registers */
 	sys_write32(0x1, data->bar[0] + 0x0008);
 	sys_write32(0x800f0000, data->bar[0] + 0x0610);
 	sys_write32(0x10, data->bar[0] + 0x0620);
