@@ -540,6 +540,35 @@ struct bt_le_cs_subevent_step {
 	const uint8_t *data;
 };
 
+/** Sign-extended IQ sample extracted from step data. */
+struct bt_le_cs_iq_sample {
+	int16_t i;
+	int16_t q;
+};
+
+/** @brief Extract IQ sample from HCI-formatted PCT.
+ *
+ * Convenience function for processing 24-bit phase correction terms found
+ * in CS step data. The 12-bit signed real and imaginary components are
+ * converted to host endianness and sign-extended.
+ *
+ * @param pct 24-bit little-endian phase correction term.
+ *
+ * @return Real and imaginary terms as int16_t.
+ */
+static inline struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3])
+{
+	uint32_t sample = sys_get_le24(pct);
+	int16_t i;
+	int16_t q;
+	struct {
+		int16_t x: 12;
+	} s;
+	i = s.x = sample & BT_HCI_LE_CS_PCT_MASK;
+	q = s.x = (sample >> 12) & BT_HCI_LE_CS_PCT_MASK;
+	return (struct bt_le_cs_iq_sample){.i = i, .q = q};
+}
+
 /** @brief Set all valid channel map bits
  *
  * This command is used to enable all valid channels in a
