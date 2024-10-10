@@ -6,7 +6,7 @@
 if SOC_NRF54L15_ENGA_CPUFLPR
 
 config RISCV_HAS_CPU_IDLE
-	bool
+	default y
 
 config NUM_IRQS
 	int

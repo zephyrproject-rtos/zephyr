@@ -1,0 +1,4 @@
+board:
+  name: dt_bl10_devkit
+  socs:
+    - name: bl602c20q2i

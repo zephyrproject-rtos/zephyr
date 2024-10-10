@@ -9,3 +9,6 @@ config RISCV_VECTORED_MODE
 	depends on RISCV_PRIVILEGED
 	help
 	  Should the SOC use vectored mode.
+
+config RISCV_HAS_CPU_IDLE
+	bool

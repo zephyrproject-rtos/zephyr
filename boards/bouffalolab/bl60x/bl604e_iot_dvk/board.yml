@@ -1,0 +1,5 @@
+board:
+  name: bl604e_iot_dvk
+  vendor: bflb
+  socs:
+    - name: bl604e20q2i
