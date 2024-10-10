@@ -133,6 +133,12 @@
 			st,adc-sequencer = <FULLY_CONFIGURABLE>;
 		};
 
+		crc: crc@40023000 {
+			compatible = "st,stm32-crc";
+			reg = <0x40023000 0xA0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1000>;
+		};
+
 		dac1: dac@50000800 {
 			compatible = "st,stm32-dac";
 			reg = <0x50000800 0x400>;
