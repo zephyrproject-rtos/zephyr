@@ -1785,6 +1785,13 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			*own_addr_type = BT_ADDR_LE_RANDOM;
+		}
+
 		err = bt_id_set_private_addr(BT_ID_DEFAULT);
 		if (err == -EACCES && (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
 				       atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
@@ -1793,12 +1800,6 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			return 0;
 		} else if (err) {
 			return err;
-		}
-
-		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-			*own_addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
-		} else {
-			*own_addr_type = BT_ADDR_LE_RANDOM;
 		}
 	} else {
 		*own_addr_type = bt_dev.id_addr[0].type;
