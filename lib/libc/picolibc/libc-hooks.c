@@ -27,6 +27,7 @@
 #define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
 static LIBC_DATA int (*_stdout_hook)(int);
+static LIBC_DATA int (*_stdin_hook)(void);
 
 int z_impl_zephyr_fputc(int a, FILE *out)
 {
@@ -34,12 +35,24 @@ int z_impl_zephyr_fputc(int a, FILE *out)
 	return 0;
 }
 
+int z_impl_zephyr_fgetc(FILE *stream)
+{
+	return (stream == stdin) ? _stdin_hook() : EOF;
+}
+
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 {
 	return z_impl_zephyr_fputc(c, stream);
 }
+
+static int z_vrfy_zephyr_fgetc(FILE *stream)
+{
+	return z_impl_zephyr_fgetc(stream);
+}
+
 #include <zephyr/syscalls/zephyr_fputc_mrsh.c>
+#include <zephyr/syscalls/zephyr_fgetc_mrsh.c>
 #endif
 
 static int picolibc_put(char a, FILE *f)
@@ -48,8 +61,14 @@ static int picolibc_put(char a, FILE *f)
 	return 0;
 }
 
+static int picolibc_get(FILE *f)
+{
+	zephyr_fgetc(f);
+	return 0;
+}
+
 static LIBC_DATA FILE __stdout = FDEV_SETUP_STREAM(picolibc_put, NULL, NULL, 0);
-static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, NULL, NULL, 0);
+static LIBC_DATA FILE __stdin = FDEV_SETUP_STREAM(NULL, picolibc_get, NULL, 0);
 
 #ifdef __strong_reference
 #define STDIO_ALIAS(x) __strong_reference(stdout, x);
