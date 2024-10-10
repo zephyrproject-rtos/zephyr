@@ -320,6 +320,7 @@ static int video_stm32_dcmi_enqueue(const struct device *dev,
 	}
 
 	vbuf->bytesused = buffer_size;
+	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
@@ -355,6 +356,9 @@ static int video_stm32_dcmi_get_caps(const struct device *dev,
 	if (ep != VIDEO_EP_OUT && ep != VIDEO_EP_ALL) {
 		return -EINVAL;
 	}
+
+	/* DCMI produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	/* Forward the message to the sensor device */
 	ret = video_get_caps(config->sensor_dev, ep, caps);

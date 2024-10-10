@@ -33,6 +33,10 @@
 extern "C" {
 #endif
 
+/** Flag used by @ref video_caps structure to indicate endpoint operates on
+ * buffers the size of the video frame
+ */
+#define LINE_COUNT_HEIGHT (-1)
 
 /**
  * @struct video_format
@@ -94,6 +98,22 @@ struct video_caps {
 	 * the stream.
 	 */
 	uint8_t min_vbuf_count;
+	/** Denotes minimum line count of a video buffer that this endpoint
+	 * can fill or process. Each line is expected to consume the number
+	 * of bytes the selected video format's pitch uses, so the video
+	 * buffer must be at least `pitch` * `min_line_count` bytes.
+	 * `LINE_COUNT_HEIGHT` is a special value, indicating the endpoint
+	 * only supports video buffers with at least enough bytes to store
+	 * a full video frame
+	 */
+	int16_t min_line_count;
+	/**
+	 * Denotes maximum line count of a video buffer that this endpoint
+	 * can fill or process. Similar constraints to `min_line_count`,
+	 * but `LINE_COUNT_HEIGHT` indicates that the endpoint will never
+	 * fill or process more than a full video frame in one video buffer.
+	 */
+	int16_t max_line_count;
 };
 
 /**
@@ -116,6 +136,12 @@ struct video_buffer {
 	 * endpoints.
 	 */
 	uint32_t timestamp;
+	/** Line offset within frame this buffer represents, from the
+	 * beginning of the frame. This offset is given in pixels,
+	 * so `line_offset` * `pitch` provides offset from the start of
+	 * the frame in bytes.
+	 */
+	uint16_t line_offset;
 };
 
 /**

@@ -144,6 +144,7 @@ static void __fill_buffer_colorbar(struct video_sw_generator_data *data, struct 
 
 	vbuf->timestamp = k_uptime_get_32();
 	vbuf->bytesused = i;
+	vbuf->line_offset = 0;
 }
 
 static void __buffer_work(struct k_work *work)
@@ -235,6 +236,9 @@ static int video_sw_generator_get_caps(const struct device *dev, enum video_endp
 {
 	caps->format_caps = fmts;
 	caps->min_vbuf_count = 0;
+
+	/* SW generator produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
 
 	return 0;
 }

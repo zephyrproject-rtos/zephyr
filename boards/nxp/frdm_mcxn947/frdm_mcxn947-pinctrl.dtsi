@@ -31,6 +31,18 @@
 		};
 	};
 
+	pinmux_flexcomm7_lpi2c: pimux_flexcomm7_lpi2c {
+		group0 {
+			pinmux = <FC7_P0_PIO3_2>,
+				<FC7_P1_PIO3_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
 	pinmux_flexcomm2_lpuart: pinmux_flexcomm2_lpuart {
 		group0 {
 			pinmux = <FC2_P2_PIO4_2>,
@@ -126,6 +138,31 @@
 				<PWM1_B2_PIO2_3>;
 			slew-rate = "fast";
 			drive-strength = "low";
+		};
+	};
+
+	pinmux_smartdma_camera: pinmux_smartdma_camera {
+		group0 {
+			/*
+			 * SmartDMA pinmux is not defined by SOC header, so
+			 * we encode it manually
+			 */
+			pinmux = <N9X_MUX('1',4,7)>,
+				<N9X_MUX('1',5,7)>,
+				<N9X_MUX('1',6,7)>,
+				<N9X_MUX('1',7,7)>,
+				<N9X_MUX('3',4,7)>,
+				<N9X_MUX('3',5,7)>,
+				<N9X_MUX('1',10,7)>,
+				<N9X_MUX('1',11,7)>,
+				<PIO0_4>,
+				<PIO0_5>,
+				<PIO0_11>,
+				<CLKOUT_PIO2_2>,
+				<CLKOUT_PIO0_6>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
 		};
 	};
 

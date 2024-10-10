@@ -788,6 +788,15 @@
 		prescale = <0>;
 	};
 
+	smartdma: smartdma@33000 {
+		compatible = "nxp,smartdma";
+		reg = <0x33000 0x1000>;
+		status = "disabled";
+		interrupts = <53 0>;
+		program-mem = <0x4000000>;
+		#dma-cells = <0>;
+	};
+
 	usdhc0: usdhc@109000 {
 		compatible = "nxp,imx-usdhc";
 		reg = <0x109000 0x1000>;

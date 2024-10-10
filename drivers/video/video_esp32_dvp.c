@@ -234,6 +234,9 @@ static int video_esp32_get_caps(const struct device *dev, enum video_endpoint_id
 		return -EINVAL;
 	}
 
+	/* ESP32 produces full frames */
+	caps->min_line_count = caps->max_line_count = LINE_COUNT_HEIGHT;
+
 	/* Forward the message to the source device */
 	return video_get_caps(config->source_dev, ep, caps);
 }
@@ -284,6 +287,7 @@ static int video_esp32_enqueue(const struct device *dev, enum video_endpoint_id 
 	}
 
 	vbuf->bytesused = data->video_format.pitch * data->video_format.height;
+	vbuf->line_offset = 0;
 
 	k_fifo_put(&data->fifo_in, vbuf);
 
