@@ -103,7 +103,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 
 	thread = z_unpend_first_thread(&sem->wait_q);
 
-	if (thread != NULL) {
+	if (unlikely(thread != NULL)) {
 		arch_thread_return_value_set(thread, 0);
 		z_ready_thread(thread);
 	} else {
@@ -111,7 +111,7 @@ void z_impl_k_sem_give(struct k_sem *sem)
 		resched = handle_poll_events(sem);
 	}
 
-	if (resched) {
+	if (unlikely(resched)) {
 		z_reschedule(&lock, key);
 	} else {
 		k_spin_unlock(&lock, key);
