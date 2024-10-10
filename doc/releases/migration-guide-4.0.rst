@@ -75,6 +75,20 @@ Mbed TLS
   corresponding build symbol was removed in Mbed TLS 3.1.0 and is now assumed to
   be enabled. (:github:`77657`)
 
+TinyCrypt
+=========
+
+* Starting from this release the library is being marked as deprecated (:github:`79566`).
+  The reasons for this are that (:github:`43712``):
+
+  * the upstream version of this library is unmaintained
+
+  * reduce the number of crypto libraries available in Zephyr (currently there are
+    3 different implementations: TinyCrypt, MbedTLS and PSA Crypto APIs).
+
+  PSA Crypto APIs are proposed as the de-facto standard for the future to perform
+  crypto operations.
+
 Trusted Firmware-M
 ==================
 
