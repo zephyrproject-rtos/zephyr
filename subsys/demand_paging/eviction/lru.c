@@ -160,14 +160,48 @@ void k_mem_paging_eviction_accessed(uintptr_t phys)
 
 struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 {
-	uint32_t head_pf_idx = LRU_PF_HEAD;
+	uint32_t pf_idx = LRU_PF_HEAD;
+	struct k_mem_page_frame *pf;
+	uintptr_t flags;
 
-	if (head_pf_idx == 0) {
+	if (pf_idx == 0) {
 		return NULL;
 	}
 
-	struct k_mem_page_frame *pf = idx_to_pf(head_pf_idx);
-	uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
+#ifndef CONFIG_EVICTION_LRU_SW_SIMULATED
+	pf = idx_to_pf(pf_idx);
+	flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
+#else
+	do {
+		/*
+		 * During page selection for eviction, if a page has access bit set,
+		 * clear the access bit and put it back at the end of queue.
+		 *
+		 * A subtle fail safe to avoid infinite loop is that the head of queue
+		 * when this function is entered will have its access bit cleared.
+		 * So when we have exhausted every page and looped back to that page,
+		 * it will be selected for eviction.
+		 */
+		pf = idx_to_pf(pf_idx);
+		flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, true);
+
+		if ((flags & ARCH_DATA_PAGE_ACCESSED) != ARCH_DATA_PAGE_ACCESSED) {
+			/* Page has not been accessed recently, so select this. */
+			break;
+		}
+
+		/*
+		 * Page has been accessed recently.
+		 * Put the page frame back to the end of queue.
+		 * Use unlink() here since we do not need the extra logic inside remove().
+		 */
+		lru_pf_unlink(pf_idx);
+		lru_pf_append(pf_idx);
+
+		/* Grab the new head of queue. */
+		pf_idx = LRU_PF_HEAD;
+	} while (pf_idx != 0);
+#endif /* !CONFIG_EVICTION_LRU_SW_SIMULATED */
 
 	__ASSERT(k_mem_page_frame_is_evictable(pf), "");
 	*dirty_ptr = ((flags & ARCH_DATA_PAGE_DIRTY) != 0);

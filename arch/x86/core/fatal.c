@@ -13,6 +13,10 @@
 #include <mmu.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+#ifdef CONFIG_DEMAND_PAGING
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
+
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
 FUNC_NORETURN void arch_system_halt(unsigned int reason)
 {
@@ -469,6 +473,20 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 #endif /* CONFIG_X86_KPTI */
 		if (was_valid_access) {
 			/* Page fault handled, re-try */
+
+#ifdef CONFIG_EVICTION_LRU
+			/* Currently only LRU eviction algorithm needs to be marked.
+			 * So for now, skip it for others to avoid unnecessary
+			 * processing.
+			 */
+			uintptr_t phys, ret;
+
+			ret = arch_page_info_get(virt, &phys, false);
+			if ((ret & ARCH_DATA_PAGE_NOT_MAPPED) != ARCH_DATA_PAGE_NOT_MAPPED) {
+				k_mem_paging_eviction_accessed(phys);
+			}
+#endif
+
 			return;
 		}
 	}
