@@ -111,6 +111,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
+| FLEXSPI   | on-chip    | flash programming                   |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 :zephyr_file:`boards/nxp/mimxrt1180_evk/mimxrt1180_evk_mimxrt1189_cm33_defconfig`

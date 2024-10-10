@@ -20,6 +20,10 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_MEMC_MCUX_FLEXSPI
+uint32_t flexspi_clock_set_freq(uint32_t clock_name, uint32_t rate);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
