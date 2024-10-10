@@ -824,11 +824,14 @@
 			};
 
 			comp: comparator@983000 {
+				/*
+				 * Use compatible "nordic,nrf-comp" to configure as COMP
+				 * Use compatible "nordic,nrf-lpcomp" to configure as LPCOMP
+				 */
 				compatible = "nordic,nrf-comp";
 				reg = <0x983000 0x1000>;
 				status = "disabled";
 				interrupts = <387 NRF_DEFAULT_IRQ_PRIORITY>;
-				#io-channel-cells = <1>;
 			};
 
 			temp: temperature-sensor@984000 {

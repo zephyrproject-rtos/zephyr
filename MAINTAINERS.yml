@@ -1150,6 +1150,25 @@ Release Notes:
   tests:
     - drivers.clock
 
+"Drivers: Comparator":
+  status: maintained
+  maintainers:
+    - bjarki-andreasen
+  files:
+    - drivers/comparator/
+    - dts/bindings/comparator/
+    - include/zephyr/drivers/comparator.h
+    - include/zephyr/drivers/comparator/
+    - include/zephyr/drivers/comparator/
+    - include/zephyr/dt-bindings/clock/
+    - tests/drivers/build_all/comparator/
+    - tests/drivers/comparator/
+    - doc/hardware/peripherals/comparator.rst
+  labels:
+    - "area: Comparator"
+  tests:
+    - drivers.comparator
+
 "Drivers: Console":
   status: odd fixes
   files:

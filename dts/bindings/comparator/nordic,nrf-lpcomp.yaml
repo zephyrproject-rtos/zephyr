@@ -1,0 +1,83 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF LPCOMP (analog Low-Power COMParator)
+
+  The following example displays the minimum node layout:
+
+    comp: comp@deadbeef {
+            compatible = "nordic,nrf-lpcomp";
+            reg = <0xdeadbeef 0x1000>;
+            interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
+            status = "disabled";
+    };
+
+  Enabling the comparator node requires setting the default
+  configuration of the comparator.
+
+  The following example displays enabling the comparator
+  using an internal reference:
+
+    &comp {
+            status = "okay";
+            psel = "AIN0";
+            refsel = "VDD_4_8";
+            hyst = "ENABLED";
+    };
+
+  To select an external reference, select the "AREF"
+  reference and add the external reference:
+
+    &comp {
+            ...
+            refsel = "AREF";
+            extrefsel = "AIN1";
+            ...
+    };
+
+compatible: "nordic,nrf-lpcomp"
+
+include: base.yaml
+
+properties:
+  psel:
+    type: string
+    enum:
+      - "AIN0"
+      - "AIN1"
+      - "AIN2"
+      - "AIN3"
+      - "AIN4"
+      - "AIN5"
+      - "AIN6"
+      - "AIN7"
+
+  extrefsel:
+    type: string
+    enum:
+      - "AIN0"
+      - "AIN1"
+
+  refsel:
+    type: string
+    enum:
+      - "VDD_1_8"
+      - "VDD_2_8"
+      - "VDD_3_8"
+      - "VDD_4_8"
+      - "VDD_5_8"
+      - "VDD_6_8"
+      - "VDD_7_8"
+      - "VDD_1_16"
+      - "VDD_3_16"
+      - "VDD_5_16"
+      - "VDD_7_16"
+      - "VDD_9_16"
+      - "VDD_11_16"
+      - "VDD_13_16"
+      - "VDD_15_16"
+      - "AREF"
+
+  enable-hyst:
+    type: boolean

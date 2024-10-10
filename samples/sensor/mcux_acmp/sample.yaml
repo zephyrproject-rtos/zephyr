@@ -27,4 +27,4 @@ tests:
   sample.sensor.mcux_acmp.no_trigger:
     build_only: true
     extra_configs:
-      - CONFIG_MCUX_ACMP_TRIGGER=n
+      - CONFIG_SENSOR_MCUX_ACMP_TRIGGER=n
