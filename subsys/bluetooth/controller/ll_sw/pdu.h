@@ -185,6 +185,10 @@
 #define EVENT_CLOCK_JITTER_US   2
 /* Event interframe timings */
 #define EVENT_IFS_US            150
+/* Event interframe timings, low latency mode */
+#define EVENT_IFS_LOW_LAT_US    (CONFIG_BT_CTLR_IFS_LOW_LATENCY)
+/* Event interframe timings, default */
+#define EVENT_IFS_DEFAULT_US    EVENT_IFS_US
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
 /* Specification defined Minimum AUX Frame Space (MAFS) */

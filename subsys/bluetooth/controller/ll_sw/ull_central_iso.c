@@ -931,6 +931,7 @@ uint8_t ull_central_iso_setup(uint16_t cis_handle,
 #endif /* CONFIG_BT_CTLR_ISOAL_PSN_IGNORE */
 	cis->lll.event_count = LLL_CONN_ISO_EVENT_COUNT_MAX;
 	cis->lll.next_subevent = 0U;
+	cis->lll.tifs_us = conn->lll.tifs_cis_us;
 	cis->lll.sn = 0U;
 	cis->lll.nesn = 0U;
 	cis->lll.cie = 0U;
