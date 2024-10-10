@@ -244,6 +244,17 @@
 		resolution = <32>;
 		status = "disabled";
 	};
+
+	flexcan0: can@3b000 {
+		compatible = "nxp,flexcan";
+		reg = <0x3b000 0x3080>;
+		interrupts = <47 0>;
+		interrupt-names = "common";
+		clocks = <&scg SCG_K4_FIRC_CLK 0xec>;
+		clk-source = <2>;
+		sample-point = <875>;
+		status = "disabled";
+	};
 };
 
 &fast_peripheral0 {

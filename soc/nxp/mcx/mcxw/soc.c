@@ -136,6 +136,10 @@ static ALWAYS_INLINE void clock_init(void)
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(tpm1), nxp_kinetis_tpm, okay)) {
 		CLOCK_EnableClock(kCLOCK_Tpm1);
 	}
+
+	if (IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN)) {
+		CLOCK_EnableClock(kCLOCK_Can0);
+	}
 }
 
 static void vbat_init(void)
