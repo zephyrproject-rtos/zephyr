@@ -219,9 +219,9 @@ static int cmd_cs_test_simple(const struct shell *sh, size_t argc, char *argv[])
 	params.t_fcs_time = 120;
 	params.t_pm_time = 20;
 	params.t_sw_time = 0;
-	params.tone_antenna_config_selection = BT_LE_CS_TEST_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
-	params.initiator_snr_control = BT_LE_CS_TEST_INITIATOR_SNR_CONTROL_NOT_USED;
-	params.reflector_snr_control = BT_LE_CS_TEST_REFLECTOR_SNR_CONTROL_NOT_USED;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.initiator_snr_control = BT_LE_CS_INITIATOR_SNR_CONTROL_NOT_USED;
+	params.reflector_snr_control = BT_LE_CS_REFLECTOR_SNR_CONTROL_NOT_USED;
 	params.drbg_nonce = 0x1234;
 	params.override_config = 0;
 	params.override_config_0.channel_map_repetition = 1;
@@ -442,6 +442,255 @@ static int cmd_cs_stop_test(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_read_local_supported_capabilities(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	struct bt_conn_le_cs_capabilities params;
+
+	err = bt_le_cs_read_local_supported_capabilities(&params);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_read_local_supported_capabilities returned error %d",
+			    err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(
+		sh,
+		"Local channel sounding supported capabilities:\n"
+		"- Num CS configurations: %d\n"
+		"- Max consecutive CS procedures: %d\n"
+		"- Num antennas supported: %d\n"
+		"- Max antenna paths supported: %d\n"
+		"- Initiator role supported: %s\n"
+		"- Reflector role supported: %s\n"
+		"- Mode 3 supported: %s\n"
+		"- RTT AA only supported: %s\n"
+		"- RTT AA only is 10ns precise: %s\n"
+		"- RTT AA only N: %d\n"
+		"- RTT sounding supported: %s\n"
+		"- RTT sounding is 10ns precise: %s\n"
+		"- RTT sounding N: %d\n"
+		"- RTT random payload supported: %s\n"
+		"- RTT random payload is 10ns precise: %s\n"
+		"- RTT random payload N: %d\n"
+		"- Phase-based NADM with sounding sequences supported: %s\n"
+		"- Phase-based NADM with random sequences supported: %s\n"
+		"- CS Sync 2M PHY supported: %s\n"
+		"- CS Sync 2M 2BT PHY supported: %s\n"
+		"- CS without transmitter FAE supported: %s\n"
+		"- Channel selection algorithm #3c supported: %s\n"
+		"- Phase-based ranging from RTT sounding sequence supported: %s\n"
+		"- T_IP1 times supported: 0x%04x\n"
+		"- T_IP2 times supported: 0x%04x\n"
+		"- T_FCS times supported: 0x%04x\n"
+		"- T_PM times supported: 0x%04x\n"
+		"- T_SW time supported: %d us\n"
+		"- TX SNR capability: 0x%02x",
+		params.num_config_supported, params.max_consecutive_procedures_supported,
+		params.num_antennas_supported, params.max_antenna_paths_supported,
+		params.initiator_supported ? "Yes" : "No",
+		params.reflector_supported ? "Yes" : "No", params.mode_3_supported ? "Yes" : "No",
+		params.rtt_aa_only_precision == BT_CONN_LE_CS_RTT_AA_ONLY_NOT_SUPP ? "No" : "Yes",
+		params.rtt_aa_only_precision == BT_CONN_LE_CS_RTT_AA_ONLY_10NS ? "Yes" : "No",
+		params.rtt_aa_only_n,
+		params.rtt_sounding_precision == BT_CONN_LE_CS_RTT_SOUNDING_NOT_SUPP ? "No" : "Yes",
+		params.rtt_sounding_precision == BT_CONN_LE_CS_RTT_SOUNDING_10NS ? "Yes" : "No",
+		params.rtt_sounding_n,
+		params.rtt_random_payload_precision == BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_NOT_SUPP
+			? "No"
+			: "Yes",
+		params.rtt_random_payload_precision == BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS ? "Yes"
+											     : "No",
+		params.rtt_random_payload_n,
+		params.phase_based_nadm_sounding_supported ? "Yes" : "No",
+		params.phase_based_nadm_random_supported ? "Yes" : "No",
+		params.cs_sync_2m_phy_supported ? "Yes" : "No",
+		params.cs_sync_2m_2bt_phy_supported ? "Yes" : "No",
+		params.cs_without_fae_supported ? "Yes" : "No",
+		params.chsel_alg_3c_supported ? "Yes" : "No",
+		params.pbr_from_rtt_sounding_seq_supported ? "Yes" : "No",
+		params.t_ip1_times_supported, params.t_ip2_times_supported,
+		params.t_fcs_times_supported, params.t_pm_times_supported, params.t_sw_time,
+		params.tx_snr_capability);
+
+	return 0;
+}
+
+static int cmd_write_cached_remote_supported_capabilities(const struct shell *sh, size_t argc,
+							  char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	struct bt_conn_le_cs_capabilities params;
+
+	params.num_config_supported = 1;
+	params.max_consecutive_procedures_supported = 0;
+	params.num_antennas_supported = 1;
+	params.max_antenna_paths_supported = 1;
+	params.initiator_supported = true;
+	params.reflector_supported = true;
+	params.mode_3_supported = true;
+	params.rtt_aa_only_precision = BT_CONN_LE_CS_RTT_AA_ONLY_10NS;
+	params.rtt_sounding_precision = BT_CONN_LE_CS_RTT_SOUNDING_10NS;
+	params.rtt_random_payload_precision = BT_CONN_LE_CS_RTT_RANDOM_PAYLOAD_10NS;
+	params.rtt_aa_only_n = 5;
+	params.rtt_sounding_n = 6;
+	params.rtt_random_payload_n = 7;
+	params.phase_based_nadm_sounding_supported = true;
+	params.phase_based_nadm_random_supported = true;
+	params.cs_sync_2m_phy_supported = true;
+	params.cs_sync_2m_2bt_phy_supported = true;
+	params.chsel_alg_3c_supported = true;
+	params.cs_without_fae_supported = true;
+	params.pbr_from_rtt_sounding_seq_supported = false;
+	params.t_ip1_times_supported = BT_HCI_LE_CS_T_IP1_TIME_10US_MASK;
+	params.t_ip2_times_supported = BT_HCI_LE_CS_T_IP2_TIME_10US_MASK;
+	params.t_fcs_times_supported = BT_HCI_LE_CS_T_FCS_TIME_100US_MASK;
+	params.t_sw_time = 0x04;
+	params.tx_snr_capability = BT_HCI_LE_CS_TX_SNR_CAPABILITY_18DB_MASK;
+
+	err = bt_le_cs_write_cached_remote_supported_capabilities(default_conn, &params);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_set_channel_classification returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_security_enable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	err = bt_le_cs_security_enable(default_conn);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_security_enable returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_set_channel_classification(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	uint8_t channel_classification[10];
+
+	for (int i = 0; i < 10; i++) {
+		channel_classification[i] = shell_strtoul(argv[1 + i], 16, &err);
+
+		if (err) {
+			shell_help(sh);
+			shell_error(sh, "Could not parse input %d, Channel Classification[%d]", i,
+				    i);
+
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_le_cs_set_channel_classification(channel_classification);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_set_channel_classification returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_set_procedure_parameters(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	struct bt_le_cs_set_procedure_parameters_param params;
+
+	params.config_id = 0;
+	params.max_procedure_len = 1000;
+	params.min_procedure_interval = 5;
+	params.max_procedure_interval = 5000;
+	params.max_procedure_count = 1;
+	params.min_subevent_len = 5000;
+	params.max_subevent_len = 4000000;
+	params.tone_antenna_config_selection = BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE;
+	params.phy = 0x01;
+	params.tx_power_delta = 0x80;
+	params.preferred_peer_antenna = 1;
+	params.snr_control_initiator = BT_LE_CS_INITIATOR_SNR_CONTROL_18dB;
+	params.snr_control_reflector = BT_HCI_OP_LE_CS_REFLECTOR_SNR_18;
+
+	err = bt_le_cs_set_procedure_parameters(default_conn, &params);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_set_procedure_parameters returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_procedure_enable(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+
+	if (default_conn == NULL) {
+		shell_error(sh, "Conn handle error, at least one connection is required.");
+		return -ENOEXEC;
+	}
+
+	struct bt_le_cs_procedure_enable_param params;
+
+	params.config_id = shell_strtoul(argv[1], 16, &err);
+
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse input 1, Config ID");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	params.enable = shell_strtoul(argv[2], 16, &err);
+
+	if (err) {
+		shell_help(sh);
+		shell_error(sh, "Could not parse input 2, Enable");
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	err = bt_le_cs_procedure_enable(default_conn, &params);
+
+	if (err) {
+		shell_error(sh, "bt_le_cs_procedure_enable returned error %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cs_cmds,
 	SHELL_CMD_ARG(read_remote_supported_capabilities, NULL, "<None>",
@@ -463,7 +712,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		"128b-rand] [phy-1m, phy-2m, phy-2m-2b] [chmap-rep <rep>] [hat-shape, x-shape] "
 		"[ch3c-jump <jump>] [chmap <XXXXXXXXXXXXXXXX>] (78-0) [chsel-3b, chsel-3c]",
 		cmd_create_config, 4, 15),
-	SHELL_CMD_ARG(remove_config, NULL, "<id>", cmd_remove_config, 2, 0), SHELL_SUBCMD_SET_END);
+	SHELL_CMD_ARG(remove_config, NULL, "<id>", cmd_remove_config, 2, 0),
+	SHELL_CMD_ARG(read_local_supported_capabilities, NULL, "<None>",
+		      cmd_read_local_supported_capabilities, 1, 0),
+	SHELL_CMD_ARG(write_cached_remote_supported_capabilities, NULL, "<None>",
+		      cmd_write_cached_remote_supported_capabilities, 1, 0),
+	SHELL_CMD_ARG(security_enable, NULL, "<None>", cmd_security_enable, 1, 0),
+	SHELL_CMD_ARG(set_channel_classification, NULL,
+		      "<Byte 0> <Byte 1> <Byte 2> <Byte 3> "
+		      "<Byte 4> <Byte 5> <Byte 6> <Byte 7> <Byte 8> <Byte 9>",
+		      cmd_set_channel_classification, 11, 0),
+	SHELL_CMD_ARG(set_procedure_parameters, NULL, "<None>", cmd_set_procedure_parameters, 1, 0),
+	SHELL_CMD_ARG(procedure_enable, NULL, "<Config ID: 0 to 3> <Enable: 0, 1>",
+		      cmd_procedure_enable, 3, 0),
+	SHELL_SUBCMD_SET_END);
 
 static int cmd_cs(const struct shell *sh, size_t argc, char **argv)
 {
