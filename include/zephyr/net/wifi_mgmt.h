@@ -70,6 +70,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
+	/** Set or get 11k status */
+	NET_REQUEST_WIFI_CMD_11K_CONFIG,
+	/** Send 11k neighbor request */
+	NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
 	/** Setup or teardown TWT flow */
@@ -108,6 +112,12 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
 	/** WPS config */
 	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
+	/** Start roaming */
+	NET_REQUEST_WIFI_CMD_START_ROAMING,
+	/** Neighbor report complete */
+	NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
+	/** Specific scan */
+	NET_REQUEST_WIFI_CMD_SPEC_SCAN,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -148,6 +158,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_IFACE_STATUS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
+
+#define NET_REQUEST_WIFI_11K_CONFIG				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_CONFIG)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG);
+
+#define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST);
 
 /** Request a Wi-Fi power save */
 #define NET_REQUEST_WIFI_PS					\
@@ -258,6 +278,16 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 
+#define NET_REQUEST_WIFI_START_ROAMING				\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_START_ROAMING)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
+
+#define NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE			\
+	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
+
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
 	/** Scan results available */
@@ -280,6 +310,12 @@ enum net_event_wifi_cmd {
 	NET_EVENT_WIFI_CMD_RAW_SCAN_RESULT,
 	/** Disconnect complete */
 	NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE,
+	/** Signal change event */
+	NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
+	/** Neighbor Report */
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_RECEIVED,
+	/** Neighbor Report complete */
+	NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE,
 	/** AP mode enable result */
 	NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT,
 	/** AP mode disable result */
@@ -327,6 +363,14 @@ enum net_event_wifi_cmd {
 /** Event emitted Wi-Fi disconnect is completed */
 #define NET_EVENT_WIFI_DISCONNECT_COMPLETE			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_COMPLETE)
+
+/** Event signal change of connected AP */
+#define NET_EVENT_WIFI_SIGNAL_CHANGE				\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_SIGNAL_CHANGE)
+
+/** Event Neighbor Report Completed */
+#define NET_EVENT_WIFI_NEIGHBOR_REP_COMP			\
+	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 /** Event emitted for Wi-Fi access point enable result */
 #define NET_EVENT_WIFI_AP_ENABLE_RESULT				\
@@ -472,6 +516,8 @@ struct wifi_connect_req_params {
 	const uint8_t *key_passwd;
 	/** Private key passwd length */
 	uint8_t key_passwd_length; /* Max 128 */
+	/** Fast BSS Transition used */
+	int ft_used;
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
@@ -727,6 +773,16 @@ enum wifi_mgmt_op {
 	WIFI_MGMT_GET = 0,
 	/** Set operation */
 	WIFI_MGMT_SET = 1,
+};
+
+/** Wi-Fi 11k parameters */
+struct wifi_11k_params {
+	/** 11k command operation */
+	enum wifi_mgmt_op oper;
+	/** 11k enable/disable */
+	int enable_11k;
+	/** SSID */
+	uint8_t ssid[WIFI_SSID_MAX_LEN+1];
 };
 
 /** Max regulatory channel number */
@@ -1157,6 +1213,22 @@ struct wifi_mgmt_ops {
 	 */
 	int (*reset_stats)(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
+	/** Set or get 11K status
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params 11k parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*cfg_11k)(const struct device *dev, struct wifi_11k_params *params);
+	/** Send 11k neighbor request
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param params 11k parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*send_11k_neighbor_request)(const struct device *dev, struct wifi_11k_params *params);
 	/** Set power save status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -1305,6 +1377,21 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
+	/** Trigger specific scan
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params Scan parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*spec_scan)(const struct device *dev, struct wifi_scan_params *params);
+	/** Start 11r roaming
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*start_11r_roaming)(const struct device *dev);
 };
 
 /** Wi-Fi management offload API */
@@ -1395,6 +1482,17 @@ void wifi_mgmt_raise_raw_scan_result_event(struct net_if *iface,
  * @param status Disconnect complete status
  */
 void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
+/** Wi-Fi management neighbor reports event
+ *
+ * @param iface Network interface
+ * @param inbuf Input buffer of neighbor reports
+ * @param buf_len Lenghth of input buffer
+ */
+void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface,
+					     char *inbuf, size_t buf_len);
+#endif
 
 /** Wi-Fi management AP mode enable result event
  *
