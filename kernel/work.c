@@ -966,9 +966,8 @@ static int cancel_delayable_async_locked(struct k_work_delayable *dwork)
 	return cancel_async_locked(&dwork->work);
 }
 
-int k_work_schedule_for_queue(struct k_work_q *queue,
-			       struct k_work_delayable *dwork,
-			       k_timeout_t delay)
+int k_work_schedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
+			      k_timeout_t delay)
 {
 	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
@@ -991,8 +990,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
 	return ret;
 }
 
-int k_work_schedule(struct k_work_delayable *dwork,
-				   k_timeout_t delay)
+int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, schedule, dwork, delay);
 
@@ -1003,9 +1001,8 @@ int k_work_schedule(struct k_work_delayable *dwork,
 	return ret;
 }
 
-int k_work_reschedule_for_queue(struct k_work_q *queue,
-				 struct k_work_delayable *dwork,
-				 k_timeout_t delay)
+int k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
+				k_timeout_t delay)
 {
 	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
@@ -1028,8 +1025,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
 	return ret;
 }
 
-int k_work_reschedule(struct k_work_delayable *dwork,
-				     k_timeout_t delay)
+int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, reschedule, dwork, delay);
 
