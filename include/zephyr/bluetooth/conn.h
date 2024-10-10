@@ -1518,6 +1518,86 @@ enum bt_security_err {
 	BT_SECURITY_ERR_UNSPECIFIED,
 };
 
+enum bt_conn_le_cs_procedure_enable_state {
+	BT_CONN_LE_CS_PROCEDURES_DISABLED = BT_HCI_OP_LE_CS_PROCEDURES_DISABLED,
+	BT_CONN_LE_CS_PROCEDURES_ENABLED = BT_HCI_OP_LE_CS_PROCEDURES_ENABLED,
+};
+
+/** CS Test Tone Antennna Config Selection.
+ *
+ *  These enum values are indices in the following table, where N_AP is the maximum
+ *  number of antenna paths (in the range [1, 4]).
+ *
+ * +--------------+-------------+-------------------+-------------------+--------+
+ * | Config Index | Total Paths | Dev A: # Antennas | Dev B: # Antennas | Config |
+ * +--------------+-------------+-------------------+-------------------+--------+
+ * |            0 |           1 |                 1 |                 1 | 1:1    |
+ * |            1 |           2 |                 2 |                 1 | N_AP:1 |
+ * |            2 |           3 |                 3 |                 1 | N_AP:1 |
+ * |            3 |           4 |                 4 |                 1 | N_AP:1 |
+ * |            4 |           2 |                 1 |                 2 | 1:N_AP |
+ * |            5 |           3 |                 1 |                 3 | 1:N_AP |
+ * |            6 |           4 |                 1 |                 4 | 1:N_AP |
+ * |            7 |           4 |                 2 |                 2 | 2:2    |
+ * +--------------+-------------+-------------------+-------------------+--------+
+ *
+ *  There are therefore four groups of possible antenna configurations:
+ *
+ *  - 1:1 configuration, where both A and B support 1 antenna each
+ *  - 1:N_AP configuration, where A supports 1 antenna, B supports N_AP antennas, and
+ *    N_AP is a value in the range [2, 4]
+ *  - N_AP:1 configuration, where A supports N_AP antennas, B supports 1 antenna, and
+ *    N_AP is a value in the range [2, 4]
+ *  - 2:2 configuration, where both A and B support 2 antennas and N_AP = 4
+ */
+enum bt_conn_le_cs_tone_antenna_config_selection {
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_ONE = BT_HCI_OP_LE_CS_ACI_0,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_TWO = BT_HCI_OP_LE_CS_ACI_1,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_THREE = BT_HCI_OP_LE_CS_ACI_2,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_FOUR = BT_HCI_OP_LE_CS_ACI_3,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_FIVE = BT_HCI_OP_LE_CS_ACI_4,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_SIX = BT_HCI_OP_LE_CS_ACI_5,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_SEVEN = BT_HCI_OP_LE_CS_ACI_6,
+	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_INDEX_EIGHT = BT_HCI_OP_LE_CS_ACI_7,
+};
+
+struct bt_conn_le_cs_procedure_enable_complete {
+	/* The ID associated with the desired configuration (0 to 3) */
+	uint8_t config_id;
+
+	/* State of the CS procedure */
+	enum bt_conn_le_cs_procedure_enable_state state;
+
+	/* Antenna configuration index */
+	enum bt_conn_le_cs_tone_antenna_config_selection tone_antenna_config_selection;
+
+	/* Transmit power level used for CS procedures (-127 to 20 dB; 0x7F if unavailable) */
+	int8_t selected_tx_power;
+
+	/* Duration of each CS subevent in microseconds (1250 us to 4 s) */
+	uint32_t subevent_len;
+
+	/* Number of CS subevents anchored off the same ACL connection event (0x01 to 0x20) */
+	uint8_t subevents_per_event;
+
+	/* Time between consecutive CS subevents anchored off the same ACL connection event in
+	 * units of 0.625 ms
+	 */
+	uint16_t subevent_interval;
+
+	/* Number of ACL connection events between consecutive CS event anchor points */
+	uint16_t event_interval;
+
+	/* Number of ACL connection events between consecutive CS procedure anchor points */
+	uint16_t procedure_interval;
+
+	/* Number of CS procedures to be scheduled (0 if procedures to continue until disabled) */
+	uint16_t procedure_count;
+
+	/* Maximum duration for each procedure in units of 0.625 ms (0x0001 to 0xFFFF) */
+	uint16_t max_procedure_len;
+};
+
 /** @brief Connection callback structure.
  *
  *  This structure is used for tracking the state of a connection.
@@ -1810,6 +1890,27 @@ struct bt_conn_cb {
 	 */
 	void (*le_cs_subevent_data_available)(struct bt_conn *conn,
 					      struct bt_conn_le_cs_subevent_result *result);
+
+	/** @brief LE CS Security Enabled.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Security Enable procedure has completed
+	 *
+	 *  @param conn Connection object.
+	 */
+	void (*le_cs_security_enabled)(struct bt_conn *conn);
+
+	/** @brief LE CS Procedure Enabled.
+	 *
+	 *  This callback notifies the application that a Channel Sounding
+	 *  Procedure Enable procedure has completed
+	 *
+	 *  @param conn Connection object.
+	 *  @param params CS Procedure Enable parameters
+	 */
+	void (*le_cs_procedure_enabled)(
+		struct bt_conn *conn, struct bt_conn_le_cs_procedure_enable_complete *params);
+
 #endif
 
 	/** @internal Internally used field for list handling */
