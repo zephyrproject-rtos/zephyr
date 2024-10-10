@@ -369,8 +369,7 @@ static struct bt_pacs_cap cap = {
 
 int bap_unicast_sr_init(void)
 {
-	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	bt_bap_unicast_server_register(&param, &unicast_server_cb);
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
 		/* Register CT required capabilities */

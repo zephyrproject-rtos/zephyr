@@ -420,16 +420,9 @@ int init_cap_acceptor_unicast(struct peer_config *peer)
 			CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
 		};
 
-		err = bt_bap_unicast_server_register(&param);
+		err = bt_bap_unicast_server_register(&param, &unicast_server_cb);
 		if (err != 0) {
 			LOG_ERR("Failed to register BAP unicast server: %d", err);
-
-			return -ENOEXEC;
-		}
-
-		err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
-		if (err != 0) {
-			LOG_ERR("Failed to register BAP unicast server callbacks: %d", err);
 
 			return -ENOEXEC;
 		}

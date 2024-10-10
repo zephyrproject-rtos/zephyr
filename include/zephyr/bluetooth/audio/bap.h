@@ -891,22 +891,6 @@ struct bt_bap_stream_ops {
 	void (*disconnected)(struct bt_bap_stream *stream, uint8_t reason);
 };
 
-/** Structure for registering Unicast Server */
-struct bt_bap_unicast_server_register_param {
-	/**
-	 * @brief Sink Count to register.
-	 *
-	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}]
-	 */
-	uint8_t snk_cnt;
-
-	/** @brief Source Count to register.
-	 *
-	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}]
-	 */
-	uint8_t src_cnt;
-};
-
 /**
  * @brief Register Audio callbacks for a stream.
  *
@@ -1291,62 +1275,54 @@ struct bt_bap_unicast_server_cb {
 	int (*release)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 };
 
+/** Structure for registering Unicast Server */
+struct bt_bap_unicast_server_register_param {
+	/**
+	 * @brief Sink Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT}]
+	 */
+	uint8_t snk_cnt;
+
+	/** @brief Source Count to register.
+	 *
+	 * Should be in range [0, @kconfig{CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT}]
+	 */
+	uint8_t src_cnt;
+
+	/** Pointer to the callback structure. */
+	struct bt_bap_unicast_server_cb *cb;
+};
+
 /**
  * @brief Register the Unicast Server.
  *
- * Register the Unicast Server. Only a single Unicast Server can be registered at any one time.
- * This will register ASCS in the GATT database.
+ * Register the Unicast Server. This will register ASCS in the GATT database.
+ * In addition, this will also register the callback structure for the Unicast Server.
+ *
+ * Only a single Unicast Server can be registered at any one time.
  *
  * @param param  Registration parameters for ascs.
+ * @param cb Unicast server callback structure.
  *
  * @return 0 in case of success, negative error code otherwise.
  */
-int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
+int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param,
+				   const struct bt_bap_unicast_server_cb *cb);
 
 /**
  * @brief Unregister the Unicast Server.
  *
  * Unregister the Unicast Server.
- * This will unregister ASCS in the GATT database.
- * Before calling this function, any callbacks registered through
- * bt_bap_unicast_server_register_cb() needs to be unregistered with
- * bt_bap_unicast_server_unregister_cb().
+ * This will unregister ASCS in the GATT database and unregister
+ * callbacks.
  *
  * Calling this function will issue an release operation on any ASE
  * in a non-idle state.
  *
  * @return 0 in case of success, negative error code otherwise.
  */
-int bt_bap_unicast_server_unregister(void);
-
-/**
- * @brief Register unicast server callbacks.
- *
- * Only one callback structure can be registered, and attempting to
- * registering more than one will result in an error.
- * Prior to calling this function the Unicast Server needs to be
- * registered with bt_bap_unicast_server_register().
- *
- * @param cb  Unicast server callback structure.
- *
- * @return 0 in case of success or negative value in case of error.
- */
-int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb);
-
-/**
- * @brief Unregister unicast server callbacks.
- *
- * May only unregister a callback structure that has previously been
- * registered by bt_bap_unicast_server_register_cb().
- *
- * Calling this function will issue an release operation on any ASE
- * in a non-idle state.
- *
- * @param cb  Unicast server callback structure.
- *
- * @return 0 in case of success or negative value in case of error.
- */
-int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb);
+int bt_bap_unicast_server_unregister(const struct bt_bap_unicast_server_cb *cb);
 
 /**
  * @typedef bt_bap_ep_func_t

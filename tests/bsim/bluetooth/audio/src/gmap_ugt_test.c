@@ -409,16 +409,9 @@ static void test_main(void)
 		return;
 	}
 
-	err = bt_bap_unicast_server_register(&param);
+	err = bt_bap_unicast_server_register(&param, &unicast_server_cbs);
 	if (err != 0) {
 		FAIL("Failed to register unicast server (err %d)\n", err);
-
-		return;
-	}
-
-	err = bt_bap_unicast_server_register_cb(&unicast_server_cbs);
-	if (err != 0) {
-		FAIL("Failed to register unicast server callbacks (err %d)\n", err);
 
 		return;
 	}
