@@ -100,10 +100,10 @@ extern "C" {
 #define SPI_WORD_SIZE_SHIFT	(5U)
 #define SPI_WORD_SIZE_MASK	(0x3FU << SPI_WORD_SIZE_SHIFT)
 /** @endcond */
-/** Get SPI word size. */
+/** Get SPI word size (data frame size) in bits. */
 #define SPI_WORD_SIZE_GET(_operation_)					\
 	(((_operation_) & SPI_WORD_SIZE_MASK) >> SPI_WORD_SIZE_SHIFT)
-/** Set SPI word size. */
+/** Set SPI word size (data frame size) in bits. */
 #define SPI_WORD_SET(_word_size_)		\
 	((_word_size_) << SPI_WORD_SIZE_SHIFT)
 /** @} */
@@ -309,7 +309,7 @@ struct spi_config {
 	 * - 0:      Master or slave.
 	 * - 1..3:   Polarity, phase and loop mode.
 	 * - 4:      LSB or MSB first.
-	 * - 5..10:  Size of a data frame in bits.
+	 * - 5..10:  Size of a data frame (word) in bits.
 	 * - 11:     Full/half duplex.
 	 * - 12:     Hold on the CS line if possible.
 	 * - 13:     Keep resource locked for the caller.
@@ -458,7 +458,7 @@ struct spi_dt_spec {
 struct spi_buf {
 	/** Valid pointer to a data buffer, or NULL otherwise */
 	void *buf;
-	/** Length of the buffer @a buf.
+	/** Length of the buffer @a buf in bytes.
 	 * If @a buf is NULL, length which as to be sent as dummy bytes (as TX
 	 * buffer) or the length of bytes that should be skipped (as RX buffer).
 	 */
@@ -471,7 +471,7 @@ struct spi_buf {
 struct spi_buf_set {
 	/** Pointer to an array of spi_buf, or NULL */
 	const struct spi_buf *buffers;
-	/** Length of the array pointed by @a buffers */
+	/** Length of the array (number of buffers) pointed by @a buffers */
 	size_t count;
 };
 
