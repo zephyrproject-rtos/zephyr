@@ -693,8 +693,6 @@ static int hostapd_disable_iface_cb(struct hostapd_iface *hapd_iface)
 					    NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT,
 					    WIFI_STATUS_AP_SUCCESS);
 
-	hostapd_config_free(hapd_iface->conf);
-	hapd_iface->conf = hapd_iface->interfaces->config_read_cb(hapd_iface->config_fname);
 	return 0;
 }
 
