@@ -874,8 +874,13 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
 
-	if (ret != ESP_OK) {
-		LOG_ERR("Unable to initialize the wifi");
+	if (ret == ESP_ERR_NO_MEM) {
+		LOG_ERR("Not enough memory to initialize Wi-Fi.");
+		LOG_ERR("Consider increasing CONFIG_HEAP_MEM_POOL_SIZE value.");
+		return -ENOMEM;
+	} else if (ret != ESP_OK) {
+		LOG_ERR("Unable to initialize the Wi-Fi: %d", ret);
+		return -EIO;
 	}
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
