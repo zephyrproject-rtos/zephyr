@@ -49,4 +49,6 @@ source "subsys/net/lib/trickle/Kconfig"
 
 source "subsys/net/lib/zperf/Kconfig"
 
+rsource "wifi_credentials/Kconfig"
+
 endmenu

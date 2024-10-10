@@ -1,0 +1,123 @@
+#
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WIFI_CREDENTIALS
+	bool "WIFI credentials management"
+	select EXPERIMENTAL
+	help
+	  Enable WiFi credentials management subsystem.
+
+if WIFI_CREDENTIALS
+
+module = WIFI_CREDENTIALS
+module-str = wifi_credentials
+source "subsys/logging/Kconfig.template.log_config"
+
+choice WIFI_CREDENTIALS_BACKEND
+	prompt "WiFi credentials backend"
+	default WIFI_CREDENTIALS_BACKEND_PSA if BUILD_WITH_TFM
+	default WIFI_CREDENTIALS_BACKEND_SETTINGS
+	default WIFI_CREDENTIALS_BACKEND_NONE if WIFI_CREDENTIALS_STATIC
+	help
+	  Selects whether to use PSA Protected Storage or the Zephyr settings subsystem
+	  for credentials storage.
+
+config WIFI_CREDENTIALS_BACKEND_SETTINGS
+	bool "Zephyr Settings"
+	depends on SETTINGS
+	depends on !SETTINGS_NONE
+
+config WIFI_CREDENTIALS_BACKEND_PSA
+	bool "PSA Protected Storage"
+	depends on BUILD_WITH_TFM
+
+config WIFI_CREDENTIALS_BACKEND_NONE
+	bool "No credentials storage"
+	depends on WIFI_CREDENTIALS_STATIC
+
+endchoice
+
+config WIFI_CREDENTIALS_MAX_ENTRIES
+	int "Number of supported WiFi credentials"
+	default 2
+	help
+	  This detemines how many different WiFi networks can be configured at a time.
+
+config WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH
+	int "Max. length of SAE password"
+	default 128
+	help
+	  There is no official limit on SAE password length,
+	  but for example Linux 6.0 has a hardcoded limit of 128 bytes.
+
+config WIFI_CREDENTIALS_SHELL
+	bool "Shell commands to manage Wi-Fi credentials"
+	default y
+	depends on SHELL
+	depends on !WIFI_CREDENTIALS_BACKEND_NONE
+
+config WIFI_CREDENTIALS_CONNECT_STORED
+	bool "Add command to connect to stored networks directly."
+	default y
+
+if WIFI_CREDENTIALS_CONNECT_STORED
+
+config WIFI_CREDENTIALS_CONNECT_STORED_CONNECTION_TIMEOUT
+	int "Connection timeout"
+	default 30
+	help
+	   Wait period before falling back to the next entry in the list of stored SSIDs.
+
+endif # WIFI_CREDENTIALS_CONNECT_STORED
+
+endif # WIFI_CREDENTIALS
+
+if WIFI_CREDENTIALS_BACKEND_PSA
+
+config WIFI_CREDENTIALS_BACKEND_PSA_OFFSET
+	int "PSA_KEY_ID range offset"
+	default 0
+	help
+	  The PSA specification mandates to set key identifiers for keys
+	  with persistent lifetime. The users of the PSA API are responsible (WIFI credentials
+	  management is user of PSA API) to provide correct and unique identifiers.
+
+endif # WIFI_CREDENTIALS_BACKEND_PSA
+
+config WIFI_CREDENTIALS_STATIC
+	bool "Static Wi-Fi network configuration"
+
+if WIFI_CREDENTIALS_STATIC
+
+config WIFI_CREDENTIALS_STATIC_SSID
+	string "SSID of statically configured WiFi network"
+
+config WIFI_CREDENTIALS_STATIC_PASSWORD
+	string "Password of statically configured Wi-Fi network"
+	default ""
+
+choice WIFI_CREDENTIALS_STATIC_TYPE
+	prompt "Static Wi-Fi network security type"
+	default WIFI_CREDENTIALS_STATIC_TYPE_PSK
+
+config WIFI_CREDENTIALS_STATIC_TYPE_OPEN
+	bool "OPEN"
+
+config WIFI_CREDENTIALS_STATIC_TYPE_PSK
+	bool "WPA2-PSK"
+
+config WIFI_CREDENTIALS_STATIC_TYPE_PSK_SHA256
+	bool "WPA2-PSK-SHA256"
+
+config WIFI_CREDENTIALS_STATIC_TYPE_SAE
+	bool "SAE"
+
+config WIFI_CREDENTIALS_STATIC_TYPE_WPA_PSK
+	bool "WPA-PSK"
+
+endchoice
+
+endif

@@ -42,7 +42,13 @@ tests:
     integration_platforms:
       - frdm_k64f
   sample.net.wifi.nrf70dk:
-    extra_args: CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+    extra_args:
+      - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
+      - CONFIG_WIFI_CREDENTIALS=y
+      - CONFIG_FLASH=y
+      - CONFIG_FLASH_MAP=y
+      - CONFIG_NVS=y
+      - CONFIG_SETTINGS=y
     platform_allow:
       - nrf7002dk/nrf5340/cpuapp
       - nrf7002dk/nrf5340/cpuapp/nrf7001
