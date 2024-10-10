@@ -8,7 +8,6 @@ import logging
 import multiprocessing
 import os
 import pickle
-import queue
 import re
 import shutil
 import subprocess
@@ -18,7 +17,8 @@ import traceback
 import yaml
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
-from typing import List
+from collections import deque
+from typing import List, Dict
 from packaging import version
 
 from colorama import Fore
@@ -538,7 +538,7 @@ class ProjectBuilder(FilterBuilder):
         super().__init__(instance.testsuite, instance.platform, instance.testsuite.source_dir, instance.build_dir, jobserver)
 
         self.log = "build.log"
-        self.instance = instance
+        self.instance: TestInstance = instance
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
@@ -601,20 +601,19 @@ class ProjectBuilder(FilterBuilder):
         else:
             self.log_info("{}".format(b_log), inline_logs)
 
-
-    def _add_to_pipeline(self, pipeline, op: str, additionals: dict={}):
+    def _add_to_processing_queue(self, processing_queue: deque, op: str, additionals: dict={}):
         try:
             if op:
                 task = dict({'op': op, 'test': self.instance}, **additionals)
-                pipeline.put(task)
-        # Only possible RuntimeError source here is a mutation of the pipeline during iteration.
-        # If that happens, we ought to consider the whole pipeline corrupted.
+                processing_queue.append(task)
+        # Only possible RuntimeError source here is a mutation of the processing_queue during iteration.
+        # If that happens, we ought to consider the whole processing_queue corrupted.
         except RuntimeError as e:
             logger.error(f"RuntimeError: {e}")
             traceback.print_exc()
 
-
-    def process(self, pipeline, done, message, lock, results):
+    def process(self, processing_queue: deque, ready_instances: Dict[str, TestInstance],
+                message, lock: Lock, results: ExecutionCounter):
         next_op = None
         additionals = {}
 
@@ -646,7 +645,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
             finally:
-                self._add_to_pipeline(pipeline, next_op)
+                self._add_to_processing_queue(processing_queue, next_op)
 
         # The build process, call cmake and build with configured generator
         elif op == "cmake":
@@ -677,7 +676,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
             finally:
-                self._add_to_pipeline(pipeline, next_op)
+                self._add_to_processing_queue(processing_queue, next_op)
 
         elif op == "build":
             try:
@@ -718,7 +717,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
             finally:
-                self._add_to_pipeline(pipeline, next_op)
+                self._add_to_processing_queue(processing_queue, next_op)
 
         elif op == "gather_metrics":
             try:
@@ -739,7 +738,7 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
             finally:
-                self._add_to_pipeline(pipeline, next_op)
+                self._add_to_processing_queue(processing_queue, next_op)
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
@@ -766,13 +765,13 @@ class ProjectBuilder(FilterBuilder):
                 next_op = 'report'
                 additionals = {}
             finally:
-                self._add_to_pipeline(pipeline, next_op, additionals)
+                self._add_to_processing_queue(processing_queue, next_op, additionals)
 
         # Report results and output progress to screen
         elif op == "report":
             try:
                 with lock:
-                    done.put(self.instance)
+                    ready_instances.update({self.instance.name: self.instance})
                     self.report_out(results)
 
                 if not self.options.coverage:
@@ -794,7 +793,7 @@ class ProjectBuilder(FilterBuilder):
                 next_op = None
                 additionals = {}
             finally:
-                self._add_to_pipeline(pipeline, next_op, additionals)
+                self._add_to_processing_queue(processing_queue, next_op, additionals)
 
         elif op == "cleanup":
             try:
@@ -1279,11 +1278,10 @@ class ProjectBuilder(FilterBuilder):
 class TwisterRunner:
 
     def __init__(self, instances, suites, env=None) -> None:
-        self.pipeline = None
         self.options = env.options
         self.env = env
-        self.instances = instances
-        self.suites = suites
+        self.instances: Dict[str, TestInstance] = instances
+        self.suites: Dict[str, TestSuite] = suites
         self.duts = None
         self.jobs = 1
         self.results = None
@@ -1293,14 +1291,15 @@ class TwisterRunner:
 
         retries = self.options.retry_failed + 1
 
-        BaseManager.register('LifoQueue', queue.LifoQueue)
+        BaseManager.register('deque', deque, exposed=['append', 'appendleft', 'pop'])
+        BaseManager.register('get_dict', dict)
         manager = BaseManager()
         manager.start()
 
         self.results = ExecutionCounter(total=len(self.instances))
         self.iteration = 0
-        pipeline = manager.LifoQueue()
-        done_queue = manager.LifoQueue()
+        processing_queue: deque = manager.deque()
+        ready_instances: Dict[str, TestInstance] = manager.get_dict()
 
         # Set number of jobs
         if self.options.jobs:
@@ -1338,18 +1337,13 @@ class TwisterRunner:
             else:
                 self.results.done = self.results.skipped_filter
 
-            self.execute(pipeline, done_queue)
+            self.execute(processing_queue, ready_instances)
 
-            while True:
-                try:
-                    inst = done_queue.get_nowait()
-                except queue.Empty:
-                    break
-                else:
-                    inst.metrics.update(self.instances[inst.name].metrics)
-                    inst.metrics["handler_time"] = inst.execution_time
-                    inst.metrics["unrecognized"] = []
-                    self.instances[inst.name] = inst
+            for inst in ready_instances.values():
+                inst.metrics.update(self.instances[inst.name].metrics)
+                inst.metrics["handler_time"] = inst.execution_time
+                inst.metrics["unrecognized"] = []
+                self.instances[inst.name] = inst
 
             print("")
 
@@ -1386,7 +1380,8 @@ class TwisterRunner:
                     self.results.skipped_filter,
                     self.results.skipped_configs - self.results.skipped_filter))
 
-    def add_tasks_to_queue(self, pipeline, build_only=False, test_only=False, retry_build_errors=False):
+    def add_tasks_to_queue(self, processing_queue: deque, build_only=False,
+                           test_only=False, retry_build_errors=False):
         for instance in self.instances.values():
             if build_only:
                 instance.run = False
@@ -1406,61 +1401,115 @@ class TwisterRunner:
                 if instance.testsuite.filter:
                     instance.filter_stages = self.get_cmake_filter_stages(instance.testsuite.filter, expr_parser.reserved.keys())
 
-                if test_only and instance.run:
-                    pipeline.put({"op": "run", "test": instance})
+                if (test_only and instance.run) or instance.no_own_image:
+                    processing_queue.append({"op": "run", "test": instance})
                 elif instance.filter_stages and "full" not in instance.filter_stages:
-                    pipeline.put({"op": "filter", "test": instance})
+                    processing_queue.append({"op": "filter", "test": instance})
                 else:
                     cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
                     if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
-                        pipeline.put({"op": "build", "test": instance})
+                        processing_queue.append({"op": "build", "test": instance})
                     else:
-                        pipeline.put({"op": "cmake", "test": instance})
+                        processing_queue.append({"op": "cmake", "test": instance})
 
+    def _required_images_are_ready(self, instance: TestInstance, ready_instances: Dict[str, TestInstance]):
+        return all([required_image in ready_instances.keys() for required_image in instance.required_images])
 
-    def pipeline_mgr(self, pipeline, done_queue, lock, results):
+    def _required_images_failed(self, instance: TestInstance, ready_instances: Dict[str, TestInstance]):
+        # Verify that all required images were successfully built
+        found_failed_image = False
+        for required_image in instance.required_images:
+            inst = ready_instances.get(required_image)
+            if inst.status != TwisterStatus.PASS:
+                logger.debug(f"{required_image}: Required image failed: {inst.reason}")
+                found_failed_image = True
+        return found_failed_image
+
+    def required_images_processed(self, instance: TestInstance, processing_queue: deque,
+                                  ready_instances: Dict[str, TestInstance], task):
+        if not instance.required_images:
+            return True
+
+        if not self._required_images_are_ready(instance, ready_instances):
+            # required image not ready yet,
+            # add the task back to the pipeline to process it later
+            if self.jobs > 1:
+                # to avoid busy waiting
+                time.sleep(1)
+            processing_queue.appendleft(task)
+            return False
+
+        if self._required_images_failed(instance, ready_instances):
+            instance.status = TwisterStatus.SKIP
+            for tc in instance.testcases:
+                tc.status = TwisterStatus.SKIP
+            instance.reason = "Required image failed"
+            instance.required_images = []
+            processing_queue.append({"op": "report", "test": instance})
+            return False
+
+        if instance.no_own_image:
+            # copy build_dir from the first required image to the current instance
+            origin_build_dir = self.instances[instance.required_images[0]].build_dir
+            shutil.copytree(origin_build_dir, instance.build_dir, dirs_exist_ok=True)
+            logger.debug(f"Copied build_dir from {origin_build_dir}")
+            if not instance.run or self.options.build_only:
+                instance.status = TwisterStatus.SKIP
+                instance.reason = "not run"
+                instance.required_images = []
+                processing_queue.append({"op": "report", "test": instance})
+                return False
+
+        # keep paths to required build dirs for further processing
+        for required_image in instance.required_images:
+            instance.required_build_dirs.append(self.instances[required_image].build_dir)
+
+        # required images are ready, clear to not process them later
+        instance.required_images = []
+        return True
+
+    def _pipeline_mgr(self, processing_queue: deque, ready_instances: Dict[str, TestInstance],
+                      lock: Lock, results: ExecutionCounter):
+        while True:
+            try:
+                task = processing_queue.pop()
+            except IndexError:
+                break
+            else:
+                instance: TestInstance = task['test']
+
+                if not self.required_images_processed(instance, processing_queue, ready_instances, task):
+                    # postpone processing task if required images are not ready
+                    continue
+
+                pb = ProjectBuilder(instance, self.env, self.jobserver)
+                pb.duts = self.duts
+                pb.process(processing_queue, ready_instances, task, lock, results)
+        return True
+
+    def pipeline_mgr(self, processing_queue: deque, ready_instances: Dict[str, TestInstance],
+                     lock: Lock, results: ExecutionCounter):
         try:
             if sys.platform == 'linux':
                 with self.jobserver.get_job():
-                    while True:
-                        try:
-                            task = pipeline.get_nowait()
-                        except queue.Empty:
-                            break
-                        else:
-                            instance = task['test']
-                            pb = ProjectBuilder(instance, self.env, self.jobserver)
-                            pb.duts = self.duts
-                            pb.process(pipeline, done_queue, task, lock, results)
-
-                    return True
+                    return self._pipeline_mgr(processing_queue, ready_instances, lock, results)
             else:
-                while True:
-                    try:
-                        task = pipeline.get_nowait()
-                    except queue.Empty:
-                        break
-                    else:
-                        instance = task['test']
-                        pb = ProjectBuilder(instance, self.env, self.jobserver)
-                        pb.duts = self.duts
-                        pb.process(pipeline, done_queue, task, lock, results)
-                return True
+                return self._pipeline_mgr(processing_queue, ready_instances, lock, results)
         except Exception as e:
-            logger.error(f"General exception: {e}")
+            logger.exception(f"General exception: {e}")
             sys.exit(1)
 
-    def execute(self, pipeline, done):
+    def execute(self, processing_queue: deque, ready_instances: Dict[str, TestInstance]):
         lock = Lock()
         logger.info("Adding tasks to the queue...")
-        self.add_tasks_to_queue(pipeline, self.options.build_only, self.options.test_only,
+        self.add_tasks_to_queue(processing_queue, self.options.build_only, self.options.test_only,
                                 retry_build_errors=self.options.retry_build_errors)
         logger.info("Added initial list of jobs to queue")
 
         processes = []
 
         for _ in range(self.jobs):
-            p = Process(target=self.pipeline_mgr, args=(pipeline, done, lock, self.results, ))
+            p = Process(target=self.pipeline_mgr, args=(processing_queue, ready_instances, lock, self.results, ))
             processes.append(p)
             p.start()
         logger.debug(f"Launched {self.jobs} jobs")

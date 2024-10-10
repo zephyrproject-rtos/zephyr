@@ -19,6 +19,7 @@ import random
 import snippets
 from pathlib import Path
 from argparse import Namespace
+from typing import Dict
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
@@ -70,6 +71,8 @@ class Filters:
     TOOLCHAIN = 'Toolchain filter'
     # in case an optional module is not available
     MODULE = 'Module filter'
+    # in case of missing required image
+    REQUIRED_IMAGE = 'Required image filter'
 
 
 class TestLevel:
@@ -109,7 +112,7 @@ class TestPlan:
         self.filtered_platforms = []
         self.default_platforms = []
         self.load_errors = 0
-        self.instances = dict()
+        self.instances: Dict[str, TestInstance] = dict()
         self.instance_fail_count = 0
         self.warnings = 0
 
@@ -667,6 +670,7 @@ class TestPlan:
         except FileNotFoundError as e:
             logger.error(f"{e}")
             return 1
+        self.apply_changes_for_required_images(loaded_from_file=True)
 
     def apply_filters(self, **kwargs):
 
@@ -1010,6 +1014,8 @@ class TestPlan:
             else:
                 self.add_instances(instance_list)
 
+        self.apply_changes_for_required_images()
+
         for _, case in self.instances.items():
             case.create_overlay(case.platform, self.options.enable_asan, self.options.enable_ubsan, self.options.enable_coverage, self.options.coverage_platform)
 
@@ -1024,10 +1030,95 @@ class TestPlan:
         self.filtered_platforms = set(p.platform.name for p in self.instances.values()
                                       if p.status != TwisterStatus.SKIP )
 
+    def _get_required_platform_and_id(self, required_image, instance: TestInstance):
+        # required_image can be in the form of platform:test_id or just test_id
+        split_req_image = required_image.split(':')
+        req_platform = instance.platform.name
+        if len(split_req_image) == 2:
+            req_platform = split_req_image[0]
+        req_test_id = split_req_image[-1]
+        return req_platform, req_test_id
+
+    def _find_required_instance(self, required_image, instance: TestInstance):
+        req_platform, req_test_id = self._get_required_platform_and_id(required_image, instance)
+        for inst in self.instances.values():
+            if req_test_id == inst.testsuite.id and req_platform == inst.platform.name:
+                return inst
+        return None
+
+    def apply_changes_for_required_images(self, loaded_from_file=False):
+        # check if required images are in scope
+        for instance in self.instances.values():
+            if not instance.testsuite.required_images:
+                continue
+            if instance.status == TwisterStatus.FILTER:
+                # do not proceed if the test is already filtered
+                continue
+
+            if self.options.subset:
+                reason = "Required images are not supported with --subsets"
+                instance.add_filter(reason, Filters.REQUIRED_IMAGE)
+                logger.debug(f"{instance.name}: {reason}")
+                continue
+
+            if self.options.runtime_artifact_cleanup:
+                reason = "Required images are not supported with --runtime-artifact-cleanup"
+                instance.add_filter(reason, Filters.REQUIRED_IMAGE)
+                logger.debug(f"{instance.name}: {reason}")
+                continue
+
+            if instance.testsuite.no_own_image or not Path(
+                    Path(instance.testsuite.source_dir) / 'CMakeLists.txt').exists():
+                instance.no_own_image = True
+                # filter out qemu platforms, because for tests must use origin path to QEMU_PIPE,
+                # can be done, but first better to refactor QemuHandler
+                if instance.platform.simulation == 'qemu':
+                    instance.add_filter("QEMU with no own image not supported", Filters.REQUIRED_IMAGE)
+                    logger.debug(f"{instance.name}: QEMU with no own image not supported")
+                    continue
+
+                # check if platform is correct in required images
+                first_image = instance.testsuite.required_images[0]
+                req_platform, _ = self._get_required_platform_and_id(first_image, instance)
+                if req_platform != instance.platform.name:
+                    instance.add_filter(f"Wrong platform in required image: {first_image}", Filters.REQUIRED_IMAGE)
+                    logger.warning(f"{instance.name}: If there is no own image, the first required image"
+                                   " should be for the same platform as the test")
+                    continue
+
+            for required_image in instance.testsuite.required_images:
+                req_instance = self._find_required_instance(required_image, instance)
+
+                if not req_instance:
+                    instance.add_filter(f"Missing required image {required_image}", Filters.REQUIRED_IMAGE)
+                    logger.debug(f"{instance.name}: Required image '{required_image}' was not found."
+                                 " Please verify if required image is provided with --testsuite-root")
+                    break
+
+                if req_instance.status == TwisterStatus.FILTER:
+                    # check if required image is filtered because is not runnable
+                    if loaded_from_file or (
+                            self.options.device_testing and not req_instance.run
+                            and len(req_instance.filters) == 1
+                            and req_instance.reason == "Not runnable on device"):
+                        # clear status flag to build required image
+                        self.instances[req_instance.name].status = TwisterStatus.NONE
+                    else:
+                        instance.add_filter(f"Required image {required_image} is filtered", Filters.REQUIRED_IMAGE)
+                        logger.debug(f"{instance.name}: Required image '{required_image}' is filtered")
+                        break
+
+                if instance.testsuite.id in req_instance.testsuite.required_images:
+                    instance.add_filter("Circular dependency in required images", Filters.REQUIRED_IMAGE)
+                    logger.warning(f"{instance.name}: Circular dependency, current app also required by "
+                                   f"{required_image}")
+                    break
+
+                instance.required_images.append(req_instance.name)
+
     def add_instances(self, instance_list):
         for instance in instance_list:
             self.instances[instance.name] = instance
-
 
     def get_testsuite(self, identifier):
         results = []
@@ -1100,7 +1191,7 @@ def change_skip_to_error_if_integration(options, instance):
         filters = {t['type'] for t in instance.filters}
         ignore_filters ={Filters.CMD_LINE, Filters.SKIP, Filters.PLATFORM_KEY,
                          Filters.TOOLCHAIN, Filters.MODULE, Filters.TESTPLAN,
-                         Filters.QUARANTINE}
+                         Filters.QUARANTINE, Filters.REQUIRED_IMAGE}
         if filters.intersection(ignore_filters):
             return
         instance.status = TwisterStatus.ERROR

@@ -795,6 +795,34 @@ filter: <expression>
 
     Would match it.
 
+required_images: <list of images>
+    A list of test scenarios that are required to be built for this test to run.
+    If the test does not have a ``CMakeLists.txt`` file or has set ``no_own_image``
+    to True, then the first image from this list will be used as the test
+    scenario image.
+    All required test scenarios must be available from the tree (given with ``-T`` option).
+    If a required test scenario is not available in tree or its build failed,
+    the test will be skipped.
+    If the required scenario is prefixed with a platform name, then it will be
+    built for that platform only.
+    The following is an example yaml with 2 required images.
+
+    .. code-block:: yaml
+
+        tests:
+          shared.app.example:
+            required_images:
+              - test.example.first
+              - native_sim:test.example.second
+            no_own_image: True
+
+    Not supported with options: ``--subset`` or ``--runtime-artifact-cleanup``.
+
+no_own_image: <True|False> (default False)
+    If true, the test scenario will not be built. Instead, it
+    will use the first test scenario from ``required_images`` list.
+    Not supported on QEMU platforms.
+
 required_snippets: <list of needed snippets>
     :ref:`Snippets <snippets>` are supported in twister for test scenarios that
     require them. As with normal applications, twister supports using the base
