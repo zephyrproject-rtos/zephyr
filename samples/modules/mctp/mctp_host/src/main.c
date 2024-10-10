@@ -34,15 +34,14 @@ MCTP_UART_DT_DEFINE(mctp_host, DEVICE_DT_GET(DT_NODELABEL(arduino_serial)));
 
 int main(void)
 {
-	printf("Hello MCTP! %s\n", CONFIG_BOARD_TARGET);
-
 	int rc;
 	struct mctp *mctp_ctx;
 
+	LOG_INF("MCTP Host EID:%d on %s\n", LOCAL_HELLO_EID, CONFIG_BOARD_TARGET);
+
 	mctp_set_alloc_ops(malloc, free, realloc);
 	mctp_ctx = mctp_init();
-	assert(mctp_ctx != NULL);
-
+	__ASSERT_NO_MSG(mctp_ctx != NULL);
 	mctp_register_bus(mctp_ctx, &mctp_host.binding, LOCAL_HELLO_EID);
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
 	mctp_uart_start_rx(&mctp_host);
@@ -52,10 +51,10 @@ int main(void)
 		rc = mctp_message_tx(mctp_ctx, REMOTE_HELLO_EID, false, 0, "hello",
 				     sizeof("hello"));
 		if (rc != 0) {
-			printf("Failed to send message, errno %d\n", rc);
+			LOG_WRN("Failed to send message, errno %d\n", rc);
 			k_msleep(1000);
 		} else {
-			k_sem_take(&mctp_rx, K_FOREVER);
+			k_sem_take(&mctp_rx, K_MSEC(10));
 		}
 		rc = 0;
 	}

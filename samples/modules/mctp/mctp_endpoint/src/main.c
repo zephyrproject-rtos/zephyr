@@ -41,7 +41,7 @@ static void rx_message(uint8_t eid, bool tag_owner,
 		break;
 	}
 
-    k_sem_give(&mctp_rx);
+	k_sem_give(&mctp_rx);
 }
 
 MCTP_UART_DT_DEFINE(mctp_endpoint, DEVICE_DT_GET(DT_NODELABEL(arduino_serial)));
@@ -50,14 +50,13 @@ MCTP_UART_DT_DEFINE(mctp_endpoint, DEVICE_DT_GET(DT_NODELABEL(arduino_serial)));
 
 int main(void)
 {
-	LOG_INF("MCTP Endpoint %d on %s\n", LOCAL_HELLO_EID, CONFIG_BOARD_TARGET);
-	int rc = 0;
+	struct mctp *mctp_ctx;
+
+	LOG_INF("MCTP Endpoint EID:%d on %s\n", LOCAL_HELLO_EID, CONFIG_BOARD_TARGET);
 
 	mctp_set_alloc_ops(malloc, free, realloc);
-
 	mctp_ctx = mctp_init();
-	assert(mctp_ctx != NULL);
-
+	__ASSERT_NO_MSG(mctp_ctx != NULL);
 	mctp_register_bus(mctp_ctx, &mctp_endpoint.binding, LOCAL_HELLO_EID);
 	mctp_set_rx_all(mctp_ctx, rx_message, NULL);
 	mctp_uart_start_rx(&mctp_endpoint);

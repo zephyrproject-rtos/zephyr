@@ -21,8 +21,9 @@ struct mctp_binding_uart {
 	struct mctp_binding binding;
 	const struct device *dev;
 
-	/* receive buffer and state */
-	uint8_t rx_buf[1024];
+	/* receive buffers and state */
+	uint8_t rx_buf[2][256];
+	bool rx_buf_used[2];
 	struct mctp_pktbuf *rx_pkt;
 	uint8_t rx_exp_len;
 	uint16_t rx_fcs;

@@ -18,6 +18,27 @@ LOG_MODULE_REGISTER(mctp_uart, CONFIG_MCTP_LOG_LEVEL);
 #define MCTP_UART_FRAMING_FLAG 0x7e
 #define MCTP_UART_ESCAPE	 0x7d
 
+const char* UART_EVENT_STRING[] = {
+	"TX Done",
+	"TX Aborted",
+	"RX Ready",
+	"RX Buffer Request",
+	"RX Buffer Released",
+	"RX Disabled",
+	"RX Stopped",
+};
+
+const char* MCTP_STATE_STRING[] = {
+	"Wait: Sync Start",
+	"Wait: Revision",
+	"Wait: Len",
+	"Data",
+	"Data: Escaped",
+	"Wait: FCS1",
+	"Wait: FCS2",
+	"Wait: Sync End",
+};
+
 struct mctp_serial_header {
 	uint8_t flag;
 	uint8_t revision;
@@ -94,7 +115,8 @@ static void mctp_uart_consume(struct mctp_binding_uart *uart, uint8_t c)
 	struct mctp_pktbuf *pkt = uart->rx_pkt;
 	bool valid = false;
 
-	LOG_DBG("state: %d, char 0x%02x", uart->rx_state, c);
+	LOG_DBG("uart consume start state: %d:%s, char 0x%02x", uart->rx_state,
+	        MCTP_STATE_STRING[uart->rx_state], c);
 
 	__ASSERT_NO_MSG(!pkt == (uart->rx_state == STATE_WAIT_SYNC_START ||
 			uart->rx_state == STATE_WAIT_REVISION ||
@@ -197,7 +219,9 @@ static void mctp_uart_consume(struct mctp_binding_uart *uart, uint8_t c)
 		break;
 	}
 
-	LOG_DBG(" -> state: %d", uart->rx_state);
+
+	LOG_DBG("uart consume end state: %d:%s, char 0x%02x", uart->rx_state,
+	        MCTP_STATE_STRING[uart->rx_state], c);
 }
 
 
@@ -206,7 +230,7 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 {
 	struct mctp_binding_uart *binding = userdata;
 
-    LOG_DBG("uart evt %d", evt->type);
+    LOG_DBG("uart event %d:%s", evt->type, UART_EVENT_STRING[evt->type]);
 
 	switch (evt->type) {
 	case UART_TX_DONE:
@@ -222,33 +246,48 @@ static void mctp_uart_callback(const struct device *dev, struct uart_event *evt,
 		binding->rx_res = evt->data.rx.len;
 		/* parse the buffer */
 		for (size_t i = 0; i < evt->data.rx.len; i++) {
-			mctp_uart_consume(binding, evt->data.rx.buf[i]);
+			mctp_uart_consume(binding, evt->data.rx.buf[evt->data.rx.offset+i]);
 		}
-		LOG_DBG("Buffer consume by UART, done receiving one packet");
+		LOG_DBG("RX Buffer Ready by UART, MCTP consuming offset %d, length %d", evt->data.rx.offset, evt->data.rx.len);
 		break;
 	case UART_RX_BUF_REQUEST:
-		LOG_WRN("Buffer requested by UART, none to be given");
+		for (int i = 0; i < sizeof(binding->rx_buf_used); i++) {
+			if (!binding->rx_buf_used[i]) {
+				binding->rx_buf_used[i] = true;
+				uart_rx_buf_rsp(dev, binding->rx_buf[i], sizeof(binding->rx_buf[i]));
+				LOG_DBG("RX Buffer reqested by UART, gave %d", i);
+				break;
+			}
+		}
 		break;
 	case UART_RX_BUF_RELEASED:
+		for (int i = 0; i < sizeof(binding->rx_buf_used); i++) {
+			if(binding->rx_buf[i] == evt->data.rx_buf.buf) {
+				binding->rx_buf_used[i] = false;
+				LOG_DBG("RX Buffer Released %d", i);
+				break;
+			}
+		}
 		break;
 	case UART_RX_STOPPED:
-		/* Ignored */
+		LOG_DBG("RX Stopped");
 		break;
-    case UART_RX_DISABLED:
-        /* Ignored */
-        break;
+    	case UART_RX_DISABLED:
+    		LOG_DBG("RX Disabled");
+    		/* TODO do I need to re-enable? Are all buffers free? */
+        	break;
 	}	
 }
 
 
 void mctp_uart_start_rx(struct mctp_binding_uart *uart)
 {
-    int res;
-    res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
-    __ASSERT_NO_MSG(res == 0);
+	int res = uart_callback_set(uart->dev, mctp_uart_callback, uart);
+	__ASSERT_NO_MSG(res == 0);
 
-	res = uart_rx_enable(uart->dev, uart->rx_buf, sizeof(uart->rx_buf), 100);
-    __ASSERT_NO_MSG(res == 0);
+	uart->rx_buf_used[0] = true;
+	res = uart_rx_enable(uart->dev, uart->rx_buf[0], sizeof(uart->rx_buf[0]), 1000);
+	__ASSERT_NO_MSG(res == 0);
 }
 
 int mctp_uart_tx(struct mctp_binding *b, struct mctp_pktbuf *pkt)
