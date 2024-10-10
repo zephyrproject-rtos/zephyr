@@ -58,6 +58,26 @@ enum tls_credential_type {
 	TLS_CREDENTIAL_PSK_ID
 };
 
+/** TLS Credential Keygen types
+ * Used to specify the type of keypair to generate during keygen operations.
+ */
+enum tls_credential_keygen_type {
+	/** Generate the default keypair type for the back-end */
+	TLS_CREDENTIAL_KEYGEN_DEFAULT = 0,
+
+	/** Do not generate a new keypair */
+	TLS_CREDENTIAL_KEYGEN_EXISTING,
+
+	/* The remaining keygen types are a subset of the key pair types defined in the IANA
+	 * Supported Groups registry. See RFC 8447 for details.
+	 */
+	TLS_CREDENTIAL_KEYGEN_SECP256R1,
+	TLS_CREDENTIAL_KEYGEN_SECP384R1,
+	TLS_CREDENTIAL_KEYGEN_SECP521R1,
+	TLS_CREDENTIAL_KEYGEN_X25519,
+	TLS_CREDENTIAL_KEYGEN_X448
+};
+
 /** Secure tag, a reference to TLS credential
  *
  * Secure tag can be used to reference credential after it was registered
@@ -125,6 +145,96 @@ int tls_credential_get(sec_tag_t tag, enum tls_credential_type type,
  * @retval -ENOENT Requested TLS credential was not found.
  */
 int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type);
+
+#if defined(CONFIG_TLS_CREDENTIAL_KEYGEN) || defined(__DOXYGEN__)
+
+/**
+ * @brief Generate client public/private keypair, store the private key, output the public key.
+ *
+ * @details This function generates a public/private keypair, installs the private key to the
+ * 	    provided security tag, and outputs the public key. The security tag must not already
+ * 	    have a private key installed. Some backends do not support this function.
+ *
+ * @param tag	  A security tag where the generated private key should be installed.
+ * @param type	  The type of public/private key-pair to generate. Set to
+ * 		  TLS_CREDENTIAL_KEYGEN_DEFAULT to use the default type for the credentials
+ * 		  back-end. TLS_CREDENTIAL_KEYGEN_EXISTING is invalid.
+ * @param key_buf A buffer where the public key will be written in ASN.1 DER format.
+ * 		  (X.509 SubjectPublicKeyInfo entry. See RFC5280)
+ * 		  This buffer may be temporarily used to hold the private key before it is saved
+ * 		  into storage. Private key contents will always be erased before the function
+ * 		  returns.
+ * @param keylen  The size of the provided key buffer. This will be updated to the total number of
+ * 		  bytes written to the key buffer.
+ *
+ * @retval 0 CSR successfully generated.
+ * @retval -EEXIST There is already a private key installed at the requested security tag.
+ * @retval -EFAULT CSR Generation failed.
+ * @retval -EFBIG CSR does not fit in the buffer provided.
+ * @retval -EINVAL Invalid input.
+ * @retval -ENOTSUP The TLS credentials backend doesn't support keygen or the requested keygen type.
+ */
+int tls_credential_keygen(sec_tag_t tag, enum tls_credential_keygen_type type,
+			  void *key_buf, size_t *keylen);
+
+/**
+ * @brief Check whether the specified TLS credential keygen type is supported.
+ *
+ *
+ * @param type
+ * @retval true if the provided keygen type can be used with tls_credential_keygen (including
+ *  		TLS_CREDENTIAL_KEYGEN_DEFAULT).
+ * @retval false otherwise.
+ */
+bool tls_credential_can_keygen(enum tls_credential_keygen_type type);
+
+#else /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+#define tls_credential_keygen(...) (-ENOTSUP)
+#define tls_credential_can_keygen(...) (false)
+#endif /* defined(CONFIG_TLS_CREDENTIAL_KEYGEN) */
+
+#if defined(CONFIG_TLS_CREDENTIAL_CSR) || defined(__DOXYGEN__)
+
+/**
+ * @brief Generate a certificate signing request (CSR).
+ *
+ * @details This function generates a PKCS#10 Certificate Signing Request. Some backends do not
+ * 	    support this function. Can optionally generate a new private/public keypair and store
+ * 	    the private key used for CSR signature. Some backends may require or not support this
+ * 	    mode.
+ *
+ * @param tag    Security tag of the private key used for signing the CSR. If generating a new
+ * 		 keypair, this is where the generated private key will be installed. In this case,
+ * 		 the security tag must not already have a private key installed. Otherwise,
+ * 		 specifies the sectag to load the needed private key from.
+ * @param type	 The type of public/private key-pair to generate. Set to
+ * 		 TLS_CREDENTIAL_KEYGEN_DEFAULT to use the default type for the credentials
+ * 		 back-end. Set to TLS_CREDENTIAL_KEYGEN_EXISTING to instead use a pre-existing private
+ * 		 key.
+ * @param dn     Distinguished Name subject string for the CSR to be generated. Provided string
+ * 		 will be copied. Should contain a comma-separated list of attribute types and
+ * 		 values conformal with RFC 4514. For example:
+ *               "C=US,ST=CA,O=Linux Foundation,CN=Zephyr RTOS Device 1"
+ * @param csr    A buffer where the PKCS#10 CSR will be written (in ASN.1 DER format).
+ * 		 This buffer may be temporarily used to hold private key data while it is in use.
+ * 		 Private key contents are always be erased before the function returns.
+ * @param csrlen The size of the provided csr buffer. If any data is written to the csr buffer,
+ *               this will be updated to the total amount written in bytes.
+ *
+ * @retval 0 CSR successfully generated.
+ * @retval -EEXIST There is already a private key installed at the requested security tag.
+ * @retval -ENOENT Private key does not exist at the requested security tag.
+ * @retval -EFAULT CSR Generation failed.
+ * @retval -EFBIG CSR does not fit in the buffer provided.
+ * @retval -EINVAL Invalid input.
+ * @retval -ENOTSUP The TLS credentials backend doesn't support CSR generation.
+ */
+int tls_credential_csr(sec_tag_t tag, char *dn, enum tls_credential_keygen_type type,
+		       void *csr, size_t *csrlen);
+
+#else /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
+#define tls_credential_csr(...) (-ENOTSUP)
+#endif /* defined(CONFIG_TLS_CREDENTIAL_CSR) */
 
 #ifdef __cplusplus
 }

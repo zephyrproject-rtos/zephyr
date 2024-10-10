@@ -344,6 +344,70 @@ static int shell_write_cred_buf(const struct shell *sh, char *chunk)
 	return 0;
 }
 
+/* Dump the contents of the credential buffer as either base64 or raw text,
+ * optionally truncating NULL terminator.
+
+ * Returns -EBADF if non-ASCII characters are printed.
+ * Returns -EINVAL if NULL terminator is missing
+ */
+static int shell_dump_cred_buf(const struct shell *sh, bool terminated,
+			       enum cred_storage_fmt format)
+{
+	int i;
+	int written;
+	int remaining;
+	bool invalid_printed = false;
+	size_t line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH;
+
+	/* If the credential is stored as binary, adjust line length so that the output
+	 * base64 has width CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
+	 */
+	if (format == CRED_STORAGE_FMT_BINARY) {
+		line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH / 4 * 3;
+	}
+
+	/* If the stored credential is NULL-terminated, do not include NULL termination in output */
+	if (terminated) {
+		if (cred_buf[cred_written - 1] != 0) {
+			/* NULL terminator is missing. */
+			return -EINVAL;
+		}
+		cred_written -= 1;
+	}
+
+	/* Print the credential out in lines. */
+	for (i = 0; i < cred_written; i += line_length) {
+		/* Print either a full line, or however much credential data is left. */
+		remaining = MIN(line_length, cred_written - i);
+
+		/* Read out a line of data. */
+		memset(cred_out_buf, 0, sizeof(cred_out_buf));
+		if (format == CRED_STORAGE_FMT_BINARY) {
+			(void)base64_encode(cred_out_buf, sizeof(cred_out_buf),
+					    &written, &cred_buf[i], remaining);
+		} else if (format == CRED_STORAGE_FMT_STRING) {
+			memcpy(cred_out_buf, &cred_buf[i], remaining);
+			if (filter_nonprint(cred_out_buf, remaining, '?')) {
+				invalid_printed = true;
+			}
+		}
+
+		/* Print the line (with prefix). */
+		shell_fprintf(sh, SHELL_NORMAL, "%s%s\n",
+			      CONFIG_TLS_CREDENTIALS_SHELL_BLK_PREFIX, cred_out_buf);
+	}
+
+	/* If there is a configured end-of-block marker, print it on a new line */
+	if (sizeof(CONFIG_TLS_CREDENTIALS_SHELL_BLK_END) > 1) {
+		shell_fprintf(sh, SHELL_NORMAL, "%s\n", CONFIG_TLS_CREDENTIALS_SHELL_BLK_END);
+	}
+
+	if (invalid_printed) {
+		return -EBADF;
+	}
+	return 0;
+}
+
 /* Adds a credential to the credential store */
 static int tls_cred_cmd_add(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -596,17 +660,12 @@ cleanup:
 /* Retrieves credential data from credential store. */
 static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 {
-	int i;
-	int remaining;
-	int written;
 	int err = 0;
 	size_t cred_len;
 	sec_tag_t sectag;
 	enum tls_credential_type type;
 	enum cred_storage_fmt format;
 	bool terminated;
-
-	size_t line_length;
 
 	/* Lock credentials so that we can safely use internal access functions. */
 	credentials_lock();
@@ -626,15 +685,6 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 		goto cleanup;
 	}
 
-	line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH;
-
-	/* If the credential is stored as binary, adjust line length so that the output
-	 * base64 has width CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH
-	 */
-	if (format == CRED_STORAGE_FMT_BINARY) {
-		line_length = CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH / 4 * 3;
-	}
-
 	/* Check whether a credential of this type and sectag actually exists. */
 	if (!credential_get(sectag, type)) {
 		shell_fprintf(sh, SHELL_ERROR, "There is no TLS credential with sectag %d and "
@@ -652,7 +702,8 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 	if (err == -EFBIG) {
 		shell_fprintf(sh, SHELL_ERROR, "Not enough room in the credential buffer to "
 					       "retrieve credential with sectag %d and type %s. "
-					       "Increase TLS_CREDENTIALS_SHELL_MAX_CRED_LEN.\n",
+					       "Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE.\n",
 					       sectag, cred_type_name(type));
 		err = -ENOMEM;
 		goto cleanup;
@@ -663,49 +714,25 @@ static int tls_cred_cmd_get(const struct shell *sh, size_t argc, char *argv[])
 		goto cleanup;
 	}
 
-	/* Update the credential buffer writehead.
-	 * Keeping this accurate ensures that a "Buffer Cleared" message is eventually printed.
-	 */
+	/* Update the credential buffer writehead. */
 	cred_written = cred_len;
 
-	/* If the stored credential is NULL-terminated, do not include NULL termination in output */
-	if (terminated) {
-		if (cred_buf[cred_written - 1] != 0) {
-			shell_fprintf(sh, SHELL_ERROR, "The stored credential isn't "
-						       "NULL-terminated, but a NULL-terminated "
-						       "format was specified.\n");
-
-			err = -EINVAL;
-			goto cleanup;
-		}
-		cred_written -= 1;
+	err = shell_dump_cred_buf(sh, terminated, format);
+	if (err == -EINVAL) {
+		shell_fprintf(sh, SHELL_ERROR, "The stored credential isn't NULL-terminated, but "
+					       "a NULL-terminated format was specified.\n");
+		goto cleanup;
 	}
-
-	/* Print the credential out in lines. */
-	for (i = 0; i < cred_written; i += line_length) {
-		/* Print either a full line, or however much credential data is left. */
-		remaining = MIN(line_length, cred_written - i);
-
-		/* Read out a line of data. */
-		memset(cred_out_buf, 0, sizeof(cred_out_buf));
-		if (format == CRED_STORAGE_FMT_BINARY) {
-			(void)base64_encode(cred_out_buf, sizeof(cred_out_buf),
-					    &written, &cred_buf[i], remaining);
-		} else if (format == CRED_STORAGE_FMT_STRING) {
-			memcpy(cred_out_buf, &cred_buf[i], remaining);
-			if (filter_nonprint(cred_out_buf, remaining, '?')) {
-				err = -EBADF;
-			}
-		}
-
-		/* Print the line. */
-		shell_fprintf(sh, SHELL_NORMAL, "%s\n", cred_out_buf);
-	}
-
-	if (err) {
+	if (err == -EBADF) {
 		shell_fprintf(sh, SHELL_WARNING, "Non-printable characters were included in the "
 						 "output and filtered. Have you selected the "
 						 "correct storage format?\n");
+		goto cleanup;
+	}
+	if (err) {
+		shell_fprintf(sh, SHELL_WARNING, "Unknown error dumping credential buffer: %d\n",
+						 err);
+		err = 0;
 	}
 
 cleanup:
@@ -793,6 +820,178 @@ cleanup:
 	return 0;
 }
 
+//TODO: Command functions conditionally enabled
+
+/* Generates a private/public keypair, stores the private key in the credential store, and
+ * outputs the public key in base-64-encoded ASN.1 DER format.
+ * (X.509 SubjectPublicKeyInfo entry. See RFC5280)
+ *
+ * The storage format for the private key depends on the TLS Credentials back-end in use.
+ * For some back-ends, keygen may be unsupported, or the stored private key may not be retrievable.
+ * See the tls_credential_keygen implementation of the back-end of interest for specifics.
+ */
+static int tls_cred_cmd_keygen(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	sec_tag_t sectag;
+	size_t cred_len = sizeof(cred_buf);
+	enum tls_credential_keygen_type type;
+
+	/* Lock credentials so that we can interact with them directly.
+	 * Mainly this is required by credential_get.
+	 */
+
+	credentials_lock();
+
+	err = shell_parse_cred_sectag(sh, argv[1], &sectag, false);
+	if (err) {
+		goto cleanup;
+	}
+
+	err = shell_parse_cred_backend(sh, argv[2]);
+	if (err) {
+		goto cleanup;
+	}
+
+	//TODO Keygen type parsing
+	type = TLS_CREDENTIAL_KEYGEN_DEFAULT;
+
+	/* Check whether the sectag already has a private key. */
+	if (credential_get(sectag, TLS_CREDENTIAL_PRIVATE_KEY)) {
+		shell_fprintf(sh, SHELL_ERROR, "TLS sectag %d already has a private key.\n",
+					       sectag);
+		err = -EEXIST;
+		goto cleanup;
+	}
+
+	/* Clear the credential buffer before use. */
+	shell_clear_cred_buf(sh);
+
+	/* Perform keygen, store result in credential buffer. */
+	err = tls_credential_keygen(sectag, type, cred_buf, &cred_len);
+	if (err == -EFBIG) {
+		shell_fprintf(sh, SHELL_ERROR, "Not enough room in the credential buffer for "
+					       "keygen. Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE. "
+					       "Generated private key will not be stored.\n");
+		err = -ENOMEM;
+		goto cleanup;
+	} else if (err) {
+		shell_fprintf(sh, SHELL_ERROR, "Error generating private key for sectag %d: %d.\n",
+						sectag, err);
+		goto cleanup;
+	}
+
+	/* If successful, update credential buffer writehead appropriately */
+	cred_written = cred_len;
+
+	shell_fprintf(sh, SHELL_NORMAL, "Private/public key pair generated\n");
+
+	/* Dump the generated public key */
+	err = shell_dump_cred_buf(sh, false, CRED_STORAGE_FMT_BINARY);
+	if (err) {
+		shell_fprintf(sh, SHELL_WARNING, "Unexpected error dumping public key: %d", err);
+		err = 0;
+	}
+
+cleanup:
+	/* Unlock credentials since we are done interacting with internal state. */
+	credentials_unlock();
+
+	/* We are also done with the credentials buffer, so clear it for good measure. */
+	shell_clear_cred_buf(sh);
+
+	return err;
+}
+
+/* Generates a private/public keypair, stores the private key in the credential store, and
+ * outputs a PKCS#10 CSR in base-64-encoded DER format.
+ *
+ * The storage format for the private key depends on the TLS Credentials back-end in use.
+ * For some back-ends, CSR may be unsupported, or the stored private key may not be retrievable.
+ * See the tls_credential_csr implementation of the back-end of interest for specifics.
+ */
+static int tls_cred_cmd_csr(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	sec_tag_t sectag;
+	size_t cred_len = sizeof(cred_buf);
+	char* dname;
+	enum tls_credential_keygen_type type;
+
+	/* Lock credentials so that we can interact with them directly.
+	 * Mainly this is required by credential_get.
+	 */
+
+	credentials_lock();
+
+	err = shell_parse_cred_sectag(sh, argv[1], &sectag, false);
+	if (err) {
+		goto cleanup;
+	}
+
+	err = shell_parse_cred_backend(sh, argv[2]);
+	if (err) {
+		goto cleanup;
+	}
+
+	/* Nothing to parse, we'll just pass what was provided directly to the csr writer.
+	 * But this should be an RFC 4514 Distinguished Name, for example:
+	 * "C=US,ST=CA,O=Linux Foundation,CN=Zephyr RTOS Device 1"
+	 */
+	dname = argv[3];
+
+	//TODO Keygen type parsing
+	type = TLS_CREDENTIAL_KEYGEN_DEFAULT;
+
+	/* Check whether the sectag already has a private key. */
+	if (credential_get(sectag, TLS_CREDENTIAL_PRIVATE_KEY)) {
+		shell_fprintf(sh, SHELL_ERROR, "TLS sectag %d already has a private key.\n",
+					       sectag);
+		err = -EEXIST;
+		goto cleanup;
+	}
+
+	/* Clear the credential buffer before use. */
+	shell_clear_cred_buf(sh);
+
+	/* Perform keygen and CSR generation, store result in credential buffer. */
+	err = tls_credential_csr(sectag, dname, type, cred_buf, &cred_len);
+	if (err == -EFBIG) {
+		shell_fprintf(sh, SHELL_ERROR, "Not enough room in the credential buffer for CSR. "
+					       "Increase "
+					       "CONFIG_TLS_CREDENTIALS_SHELL_CRED_BUF_SIZE. "
+					       "Generated private key will not be stored.\n");
+		err = -ENOMEM;
+		goto cleanup;
+	} else if (err) {
+		shell_fprintf(sh, SHELL_ERROR, "Error generating CSR for sectag %d: %d.\n",
+						sectag, err);
+		goto cleanup;
+	}
+
+	/* If successful, update cred_written appropriately */
+	cred_written = cred_len;
+
+	shell_fprintf(sh, SHELL_NORMAL, "CSR generated\n");
+
+	/* Dump the generated CSR */
+	err = shell_dump_cred_buf(sh, false, CRED_STORAGE_FMT_BINARY);
+	if (err) {
+		shell_fprintf(sh, SHELL_WARNING, "Unexpected error dumping CSR: %d", err);
+		err = 0;
+	}
+
+cleanup:
+	/* Unlock credentials since we are done interacting with internal state. */
+	credentials_unlock();
+
+	/* We are also done with the credentials buffer, so clear it for good measure. */
+	shell_clear_cred_buf(sh);
+
+	return err;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 	SHELL_CMD_ARG(buf, NULL, "Buffer in credential data so it can be added.",
 		      tls_cred_cmd_buf, 2, 0),
@@ -802,6 +1001,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(tls_cred_cmds,
 		      tls_cred_cmd_del, 3, 0),
 	SHELL_CMD_ARG(get, NULL, "Retrieve the contents of a TLS credential",
 		      tls_cred_cmd_get, 4, 0),
+
+	//TODO: Make these conditionally enabled?
+	SHELL_CMD_ARG(keygen, NULL, "Generate private/public keypair",
+		      tls_cred_cmd_keygen, 4, 0),
+	SHELL_CMD_ARG(csr, NULL, "Generate CSR",
+		      tls_cred_cmd_csr, 5, 0),
+
 	SHELL_CMD_ARG(list, NULL, "List stored TLS credentials, optionally filtering by type "
 				  "or sectag.",
 		      tls_cred_cmd_list, 1, 2),

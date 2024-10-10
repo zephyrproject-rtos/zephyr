@@ -32,4 +32,12 @@ config TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE
 
 	   Also used to print error messages if digest generation fails.
 
+config TLS_CREDENTIALS_SHELL_BLK_PREFIX
+	string "Prefix to use when printing block outputs such as CSR or credential data"
+	default "#CSH: "
+
+config TLS_CREDENTIALS_SHELL_BLK_END
+	string "End-of-block marker to print on new line when finished printing block outputs."
+	default "#CSH-END"
+
 endif # TLS_CREDENTIALS_SHELL
