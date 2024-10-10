@@ -378,6 +378,10 @@
 	sys_trace_k_heap_alloc_enter(h, bytes, timeout)
 #define sys_port_trace_k_heap_alloc_exit(h, timeout, ret)                                          \
 	sys_trace_k_heap_alloc_exit(h, bytes, timeout, ret)
+#define sys_port_trace_k_heap_calloc_enter(h, timeout)                                             \
+	sys_trace_k_heap_calloc_enter(h, num, size, timeout)
+#define sys_port_trace_k_heap_calloc_exit(h, timeout, ret)                                         \
+	sys_trace_k_heap_calloc_exit(h, num, size, timeout, ret)
 #define sys_port_trace_k_heap_free(h) sys_trace_k_heap_free(h, mem)
 #define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)                                \
 	sys_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
@@ -657,6 +661,9 @@ void sys_trace_k_msgq_purge(struct k_msgq *msgq);
 void sys_trace_k_heap_init(struct k_heap *h, void *mem, size_t bytes);
 void sys_trace_k_heap_alloc_enter(struct k_heap *h, size_t bytes, k_timeout_t timeout);
 void sys_trace_k_heap_alloc_exit(struct k_heap *h, size_t bytes, k_timeout_t timeout, void *ret);
+void sys_trace_k_heap_calloc_enter(struct k_heap *h, size_t num, size_t size, k_timeout_t timeout);
+void sys_trace_k_heap_calloc_exit(struct k_heap *h, size_t num, size_t size, k_timeout_t timeout,
+				  void *ret);
 void sys_trace_k_heap_aligned_alloc_enter(struct k_heap *h, size_t bytes, k_timeout_t timeout);
 void sys_trace_k_heap_aligned_alloc_blocking(struct k_heap *h, size_t bytes, k_timeout_t timeout);
 void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, size_t bytes, k_timeout_t timeout,

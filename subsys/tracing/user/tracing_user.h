@@ -292,6 +292,8 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_k_heap_aligned_alloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_alloc_enter(heap, timeout)
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)
+#define sys_port_trace_k_heap_calloc_enter(heap, timeout)
+#define sys_port_trace_k_heap_calloc_exit(heap, timeout, ret)
 #define sys_port_trace_k_heap_free(heap)
 #define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
 #define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)

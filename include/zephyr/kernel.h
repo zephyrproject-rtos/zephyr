@@ -5464,6 +5464,31 @@ void *k_heap_alloc(struct k_heap *h, size_t bytes,
 		k_timeout_t timeout) __attribute_nonnull(1);
 
 /**
+ * @brief Allocate and initialize memory for an array of objects from a k_heap
+ *
+ * Allocates memory for an array of num objects of size and initializes all
+ * bytes in the allocated storage to zero.  If no memory is available
+ * immediately, the call will block for the specified timeout (constructed
+ * via the standard timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory
+ * to be freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ * Allocated memory is aligned on a multiple of pointer sizes.
+ *
+ * @note @a timeout must be set to K_NO_WAIT if called from ISR.
+ * @note When CONFIG_MULTITHREADING=n any @a timeout is treated as K_NO_WAIT.
+ *
+ * @funcprops \isr_ok
+ *
+ * @param h Heap from which to allocate
+ * @param num Number of objects to allocate
+ * @param size Desired size of each object to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return A pointer to valid heap memory, or NULL
+ */
+void *k_heap_calloc(struct k_heap *h, size_t num, size_t size, k_timeout_t timeout)
+	__attribute_nonnull(1);
+
+/**
  * @brief Reallocate memory from a k_heap
  *
  * Reallocates and returns a memory buffer from the memory region owned

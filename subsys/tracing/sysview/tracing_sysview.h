@@ -563,6 +563,13 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_heap_alloc_exit(heap, timeout, ret)                                       \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_ALLOC, (uint32_t)ret)
 
+#define sys_port_trace_k_heap_calloc_enter(heap, timeout)                                          \
+	SEGGER_SYSVIEW_RecordU32x2(TID_HEAP_CALLOC, (uint32_t)(uintptr_t)heap,                     \
+				   (uint32_t)timeout.ticks)
+
+#define sys_port_trace_k_heap_calloc_exit(heap, timeout, ret)                                      \
+	SEGGER_SYSVIEW_RecordEndCallU32(TID_HEAP_CALLOC, (uint32_t)ret)
+
 #define sys_port_trace_k_heap_free(heap)                                                           \
 	SEGGER_SYSVIEW_RecordU32(TID_HEAP_FREE, (uint32_t)(uintptr_t)heap)
 
