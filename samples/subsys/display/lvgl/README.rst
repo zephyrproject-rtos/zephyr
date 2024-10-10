@@ -46,6 +46,7 @@ for corresponding connectors, for example:
 or a board with an integrated display:
 
 - :ref:`esp_wrover_kit`
+- :ref:`feather_esp32s3_tft`
 
 or a simulated display environment in a :ref:`native_sim <native_sim>` application:
 

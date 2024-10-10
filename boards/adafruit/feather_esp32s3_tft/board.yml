@@ -1,0 +1,5 @@
+board:
+  name: adafruit_feather_esp32s3_tft
+  vendor: adafruit
+  socs:
+  - name: esp32s3
