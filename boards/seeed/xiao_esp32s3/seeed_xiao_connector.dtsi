@@ -28,3 +28,6 @@ xiao_spi: &spi2 {};
 xiao_i2c: &i2c0 {};
 xiao_serial: &uart0 {};
 xiao_adc: &adc0 {};
+xiao_sense_spi: &spi2 {};
+xiao_sense_i2c: &i2c1 {};
+xiao_sense_lcd_cam: &lcd_cam {};
