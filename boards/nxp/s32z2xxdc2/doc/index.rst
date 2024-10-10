@@ -59,6 +59,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | LPI2C     | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| HSE       | on-chip    | crypto                              |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
@@ -162,6 +164,22 @@ ADC is provided through ADC SAR controller with 2 instances. Each ADC SAR instan
 
 .. note::
    All channels of an instance only run on 1 group channel at the same time.
+
+CRYPTO
+======
+
+The Hardware Security Engine (HSE) supports cryptographic operations, including hashing and
+symmetric ciphers, with capabilities for ECB, CBC, and CTR modes using RAM-based key catalogs
+with 128-bit key lengths.
+
+.. note::
+   Applications must format key catalogs before executing the first service.
+   The NXP S32 HSE CRYPTO provides a Kconfig option, `CONFIG_CRYPTO_NXP_S32_HSE_FORMAT_KEY_CATALOG`,
+   which is used for testing purposes to format both the NVM and RAM key catalogs.
+
+   By default, only MU0 is activated for use by the HSE to listen for requests, while other MUs
+   remain deactivated. If applications require the use of additional MUs, they must be activated
+   beforehand.
 
 Programming and Debugging
 *************************

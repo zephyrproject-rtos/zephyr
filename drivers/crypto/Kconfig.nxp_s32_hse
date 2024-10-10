@@ -1,0 +1,32 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CRYPTO_NXP_S32_HSE
+	bool "NXP S32 HSE crypto driver"
+	default y
+	depends on DT_HAS_NXP_S32_CRYPTO_HSE_MU_ENABLED
+	help
+	  Enable NXP HSE crypto driver.
+
+config CRYPTO_NXP_S32_HSE_FORMAT_KEY_CATALOG
+	bool "NXP S32 HSE crypto driver supports formatting all key catalogs during initialization."
+	depends on CRYPTO_NXP_S32_HSE
+	help
+	  Enable supports formatting all key catalogs during initialization.
+	  This feature is primarily used for testing purposes.
+
+config CRYPTO_NXP_S32_HSE_OUTPUT_BUFFER_SIZE
+	int "The output buffer size for storing the output data of HSE crypto service"
+	default 128
+	depends on CRYPTO_NXP_S32_HSE
+	help
+	  The output buffer size for storing the output data of HSE crypto service.
+
+config CRYPTO_NXP_S32_HSE_AES_KEY_GROUP_ID
+	int "The AES 128-bits Key Group ID within RAM Key Catalog"
+	range 0 255
+	default 0
+	depends on CRYPTO_NXP_S32_HSE
+	help
+	  The AES 128-bits Key Group ID within RAM Key Catalog.
+
