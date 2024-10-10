@@ -247,9 +247,8 @@ uint8_t ll_scan_enable(uint8_t enable)
 	lll->rl_idx = FILTER_IDX_NONE;
 	lll->rpa_gen = 0;
 
-	if ((lll->type & 0x1) &&
-	    (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	     own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+	if ((lll->type & 0x1) && (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+				  own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM)) {
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
