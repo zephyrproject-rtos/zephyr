@@ -264,17 +264,14 @@ static enum wifi_link_mode get_sta_link_mode(struct wpa_supplicant *wpa_s, struc
 		return WIFI_5;
 	} else if (sta->flags & WLAN_STA_HT) {
 		return WIFI_4;
-#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	} else if (sta->flags & WLAN_STA_NONERP) {
 		return WIFI_1;
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	} else if (wpa_s->assoc_freq > 4000) {
 		return WIFI_2;
 	} else if (wpa_s->assoc_freq > 2000) {
 		return WIFI_3;
 #else
-	} else if ((sta->flags & WLAN_STA_NONERP) ||
-		   (iface->current_mode->mode == HOSTAPD_MODE_IEEE80211B)) {
-		return WIFI_1;
 	} else if (iface->freq > 4000) {
 		return WIFI_2;
 	} else if (iface->freq > 2000) {
