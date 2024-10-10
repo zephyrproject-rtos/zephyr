@@ -230,12 +230,16 @@ static int cdc_ecm_out_start(struct usbd_class_data *const c_data)
 	return  ret;
 }
 
+#define NET_PKT_ALLOC_TIMEOUT 100 /* ms */
+
 static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 			      struct net_buf *const buf, const int err)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_ecm_eth_data *data = dev->data;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt, *src;
+	uint16_t len;
+	int ret;
 
 	if (err || buf->len == 0) {
 		goto restart_out_transfer;
@@ -254,24 +258,45 @@ static int cdc_ecm_acl_out_cb(struct usbd_class_data *const c_data,
 		}
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, buf->len,
+	len = net_buf_frags_len(buf);
+
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, len,
 					   AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("No memory for net_pkt");
 		goto restart_out_transfer;
 	}
 
-	if (net_pkt_write(pkt, buf->data, buf->len)) {
-		LOG_ERR("Unable to write into pkt");
-		net_pkt_unref(pkt);
+	/* Temporary source pkt we use to copy the Ethernet frame from
+	 * the list of USB net_buf's.
+	 */
+	src = net_pkt_alloc(K_MSEC(NET_PKT_ALLOC_TIMEOUT));
+	if (src == NULL) {
+		LOG_ERR("src packet alloc fail");
 		goto restart_out_transfer;
 	}
 
+	net_pkt_append_buffer(src, buf);
+	net_pkt_set_overwrite(src, true);
+	net_pkt_cursor_init(src);
+
+	ret = net_pkt_copy(pkt, src, len);
+	if (ret < 0) {
+		LOG_ERR("Cannot copy data (%d)", ret);
+		net_pkt_unref(pkt);
+		goto unref_packet;
+	}
+
 	LOG_DBG("Received packet len %zu", net_pkt_get_len(pkt));
+
 	if (net_recv_data(data->iface, pkt) < 0) {
 		LOG_ERR("Packet %p dropped by network stack", pkt);
 		net_pkt_unref(pkt);
 	}
+
+unref_packet:
+	src->buffer = NULL;
+	net_pkt_unref(src);
 
 restart_out_transfer:
 	net_buf_unref(buf);
@@ -486,12 +511,19 @@ static void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,
 	return data->fs_desc;
 }
 
+#define TX_ALLOC_TIMEOUT 50 /* ms */
+
+static struct net_buf *tx_allocator(k_timeout_t timeout, void *user_data)
+{
+	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
+}
+
 static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 {
 	struct cdc_ecm_eth_data *const data = dev->data;
 	struct usbd_class_data *c_data = data->c_data;
 	size_t len = net_pkt_get_len(pkt);
-	struct net_buf *buf;
+	struct net_buf *buf, *tmp;
 
 	if (len > NET_ETH_MAX_FRAME_SIZE) {
 		LOG_WRN("Trying to send too large packet, drop");
@@ -510,14 +542,21 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 		return -ENOMEM;
 	}
 
-	if (net_pkt_read(pkt, buf->data, len)) {
-		LOG_ERR("Failed copy net_pkt");
-		net_buf_unref(buf);
+	tmp = pkt->frags;
+	while (tmp) {
+		size_t copied;
 
-		return -ENOBUFS;
+		copied = net_buf_append_bytes(buf, tmp->len, tmp->data,
+					      K_MSEC(TX_ALLOC_TIMEOUT),
+					      tx_allocator, &cdc_ecm_ep_pool);
+		if (copied != (size_t)tmp->len) {
+			LOG_ERR("Failed copy net_pkt");
+			net_buf_unref(buf);
+			return -ENOBUFS;
+		}
+
+		tmp = tmp->frags;
 	}
-
-	net_buf_add(buf, len);
 
 	if (!(buf->len % cdc_ecm_get_bulk_in_mps(c_data))) {
 		udc_ep_buf_set_zlp(buf);
