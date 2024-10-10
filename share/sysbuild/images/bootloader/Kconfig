@@ -102,6 +102,9 @@ config MCUBOOT_MODE_RAM_LOAD
 	  from there. The image must be linked to execute from RAM, the address that it is copied
 	  to is specified using the load-addr argument when running imgtool.
 
+	  Note: RAM must be assigned to the bootloader that is not used by the application in this
+	  mode so that the bootloader is able to function until the application has booted.
+
 config MCUBOOT_MODE_FIRMWARE_UPDATER
 	bool "Firmware updater"
 	help

@@ -661,6 +661,10 @@ function(set_config_string image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
 endfunction()
 
+function(set_config_int image setting value)
+  set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=${value}\n")
+endfunction()
+
 # Usage:
 #   sysbuild_add_subdirectory(<source_dir> [<binary_dir>])
 #
