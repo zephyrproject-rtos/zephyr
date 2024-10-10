@@ -724,18 +724,12 @@ static int espi_it8xxx2_receive_vwire(const struct device *dev,
 		(struct espi_vw_regs *)config->base_espi_vw;
 	uint8_t vw_index = vw_channel_list[signal].vw_index;
 	uint8_t level_mask = vw_channel_list[signal].level_mask;
-	uint8_t valid_mask = vw_channel_list[signal].valid_mask;
 
 	if (signal > ARRAY_SIZE(vw_channel_list)) {
 		return -EIO;
 	}
 
-	if (vw_reg->VW_INDEX[vw_index] & valid_mask) {
-		*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
-	} else {
-		/* Not valid */
-		*level = 0;
-	}
+	*level = !!(vw_reg->VW_INDEX[vw_index] & level_mask);
 
 	return 0;
 }
