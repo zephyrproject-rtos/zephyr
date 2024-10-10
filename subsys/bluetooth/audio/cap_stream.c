@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -280,9 +281,41 @@ static struct bt_bap_stream_ops bap_stream_ops = {
 	.disconnected = cap_stream_disconnected_cb,
 };
 
+static void unicast_client_cp_cb(struct bt_bap_stream *bap_stream,
+				 enum bt_bap_ascs_rsp_code rsp_code, enum bt_bap_ascs_reason reason)
+{
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
+	    stream_is_central(bap_stream)) {
+		struct bt_cap_stream *cap_stream =
+			CONTAINER_OF(bap_stream, struct bt_cap_stream, bap_stream);
+
+		bt_cap_initiator_cp_cb(cap_stream, rsp_code, reason);
+	}
+}
+
 void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream)
 {
 	bt_bap_stream_cb_register(&cap_stream->bap_stream, &bap_stream_ops);
+
+	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT)) {
+		/* The CAP initiator can use the same callback for all of these as the result is the
+		 * same: Abort current procedure
+		 */
+		static struct bt_bap_unicast_client_cb unicast_client_cb = {
+			.config = unicast_client_cp_cb,
+			.qos = unicast_client_cp_cb,
+			.enable = unicast_client_cp_cb,
+			.start = unicast_client_cp_cb,
+			.stop = unicast_client_cp_cb,
+			.disable = unicast_client_cp_cb,
+			.metadata = unicast_client_cp_cb,
+			.release = unicast_client_cp_cb,
+		};
+		int err;
+
+		err = bt_bap_unicast_client_register_cb(&unicast_client_cb);
+		__ASSERT_NO_MSG(err == 0 || err == -EEXIST);
+	}
 }
 
 void bt_cap_stream_ops_register(struct bt_cap_stream *stream,
