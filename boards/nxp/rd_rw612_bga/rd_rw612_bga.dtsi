@@ -14,7 +14,6 @@
 
 	aliases {
 		usart-0 = &flexcomm3;
-		led0 = &green_led;
 		sw0 = &sw_4;
 		i2c-0 = &flexcomm2;
 		watchdog0 = &wwdt;
@@ -30,14 +29,6 @@
 		zephyr,flash-controller = &mx25u51245g;
 		zephyr,console = &flexcomm3;
 		zephyr,shell-uart = &flexcomm3;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		green_led: led_1 {
-			gpios = <&hsgpio1 20 0>;
-			label = "User LED_GREEN";
-		};
 	};
 
 	gpio_keys {
