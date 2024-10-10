@@ -4,11 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LSM6DSV16X
-	bool "LSM6DSV16X I2C/SPI accelerometer and gyroscope Chip"
+	bool "LSM6DSV16X I3C/I2C/SPI accelerometer and gyroscope Chip"
 	default y
 	depends on DT_HAS_ST_LSM6DSV16X_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi)
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSV16X
