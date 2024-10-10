@@ -17,6 +17,16 @@
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+#include <fsl_iopctl.h>
+#include <fsl_reset.h>
+#include <fsl_clock.h>
+#include <fsl_gpio.h>
+/* There is no PORT_Type definition in RT7xx, don't need this parameter. */
+#define PORT_Type void
+static GPIO_Type const *s_gpioBases[] = GPIO_BASE_PTRS;
+#endif
+
 struct gpio_mcux_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
@@ -32,19 +42,42 @@ struct gpio_mcux_data {
 	sys_slist_t callbacks;
 };
 
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+static uint32_t GPIO_GetInstance(GPIO_Type *base)
+{
+
+	uint32_t instance;
+	/* Find the instance index from base address mappings. */
+	for (instance = 0; instance < ARRAY_SIZE(s_gpioBases); instance++) {
+		if (s_gpioBases[instance] == base) {
+			break;
+		}
+	}
+
+	assert(instance < ARRAY_SIZE(s_gpioBases));
+
+	return instance;
+}
+#endif
+
 static int gpio_mcux_configure(const struct device *dev,
 			       gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
+
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+	uint32_t port_no = GPIO_GetInstance(gpio_base);
+	volatile uint32_t pinconfig = 0;
+#else
 	PORT_Type *port_base = config->port_base;
 	uint32_t mask = 0U;
 	uint32_t pcr = 0U;
-
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
 		return -EINVAL;
 	}
+#endif
 
 	if (((flags & GPIO_INPUT) != 0) && ((flags & GPIO_OUTPUT) != 0)) {
 		return -ENOTSUP;
@@ -64,6 +97,10 @@ static int gpio_mcux_configure(const struct device *dev,
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
 		gpio_base->PDDR &= ~BIT(pin);
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+		/* Enable input buffer for input pins */
+		pinconfig |= IOPCTL_INBUF_EN;
+#endif
 		break;
 	case GPIO_OUTPUT:
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
@@ -77,6 +114,36 @@ static int gpio_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)
+	/* Select GPIO mux for this pin (func 0 is always GPIO) */
+	pinconfig |= IOPCTL_FUNC0;
+
+	if ((flags & GPIO_PULL_UP) != 0) {
+		/* Enable and select pull up. */
+		pinconfig |= (IOPCTL_PUPD_EN | IOPCTL_PULLUP_EN);
+	} else if ((flags & GPIO_PULL_DOWN) != 0) {
+		/* Enable and select pull down. */
+		pinconfig |= (IOPCTL_PUPD_EN | IOPCTL_PULLDOWN_EN);
+	}
+
+#if defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH
+	/* Determine the drive strength */
+	switch (flags & KINETIS_GPIO_DS_MASK) {
+	case KINETIS_GPIO_DS_DFLT:
+		/* Default is low drive strength */
+		pinconfig |= IOPCTL_DRIVE_100OHM;
+		break;
+	case KINETIS_GPIO_DS_ALT:
+		/* Alternate is high drive strength */
+		pinconfig |= IOPCTL_DRIVE_33OHM;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+#endif /* defined(FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH) && FSL_FEATURE_PORT_HAS_DRIVE_STRENGTH */
+
+	IOPCTL_PinMuxSet(port_no, pin, pinconfig);
+#else
 	/* Set PCR mux to GPIO for the pin we are configuring */
 	mask |= PORT_PCR_MUX_MASK;
 	pcr |= PORT_PCR_MUX(PORT_MUX_GPIO);
@@ -84,7 +151,7 @@ static int gpio_mcux_configure(const struct device *dev,
 #if defined(FSL_FEATURE_PORT_HAS_INPUT_BUFFER) && FSL_FEATURE_PORT_HAS_INPUT_BUFFER
 	/* Enable digital input buffer */
 	pcr |= PORT_PCR_IBE_MASK;
-#endif
+#endif /* defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT) */
 
 	/* Now do the PORT module. Figure out the pullup/pulldown
 	 * configuration, but don't write it to the PCR register yet.
@@ -120,6 +187,8 @@ static int gpio_mcux_configure(const struct device *dev,
 
 	/* Accessing by pin, we only need to write one PCR register. */
 	port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr;
+
+#endif /* End of #if defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT) */
 
 	return 0;
 }
@@ -178,6 +247,7 @@ static int gpio_mcux_port_toggle_bits(const struct device *dev, uint32_t mask)
 	return 0;
 }
 
+#if !(defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT))
 #if !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
 static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev,
 						   uint32_t pin,
@@ -215,6 +285,7 @@ static uint32_t get_port_pcr_irqc_value_from_flags(const struct device *dev,
 	return PORT_PCR_IRQC(port_interrupt);
 }
 #endif  /* !defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT */
+#endif  /* !(defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT)) */
 
 #if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
@@ -269,12 +340,14 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev,
 {
 	const struct gpio_mcux_config *config = dev->config;
 	GPIO_Type *gpio_base = config->gpio_base;
+#if !(defined(CONFIG_SOC_SERIES_IMXRT7XX) && defined(CONFIG_SOC_FAMILY_NXP_IMXRT))
 	PORT_Type *port_base = config->port_base;
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
 		return -EINVAL;
 	}
+#endif
 
 	/* Check for an invalid pin configuration */
 	if ((mode != GPIO_INT_MODE_DISABLED) &&
@@ -288,15 +361,15 @@ static int gpio_mcux_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
-	uint32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
-
-	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
-#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
+#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
 	uint32_t icr = get_gpio_icr_irqc_value_from_flags(dev, pin, mode, trig);
 
 	gpio_base->ICR[pin] = (gpio_base->ICR[pin] & ~GPIO_ICR_IRQC_MASK) | icr;
+#elif !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+	uint32_t pcr = get_port_pcr_irqc_value_from_flags(dev, pin, mode, trig);
+
+	port_base->PCR[pin] = (port_base->PCR[pin] & ~PORT_PCR_IRQC_MASK) | pcr;
 #endif  /* !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) */
 
 	return 0;
@@ -316,17 +389,17 @@ static void gpio_mcux_port_isr(const struct device *dev)
 	struct gpio_mcux_data *data = dev->data;
 	uint32_t int_status;
 
-#if !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
-	int_status = config->port_base->ISFR;
-
-	/* Clear the port interrupts */
-	config->port_base->ISFR = int_status;
-#elif (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
+#if (defined(FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT) && \
 		FSL_FEATURE_GPIO_HAS_INTERRUPT_CHANNEL_SELECT)
 	int_status = config->gpio_base->ISFR[0];
 
 	/* Clear the gpio interrupts */
 	config->gpio_base->ISFR[0] = int_status;
+#elif !(defined(FSL_FEATURE_PORT_HAS_NO_INTERRUPT) && FSL_FEATURE_PORT_HAS_NO_INTERRUPT)
+	int_status = config->port_base->ISFR;
+
+	/* Clear the port interrupts */
+	config->port_base->ISFR = int_status;
 #else
 	int_status = 0U;
 	ARG_UNUSED(config);

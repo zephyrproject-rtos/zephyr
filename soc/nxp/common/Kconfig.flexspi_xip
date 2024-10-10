@@ -18,7 +18,6 @@ config FLASH_BASE_ADDRESS
 config FLASH_SIZE
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
 		if $(DT_FLASH_HAS_SIZE_PROP)
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
 config FLASH_MCUX_FLEXSPI_XIP
 	bool

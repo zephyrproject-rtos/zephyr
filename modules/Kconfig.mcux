@@ -96,6 +96,11 @@ config HAS_MCUX_FLEXSPI
 	help
 	  Set if the flexible SPI (FlexSPI) module is present in the SoC.
 
+config HAS_MCUX_XSPI
+	bool
+	help
+	  Set if the flexible SPI (XSPI) module is present in the SoC.
+
 config HAS_MCUX_FTFX
 	bool
 	help

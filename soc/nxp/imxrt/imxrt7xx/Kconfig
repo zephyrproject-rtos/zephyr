@@ -1,0 +1,86 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT798S
+	select CPU_CORTEX_M33
+	select CLOCK_CONTROL
+	select CPU_CORTEX_M_HAS_DWT
+	select ARM
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select ARM_TRUSTZONE_M
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_MCUX
+	select HAS_MCUX_SYSCON
+	select HAS_MCUX_CACHE if SOC_MIMXRT798S_CPU0
+	select HAS_GLIKEY
+	select HAS_MCUX_XSPI
+
+if SOC_SERIES_IMXRT7XX
+if NXP_IMXRT_BOOT_HEADER
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	default 0x4000
+
+endif # NXP_IMXRT_BOOT_HEADER
+
+config IMXRT7XX_CODE_CACHE
+	bool "Code cache"
+	default y if HAS_MCUX_CACHE
+	help
+	  Enable code cache for XSPI region at boot. If this Kconfig is
+	  cleared, the CACHE64 controller will be disabled during SOC init
+
+config MCUX_CORE_SUFFIX
+	default "_cm33_core0" if SOC_MIMXRT798S_CPU0
+	default "_cm33_core1" if SOC_MIMXRT798S_CPU1
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_XSPI := nxp,imx-xspi
+
+DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+
+DT_FLASH_PARENT_IS_XSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_XSPI))
+DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+		if $(DT_FLASH_PARENT_IS_XSPI)
+
+config FLASH_SIZE
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,Kb) \
+		if $(DT_FLASH_HAS_SIZE_PROP)
+
+config FLASH_MCUX_XSPI_XIP
+	bool
+	default $(DT_FLASH_PARENT_IS_XSPI)
+	select XIP
+	help
+	  Allows for the soc to safely initialize the clocks for the
+	  XSPI when planning to execute code in XSPI Memory.
+
+endif # SOC_SERIES_IMXRT7XX
+
+if FLASH_MCUX_XSPI_XIP
+
+# Code relocation is needed when FLASH_MCUX_XSPI_XIP is enabled
+config CODE_DATA_RELOCATION_SRAM
+	default y
+
+config FLASH_MCUX_XSPI_XIP_MEM
+	string
+	default "RAM"
+
+endif # FLASH_MCUX_XSPI_XIP
+
+config MFD
+	default y
+	depends on DT_HAS_NXP_LP_FLEXCOMM_ENABLED
+
+config HAS_GLIKEY
+	bool
+	help
+	   This symbol defined whether enable glikey driver.
