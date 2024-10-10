@@ -482,12 +482,18 @@ static int qspi_rdsr(const struct device *dev, uint8_t sr_num)
 }
 
 /* Wait until RDSR confirms write is not in progress. */
-static int qspi_wait_while_writing(const struct device *dev, k_timeout_t poll_period)
+static int qspi_wait_while_writing(const struct device *dev, uint32_t poll_period_us)
 {
 	int rc;
 
 	do {
-		k_sleep(poll_period);
+		if (poll_period_us > 0) {
+#ifdef CONFIG_MULTITHREADING
+			k_sleep(K_USEC(poll_period_us));
+#else
+			k_busy_wait(poll_period_us);
+#endif
+		}
 		rc = qspi_rdsr(dev, 1);
 	} while ((rc >= 0)
 		 && ((rc & SPI_NOR_WIP_BIT) != 0U));
@@ -558,7 +564,7 @@ static int qspi_wrsr(const struct device *dev, uint8_t sr_val, uint8_t sr_num)
 	 * corrupted.  Wait.
 	 */
 	if (rc == 0) {
-		rc = qspi_wait_while_writing(dev, K_NO_WAIT);
+		rc = qspi_wait_while_writing(dev, 0);
 	}
 
 	return rc;
@@ -608,7 +614,7 @@ static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 			 * flash memory is unavailable to perform additional operations
 			 * until done.
 			 */
-			rc = qspi_wait_while_writing(dev, K_MSEC(10));
+			rc = qspi_wait_while_writing(dev, 10000);
 			if (rc < 0) {
 				LOG_ERR("wait error at 0x%lx size %zu", (long)addr, size);
 				break;
