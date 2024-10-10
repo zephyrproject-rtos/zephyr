@@ -24,6 +24,9 @@ Configuration
 The  backend is configured via Kconfig and devicetree.
 When configuring the backend, do the following:
 
+* If at least one of the cores uses data cache on shared memory, set the ``dcache-alignment`` value.
+  This must be the largest value of the invalidation or the write-back size for both sides of the communication.
+  You can skip it if none of the communication sides is using data cache on shared memory.
 * Define two memory regions and assign them to ``tx-region`` and ``rx-region``
   of an instance. Ensure that the memory regions used for data exchange are
   unique (not overlapping any other region) and accessible by both domains
@@ -31,6 +34,12 @@ When configuring the backend, do the following:
 * Define MBOX devices which are used to send the signal that informs the other
   domain (or CPU) that data has been written. Ensure that the other domain
   (or CPU) is able to receive the signal.
+
+.. caution::
+
+    Make sure that you set correct value of the ``dcache-alignment``.
+    At first, wrong value may not show any signs, which may give a false impression that everything works.
+    Unstable behavior will appear sooner or later.
 
 See the following configuration example for one of the instances:
 
@@ -49,6 +58,7 @@ See the following configuration example for one of the instances:
       ipc {
          ipc0: ipc0 {
             compatible = "zephyr,ipc-icmsg";
+            dcache-alignment = <32>;
             tx-region = <&tx>;
             rx-region = <&rx>;
             mboxes = <&mbox 0>, <&mbox 1>;
