@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 
 #include "eth.h"
 
-#define BUFFER_SIZE 1560
+#define BUFFER_SIZE (1500 + 60) /* Ethernet MTU + TSN Metadata */
 
 #define DESC_MAGIC 0xAD4B0000UL
 
@@ -290,7 +290,7 @@ static int eth_tsn_nic_init(const struct device *dev)
 
 	printk("Ethernet init\n");
 
-	eth_tsn_nic_start(dev); /* TODO: This is for test only: this should be called by user app */
+	eth_tsn_nic_start(dev); /* TODO: This is for test only: this is called by zephyr subsys */
 
 	/* Test logs */
 	/*
