@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Arrel Neumiller
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: esp32c3_supermini
+  vendor: others
+  socs:
+  - name: esp32c3
