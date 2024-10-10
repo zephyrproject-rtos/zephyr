@@ -3636,6 +3636,20 @@ struct bt_hci_evt_le_cs_subevent_result {
 	uint8_t steps[];
 } __packed;
 
+#define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE 0x32
+
+struct bt_hci_evt_le_cs_subevent_result_continue {
+	uint16_t conn_handle;
+	uint8_t config_id;
+	uint8_t procedure_done_status;
+	uint8_t subevent_done_status;
+	uint8_t procedure_abort_reason: 4;
+	uint8_t subevent_abort_reason: 4;
+	uint8_t num_antenna_paths;
+	uint8_t num_steps_reported;
+	uint8_t steps[];
+} __packed;
+
 #define BT_HCI_EVT_LE_CS_TEST_END_COMPLETE 0x33
 struct bt_hci_evt_le_cs_test_end_complete {
 	uint8_t status;
@@ -3734,6 +3748,7 @@ struct bt_hci_evt_le_cs_test_end_complete {
 #define BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE              BT_EVT_BIT(44)
 #define BT_EVT_MASK_LE_CS_CONFIG_COMPLETE                             BT_EVT_BIT(46)
 #define BT_EVT_MASK_LE_CS_SUBEVENT_RESULT                             BT_EVT_BIT(48)
+#define BT_EVT_MASK_LE_CS_SUBEVENT_RESULT_CONTINUE                    BT_EVT_BIT(49)
 #define BT_EVT_MASK_LE_CS_TEST_END_COMPLETE                           BT_EVT_BIT(50)
 
 /** HCI Error Codes, BT Core Spec v5.4 [Vol 1, Part F]. */
