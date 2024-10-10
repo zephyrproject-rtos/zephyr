@@ -10,7 +10,7 @@ Overview
 The Zephyr kernel is supported on the Intel® Cyclone® V SoC Development Kit,
 using its Hard Processor System (HPS) CPU.
 
-.. figure:: img/cv_soc_board.jpg
+.. figure:: img/cyclonev_socdk.jpg
    :align: center
    :alt: Intel's Cyclone® V SoC FPGA DevKit
 

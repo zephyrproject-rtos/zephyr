@@ -43,7 +43,7 @@ Functional Description
 The following two figures and the table below describe the key components, interfaces, and controls
 of the ESP-WROVER-KIT board.
 
-.. figure:: img/esp-wrover-kit-v4.1-layout-front.jpg
+.. figure:: img/esp_wrover_kit.jpg
      :align: center
      :alt: esp wrover front
 

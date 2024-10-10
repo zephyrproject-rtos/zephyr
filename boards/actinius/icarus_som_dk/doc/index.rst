@@ -6,7 +6,7 @@ Actinius Icarus SoM DK
 Overview
 ********
 
-.. figure:: img/icarus-som-dk.jpg
+.. figure:: img/icarus_som_dk.jpg
      :width: 450px
      :align: center
      :alt: Icarus SoM DK
@@ -42,7 +42,7 @@ following devices (provided directly by Nordic):
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/icarus-som-dk-block-diagram.jpg
+.. figure:: img/icarus_som_dk_block_diagram.jpg
      :width: 450px
      :align: center
      :alt: Icarus SoM DK Block Diagram
