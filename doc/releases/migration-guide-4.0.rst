@@ -199,6 +199,12 @@ Clock control
 Controller Area Network (CAN)
 =============================
 
+Crypto
+======
+
+* Following the deprecation of the TinyCrypt library (:github:`79566`), the
+  TinyCrypt-based shim driver was marked as deprecated (:github:`79653`).
+
 Display
 =======
 
