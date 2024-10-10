@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Cirrus Logic, Inc.
+# SPDX-Identifier: Apache-2.0
+
+description: Cirrus Logic CS35L45 Smart Amplifier on an I2C bus
+
+compatible: "cirrus,cs35l45"
+
+include: ["i2c-device.yaml", "cirrus,cs35l45-common.yaml"]
