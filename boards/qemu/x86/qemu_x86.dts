@@ -13,6 +13,10 @@
 #endif
 #define DT_FLASH_SIZE		DT_SIZE_K(4096)
 
+/* Simulated Flash */
+#define DT_SIM_FLASH_BASE	(DT_DRAM_BASE + DT_DRAM_SIZE - DT_SIZE_M(1))
+#define DT_SIM_FLASH_SIZE	DT_SIZE_K(256)
+
 #include <intel/atom.dtsi>
 #include <zephyr/dt-bindings/pcie/pcie.h>
 
@@ -42,7 +46,7 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,flash-controller = &sim_flash;
+		zephyr,flash-controller = &sim_flash_controller;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,canbus = &can0;
 	};
@@ -80,16 +84,29 @@
 		};
 	};
 
-	sim_flash: sim_flash {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sim_flash_mem: memory@1f00000 {
+			compatible = "zephyr,memory-region";
+			reg = <DT_SIM_FLASH_BASE DT_SIM_FLASH_SIZE>;
+			zephyr,memory-region = "SOC_NV_FLASH";
+		};
+	};
+
+	sim_flash_controller: sim_flash_controller {
 		compatible = "zephyr,sim-flash";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
 		erase-value = <0xff>;
 
+		memory-region = <&sim_flash_mem>;
+
 		flash_sim0: flash_sim@0 {
 			compatible = "soc-nv-flash";
-			reg = <0x00000000 DT_SIZE_K(1024)>;
+			reg = <DT_SIM_FLASH_BASE DT_SIM_FLASH_SIZE>;
 
 			erase-block-size = <1024>;
 			write-block-size = <4>;
@@ -147,22 +164,22 @@
 		 * Storage partition will be used by FCB/LittleFS/NVS
 		 * if enabled.
 		 */
-		storage_partition: partition@1000 {
+		storage_partition: partition@0 {
 			label = "storage";
-			reg = <0x00001000 0x00010000>;
+			reg = <0x00000000 0x00010000>;
 		};
 
-		slot0_partition: partition@11000 {
+		slot0_partition: partition@10000 {
 			label = "image-0";
-			reg = <0x00011000 0x00010000>;
+			reg = <0x00010000 0x00010000>;
 		};
-		slot1_partition: partition@21000 {
+		slot1_partition: partition@20000 {
 			label = "image-1";
-			reg = <0x00021000 0x00010000>;
+			reg = <0x00020000 0x00010000>;
 		};
-		eepromemu_partition: partition@31000 {
+		eepromemu_partition: partition@30000 {
 			label = "eeprom-emu";
-			reg = <0x00031000 0x00010000>;
+			reg = <0x00030000 0x00010000>;
 		};
 	};
 };
