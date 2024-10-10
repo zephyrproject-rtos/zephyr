@@ -82,6 +82,49 @@
 #define LINKER_DT_NODE_REGION_NAME(node_id) \
 	STRINGIFY(LINKER_DT_NODE_REGION_NAME_TOKEN(node_id))
 
+#define LINKER_DT_L_PAREN (
+#define LINKER_DT_R_PAREN )
+
+/**
+ * @brief Get the linker memory-region flags with parentheses.
+ *
+ * This attempts to return the zephyr,memory-region-flags property
+ * with parentheses.
+ * Return empty string if not set the property.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     / {
+ *             soc {
+ *                     sram1: memory@2000000 {
+ *                         zephyr,memory-region = "MY_NAME";
+ *                         zephyr,memory-region-flags = "rx";
+ *                     };
+ *                     sram2: memory@2001000 {
+ *                         zephyr,memory-region = "MY@OTHER@NAME";
+ *                         zephyr,memory-region-flags = "r!w!x";
+ *                     };
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    LINKER_DT_NODE_REGION_FLAGS(DT_NODELABEL(sram1)) // (rx)
+ *    LINKER_DT_NODE_REGION_FLAGS(DT_NODELABEL(sram2)) // (r!w!x)
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return the value of the memory region flag specified in the device tree
+ *         enclosed in parentheses.
+ */
+#define LINKER_DT_NODE_REGION_FLAGS(node_id)                                                       \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, zephyr_memory_region_flags),                          \
+		   (LINKER_DT_L_PAREN DT_STRING_UNQUOTED(node_id, zephyr_memory_region_flags)      \
+			    LINKER_DT_R_PAREN))
+
 /** @cond INTERNAL_HIDDEN */
 
 #define _DT_COMPATIBLE	zephyr_memory_region
@@ -102,6 +145,7 @@
  *        compatible = "zephyr,memory-region", "mmio-sram";
  *        reg = < 0x20010000 0x1000 >;
  *        zephyr,memory-region = "FOOBAR";
+ *        zephyr,memory-region-flags = "rw";
  *    };
  * @endcode
  *
@@ -115,7 +159,8 @@
  * @param attr region attributes
  */
 #define _REGION_DECLARE(node_id)			\
-	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id) :	\
+	LINKER_DT_NODE_REGION_NAME_TOKEN(node_id)	\
+	LINKER_DT_NODE_REGION_FLAGS(node_id) :          \
 	ORIGIN = DT_REG_ADDR(node_id),			\
 	LENGTH = DT_REG_SIZE(node_id)
 
