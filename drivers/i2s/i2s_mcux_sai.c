@@ -76,6 +76,7 @@ struct stream {
 	bool last_block;
 	struct k_msgq in_queue;
 	struct k_msgq out_queue;
+	struct k_work_delayable difer_work;
 };
 
 struct i2s_mcux_config {
@@ -101,6 +102,7 @@ struct i2s_mcux_config {
 
 /* Device run time data */
 struct i2s_dev_data {
+	const struct device *dev_i2s;
 	const struct device *dev_dma;
 	struct stream tx;
 	void *tx_in_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
@@ -314,17 +316,19 @@ static void i2s_dma_tx_callback(const struct device *dma_dev,
 			strm->state = I2S_STATE_ERROR;
 			goto disabled_exit_no_drop;
 		}
-		dma_start(dev_data->dev_dma, strm->dma_channel);
 
 		if (blocks_queued ||
 			       (strm->free_tx_dma_blocks < MAX_TX_DMA_BLOCKS)) {
+			dma_start(dev_data->dev_dma, strm->dma_channel);
 			goto enabled_exit;
 		} else {
 			/* all DMA blocks are free but no blocks were queued */
-			if (strm->state == I2S_STATE_STOPPING) {
-				/* TX queue has drained */
-				strm->state = I2S_STATE_READY;
-				LOG_DBG("TX stream has stopped");
+			if (strm->state == I2S_STATE_STOPPING || blocks_queued == 0) {
+				/* Received a STOP/DRAIN trigger */
+				k_work_reschedule(&strm->difer_work,
+				  K_MSEC(1));
+				LOG_DBG("TX stream has drained");
+				return;
 			} else {
 				strm->state = I2S_STATE_ERROR;
 				LOG_ERR("TX Failed to reload DMA");
@@ -429,22 +433,6 @@ static void i2s_dma_rx_callback(const struct device *dma_dev,
 	}
 }
 
-static void enable_mclk_direction(const struct device *dev, bool dir)
-{
-	const struct i2s_mcux_config *dev_cfg = dev->config;
-	uint32_t offset = dev_cfg->mclk_pin_offset;
-	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t *gpr = (uint32_t *)
-			(DT_REG_ADDR(DT_NODELABEL(iomuxcgpr)) + offset);
-
-	if (dir) {
-		*gpr |= mask;
-	} else {
-		*gpr &= ~mask;
-	}
-
-}
-
 static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 {
 	const struct i2s_mcux_config *dev_cfg = dev->config;
@@ -460,6 +448,35 @@ static void get_mclk_rate(const struct device *dev, uint32_t *mclk)
 		return;
 	}
 	*mclk = rate;
+}
+
+static void enable_mclk_direction(const struct device *dev, bool dir)
+{
+	const struct i2s_mcux_config *dev_cfg = dev->config;
+
+#if (defined(CONFIG_I2S_HAS_PLL_SETTING) && (CONFIG_I2S_HAS_PLL_SETTING))
+	uint32_t offset = dev_cfg->mclk_pin_offset;
+	uint32_t mask = dev_cfg->mclk_pin_mask;
+	uint32_t *gpr = (uint32_t *)
+			(DT_REG_ADDR(DT_NODELABEL(iomuxcgpr)) + offset);
+
+	if (dir) {
+		*gpr |= mask;
+	} else {
+		*gpr &= ~mask;
+	}
+#else
+	sai_master_clock_t mclkConfig;
+	uint32_t mclk;
+	I2S_Type *base = (I2S_Type *)dev_cfg->base;
+
+	get_mclk_rate(dev, &mclk);
+	mclkConfig.mclkOutputEnable = true;
+	mclkConfig.mclkHz = mclk;
+	mclkConfig.mclkSourceClkHz = mclk;
+	SAI_SetMasterClockConfig(base, &mclkConfig);
+#endif
+
 }
 
 static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
@@ -1052,9 +1069,17 @@ static int i2s_mcux_read(const struct device *dev, void **mem_block,
 	status = k_msgq_get(&strm->out_queue, &buffer,
 			 SYS_TIMEOUT_MS(strm->cfg.timeout));
 	if (status != 0) {
+		if (strm->out_queue.used_msgs == 0 && strm->state == I2S_STATE_STOPPING) {
+			*mem_block = NULL;
+			*size = 0;
+			LOG_DBG("return NULL");
+			LOG_DBG("the inqueue is %d", strm->in_queue.used_msgs);
+			return 0;
+		}
 		if (strm->state == I2S_STATE_ERROR) {
 			ret = -EIO;
 		} else {
+			LOG_ERR("used_msgs %d", strm->out_queue.used_msgs);
 			LOG_DBG("need retry");
 			ret = -EAGAIN;
 		}
@@ -1142,6 +1167,7 @@ static void i2s_mcux_isr(void *arg)
 
 static void audio_clock_settings(const struct device *dev)
 {
+#if (defined(CONFIG_I2S_HAS_PLL_SETTING) && (CONFIG_I2S_HAS_PLL_SETTING))
 	clock_audio_pll_config_t audioPllConfig;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	uint32_t clock_name = (uint32_t) dev_cfg->clk_sub_sys;
@@ -1167,6 +1193,31 @@ static void audio_clock_settings(const struct device *dev)
 	#endif /* CONFIG_SOC_SERIES */
 
 	CLOCK_InitAudioPll(&audioPllConfig);
+#endif
+}
+
+static void i2s_mcux_sai_tx_work(struct k_work *item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct stream *strm =
+		CONTAINER_OF(dwork, struct stream, difer_work);
+	struct i2s_dev_data *data = CONTAINER_OF(strm, struct i2s_dev_data, tx);
+	const struct device *dev = data->dev_i2s;
+
+	strm->state = I2S_STATE_READY;
+	i2s_tx_stream_disable(dev, false);
+}
+
+static void i2s_mcux_sai_rx_work(struct k_work *item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
+	struct stream *strm =
+		CONTAINER_OF(dwork, struct stream, difer_work);
+	struct i2s_dev_data *data = CONTAINER_OF(strm, struct i2s_dev_data, rx);
+	const struct device *dev = data->dev_i2s;
+
+	strm->state = I2S_STATE_READY;
+	i2s_rx_stream_disable(dev, false, false);
 }
 
 static int i2s_mcux_initialize(const struct device *dev)
@@ -1182,6 +1233,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
+	dev_data->dev_i2s = dev;
 	/* Initialize the buffer queues */
 	k_msgq_init(&dev_data->tx.in_queue, (char *)dev_data->tx_in_msgs,
 		    sizeof(void *), CONFIG_I2S_TX_BLOCK_COUNT);
@@ -1208,6 +1260,10 @@ static int i2s_mcux_initialize(const struct device *dev)
 
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
+	k_work_init_delayable(&dev_data->tx.difer_work,
+			      i2s_mcux_sai_tx_work);
+	k_work_init_delayable(&dev_data->rx.difer_work,
+			      i2s_mcux_sai_rx_work);
 
 #if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) || \
 	(defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) &&	       \
@@ -1228,8 +1284,8 @@ static int i2s_mcux_initialize(const struct device *dev)
 #if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) ||	\
 	(defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) &&		\
 	(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER))
-#if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) &&			\
-	(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
+#if ((defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)) || \
+	(defined(FSL_FEATURE_SAI_HAS_MCR_MCLK_POST_DIV) && (FSL_FEATURE_SAI_HAS_MCR_MCLK_POST_DIV)))
 	mclkConfig.mclkHz = mclk;
 	mclkConfig.mclkSourceClkHz = mclk;
 #endif
@@ -1256,30 +1312,30 @@ static const struct i2s_driver_api i2s_mcux_driver_api = {
 									\
 	static const struct i2s_mcux_config i2s_##i2s_id##_config = {	\
 		.base = (I2S_Type *)DT_INST_REG_ADDR(i2s_id),		\
-		.clk_src = DT_INST_PROP(i2s_id, clock_mux),		\
-		.clk_pre_div = DT_INST_PROP(i2s_id, pre_div),		\
-		.clk_src_div = DT_INST_PROP(i2s_id, podf),		\
+		.clk_src = DT_INST_PROP_OR(i2s_id, clock_mux, 0),		\
+		.clk_pre_div = DT_INST_PROP_OR(i2s_id, pre_div, 0),		\
+		.clk_src_div = DT_INST_PROP_OR(i2s_id, podf, 0),		\
 		.pll_src =						\
-			DT_PHA_BY_NAME(DT_DRV_INST(i2s_id),		\
-				pll_clocks, src, value),		\
+			DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id),		\
+				pll_clocks, src, value, 0),		\
 		.pll_lp =						\
-			DT_PHA_BY_NAME(DT_DRV_INST(i2s_id),		\
-				pll_clocks, lp, value),			\
+			DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id),		\
+				pll_clocks, lp, value, 0),			\
 		.pll_pd =						\
-			DT_PHA_BY_NAME(DT_DRV_INST(i2s_id),		\
-				pll_clocks, pd, value),			\
+			DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id),		\
+				pll_clocks, pd, value, 0),			\
 		.pll_num =						\
-			DT_PHA_BY_NAME(DT_DRV_INST(i2s_id),		\
-				pll_clocks, num, value),		\
+			DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id),		\
+				pll_clocks, num, value, 0),		\
 		.pll_den =						\
-			DT_PHA_BY_NAME(DT_DRV_INST(i2s_id),		\
-				pll_clocks, den, value),		\
+			DT_PHA_BY_NAME_OR(DT_DRV_INST(i2s_id),		\
+				pll_clocks, den, value, 0),		\
 		.mclk_pin_mask =					\
-			DT_PHA_BY_IDX(DT_DRV_INST(i2s_id),		\
-				pinmuxes, 0, function),			\
+			DT_PHA_BY_IDX_OR(DT_DRV_INST(i2s_id),		\
+				pinmuxes, 0, function, 0),			\
 		.mclk_pin_offset =					\
-			DT_PHA_BY_IDX(DT_DRV_INST(i2s_id),		\
-				pinmuxes, 0, pin),			\
+			DT_PHA_BY_IDX_OR(DT_DRV_INST(i2s_id),		\
+				pinmuxes, 0, pin, 0),			\
 		.clk_sub_sys =	(clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),	\
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),	\

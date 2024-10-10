@@ -347,6 +347,32 @@ static int frdm_mcxn947_init(void)
 	CLOCK_AttachClk(kPLL0_to_FLEXIO);
 #endif
 
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai0), okay) || DT_NODE_HAS_STATUS(DT_NODELABEL(sai1), okay)
+	CLOCK_SetupFROHFClocking(48000000U);
+	/* < Set up PLL1 */
+	const pll_setup_t pll1_Setup = {
+		.pllctrl = SCG_SPLLCTRL_SOURCE(1U) | SCG_SPLLCTRL_SELI(3U) |
+				 SCG_SPLLCTRL_SELP(1U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(25U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(10U),
+		.pllmdiv = SCG_SPLLMDIV_MDIV(256U),
+		.pllRate = 24576000U};
+	CLOCK_SetPLL1Freq(&pll1_Setup);
+	CLOCK_SetClkDiv(kCLOCK_DivPLL1Clk0, 1U);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai0), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivSai0Clk, 1u);
+	CLOCK_AttachClk(kPLL1_CLK0_to_SAI0);
+	CLOCK_EnableClock(kCLOCK_Sai0);
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(sai1), okay)
+	CLOCK_SetClkDiv(kCLOCK_DivSai1Clk, 1u);
+	CLOCK_AttachClk(kPLL1_CLK0_to_SAI1);
+	CLOCK_EnableClock(kCLOCK_Sai1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 

@@ -28,4 +28,8 @@ config I2S_EDMA_BURST_SIZE
 	help
 	  I2S EDMA burst size in bytes.
 
+config I2S_HAS_PLL_SETTING
+	bool "I2S will setting pll in driver"
+	default y
+
 endif # I2S_MCUX_SAI
