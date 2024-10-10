@@ -8,6 +8,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <stdint.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -24,6 +25,7 @@
 #include <zephyr/settings/settings.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
@@ -347,6 +349,9 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	 */
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
 		int err;
+
+		bt_buf_set_type(buf, BT_BUF_H4);
+		net_buf_push_u8(buf, BT_HCI_H4_CMD);
 
 		err = bt_send(buf);
 		if (err) {
@@ -3000,6 +3005,9 @@ static void hci_core_send_cmd(void)
 
 	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, buf);
 
+	bt_buf_set_type(buf, BT_BUF_H4);
+	net_buf_push_u8(buf, BT_HCI_H4_CMD);
+
 	err = bt_send(buf);
 	if (err) {
 		LOG_ERR("Unable to send to driver (err %d)", err);
@@ -4003,9 +4011,17 @@ static int hci_init(void)
 
 int bt_send(struct net_buf *buf)
 {
+	uint8_t h4_type;
+
 	LOG_DBG("buf %p len %u type %u", buf, buf->len, bt_buf_get_type(buf));
 
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+	__ASSERT_NO_MSG(buf->len >= sizeof(h4_type));
+	h4_type = buf->data[0];
+
+	bt_monitor_send(bt_monitor_opcode_tx(h4_type), &buf->data[sizeof(h4_type)],
+			buf->len - sizeof(h4_type));
+	(void)h4_type;
 
 	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
 		return bt_hci_ecc_send(buf);
@@ -4014,6 +4030,7 @@ int bt_send(struct net_buf *buf)
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 	return bt_hci_send(bt_dev.hci, buf);
 #else
+	bt_buf_set_type(buf, bt_buf_out_type_from_h4_type(net_buf_pull_u8(buf)));
 	return bt_dev.drv->send(buf);
 #endif
 }
@@ -4042,8 +4059,14 @@ void hci_event_prio(struct net_buf *buf)
 	struct net_buf_simple_state state;
 	struct bt_hci_evt_hdr *hdr;
 	uint8_t evt_flags;
+	uint8_t h4_type;
 
 	net_buf_simple_save(&buf->b, &state);
+
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+	h4_type = net_buf_pull_u8(buf);
+	__ASSERT_NO_MSG(h4_type == BT_HCI_H4_EVT);
+	(void)h4_type;
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("Invalid HCI event size (%u)", buf->len);
@@ -4080,19 +4103,34 @@ static void rx_queue_put(struct net_buf *buf)
 
 static int bt_recv_unsafe(struct net_buf *buf)
 {
-	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+	uint8_t h4_type;
+
+	if (bt_buf_get_type(buf) != BT_BUF_H4) {
+		net_buf_push_u8(buf, bt_buf_type_to_h4_type(bt_buf_get_type(buf)));
+		bt_buf_set_type(buf, BT_BUF_H4);
+	}
+
+	CHECKIF(buf->len < sizeof(h4_type)) {
+		net_buf_unref(buf);
+		return -EINVAL;
+	}
+
+	h4_type = buf->data[0];
+
+	bt_monitor_send(bt_monitor_opcode_rx(h4_type), &buf->data[sizeof(h4_type)],
+			buf->len - sizeof(h4_type));
 
 	LOG_DBG("buf %p len %u", buf, buf->len);
 
-	switch (bt_buf_get_type(buf)) {
+	switch (h4_type) {
 #if defined(CONFIG_BT_CONN)
-	case BT_BUF_ACL_IN:
+	case BT_HCI_H4_ACL:
 		rx_queue_put(buf);
 		return 0;
 #endif /* BT_CONN */
-	case BT_BUF_EVT:
+	case BT_HCI_H4_EVT:
 	{
-		struct bt_hci_evt_hdr *hdr = (void *)buf->data;
+		struct bt_hci_evt_hdr *hdr = (void *)&buf->data[sizeof(h4_type)];
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
 
 		if (evt_flags & BT_HCI_EVT_FLAG_RECV_PRIO) {
@@ -4106,12 +4144,12 @@ static int bt_recv_unsafe(struct net_buf *buf)
 		return 0;
 	}
 #if defined(CONFIG_BT_ISO)
-	case BT_BUF_ISO_IN:
+	case BT_HCI_H4_ISO:
 		rx_queue_put(buf);
 		return 0;
 #endif /* CONFIG_BT_ISO */
 	default:
-		LOG_ERR("Invalid buf type %u", bt_buf_get_type(buf));
+		LOG_ERR("Invalid buf h4 type %u", h4_type);
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
@@ -4217,6 +4255,7 @@ static void init_work(struct k_work *work)
 static void rx_work_handler(struct k_work *work)
 {
 	int err;
+	uint8_t h4_type;
 
 	struct net_buf *buf;
 
@@ -4228,22 +4267,25 @@ static void rx_work_handler(struct k_work *work)
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
-	switch (bt_buf_get_type(buf)) {
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+	h4_type = net_buf_pull_u8(buf);
+
+	switch (h4_type) {
 #if defined(CONFIG_BT_CONN)
-	case BT_BUF_ACL_IN:
+	case BT_HCI_H4_ACL:
 		hci_acl(buf);
 		break;
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_ISO)
-	case BT_BUF_ISO_IN:
+	case BT_HCI_H4_ISO:
 		hci_iso(buf);
 		break;
 #endif /* CONFIG_BT_ISO */
-	case BT_BUF_EVT:
+	case BT_HCI_H4_EVT:
 		hci_event(buf);
 		break;
 	default:
-		LOG_ERR("Unknown buf type %u", bt_buf_get_type(buf));
+		LOG_ERR("Unknown h4 type %u", h4_type);
 		net_buf_unref(buf);
 		break;
 	}

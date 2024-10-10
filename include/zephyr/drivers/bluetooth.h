@@ -19,6 +19,7 @@
  * @{
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <zephyr/net_buf.h>
@@ -26,6 +27,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/check.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -148,6 +150,8 @@ static inline int bt_hci_close(const struct device *dev)
  * Send an HCI packet to the controller. The packet type of the buffer
  * must be set using bt_buf_set_type().
  *
+ * Only the BT_BUF_H4 packet type is accepted.
+ *
  * @note This function must only be called from a cooperative thread.
  *
  * @param dev HCI device
@@ -158,6 +162,13 @@ static inline int bt_hci_close(const struct device *dev)
 static inline int bt_hci_send(const struct device *dev, struct net_buf *buf)
 {
 	const struct bt_hci_driver_api *api = (const struct bt_hci_driver_api *)dev->api;
+
+	CHECKIF(bt_buf_get_type(buf) != BT_BUF_H4) {
+		return -EPROTO;
+	}
+
+	/* Translate from H4 encapsulation to BT_BUF_TYPE. */
+	bt_buf_set_type(buf, bt_buf_h4_type_to_out_type(net_buf_pull_u8(buf)));
 
 	return api->send(dev, buf);
 }
