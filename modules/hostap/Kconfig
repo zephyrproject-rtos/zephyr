@@ -178,6 +178,56 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	select MBEDTLS_PEM_CERTIFICATE_FORMAT
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+config EAP_TLS
+	bool "EAP-TLS support"
+
+config EAP_TTLS
+	bool "EAP-TTLS support"
+
+config EAP_PEAP
+	bool "EAP-PEAP support"
+
+config EAP_MD5
+	bool "EAP-MD5 support"
+
+config EAP_MSCHAPV2
+	bool "EAP-MSCHAPv2 support"
+
+config EAP_LEAP
+	bool "EAP-LEAP support"
+
+config EAP_PSK
+	bool "EAP-PSK support"
+
+config EAP_PAX
+	bool "EAP-PAX support"
+
+config EAP_SAKE
+	bool "EAP-SAKE support"
+
+config EAP_GPSK
+	bool "EAP-GPSK support"
+
+config EAP_PWD
+	bool "EAP-PWD support"
+
+config EAP_EKE
+	bool "EAP-EKE support"
+
+config EAP_IKEV2
+	bool "EAP-IKEv2 support"
+
+config EAP_SIM
+	bool "EAP-SIM support"
+
+config EAP_AKA
+	bool "EAP-AKA support"
+
+config EAP_ALL
+	bool "All EAP methods support"
+	select EAP_TLS
+	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+
 config WIFI_NM_WPA_SUPPLICANT_WPA3
 	bool "WPA3 support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
