@@ -21,6 +21,15 @@ if BT_MESH
 config BT_MESH_PROXY
 	bool
 
+config BT_MESH_PROXY_MSG_ALWAYS_SEND
+	bool "Ensure proxy messages always send"
+	default y
+	depends on BT_MESH_PROXY
+	depends on BT_MESH_WORKQ_MESH
+	help
+	  When sending proxy messages in sysworkq context, will defer and sending in
+	  Mesh workq context, this will ensure proxy messages always send.
+
 config BT_MESH_GATT
 	bool
 
@@ -102,6 +111,57 @@ menuconfig BT_MESH_ADV_EXT
 	  advertising, but isn't supported by all controllers.
 
 if BT_MESH_ADV_EXT
+
+choice BT_MESH_WORKQ_CONTEXT
+	prompt "Mesh Thread Selection"
+	default BT_MESH_WORKQ_SYS
+	help
+	  Selects in which context the BT Mesh messages will be sending.
+
+config BT_MESH_WORKQ_SYS
+	bool "Sending for BT Mesh messages in the system work queue"
+	help
+	  When this option is selected, the Mesh will sending for Mesh messages
+	  in the system work queue. The application needs to ensure the system
+	  workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE) is large enough,
+	  refer to BT_MESH_ADV_STACK_SIZE for the recommended minimum.
+	  Note: When this option is used, other users of the system work queue will
+	  influence the latency of sending Mesh messages.
+
+config BT_MESH_WORKQ_MESH
+	bool "Sending for BT Mesh messages in the mesh-specific work queue"
+	help
+	  When this option is selected, the Mesh will sending for Mesh messages
+	  in the mesh-specific work queue. The application needs to ensure the
+	  mesh-specific work queue size is large enough, refer to BT_MESH_ADV_STACK_SIZE
+	  for the recommended minimum.
+
+if BT_MESH_WORKQ_MESH
+
+config BT_MESH_ADV_STACK_SIZE
+	int "Mesh extended advertiser thread stack size"
+	default 2048 if BT_MESH_PROXY_MSG_ALWAYS_SEND
+	default 1024 if BT_HOST_CRYPTO
+	default 776 if BT_MESH_PRIV_BEACONS
+	default 768
+	help
+	  Size of bt mesh adv thread stack.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+config BT_MESH_ADV_PRIO
+	int "Mesh advertiser thread priority"
+	default 7
+	help
+	  Priority of bt mesh adv thread.
+
+	  NOTE: This is an advanced setting and should not be changed unless
+	  absolutely necessary
+
+endif # BT_MESH_WORKQ_MESH
+
+endchoice
 
 config BT_MESH_RELAY_ADV_SETS
 	int "Maximum of simultaneous relay message support"

@@ -37,6 +37,11 @@ struct bt_mesh_proxy_role {
 	struct bt_conn *conn;
 	uint8_t msg_type;
 
+#if defined(CONFIG_BT_MESH_PROXY_MSG_ALWAYS_SEND)
+	struct k_fifo pending;
+	struct k_work work;
+#endif /* CONFIG_BT_MESH_PROXY_MSG_ALWAYS_SEND */
+
 	struct {
 		proxy_send_cb_t send;
 		proxy_recv_cb_t recv;
