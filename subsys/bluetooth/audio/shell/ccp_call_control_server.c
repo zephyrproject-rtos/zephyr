@@ -111,7 +111,7 @@ static int cmd_ccp_call_control_server_set_bearer_name(const struct shell *sh, s
 	if (argc > 2) {
 		index = validate_and_get_index(sh, argv[1]);
 		if (index < 0) {
-			return index;
+			return -ENOEXEC;
 		}
 	}
 
@@ -139,7 +139,7 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 	if (argc > 1) {
 		index = validate_and_get_index(sh, argv[1]);
 		if (index < 0) {
-			return index;
+			return -ENOEXEC;
 		}
 	}
 
@@ -151,6 +151,32 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 	}
 
 	shell_print(sh, "Bearer[%d] name: %s", index, name);
+
+	return 0;
+}
+
+static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, size_t argc,
+						      char *argv[])
+{
+	const char *uci;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_ccp_call_control_server_get_bearer_uci(bearers[index], &uci);
+	if (err != 0) {
+		shell_error(sh, "Failed to get bearer[%d] UCI: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] UCI: %s", index, uci);
 
 	return 0;
 }
@@ -174,6 +200,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(ccp_call_control_server_cmds,
 					     cmd_ccp_call_control_server_set_bearer_name, 2, 1),
 			       SHELL_CMD_ARG(get_bearer_name, NULL, "Get bearer name [index]",
 					     cmd_ccp_call_control_server_get_bearer_name, 1, 1),
+			       SHELL_CMD_ARG(get_bearer_uci, NULL, "Get bearer UCI [index]",
+					     cmd_ccp_call_control_server_get_bearer_uci, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_server, &ccp_call_control_server_cmds,

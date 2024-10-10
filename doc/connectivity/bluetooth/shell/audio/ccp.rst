@@ -24,6 +24,7 @@ to :code:`0` which is the GTBS bearer.
      init             : Initialize CCP Call Control Server
      set_bearer_name  : Set bearer name [index] <name>
      get_bearer_name  : Get bearer name [index]
+     get_bearer_uci   : Get bearer UCI [index]
 
 
 Example Usage
@@ -58,6 +59,15 @@ Setting and getting the bearer name
    uart:~$ ccp_call_control_server get_bearer_name 1
    Bearer[1] name: New TBS name
 
+Getting the bearer UCI
+----------------------
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_server get_bearer_uci
+   Bearer[0] UCI: un999
+   uart:~$ ccp_call_control_server get_bearer_uci 1
+   Bearer[1] UCI: skype
 
 Call Control Client
 *******************
