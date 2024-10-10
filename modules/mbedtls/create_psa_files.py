@@ -37,7 +37,11 @@ config PSA_CRYPTO_ENABLE_ALL
 	bool "All PSA crypto features"
 """.format(os.path.basename(__file__), INPUT_REL_PATH)
 
-KCONFIG_FOOTER="\nendif # PSA_CRYPTO_CLIENT\n"
+KCONFIG_FOOTER="""
+rsource "Kconfig.psa.logic"
+
+endif # PSA_CRYPTO_CLIENT
+"""
 
 H_HEADER="""\
 /*
