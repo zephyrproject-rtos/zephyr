@@ -48,8 +48,6 @@ typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uin
 
 #define SPI_WORD_SIZE 8
 
-#define SPI_CS_INDEX 3
-
 #ifdef CONFIG_SPI_AMBIQ_DMA
 static __aligned(32) struct {
 	__aligned(32) uint32_t buf[CONFIG_SPI_DMA_TCB_BUFFER_SIZE];
@@ -145,7 +143,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	}
 
 	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+		LOG_ERR("Device mode not supported");
 		return -ENOTSUP;
 	}
 	if (config->operation & SPI_MODE_LOOP) {
@@ -158,7 +156,8 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	/* Select slower of two: SPI bus frequency for SPI device or SPI master clock frequency */
+	/* Select slower of two: SPI bus frequency for SPI device or SPI controller clock frequency
+	 */
 	data->iom_cfg.ui32ClockFreq =
 		(config->frequency ? MIN(config->frequency, cfg->clock_freq) : cfg->clock_freq);
 	ctx->config = config;
