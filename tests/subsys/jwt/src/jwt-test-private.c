@@ -4,7 +4,7 @@
  *
  */
 
-#if defined(CONFIG_JWT_SIGN_RSA)
+#if defined(CONFIG_JWT_SIGN_RSA_PSA) || defined(CONFIG_JWT_SIGN_RSA_LEGACY)
 
 /* To generate the key in the correct format use the following command:
  * $ openssl genrsa 2048 | openssl rsa -outform DER | xxd -i
@@ -113,7 +113,7 @@ unsigned char jwt_test_private_der[] = {
 	0x05, 0xfd, 0x71, 0xb0, 0x3e
 };
 
-#else /* CONFIG_JWT_SIGN_ECDSA */
+#else /* CONFIG_JWT_SIGN_ECDSA_PSA */
 
 /* Here's how to generate the key in the correct format:
  * - generate the key using OpenSSL:
