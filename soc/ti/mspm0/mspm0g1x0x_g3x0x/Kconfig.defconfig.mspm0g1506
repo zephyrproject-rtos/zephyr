@@ -1,0 +1,14 @@
+# TI MSPM0G1506 SoC
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MSPM0G1506
+
+config SOC
+	default "mspm0g1506"
+
+config NUM_IRQS
+	default 32
+
+endif # SOC_MSPM0G1506
