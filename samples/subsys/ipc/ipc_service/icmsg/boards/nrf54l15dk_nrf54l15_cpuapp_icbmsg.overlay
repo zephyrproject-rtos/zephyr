@@ -23,6 +23,7 @@
 	ipc {
 		ipc0: ipc0 {
 			compatible = "zephyr,ipc-icbmsg";
+			dcache-alignment = <32>;
 			tx-region = <&sram_tx>;
 			rx-region = <&sram_rx>;
 			tx-blocks = <16>;
