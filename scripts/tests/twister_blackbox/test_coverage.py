@@ -14,6 +14,7 @@ import sys
 import json
 
 # pylint: disable=duplicate-code
+# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -47,7 +48,7 @@ class TestCoverage:
                 'coverage.log', 'coverage.json',
                 'coverage'
             ],
-            r'{"files": \[], "gcovr/format_version": ".*"}'
+            [r'"files": \[\]', r'"gcovr/format_version": ".*"']
         ),
     ]
     TESTDATA_4 = [
@@ -243,8 +244,10 @@ class TestCoverage:
             if f_name == 'coverage.json':
                 with open(path, "r") as json_file:
                     json_content = json.load(json_file)
-                    pattern = re.compile(expected_content)
-                    assert pattern.match(json.dumps(json_content))
+                    dumped_content = json.dumps(json_content)
+                    for content in expected_content:
+                        pattern = re.compile(content)
+                        assert pattern.search(dumped_content)
         if os.path.exists(base_dir):
             os.rmdir(base_dir)
 

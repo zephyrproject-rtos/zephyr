@@ -25,6 +25,7 @@ class TwisterStatus(str, Enum):
     def get_color(status: TwisterStatus) -> str:
         status2color = {
             TwisterStatus.PASS: Fore.GREEN,
+            TwisterStatus.NOTRUN: Fore.CYAN,
             TwisterStatus.SKIP: Fore.YELLOW,
             TwisterStatus.FILTER: Fore.YELLOW,
             TwisterStatus.BLOCK: Fore.YELLOW,
@@ -42,6 +43,7 @@ class TwisterStatus(str, Enum):
     # All statuses below this comment can be used for TestSuite
     # All statuses below this comment can be used for TestInstance
     FILTER = 'filtered'
+    NOTRUN = 'not run'
 
     # All statuses below this comment can be used for Harness
     NONE = None
