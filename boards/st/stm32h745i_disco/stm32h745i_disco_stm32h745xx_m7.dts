@@ -224,8 +224,6 @@
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
-	sample-point = <875>;
-	sample-point-data = <875>;
 
 	can-transceiver {
 		max-bitrate = <5000000>;
@@ -238,8 +236,6 @@
 	pinctrl-names = "default";
 	clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000100>,
 		<&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
-	sample-point = <875>;
-	sample-point-data = <875>;
 
 	can-transceiver {
 		max-bitrate = <5000000>;
