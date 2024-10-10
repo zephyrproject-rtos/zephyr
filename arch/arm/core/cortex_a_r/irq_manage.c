@@ -55,6 +55,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return arm_gic_irq_is_enabled(irq);
 }
 
+void arch_irq_set_pending(unsigned int irq)
+{
+	return arm_gic_irq_set_pending(irq);
+}
+
 /**
  * @internal
  *

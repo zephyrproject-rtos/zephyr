@@ -35,6 +35,11 @@ int arch_irq_is_enabled(unsigned int irq)
 	return posix_irq_is_enabled(irq);
 }
 
+void arch_irq_set_pending(unsigned int irq)
+{
+	return posix_sw_set_pending_IRQ(irq);
+}
+
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 /**
  * Configure a dynamic interrupt.

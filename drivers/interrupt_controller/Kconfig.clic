@@ -7,6 +7,7 @@ config NUCLEI_ECLIC
 	depends on DT_HAS_NUCLEI_ECLIC_ENABLED
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	select CLIC_SMCLICSHV_EXT if RISCV_VECTORED_MODE
+	select IRQ_HAS_SET_PENDING
 	help
 	  Interrupt controller for Nuclei SoC core.
 
@@ -15,6 +16,7 @@ config NRFX_CLIC
 	default y
 	depends on DT_HAS_NORDIC_NRF_CLIC_ENABLED
 	select GEN_IRQ_VECTOR_TABLE
+	select IRQ_HAS_SET_PENDING
 	help
 	  Interrupt controller for Nordic VPR cores.
 

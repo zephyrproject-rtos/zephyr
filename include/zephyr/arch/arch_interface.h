@@ -313,6 +313,13 @@ void arch_irq_enable(unsigned int irq);
 int arch_irq_is_enabled(unsigned int irq);
 
 /**
+ * Set an interrupt line as pending.
+ *
+ * @see irq_set_pending()
+ */
+void arch_irq_set_pending(unsigned int irq);
+
+/**
  * Arch-specific hook to install a dynamic interrupt.
  *
  * @param irq IRQ line number

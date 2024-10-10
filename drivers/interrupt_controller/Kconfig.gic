@@ -7,6 +7,7 @@ if CPU_CORTEX
 
 config GIC
 	bool
+	select IRQ_HAS_SET_PENDING
 
 config GIC_V1
 	def_bool DT_HAS_ARM_GIC_V1_ENABLED

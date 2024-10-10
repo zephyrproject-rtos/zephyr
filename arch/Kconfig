@@ -165,6 +165,7 @@ config ARCH_POSIX
 	# This was in general ok, but with some host compilers and C library versions
 	# it led to problems. So we override it to 2011 for the native targets.
 	select REQUIRES_STD_C11
+	select IRQ_HAS_SET_PENDING
 	help
 	  POSIX (native) architecture
 
@@ -584,6 +585,11 @@ config IRQ_OFFLOAD_NESTED
 	  legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU.  Not all
 	  hardware is capable.
+
+config IRQ_HAS_SET_PENDING
+	bool
+	help
+	  Selected when interrupt controller driver has implementation to set an IRQ as pending.
 
 config EXCEPTION_DEBUG
 	bool "Unhandled exception debugging"

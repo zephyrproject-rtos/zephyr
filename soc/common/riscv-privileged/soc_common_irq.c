@@ -32,6 +32,13 @@ int arch_irq_is_enabled(unsigned int irq)
 	return riscv_clic_irq_is_enabled(irq);
 }
 
+#ifdef CONFIG_IRQ_HAS_SET_PENDING
+void arch_irq_set_pending(unsigned int irq)
+{
+	return riscv_clic_irq_set_pending(irq);
+}
+#endif /* CONFIG_IRQ_HAS_SET_PENDING */
+
 void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	riscv_clic_irq_priority_set(irq, prio, flags);

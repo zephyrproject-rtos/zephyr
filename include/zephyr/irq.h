@@ -310,6 +310,15 @@ void z_smp_global_unlock(unsigned int key);
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
 
 /**
+ * @brief Set IRQ as pending.
+ *
+ * This routine set the interrupt source @a irq as pending.
+ *
+ * @param irq IRQ line.
+ */
+#define irq_set_pending(irq) IF_ENABLED(CONFIG_IRQ_HAS_SET_PENDING, (arch_irq_set_pending(irq)))
+
+/**
  * @}
  */
 
