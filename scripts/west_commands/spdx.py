@@ -6,7 +6,6 @@ import os
 import uuid
 
 from west.commands import WestCommand
-from west import log
 
 from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery
 
@@ -50,65 +49,65 @@ class ZephyrSpdx(WestCommand):
         return parser
 
     def do_run(self, args, unknown_args):
-        log.dbg(f"running zephyr SPDX generator")
+        self.dbg(f"running zephyr SPDX generator")
 
-        log.dbg(f"  --init is", args.init)
-        log.dbg(f"  --build-dir is", args.build_dir)
-        log.dbg(f"  --namespace-prefix is", args.namespace_prefix)
-        log.dbg(f"  --spdx-dir is", args.spdx_dir)
-        log.dbg(f"  --analyze-includes is", args.analyze_includes)
-        log.dbg(f"  --include-sdk is", args.include_sdk)
+        self.dbg(f"  --init is", args.init)
+        self.dbg(f"  --build-dir is", args.build_dir)
+        self.dbg(f"  --namespace-prefix is", args.namespace_prefix)
+        self.dbg(f"  --spdx-dir is", args.spdx_dir)
+        self.dbg(f"  --analyze-includes is", args.analyze_includes)
+        self.dbg(f"  --include-sdk is", args.include_sdk)
 
         if args.init:
-            do_run_init(args)
+            self.do_run_init(args)
         else:
-            do_run_spdx(args)
+            self.do_run_spdx(args)
 
-def do_run_init(args):
-    log.inf("initializing Cmake file-based API prior to build")
+    def do_run_init(self, args):
+        self.inf("initializing Cmake file-based API prior to build")
 
-    if not args.build_dir:
-        log.die("Build directory not specified; call `west spdx --init --build-dir=BUILD_DIR`")
+        if not args.build_dir:
+            self.die("Build directory not specified; call `west spdx --init --build-dir=BUILD_DIR`")
 
-    # initialize CMake file-based API - empty query file
-    query_ready = setupCmakeQuery(args.build_dir)
-    if query_ready:
-        log.inf("initialized; run `west build` then run `west spdx`")
-    else:
-        log.err("Couldn't create Cmake file-based API query directory")
-        log.err("You can manually create an empty file at $BUILDDIR/.cmake/api/v1/query/codemodel-v2")
+        # initialize CMake file-based API - empty query file
+        query_ready = setupCmakeQuery(args.build_dir)
+        if query_ready:
+            self.inf("initialized; run `west build` then run `west spdx`")
+        else:
+            self.err("Couldn't create Cmake file-based API query directory")
+            self.err("You can manually create an empty file at $BUILDDIR/.cmake/api/v1/query/codemodel-v2")
 
-def do_run_spdx(args):
-    if not args.build_dir:
-        log.die("Build directory not specified; call `west spdx --build-dir=BUILD_DIR`")
+    def do_run_spdx(self, args):
+        if not args.build_dir:
+            self.die("Build directory not specified; call `west spdx --build-dir=BUILD_DIR`")
 
-    # create the SPDX files
-    cfg = SBOMConfig()
-    cfg.buildDir = args.build_dir
-    if args.namespace_prefix:
-        cfg.namespacePrefix = args.namespace_prefix
-    else:
-        # create default namespace according to SPDX spec
-        # note that this is intentionally _not_ an actual URL where
-        # this document will be stored
-        cfg.namespacePrefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
-    if args.spdx_dir:
-        cfg.spdxDir = args.spdx_dir
-    else:
-        cfg.spdxDir = os.path.join(args.build_dir, "spdx")
-    if args.analyze_includes:
-        cfg.analyzeIncludes = True
-    if args.include_sdk:
-        cfg.includeSDK = True
+        # create the SPDX files
+        cfg = SBOMConfig()
+        cfg.buildDir = args.build_dir
+        if args.namespace_prefix:
+            cfg.namespacePrefix = args.namespace_prefix
+        else:
+            # create default namespace according to SPDX spec
+            # note that this is intentionally _not_ an actual URL where
+            # this document will be stored
+            cfg.namespacePrefix = f"http://spdx.org/spdxdocs/zephyr-{str(uuid.uuid4())}"
+        if args.spdx_dir:
+            cfg.spdxDir = args.spdx_dir
+        else:
+            cfg.spdxDir = os.path.join(args.build_dir, "spdx")
+        if args.analyze_includes:
+            cfg.analyzeIncludes = True
+        if args.include_sdk:
+            cfg.includeSDK = True
 
-    # make sure SPDX directory exists, or create it if it doesn't
-    if os.path.exists(cfg.spdxDir):
-        if not os.path.isdir(cfg.spdxDir):
-            log.err(f'SPDX output directory {cfg.spdxDir} exists but is not a directory')
-            return
-        # directory exists, we're good
-    else:
-        # create the directory
-        os.makedirs(cfg.spdxDir, exist_ok=False)
+        # make sure SPDX directory exists, or create it if it doesn't
+        if os.path.exists(cfg.spdxDir):
+            if not os.path.isdir(cfg.spdxDir):
+                self.err(f'SPDX output directory {cfg.spdxDir} exists but is not a directory')
+                return
+            # directory exists, we're good
+        else:
+            # create the directory
+            os.makedirs(cfg.spdxDir, exist_ok=False)
 
-    makeSPDX(cfg)
+        makeSPDX(cfg)
