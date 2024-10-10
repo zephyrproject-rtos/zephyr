@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Semtech Corporation - Félix Piédallu
+# SPDX-License-Identifier: Apache-2.0
+
+# LoRa transceiver drivers configuration options
+
+config SEMTECH_SX126X
+	bool "Semtech SX126x family LoRa transceiver driver"
+	default y
+	depends on DT_HAS_SEMTECH_SX1261_NEW_ENABLED || DT_HAS_SEMTECH_SX1262_NEW_ENABLED || DT_HAS_SEMTECH_SX1268_NEW_ENABLED || DT_HAS_ST_STM32WL_SUBGHZ_RADIO_ENABLED
+	select SPI
+	help
+	  Enable driver for the SX126x family and stm32wl embedded LoRa transceiver driver

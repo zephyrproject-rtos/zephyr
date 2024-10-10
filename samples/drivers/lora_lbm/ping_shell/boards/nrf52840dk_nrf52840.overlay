@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2024 Semtech Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* PINS used for the HW modem sample. */
+		hw-modem-busy-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+		hw-modem-command-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+		hw-modem-event-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
+		hw-modem-led-scan-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+	};
+
+	// soc {
+	//     /delete-node/ spi@4002f000;
+	//     spi2: arduino_spi: spi@40023000 {};
+	// };
+
+	aliases {
+		smtc-watchdog = &wdt;
+		smtc-lr11xx = &lora_semtech_lr11xxmb1xxs;
+	};
+};
+
+&spi1 {
+	status = "disabled";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&lora_semtech_lr11xxmb1xxs {
+	tcxo-wakeup-time = <7>;
+};
