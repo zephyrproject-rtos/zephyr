@@ -274,8 +274,8 @@ def map_regs(log_only):
     dsp = Regs(bar4_mem)
     if adsp_is_ace():
         dsp.HFDSSCS        = 0x1000
-        dsp.HFPWRCTL       = 0x1d18 if ace20 else 0x1d20
-        dsp.HFPWRSTS       = 0x1d1c if ace20 else 0x1d24
+        dsp.HFPWRCTL       = 0x1d18 if ace15 or ace20 else 0x1d20
+        dsp.HFPWRSTS       = 0x1d1c if ace15 or ace20 else 0x1d24
         dsp.DSP2CXCTL_PRIMARY = 0x178d04
         dsp.HFIPCXTDR      = 0x73200
         dsp.HFIPCXTDA      = 0x73204
