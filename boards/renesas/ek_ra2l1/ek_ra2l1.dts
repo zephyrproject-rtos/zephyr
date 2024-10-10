@@ -1,0 +1,27 @@
+/**
+ * Copyright (c) 2021-2024 MUNIC SA
+ *
+ * DTS for Renesas EK-RA2L1 eval. board
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra2/ra2l1.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xb.dtsi>
+#include <renesas/ra/ra2/r7fa2l1xxxxfp.dtsi>
+
+/ {
+	model = "Renesas EK-RA2L1";
+	compatible = "renesas,r7fa2l1abxxfp", "renesas,ra2l1";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&systick {
+	status = "okay";
+};
