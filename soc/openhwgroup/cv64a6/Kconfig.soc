@@ -1,0 +1,10 @@
+#Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+#SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_OPENHWGROUP_CV64A6
+	bool
+
+config SOC_FAMILY
+	default "ariane_cv64a6" if SOC_FAMILY_OPENHWGROUP_CV64A6
+
+rsource "*/Kconfig.soc"

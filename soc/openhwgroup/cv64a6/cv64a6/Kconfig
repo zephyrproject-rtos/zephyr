@@ -1,0 +1,42 @@
+# Copyright 2024 CISPA Helmholtz Center for Information Security gGmbH
+# SPDX-License-Identifier: Apache-2.0
+# RISCV64 OpenHW Group cva6 configuration options
+
+config SOC_SERIES_CV64A6
+	select RISCV
+	select RISCV_HAS_PLIC
+
+config SOC_CV64A6
+	select RISCV_PRIVILEGED
+	select ATOMIC_OPERATIONS_BUILTIN
+	select RISCV_GP
+	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select SCHED_IPI_SUPPORTED
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select HAS_POWEROFF
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+
+config SOC_SERIES_CV64A6_PROVIDE_NONSTANDARD_CACHE_OPTIONS
+	bool "Include non-standard cache management operations (currently global cache disable)"
+	depends on SOC_CV64A6
+	default n
+
+config SOC_SERIES_CV64A6_PROVIDE_TEST_POWEROFF
+	bool "Include methods for terminating a test in the CV64a6 test harness (hardware simulation)"
+	depends on SOC_CV64A6
+	default n
+
+config SOC_SERIES_CV64A6_PROVIDE_FPGA_POWEROFF
+	bool "Include methods for terminating a test on the FPGA"
+	depends on SOC_CV64A6
+	default n
