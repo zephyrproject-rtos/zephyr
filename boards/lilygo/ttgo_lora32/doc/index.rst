@@ -49,13 +49,13 @@ of the Lilygo TTGO LoRa32 board.
 +------------------+-------------------------------------------------------------------------+
 | Power Switch     | Sliding power switch.                                                   |
 +------------------+-------------------------------------------------------------------------+
-| LCD screen       | Built-in OLED display \(`SSD1306`_, 0.96", 128x64 px\) controlled       |
+| OLED display     | Built-in OLED display \(`SSD1306`_, 0.96", 128x64 px\) controlled       |
 |                  | by I2C interface                                                        |
 +------------------+-------------------------------------------------------------------------+
 | SX1276/SX1278    | LoRa radio frontend chip, connected via SPI.                            |
 |                  | Use SX1276 for 433MHz and SX1276 for 868/915/923MHz.                    |
 +------------------+-------------------------------------------------------------------------+
-| TF card slot     | TF card slot wired to the SD interface of the MCU.                      |
+| TF card slot     | TF card slot wired to the SDHC interface of the MCU.                    |
 +------------------+-------------------------------------------------------------------------+
 
 
@@ -205,7 +205,7 @@ message in the monitor:
    ***** Booting Zephyr OS vx.x.x-xxx-gxxxxxxxxxxxx *****
    Hello World! ttgo_lora32
 
-LoRa samples
+Code samples
 ============
 
 There are two LoRa samples that will work out of the box with this board.
@@ -225,6 +225,26 @@ To build the LoRa receive sample application using sysbuild use the command:
 .. zephyr-app-commands::
    :tool: west
    :zephyr-app: samples/drivers/lora/receive
+   :board: ttgo_lora32/esp32/procpu
+   :goals: build
+   :west-args: --sysbuild
+   :compact:
+
+The following sample application lists the contents of the SD card:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/subsys/fs/fs_sample
+   :board: ttgo_lora32/esp32/procpu
+   :goals: build
+   :west-args: --sysbuild
+   :compact:
+
+The following sample application displays numbers on the OLED display:
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/subsys/display/cfb
    :board: ttgo_lora32/esp32/procpu
    :goals: build
    :west-args: --sysbuild
