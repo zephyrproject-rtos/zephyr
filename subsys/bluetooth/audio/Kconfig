@@ -39,12 +39,6 @@ config BT_AUDIO_NOTIFY_RETRY_DELAY
 	  retry to send notification that failed due to lack of TX buffers
 	  available.
 
-config BT_CCID
-	bool
-	help
-	  This hidden option is enabled when any of the content control
-	  features are enabled.
-
 rsource "Kconfig.bap"
 rsource "Kconfig.vocs"
 rsource "Kconfig.aics"
