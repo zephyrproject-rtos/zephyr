@@ -471,16 +471,6 @@ struct wifi_connect_req_params {
 	uint8_t key_passwd_length; /* Max 128 */
 	/** suiteb or suiteb-192 */
 	uint8_t suiteb_type;
-	/** eap version */
-	uint8_t eap_ver;
-	/** Identity for EAP */
-	const uint8_t *eap_identity;
-	/** eap identity length */
-	uint8_t eap_id_length; /* Max 64 */
-	/** Password string for EAP. */
-	const uint8_t *eap_password;
-	/** eap passwd length */
-	uint8_t eap_passwd_length; /* Max 128 */
 };
 
 /** @brief Wi-Fi connect result codes. To be overlaid on top of \ref wifi_status
