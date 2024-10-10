@@ -1082,7 +1082,7 @@ def test_bsim_build(monkeypatch, tmp_path):
     build_dir = tmp_path / "build_dir"
     os.makedirs(build_dir)
     mocked_instance.build_dir = str(build_dir)
-    mocked_instance.name = "platform_name/test/dummy.test"
+    mocked_instance.name = os.path.join('platform_name', 'test', 'dummy.test')
     mocked_instance.testsuite.harness_config = {}
 
     harness = Bsim()

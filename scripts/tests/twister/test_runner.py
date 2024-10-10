@@ -113,7 +113,7 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         ["extra_overlay.conf"],
         ["x.overlay;y.overlay", "z.overlay"],
         ["cmake1=foo", "cmake2=bar"],
-        "/builddir/",
+        os.path.join('', 'builddir', ''),
     ) == [
         "-DCONFIG_t=\"test\"",
         "-Dcmake1=foo", "-Dcmake2=bar",
@@ -121,8 +121,8 @@ def test_projectbuilder_cmake_assemble_args_single(m):
         "-Dhandler_arg1", "-Dhandler_arg2",
         "-DCONF_FILE=a.conf;b.conf;c.conf",
         "-DDTC_OVERLAY_FILE=x.overlay;y.overlay;z.overlay",
-        "-DOVERLAY_CONFIG=extra_overlay.conf "
-        "/builddir/twister/testsuite_extra.conf",
+        "-DOVERLAY_CONFIG=extra_overlay.conf " + \
+        os.path.join('', 'builddir', 'twister', 'testsuite_extra.conf'),
     ])
 
 
@@ -1871,7 +1871,7 @@ TESTDATA_12 = [
     (
         {
             'CMakeCache.txt': mock.mock_open(
-                read_data='canonical/zephyr/base/dummy.file: ERROR'
+                read_data=f'{os.path.join("canonical", "zephyr", "base", "dummy.file")}: ERROR'
             )
         },
         {
@@ -1881,7 +1881,7 @@ TESTDATA_12 = [
     (
         {
             os.path.join('zephyr', 'runners.yaml'): mock.mock_open(
-                read_data='There was canonical/zephyr/base/dummy.file here'
+                read_data=f'There was {os.path.join("canonical", "zephyr", "base", "dummy.file")} here'
             )
         },
         {
@@ -1900,7 +1900,7 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
     text_mocks,
     expected_write_texts
 ):
-    build_dir_path = 'canonical/zephyr/base/build_dir/'
+    build_dir_path = os.path.join('canonical', 'zephyr', 'base', 'build_dir', '')
 
     def mock_exists(fname):
         if not fname.startswith(build_dir_path):
@@ -1921,7 +1921,7 @@ def test_projectbuilder_sanitize_zephyr_base_from_files(
     with mock.patch('os.path.exists', mock_exists), \
          mock.patch('builtins.open', mock_open), \
          mock.patch('twisterlib.runner.canonical_zephyr_base',
-                    'canonical/zephyr/base'):
+                    os.path.join('canonical', 'zephyr', 'base', '')):
         pb._sanitize_zephyr_base_from_files()
 
     for fname, fhandler in text_mocks.items():
@@ -2378,12 +2378,13 @@ TESTDATA_17 = [
     ('linux', '???', {'jobs': 4}, False, 4, 'JobClient'),
 ]
 
+@pytest.mark.skipif(sys.platform != 'linux', reason='JobClient family only works on Linux.')
 @pytest.mark.parametrize(
     'platform, os_name, options, jobclient_from_environ, expected_jobs,' \
     ' expected_jobserver',
     TESTDATA_17,
     ids=['GNUMakeJobClient', 'GNUMakeJobServer',
-         'JobClient', 'Jobclient+options']
+         'JobClient', 'JobClient+options']
 )
 def test_twisterrunner_run(
     caplog,
@@ -2618,9 +2619,6 @@ def test_twisterrunner_add_tasks_to_queue(
     tr.get_cmake_filter_stages.assert_any_call('full', mock.ANY)
     if retry_build_errors:
         tr.get_cmake_filter_stages.assert_any_call('some', mock.ANY)
-
-    print(pipeline_mock.put.call_args_list)
-    print([mock.call(el) for el in expected_pipeline_elements])
 
     assert pipeline_mock.put.call_args_list == \
            [mock.call(el) for el in expected_pipeline_elements]

@@ -57,7 +57,6 @@ def testplan_obj(test_data, class_env, testsuites_dir, tmpdir_factory):
     env = class_env
     env.board_roots = [test_data +"board_config/1_level/2_level/"]
     env.test_roots = [testsuites_dir + '/tests', testsuites_dir + '/samples']
-    env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
     plan = TestPlan(env)
     plan.parse_configuration(config_file=env.test_config)
     return plan

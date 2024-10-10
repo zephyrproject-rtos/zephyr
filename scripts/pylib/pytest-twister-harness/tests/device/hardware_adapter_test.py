@@ -205,6 +205,7 @@ def test_device_log_correct_error_handle(patched_popen, device: HardwareAdapter,
         assert 'flashing error' in file.readlines()
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='PTY is not used on Windows.')
 @mock.patch('twister_harness.device.hardware_adapter.subprocess.Popen')
 @mock.patch('twister_harness.device.hardware_adapter.serial.Serial')
 def test_if_hardware_adapter_uses_serial_pty(
@@ -238,6 +239,7 @@ def test_if_hardware_adapter_uses_serial_pty(
     assert not device._serial_pty_proc
 
 
+@pytest.mark.skipif(os.name == 'nt', reason='PTY is not used on Windows.')
 def test_if_hardware_adapter_properly_send_data_to_subprocess(
     device: HardwareAdapter, shell_simulator_path: str
 ) -> None:

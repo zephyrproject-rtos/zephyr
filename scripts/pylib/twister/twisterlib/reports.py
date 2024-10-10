@@ -12,7 +12,9 @@ from colorama import Fore
 import xml.etree.ElementTree as ET
 import string
 from datetime import datetime
-from pathlib import PosixPath
+from pathlib import PosixPath, WindowsPath
+
+from twisterlib.twister_path import TPath
 
 from twisterlib.statuses import TwisterStatus
 
@@ -267,8 +269,14 @@ class Reporting:
             report_options = self.env.non_default_options()
 
         # Resolve known JSON serialization problems.
-        for k,v in report_options.items():
-            report_options[k] = str(v) if type(v) in [PosixPath] else v
+        for k, v in report_options.items():
+            pathlikes = [PosixPath, WindowsPath, TPath]
+            value = v
+            if type(v) in pathlikes:
+                value = os.fspath(v)
+            if type(v) in [list]:
+                value = [os.fspath(x) if type(x) in pathlikes else x for x in v]
+            report_options[k] = value
 
         report = {}
         report["environment"] = {"os": os.name,
@@ -310,7 +318,7 @@ class Reporting:
                 "name": instance.testsuite.name,
                 "arch": instance.platform.arch,
                 "platform": instance.platform.name,
-                "path": instance.testsuite.source_dir_rel
+                "path": os.fspath(instance.testsuite.source_dir_rel)
             }
             if instance.run_id:
                 suite['run_id'] = instance.run_id

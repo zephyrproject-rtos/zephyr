@@ -61,15 +61,23 @@ def terminate_process(proc):
     so we need to use try_kill_process_by_pid.
     """
 
-    for child in psutil.Process(proc.pid).children(recursive=True):
+    parent = psutil.Process(proc.pid)
+    to_terminate = parent.children(recursive=True)
+    to_terminate.append(parent)
+
+    for p in to_terminate:
         try:
-            os.kill(child.pid, signal.SIGTERM)
+            p.terminate()
         except (ProcessLookupError, psutil.NoSuchProcess):
             pass
-    proc.terminate()
-    # sleep for a while before attempting to kill
-    time.sleep(0.5)
-    proc.kill()
+    _, alive = psutil.wait_procs(to_terminate, timeout=1)
+
+    for p in alive:
+        try:
+            p.kill()
+        except (ProcessLookupError, psutil.NoSuchProcess):
+            pass
+    _, alive = psutil.wait_procs(to_terminate, timeout=1)
 
 
 class Handler:
@@ -193,10 +201,8 @@ class BinaryHandler(Handler):
             pid = int(open(self.pid_fn).read())
             os.unlink(self.pid_fn)
             self.pid_fn = None  # clear so we don't try to kill the binary twice
-            try:
-                os.kill(pid, signal.SIGKILL)
-            except (ProcessLookupError, psutil.NoSuchProcess):
-                pass
+            p = psutil.Process(pid)
+            terminate_process(p)
 
     def _output_reader(self, proc):
         self.line = proc.stdout.readline()

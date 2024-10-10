@@ -30,7 +30,13 @@ class Artifacts:
                 if t['status'] != TwisterStatus.FILTER:
                     p = t['platform']
                     normalized  = p.replace("/", "_")
-                    dirs.append(os.path.join(self.options.outdir, normalized, t['name']))
+                    print(os.getcwd())
+                    print(self.options.outdir)
+                    print(normalized)
+                    print(t['name'])
+                    dir = os.path.join(self.options.outdir, normalized, t['name'])
+                    print(dir)
+                    dirs.append(dir)
 
         dirs.extend(
             [
@@ -38,4 +44,7 @@ class Artifacts:
                 os.path.join(self.options.outdir, "testplan.json")
                 ]
             )
+
+        print(dirs)
+
         self.make_tarfile(self.options.package_artifacts, dirs)
