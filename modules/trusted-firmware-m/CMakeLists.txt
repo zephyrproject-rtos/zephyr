@@ -240,7 +240,7 @@ if (CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
   endif()
 
-  if(CONFIG_BOARD_RD_RW612_BGA OR CONFIG_BOARD_FRDM_RW612)
+  if(CONFIG_BOARD_RD_RW612_BGA)
     # Supply path to NXP HAL sources used for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DZEPHYR_HAL_NXP_MODULE_DIR=${ZEPHYR_HAL_NXP_MODULE_DIR})
     # Supply path to NXP HAL sources used for TF-M build
@@ -390,7 +390,7 @@ if (CONFIG_BUILD_WITH_TFM)
   if(CONFIG_SOC_FAMILY_NORDIC_NRF)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
   endif()
-  if(CONFIG_BOARD_RD_RW612_BGA OR CONFIG_BOARD_FRDM_RW612)
+  if(CONFIG_BOARD_RD_RW612_BGA)
     zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_lds_api.c)
   endif()
   target_include_directories(tfm_api PUBLIC
