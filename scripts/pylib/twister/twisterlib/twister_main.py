@@ -131,6 +131,12 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
         logger.error(f"{e}")
         return 1
 
+    def check_platform(platform, platform_list):
+        for p in platform_list:
+            if p in platform.aliases:
+                return True
+        return False
+
     if options.verbose > 1:
         # if we are using command line platform filter, no need to list every
         # other platform as excluded, we know that already.
@@ -139,7 +145,7 @@ def main(options: argparse.Namespace, default_options: argparse.Namespace):
 
         for i in tplan.instances.values():
             if i.status == TwisterStatus.FILTER:
-                if options.platform and i.platform.name not in options.platform:
+                if options.platform and not check_platform(i.platform, options.platform):
                     continue
                 logger.debug(
                     "{:<25} {:<50} {}SKIPPED{}: {}".format(

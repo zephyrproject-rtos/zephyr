@@ -2046,6 +2046,7 @@ def test_projectbuilder_report_out(
     trim_actual_log = re.sub(r'twister:runner.py:\d+', '', trim_actual_log)
     assert all([log in trim_actual_log for log in expected_logs])
 
+    print(trim_actual_log)
     if expected_out:
         out, err = capfd.readouterr()
         sys.stdout.write(out)

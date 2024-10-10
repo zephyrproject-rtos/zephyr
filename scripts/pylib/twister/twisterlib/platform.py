@@ -6,8 +6,11 @@
 
 import os
 import scl
-from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import ZEPHYR_BASE
+import logging
+
+logger = logging.getLogger('twister')
+logger.setLevel(logging.DEBUG)
 
 class Platform:
     """Class representing metadata for a particular platform
@@ -23,6 +26,7 @@ class Platform:
         """
 
         self.name = ""
+        self.aliases = []
         self.normalized_name = ""
         # if sysbuild to be used by default on a given platform
         self.sysbuild = False
@@ -50,19 +54,29 @@ class Platform:
         self.filter_data = dict()
         self.uart = ""
         self.resc = ""
+        self.qualifier = None
 
-    def load(self, platform_file):
-        scp = TwisterConfigParser(platform_file, self.platform_schema)
-        scp.load()
-        data = scp.data
+    def load(self, board, target, aliases, data={}):
+        self.name = target
+        self.aliases = aliases
 
-        self.name = data['identifier']
+        v = data.get("variants", {})
+        vdata = {}
+        for a in aliases:
+            vdata = v.get(a, {})
+            if vdata:
+                break
+
         self.normalized_name = self.name.replace("/", "_")
-        self.sysbuild = data.get("sysbuild", False)
-        self.twister = data.get("twister", True)
+        self.sysbuild = vdata.get("sysbuild", data.get("sysbuild", False))
+        self.twister = vdata.get("twister", data.get("twister", True))
+
         # if no RAM size is specified by the board, take a default of 128K
-        self.ram = data.get("ram", 128)
-        testing = data.get("testing", {})
+        self.ram = vdata.get("ram", data.get("ram", 128))
+        # if no flash size is specified by the board, take a default of 512K
+        self.flash = vdata.get("flash", data.get("flash", 512))
+
+        testing = vdata.get("testing", data.get("testing", {}))
         self.timeout_multiplier = testing.get("timeout_multiplier", 1.0)
         self.ignore_tags = testing.get("ignore_tags", [])
         self.only_tags = testing.get("only_tags", [])
@@ -71,20 +85,18 @@ class Platform:
         renode = testing.get("renode", {})
         self.uart = renode.get("uart", "")
         self.resc = renode.get("resc", "")
-        # if no flash size is specified by the board, take a default of 512K
-        self.flash = data.get("flash", 512)
         self.supported = set()
-        for supp_feature in data.get("supported", []):
+        for supp_feature in vdata.get("supported", data.get("supported", [])):
             for item in supp_feature.split(":"):
                 self.supported.add(item)
 
-        self.arch = data['arch']
-        self.vendor = data.get('vendor', '')
-        self.tier = data.get("tier", -1)
-        self.type = data.get('type', "na")
-        self.simulation = data.get('simulation', "na")
-        self.simulation_exec = data.get('simulation_exec')
-        self.supported_toolchains = data.get("toolchain", [])
+        self.arch = vdata.get('arch', data.get('arch', None))
+        self.vendor = board.vendor
+        self.tier = vdata.get("tier", data.get("tier", -1))
+        self.type = vdata.get('type', data.get('type', "na"))
+        self.simulation = vdata.get('simulation', data.get('simulation', "na"))
+        self.simulation_exec = vdata.get('simulation_exec', data.get('simulation_exec', None))
+        self.supported_toolchains = vdata.get("toolchain", data.get("toolchain", []))
         if self.supported_toolchains is None:
             self.supported_toolchains = []
 
@@ -111,7 +123,7 @@ class Platform:
                 if toolchain not in self.supported_toolchains:
                     self.supported_toolchains.append(toolchain)
 
-        self.env = data.get("env", [])
+        self.env = vdata.get("env", data.get("env", []))
         self.env_satisfied = True
         for env in self.env:
             if not os.environ.get(env, None):
