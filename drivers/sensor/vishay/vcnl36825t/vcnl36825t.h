@@ -219,11 +219,25 @@
 #define VCNL36825T_FORCED_FACTOR_DC_KILL_AMBIENT	3
 #define VCNL36825T_FORCED_FACTOR_MEASUREMENT		1
 #define VCNL36825T_FORCED_FACTOR_SHUTDOWN		1
-#define VCNL36825T_FORCED_FACTOR_SCALE		10
+#define VCNL36825T_FORCED_FACTOR_SCALE			10
+
+/* necessary time to wait before data of a "forced" measurement is available */
 #define VCNL36825T_FORCED_FACTOR_SUM                                                               \
 	((VCNL36825T_FORCED_FACTOR_TIME_TO_TRIGGER + VCNL36825T_FORCED_FACTOR_DC_KILL_AMBIENT +    \
 	  VCNL36825T_FORCED_FACTOR_MEASUREMENT + VCNL36825T_FORCED_FACTOR_SHUTDOWN) *              \
 	 VCNL36825T_FORCED_FACTOR_SCALE)
+
+#ifdef CONFIG_PM_DEVICE
+
+#define VCNL36825T_FORCED_WAKEUP_DELAY_MAX_US 1000
+#define VCNL36825T_FORCED_FACTOR_WAKEUP_DELAY 10
+
+/* necessary wait time before data for a "forced" measurement is available AFTER the device slept */
+#define VCNL36825T_FORCED_FACTOR_WAKEUP_SUM                                                        \
+	(VCNL36825T_FORCED_FACTOR_SUM +                                                            \
+	 (VCNL36825T_FORCED_FACTOR_WAKEUP_DELAY * VCNL36825T_FORCED_FACTOR_SCALE))
+
+#endif
 
 enum vcnl36825t_operation_mode {
 	VCNL36825T_OPERATION_MODE_AUTO,
@@ -288,7 +302,12 @@ struct vcnl36825t_config {
 struct vcnl36825t_data {
 	uint16_t proximity;
 
-	int meas_timeout_us; /** wait time for finished measurement for "forced" operation mode */
+	unsigned int meas_timeout_us; /** wait time for finished measurement in "forced"-mode  */
+
+#ifdef CONFIG_PM_DEVICE
+	unsigned int meas_timeout_running_us;
+	unsigned int meas_timeout_wakeup_us;
+#endif
 };
 
 #endif
