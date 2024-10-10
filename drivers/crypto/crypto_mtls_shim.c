@@ -197,9 +197,6 @@ static int mtls_ccm_encrypt_auth(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	/* This is equivalent to what the TinyCrypt shim does in
-	 * do_ccm_encrypt_mac().
-	 */
 	apkt->pkt->out_len = apkt->pkt->in_len;
 	apkt->pkt->out_len += ctx->mode_params.ccm_info.tag_len;
 
