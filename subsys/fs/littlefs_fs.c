@@ -842,8 +842,25 @@ static int littlefs_init_cfg(struct fs_littlefs *fs, int flags)
 
 		lcp->read_size = block_size;
 		lcp->prog_size = block_size;
-		lcp->cache_size = block_size;
-		lcp->lookahead_size = block_size * 4;
+
+		/* The values of the cache_size and lookahead_size fields are used at compile time
+		 * to statically allocate buffers that are pointed at by the read_buffer,
+		 * prog_buffer, and lookahead_buffer fields. If the updated sizes are bigger than
+		 * the original sizes then set the corresponding pointers to NULL so that lfs_init
+		 * will dynamically allocate appropriately sized buffers instead of trying to use
+		 * the statically allocated buffer. */
+		lfs_size_t new_cache_size = block_size;
+		if (new_cache_size > lcp->cache_size) {
+			lcp->read_buffer = NULL;
+			lcp->prog_buffer = NULL;
+		}
+		lcp->cache_size = new_cache_size;
+		lfs_size_t new_lookahead_size = block_size * 4;
+		if (new_lookahead_size > lcp->lookahead_size) {
+			lcp->lookahead_buffer = NULL;
+		}
+		lcp->lookahead_size = new_lookahead_size;
+
 		lcp->sync = lfs_api_sync_blk;
 
 		LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
