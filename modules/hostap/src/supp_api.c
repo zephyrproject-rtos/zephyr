@@ -1650,10 +1650,16 @@ static void dpp_ssid_bin2str(char *dst, uint8_t *src, int max_len)
 #define SUPPLICANT_DPP_CMD_BUF_SIZE 384
 #define STR_CUR_TO_END(cur) (cur) = (&(cur)[0] + strlen((cur)))
 
-static int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t max_len)
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params)
 {
-	char *pos = cmd;
-	char *end = cmd + max_len;
+	char *pos;
+	static char dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE] = {0};
+	char *end = &dpp_cmd_buf[SUPPLICANT_DPP_CMD_BUF_SIZE - 2];
+
+	memset(dpp_cmd_buf, 0x0, SUPPLICANT_DPP_CMD_BUF_SIZE);
+
+	pos = &dpp_cmd_buf[0];
 
 	switch (params->action) {
 	case WIFI_DPP_CONFIGURATOR_ADD:
@@ -1831,72 +1837,12 @@ static int dpp_params_to_cmd(struct wifi_dpp_params *params, char *cmd, size_t m
 		break;
 	default:
 		wpa_printf(MSG_ERROR, "Unknown DPP action");
-		return -EINVAL;
+		return -1;
 	}
 
+	wpa_printf(MSG_DEBUG, "%s", dpp_cmd_buf);
+	if (zephyr_wpa_cli_cmd_resp(dpp_cmd_buf, params->resp)) {
+		return -1;
+	}
 	return 0;
 }
-
-int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)
-{
-	int ret;
-	char *cmd = NULL;
-
-	if (params == NULL) {
-		return -EINVAL;
-	}
-
-	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
-	if (cmd == NULL) {
-		return -ENOMEM;
-	}
-
-	/* leave one byte always be 0 */
-	ret = dpp_params_to_cmd(params, cmd, SUPPLICANT_DPP_CMD_BUF_SIZE - 2);
-	if (ret) {
-		os_free(cmd);
-		return ret;
-	}
-
-	wpa_printf(MSG_DEBUG, "wpa_cli %s", cmd);
-	if (zephyr_wpa_cli_cmd_resp(cmd, params->resp)) {
-		os_free(cmd);
-		return -ENOEXEC;
-	}
-
-	os_free(cmd);
-	return 0;
-}
-
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params)
-{
-	int ret;
-	char *cmd = NULL;
-
-	if (params == NULL) {
-		return -EINVAL;
-	}
-
-	cmd = os_zalloc(SUPPLICANT_DPP_CMD_BUF_SIZE);
-	if (cmd == NULL) {
-		return -ENOMEM;
-	}
-
-	/* leave one byte always be 0 */
-	ret = dpp_params_to_cmd(params, cmd, SUPPLICANT_DPP_CMD_BUF_SIZE - 2);
-	if (ret) {
-		os_free(cmd);
-		return ret;
-	}
-
-	wpa_printf(MSG_DEBUG, "hostapd_cli %s", cmd);
-	if (zephyr_hostapd_cli_cmd_resp(cmd, params->resp)) {
-		os_free(cmd);
-		return -ENOEXEC;
-	}
-
-	os_free(cmd);
-	return 0;
-}
-#endif /* CONFIG_WIFI_NM_HOSTAPD_AP */

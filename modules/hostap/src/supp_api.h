@@ -253,22 +253,12 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 #endif /* CONFIG_AP */
 
 /**
- * @brief Dispatch DPP operations for STA
+ * @brief Dispatch DPP operations
  *
  * @param dev Wi-Fi interface name to use
  * @param dpp_params DPP action enum and params in string
  * @return 0 for OK; -1 for ERROR
  */
-int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
-
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-/**
- * @brief Dispatch DPP operations for AP
- *
- * @param dev Wi-Fi interface name to use
- * @param dpp_params DPP action enum and params in string
- * @return 0 for OK; -1 for ERROR
- */
-int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
-#endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
+int supplicant_dpp_dispatch(const struct device *dev,
+			    struct wifi_dpp_params *params);
 #endif /* ZEPHYR_SUPP_MGMT_H */
