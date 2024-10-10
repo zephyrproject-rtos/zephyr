@@ -11,7 +11,6 @@ commands which specifically execute runners.'''
 import os
 from pathlib import Path
 
-from west import log
 from west.commands import WestCommand
 
 # This relies on this file being zephyr/scripts/foo/bar.py.
@@ -43,5 +42,5 @@ class Forceable(WestCommand):
         self.args.force being True can allow execution to proceed.
         '''
         if not (cond or self.args.force):
-            log.err(msg)
-            log.die('refusing to proceed without --force due to above error')
+            self.err(msg)
+            self.die('refusing to proceed without --force due to above error')
