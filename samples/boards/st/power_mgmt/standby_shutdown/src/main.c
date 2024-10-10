@@ -42,16 +42,19 @@ static struct gpio_callback button_cb_data;
 
 void config_wakeup_features(void)
 {
-	/* Configure wake-up features */
-	/* WKUP2(PC13) only , - active low, pull-up */
-	/* Set pull-ups for standby modes */
-	LL_PWR_EnableGPIOPullUp(LL_PWR_GPIO_C, LL_PWR_GPIO_BIT_13);
-	LL_PWR_IsWakeUpPinPolarityLow(LL_PWR_WAKEUP_PIN2);
-	/* Enable pin pull up configurations and wakeup pins */
-	LL_PWR_EnablePUPDCfg();
+	/*
+	 * Configure wake-up features : WKUP2(PC13) only
+	 *
+	 * The Following Wakeup sequence is highly recommended prior to each Standby mode entry
+	 * mainly when using more than one wakeup source this is to not miss any wakeup event:
+	 * - Disable all used wakeup sources,
+	 * - Clear all related wakeup flags,
+	 * - Re-enable all used wakeup sources,
+	 * - Enter the Standby mode.
+	 */
+	LL_PWR_DisableWakeUpPin(LL_PWR_WAKEUP_PIN2);
+	LL_PWR_ClearFlag_WU(); /* Clear wakeup flags */
 	LL_PWR_EnableWakeUpPin(LL_PWR_WAKEUP_PIN2);
-	/* Clear wakeup flags */
-	LL_PWR_ClearFlag_WU();
 }
 
 void button_pressed(const struct device *dev, struct gpio_callback *cb,
@@ -97,19 +100,20 @@ int main(void)
 	hwinfo_get_reset_cause(&cause);
 	hwinfo_clear_reset_cause();
 
-	if (cause == RESET_LOW_POWER_WAKE)	{
+	if (cause == RESET_LOW_POWER_WAKE) {
 		hwinfo_clear_reset_cause();
 		printk("\nReset cause: Standby mode\n\n");
 	}
-
 	if (cause == (RESET_PIN | RESET_BROWNOUT)) {
 		printk("\nReset cause: Shutdown mode or power up\n\n");
 	}
-
 	if (cause == RESET_PIN) {
 		printk("\nReset cause: Reset pin\n\n");
 	}
-
+	/* After flashing the reset cause is  0x3 : RESET_SOFTWARE | RESTE_PIN */
+	if ((cause & RESET_SOFTWARE) == RESET_SOFTWARE) {
+		printk("\nReset cause: Reset soft\n\n");
+	}
 
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 	if (!gpio_is_ready_dt(&button)) {
