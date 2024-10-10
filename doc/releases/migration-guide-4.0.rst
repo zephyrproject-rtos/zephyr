@@ -240,6 +240,8 @@ Sensors
 * The existing driver for the Microchip MCP9808 temperature sensor transformed and renamed
   to support all JEDEC JC 42.4 compatible temperature sensors. It now uses the
   :dtcompatible:`jedec,jc-42.4-temp` compatible string instead to the ``microchip,mcp9808`` string.
+* Boards using the :dtcompatible:`bosch,bme280` compatible as an interface to a BMP280 sensor
+  must add the new :dtcompatible:`bosch,bmp280` compatible to the node.
 
 Serial
 ======
