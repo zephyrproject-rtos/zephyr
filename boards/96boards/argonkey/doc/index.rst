@@ -51,7 +51,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_argonkey board configuration supports the following hardware
+The Zephyr ``96b_argonkey`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

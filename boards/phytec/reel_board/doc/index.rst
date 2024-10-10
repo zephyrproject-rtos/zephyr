@@ -114,7 +114,7 @@ The mode is controlled by MODE pin (P1.00).
 Supported Features
 ==================
 
-The reel_board board configuration supports the following
+The ``reel_board`` board target supports the following
 hardware features:
 
 +-----------+------------+----------------------+

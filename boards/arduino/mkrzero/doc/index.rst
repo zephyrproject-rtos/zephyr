@@ -27,7 +27,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_mkrzero board configuration supports the following hardware
+The ``arduino_mkrzero`` board target supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+

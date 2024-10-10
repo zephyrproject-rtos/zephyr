@@ -48,7 +48,7 @@ More information about STM32H747XIH6 can be found here:
 Supported Features
 ==================
 
-The current Zephyr stm32h747i_disco board configuration supports the following hardware features:
+The current Zephyr ``stm32h747i_disco`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

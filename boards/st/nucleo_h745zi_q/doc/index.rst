@@ -91,7 +91,7 @@ Nucleo H745ZI-Q provides the following hardware components:
 Supported Features
 ==================
 
-The Zephyr nucleo_h745zi_q board configuration supports the following hardware
+The Zephyr ``nucleo_h745zi_q`` board target supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+
