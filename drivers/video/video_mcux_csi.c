@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro Limited
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,25 +32,6 @@ struct video_mcux_csi_data {
 	struct k_fifo fifo_out;
 	struct k_poll_signal *signal;
 };
-
-static inline unsigned int video_pix_fmt_bpp(uint32_t pixelformat)
-{
-	switch (pixelformat) {
-	case VIDEO_PIX_FMT_BGGR8:
-	case VIDEO_PIX_FMT_GBRG8:
-	case VIDEO_PIX_FMT_GRBG8:
-	case VIDEO_PIX_FMT_RGGB8:
-		return 1;
-	case VIDEO_PIX_FMT_RGB565:
-	case VIDEO_PIX_FMT_YUYV:
-		return 2;
-	case VIDEO_PIX_FMT_XRGB32:
-	case VIDEO_PIX_FMT_XYUV32:
-		return 4;
-	default:
-		return 0;
-	}
-}
 
 static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle, status_t status, void *user_data)
 {
@@ -217,6 +199,11 @@ static int video_mcux_csi_stream_start(const struct device *dev)
 	const struct video_mcux_csi_config *config = dev->config;
 	struct video_mcux_csi_data *data = dev->data;
 	status_t ret;
+	struct video_buf *vbuf;
+
+	while (vbuf = k_fifo_get(&data->fifo_out, K_NO_WAIT)) {
+		k_fifo_put(&data->fifo_in, vbuf);
+	};
 
 	ret = CSI_TransferStart(config->base, &data->csi_handle);
 	if (ret != kStatus_Success) {
@@ -447,6 +434,38 @@ static int video_mcux_csi_set_signal(const struct device *dev, enum video_endpoi
 }
 #endif
 
+static int video_mcux_csi_set_frmival(const struct device *dev, enum video_endpoint_id ep,
+				      struct video_frmival *frmival)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+
+	return video_set_frmival(config->source_dev, ep, frmival);
+}
+
+static int video_mcux_csi_get_frmival(const struct device *dev, enum video_endpoint_id ep,
+				      struct video_frmival *frmival)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+
+	return video_get_frmival(config->source_dev, ep, frmival);
+}
+
+static int video_mcux_csi_enum_frmival(const struct device *dev, enum video_endpoint_id ep,
+				       struct video_frmival_enum *fie)
+{
+	const struct video_mcux_csi_config *config = dev->config;
+
+#if defined(CONFIG_VIDEO_MCUX_MIPI_CSI2RX)
+	struct video_format fmt;
+
+	fmt.pixelformat = fie->pixelformat;
+	video_pix_fmt_convert(&fmt, false);
+	fie->pixelformat = fmt.pixelformat;
+#endif
+
+	return video_enum_frmival(config->source_dev, ep, fie);
+}
+
 static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_format = video_mcux_csi_set_fmt,
 	.get_format = video_mcux_csi_get_fmt,
@@ -458,6 +477,9 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_ctrl = video_mcux_csi_set_ctrl,
 	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
+	.set_frmival = video_mcux_csi_set_frmival,
+	.get_frmival = video_mcux_csi_get_frmival,
+	.enum_frmival = video_mcux_csi_enum_frmival,
 #ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,
 #endif
@@ -487,11 +509,6 @@ static int video_mcux_csi_init_0(const struct device *dev)
 	return video_mcux_csi_init(dev);
 }
 
-/* CONFIG_KERNEL_INIT_PRIORITY_DEVICE is used to make sure the
- * CSI peripheral is initialized before the camera, which is
- * necessary since the clock to the camera is provided by the
- * CSI peripheral.
- */
 DEVICE_DT_INST_DEFINE(0, &video_mcux_csi_init_0, NULL, &video_mcux_csi_data_0,
 		      &video_mcux_csi_config_0, POST_KERNEL, CONFIG_VIDEO_MCUX_CSI_INIT_PRIORITY,
 		      &video_mcux_csi_driver_api);
