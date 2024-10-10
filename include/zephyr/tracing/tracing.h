@@ -2376,6 +2376,65 @@
 
 /** @} */ /* end of subsys_tracing_apis_socket */
 
+/**
+ * @brief GPIO Tracing APIs
+ * @defgroup subsys_tracing_apis_gpio GPIO Tracing APIs
+ * @{
+ */
+
+/**
+ * @brief Trace a GPIO pin becoming active
+ * @param port @ref device representing the GPIO port
+ * @param pin @ref gpio_pin_t representing the pin
+ */
+#define sys_port_trace_gpio_pin_active(port, pin)
+
+/**
+ * @brief Trace a GPIO pin becoming inactive
+ * @param port @ref device representing the GPIO port
+ * @param pin @ref gpio_pin_t representing the pin
+ */
+#define sys_port_trace_gpio_pin_inactive(port, pin)
+
+/**
+ * @brief Trace GPIO being configured as output
+ * @param port @ref device representing the GPIO port
+ * @param pin @ref gpio_pin_t representing the pin
+ * @param flags @ref gpio_flags_t representing the flags
+ */
+#define sys_port_trace_gpio_pin_configured_output(port, pin, flags)
+
+/**
+ * @brief Trace GPIO being configured as input
+ * @param port @ref device representing the GPIO port
+ * @param pin @ref gpio_pin_t representing the pin
+ * @param flags @ref gpio_flags_t representing the flags
+ */
+#define sys_port_trace_gpio_pin_configured_input(port, pin, flags)
+
+/**
+ * @brief Trace attaching event handler to GPIO
+ * @param port @ref device representing the GPIO port
+ * @param callback @ref gpio_callback a valid Application's callback structure pointer
+ */
+#define sys_port_trace_gpio_pin_event_attached(port, callback)
+
+/**
+ * @brief Trace removing event handler from GPIO
+ * @param port @ref device representing the GPIO port
+ * @param callback @ref gpio_callback a valid Application's callback structure pointer
+ */
+#define sys_port_trace_gpio_pin_event_removed(port, callback)
+
+/**
+ * @brief Trace executing GPIO event handler
+ * @param port @ref device representing the GPIO port
+ * @param callback @ref gpio_callback a valid Application's callback structure pointer
+ */
+#define sys_port_trace_gpio_pin_event_executed(port, callback)
+
+/** @} */ /* end of subsys_tracing_apis_gpio */
+
 #if defined(CONFIG_PERCEPIO_TRACERECORDER)
 #include "tracing_tracerecorder.h"
 #else

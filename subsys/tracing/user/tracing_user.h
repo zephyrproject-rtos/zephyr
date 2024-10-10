@@ -7,6 +7,7 @@
 
 #ifndef _TRACE_USER_H
 #define _TRACE_USER_H
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
@@ -47,6 +48,22 @@ void sys_trace_isr_exit(void);
 void sys_trace_idle(void);
 void sys_trace_sys_init_enter(const struct init_entry *entry, int level);
 void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result);
+
+struct gpio_callback;
+typedef uint8_t gpio_pin_t;
+typedef uint32_t gpio_flags_t;
+void sys_trace_gpio_pin_active_user(const struct device *port, gpio_pin_t pin);
+void sys_trace_gpio_pin_inactive_user(const struct device *port, gpio_pin_t pin);
+void sys_trace_gpio_pin_configured_output_user(const struct device *port, gpio_pin_t pin,
+					       gpio_flags_t flags);
+void sys_trace_gpio_pin_configured_input_user(const struct device *port, gpio_pin_t pin,
+					      gpio_flags_t flags);
+void sys_trace_gpio_pin_event_attached_user(const struct device *port,
+					    struct gpio_callback *callback);
+void sys_trace_gpio_pin_event_removed_user(const struct device *port,
+					   struct gpio_callback *callback);
+void sys_trace_gpio_pin_event_executed_user(const struct device *port,
+					    struct gpio_callback *callback);
 
 #define sys_port_trace_k_thread_foreach_enter()
 #define sys_port_trace_k_thread_foreach_exit()
@@ -389,6 +406,19 @@ void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int resu
 #define sys_port_trace_net_send_data_exit(pkt, ret)
 #define sys_port_trace_net_rx_time(pkt, end_time)
 #define sys_port_trace_net_tx_time(pkt, end_time)
+
+#define sys_port_trace_gpio_pin_active(port, pin)   sys_trace_gpio_pin_active_user(port, pin)
+#define sys_port_trace_gpio_pin_inactive(port, pin) sys_trace_gpio_pin_inactive_user(port, pin)
+#define sys_port_trace_gpio_pin_configured_output(port, pin, flag)                                 \
+	sys_trace_gpio_pin_configured_output_user(port, pin, flag)
+#define sys_port_trace_gpio_pin_configured_input(port, pin, flag)                                  \
+	sys_trace_gpio_pin_configured_input_user(port, pin, flag)
+#define sys_port_trace_gpio_pin_event_attached(port, callback)                                     \
+	sys_trace_gpio_pin_event_attached_user(port, callback)
+#define sys_port_trace_gpio_pin_event_removed(port, callback)                                      \
+	sys_trace_gpio_pin_event_removed_user(port, callback)
+#define sys_port_trace_gpio_pin_event_executed(port, callback)                                     \
+	sys_trace_gpio_pin_event_executed_user(port, callback)
 
 #ifdef __cplusplus
 }

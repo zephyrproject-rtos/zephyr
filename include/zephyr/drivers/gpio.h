@@ -19,6 +19,7 @@
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/tracing/tracing.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -550,7 +551,7 @@ struct gpio_dt_spec {
  *		.ngpios = 32,
  *		.gpios_reserved = 0xdeadbeef,
  *		               // 0b1101 1110 1010 1101 1011 1110 1110 1111
- *
+ *	};
  *	static const struct some_config dev_cfg_b = {
  *		.ngpios = 18,
  *		.gpios_reserved = 0xfffc0418,
@@ -1011,6 +1012,17 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 		data->invert &= ~(gpio_port_pins_t)BIT(pin);
 	}
 
+	if ((flags & GPIO_OUTPUT) != 0) {
+		sys_port_trace_gpio_pin_configured_output(port, pin, flags);
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			sys_port_trace_gpio_pin_active(port, pin);
+		} else {
+			sys_port_trace_gpio_pin_inactive(port, pin);
+		}
+	} else {
+		sys_port_trace_gpio_pin_configured_input(port, pin, flags);
+	}
+
 	return api->pin_configure(port, pin, flags);
 }
 
@@ -1230,13 +1242,26 @@ static inline int gpio_pin_get_config_dt(const struct gpio_dt_spec *spec,
 __syscall int gpio_port_get_raw(const struct device *port,
 				gpio_port_value_t *value);
 
-static inline int z_impl_gpio_port_get_raw(const struct device *port,
-					   gpio_port_value_t *value)
+static inline int z_impl_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
 {
-	const struct gpio_driver_api *api =
-		(const struct gpio_driver_api *)port->api;
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)port->api;
 
-	return api->port_get_raw(port, value);
+	int ret = api->port_get_raw(port, value);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	gpio_pin_t counter = 0;
+
+	for (gpio_port_value_t val_cp = *value; IS_ENABLED(CONFIG_TRACING_GPIO) && (val_cp != 0);
+	     val_cp >>= 1, counter++) {
+		if ((val_cp & 0x1) == 1) {
+			sys_port_trace_gpio_pin_active(port, counter);
+		}
+	}
+
+	return ret;
 }
 
 /**
@@ -1299,6 +1324,16 @@ static inline int z_impl_gpio_port_set_masked_raw(const struct device *port,
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->api;
+
+	for (gpio_pin_t i = 0; IS_ENABLED(CONFIG_TRACING_GPIO) && (i < sizeof(mask) * 8); ++i) {
+		if (mask & BIT(i)) {
+			if ((value & BIT(i)) != 0) {
+				sys_port_trace_gpio_pin_active(port, i);
+			} else {
+				sys_port_trace_gpio_pin_inactive(port, i);
+			}
+		}
+	}
 
 	return api->port_set_masked_raw(port, mask, value);
 }
@@ -1624,6 +1659,12 @@ static inline int gpio_pin_set(const struct device *port, gpio_pin_t pin,
 	__ASSERT((cfg->port_pin_mask & (gpio_port_pins_t)BIT(pin)) != 0U,
 		 "Unsupported pin");
 
+	if (value != 0) {
+		sys_port_trace_gpio_pin_active(port, pin);
+	} else {
+		sys_port_trace_gpio_pin_inactive(port, pin);
+	}
+
 	if (data->invert & (gpio_port_pins_t)BIT(pin)) {
 		value = (value != 0) ? 0 : 1;
 	}
@@ -1724,6 +1765,8 @@ static inline int gpio_add_callback(const struct device *port,
 		return -ENOSYS;
 	}
 
+	sys_port_trace_gpio_pin_event_attached(port, callback);
+
 	return api->manage_callback(port, callback, true);
 }
 
@@ -1771,6 +1814,8 @@ static inline int gpio_remove_callback(const struct device *port,
 	if (api->manage_callback == NULL) {
 		return -ENOSYS;
 	}
+
+	sys_port_trace_gpio_pin_event_removed(port, callback);
 
 	return api->manage_callback(port, callback, false);
 }

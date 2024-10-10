@@ -174,6 +174,19 @@ extern "C" {
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)			\
 	sys_trace_k_timer_status_sync_exit(timer, result)
 
+/* GPIO */
+#define sys_port_trace_gpio_pin_active(port, pin)   sys_trace_gpio_pin_active(port, pin)
+#define sys_port_trace_gpio_pin_inactive(port, pin) sys_trace_gpio_pin_inactive(port, pin)
+#define sys_port_trace_gpio_pin_configured_output(port, pin, flags)                                \
+	sys_trace_gpio_pin_configured_output(port, pin, flags)
+#define sys_port_trace_gpio_pin_configured_input(port, pin, flags)                                 \
+	sys_trace_gpio_pin_configured_input(port, pin, flags)
+#define sys_port_trace_gpio_pin_event_attached(port, callback)                                     \
+	sys_trace_gpio_pin_event_attached(port, callback)
+#define sys_port_trace_gpio_pin_event_removed(port, callback)                                      \
+	sys_trace_gpio_pin_event_removed(port, callback)
+#define sys_port_trace_gpio_pin_event_executed(port, callback)                                     \
+	sys_trace_gpio_pin_event_executed(port, callback)
 
 #define sys_port_trace_k_condvar_init(condvar, ret)
 #define sys_port_trace_k_condvar_signal_enter(condvar)
@@ -591,6 +604,20 @@ void sys_trace_net_send_data_enter(struct net_pkt *pkt);
 void sys_trace_net_send_data_exit(struct net_pkt *pkt, int ret);
 void sys_trace_net_rx_time(struct net_pkt *pkt, uint32_t end_time);
 void sys_trace_net_tx_time(struct net_pkt *pkt, uint32_t end_time);
+
+/* GPIO */
+struct gpio_callback;
+typedef uint8_t gpio_pin_t;
+typedef uint32_t gpio_flags_t;
+void sys_trace_gpio_pin_active(const struct device *port, gpio_pin_t pin);
+void sys_trace_gpio_pin_inactive(const struct device *port, gpio_pin_t pin);
+void sys_trace_gpio_pin_configured_output(const struct device *port, gpio_pin_t pin,
+					  gpio_flags_t flags);
+void sys_trace_gpio_pin_configured_input(const struct device *port, gpio_pin_t pin,
+					 gpio_flags_t flags);
+void sys_trace_gpio_pin_event_attached(const struct device *port, struct gpio_callback *callback);
+void sys_trace_gpio_pin_event_removed(const struct device *port, struct gpio_callback *callback);
+void sys_trace_gpio_pin_event_executed(const struct device *port, struct gpio_callback *callback);
 
 #ifdef __cplusplus
 }

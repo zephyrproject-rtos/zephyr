@@ -349,6 +349,12 @@ config TRACING_NET_CORE
 	  Enable tracing core network IP stack, like packet reception
 	  and sending.
 
+config TRACING_GPIO
+	bool "Tracing GPIO"
+	default n
+	help
+	  Enable tracing GPIO.
+
 endmenu  # Tracing Configuration
 
 endif
