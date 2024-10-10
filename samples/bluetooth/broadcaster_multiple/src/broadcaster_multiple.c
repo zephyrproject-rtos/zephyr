@@ -13,6 +13,8 @@
  */
 #if defined(CONFIG_BT_CTLR_ADV_DATA_LEN_MAX)
 #define BT_AD_DATA_LEN_MAX CONFIG_BT_CTLR_ADV_DATA_LEN_MAX
+#elif defined(CONFIG_BT_EXT_ADV)
+#define BT_AD_DATA_LEN_MAX 192U
 #else
 #define BT_AD_DATA_LEN_MAX 31U
 #endif
@@ -26,8 +28,10 @@
 /* Maximum value of AD data format length field (8-bit) */
 #define BT_AD_DATA_FORMAT_LEN_MAX 255U
 
+#define DEVICE_NAME CONFIG_BT_DEVICE_NAME " " CONFIG_SOC_SERIES
+
 /* Device name length, size minus one null character */
-#define BT_DEVICE_NAME_LEN (sizeof(CONFIG_BT_DEVICE_NAME) - 1U)
+#define BT_DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1U)
 
 /* Device name length in AD data format, 2 bytes for length and type overhead */
 #define BT_DEVICE_NAME_AD_DATA_LEN (BT_AD_DATA_FORMAT_LEN_SIZE + \
@@ -59,14 +63,21 @@ static const struct bt_data ad_long[] = {
 #if CONFIG_BT_CTLR_ADV_DATA_LEN_MAX > 255
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, sizeof(mfg_data)),
 #endif
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, sizeof(DEVICE_NAME) - 1),
 };
 
 static const struct bt_data ad_short[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, sizeof(DEVICE_NAME) - 1),
 };
 
 static struct bt_le_ext_adv *adv[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
+
+struct bt_le_ext_adv *broadcaster_multiple_connectable_get(void)
+{
+#define ADV_CONN_IDX 1
+
+	return adv[ADV_CONN_IDX];
+}
 
 int broadcaster_multiple(void)
 {
@@ -94,9 +105,9 @@ int broadcaster_multiple(void)
 			.ad_size = ARRAY_SIZE(ad_short),
 		},
 		{ /* Use 2M auxiliary PDU */
-			.options = BT_LE_ADV_OPT_EXT_ADV,
-			.ad = ad_long,
-			.ad_size = ARRAY_SIZE(ad_long),
+			.options = BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_CONN,
+			.ad = ad_short,
+			.ad_size = ARRAY_SIZE(ad_short),
 		},
 		{ /* Use 1M auxiliary PDU */
 			.options = BT_LE_ADV_OPT_EXT_ADV | BT_LE_ADV_OPT_NO_2M,
