@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device_runtime.h>
 
 static K_SEM_DEFINE(sem, 0, 1);
 static const struct gpio_dt_spec phase_a = GPIO_DT_SPEC_GET(DT_ALIAS(qenca), gpios);
@@ -140,6 +141,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 {
 	int rc;
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
+
 	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
 	qdec_trigger.chan = SENSOR_CHAN_ALL;
 	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
@@ -158,9 +163,17 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 	/* emulation not working, but there maybe old trigger, ignore */
 	rc = k_sem_take(&sem, K_MSEC(200));
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
+
 	/* there should be no triggers now*/
 	rc = k_sem_take(&sem, K_MSEC(200));
 	zassert_true(rc == -EAGAIN, "qdec handler should not be triggered (%d)", rc);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
 
 	/* register empty trigger - disable trigger */
 	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, NULL);
@@ -171,6 +184,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_and_disable)
 	/* emulation working, but handler not set, thus should not be called */
 	rc = k_sem_take(&sem, K_MSEC(200));
 	zassert_true(rc == -EAGAIN, "qdec handler should not be triggered (%d)", rc);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -183,6 +200,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set)
 {
 	int rc;
 	struct sensor_value val = {0};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
 
 	qdec_trigger.type = SENSOR_TRIG_DATA_READY;
 	qdec_trigger.chan = SENSOR_CHAN_ROTATION;
@@ -202,6 +223,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set)
 
 	TC_PRINT("QDEC reading: %d\n", val.val1);
 	zassert_true(val.val1 != 0, "No readings from QDEC");
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -213,6 +238,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set)
 ZTEST(qdec_sensor, test_sensor_trigger_set_negative)
 {
 	int rc;
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
 
 	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
 	zassume_true(rc != -ENOSYS, "sensor_trigger_set not supported");
@@ -228,6 +257,10 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_negative)
 
 	rc = sensor_trigger_set(qdec_dev, &qdec_trigger, qdec_trigger_handler);
 	zassume_true(rc < 0, "sensor_trigger_set should fail due to invalid channel");
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -238,12 +271,20 @@ ZTEST(qdec_sensor, test_sensor_trigger_set_negative)
  */
 ZTEST(qdec_sensor, test_qdec_readings)
 {
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
+
 	qenc_emulate_verify_reading(10, 100, true, false);
 	qenc_emulate_verify_reading(2, 500, true, false);
 	qenc_emulate_verify_reading(10, 200, false, false);
 	/* may lead to overflows but currently driver does not detects that */
 	qenc_emulate_verify_reading(1, 1000, false, true);
 	qenc_emulate_verify_reading(1, 1000, true, true);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -257,8 +298,15 @@ ZTEST(qdec_sensor, test_sensor_channel_get_empty)
 	int rc;
 	struct sensor_value val = {0};
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
+
 	rc = sensor_sample_fetch(qdec_dev);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
+
+	/* wait for potential new readings */
+	k_msleep(100);
 
 	/* get readings but ignore them, as they may include reading from time
 	 * when emulation was still working (i.e. during previous test)
@@ -277,6 +325,10 @@ ZTEST(qdec_sensor, test_sensor_channel_get_empty)
 	zassert_true(rc == 0, "Failed to get sample (%d)", rc);
 	zassert_true(val.val1 == 0, "Expected no readings but got: %d", val.val1);
 	zassert_true(val.val2 == 0, "Expected no readings but got: %d", val.val2);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -290,6 +342,10 @@ ZTEST(qdec_sensor, test_sensor_channel_get)
 	int rc;
 	struct sensor_value val_first = {0};
 	struct sensor_value val_second = {0};
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
 
 	qenc_emulate_start(K_MSEC(10), true);
 
@@ -325,6 +381,10 @@ ZTEST(qdec_sensor, test_sensor_channel_get)
 	 */
 	TC_PRINT("Expected the same readings: %d vs %d - ignore!\n", val_first.val2,
 		 val_second.val2);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -338,6 +398,10 @@ ZTEST(qdec_sensor, test_sensor_channel_get_negative)
 	int rc;
 	struct sensor_value val = {0};
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
+
 	qenc_emulate_start(K_MSEC(10), true);
 
 	/* wait for some readings*/
@@ -350,6 +414,10 @@ ZTEST(qdec_sensor, test_sensor_channel_get_negative)
 	zassert_true(rc < 0, "Should failed to get sample (%d)", rc);
 	zassert_true(val.val1 == 0, "Some readings from QDEC: %d", val.val1);
 	zassert_true(val.val2 == 0, "Some readings from QDEC: %d", val.val2);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 /**
@@ -362,6 +430,10 @@ ZTEST(qdec_sensor, test_sensor_sample_fetch)
 {
 	int rc;
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_get(qdec_dev);
+	}
+
 	rc = sensor_sample_fetch(qdec_dev);
 	zassert_true(rc == 0, "Failed to fetch sample (%d)", rc);
 
@@ -370,6 +442,10 @@ ZTEST(qdec_sensor, test_sensor_sample_fetch)
 
 	rc = sensor_sample_fetch_chan(qdec_dev, SENSOR_CHAN_MAX);
 	zassert_true(rc < 0, "Should fail to fetch sample from invalid channel (%d)", rc);
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		pm_device_runtime_put(qdec_dev);
+	}
 }
 
 static void *setup(void)
