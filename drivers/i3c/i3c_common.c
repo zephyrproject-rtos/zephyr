@@ -234,92 +234,41 @@ struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 	return ret;
 }
 
-int i3c_determine_default_addr(struct i3c_device_desc *target, uint8_t *addr)
-{
-	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
-
-	/* If dynamic addr is set, then it assumed that it was assigned by a primary controller */
-	if (target->dynamic_addr == 0) {
-		/* It is assumed that SETDASA or ENTDAA will be run after this */
-		if (target->init_dynamic_addr != 0U) {
-			/* initial dynamic address is requested */
-			if (target->static_addr == 0) {
-				/* SA is set to 0, so DA will be set with ENTDAA */
-				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
-							   target->init_dynamic_addr)) {
-					/* Set DA during ENTDAA */
-					*addr = target->init_dynamic_addr;
-				} else {
-					/* address is not free, get the next one */
-					*addr = i3c_addr_slots_next_free_find(
-						&data->attached_dev.addr_slots, 0);
-				}
-			} else {
-				/* Use the init dynamic address as it's DA, but the RR will need to
-				 * be first set with it's SA to run SETDASA, the RR address will
-				 * need be updated after SETDASA with the request dynamic address
-				 */
-				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
-							   target->static_addr)) {
-					*addr = target->static_addr;
-				} else {
-					/* static address has already been taken */
-					return -EINVAL;
-				}
-			}
-		} else {
-			/* no init dynamic address is requested */
-			if (target->static_addr != 0) {
-				if (i3c_addr_slots_is_free(&data->attached_dev.addr_slots,
-							   target->static_addr)) {
-					/* static exists, set DA with same SA during SETDASA*/
-					*addr = target->static_addr;
-				} else {
-					/* static address has already been taken */
-					return -EINVAL;
-				}
-			} else {
-				/* pick a DA to use */
-				*addr = i3c_addr_slots_next_free_find(
-					&data->attached_dev.addr_slots, 0);
-			}
-		}
-	} else {
-		*addr = target->dynamic_addr;
-	}
-
-	return 0;
-}
-
 int i3c_attach_i3c_device(struct i3c_device_desc *target)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
 	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
-	sys_snode_t *node;
 	uint8_t addr = 0;
 	int status = 0;
+	struct i3c_device_desc *i3c_desc;
 
 	/* check to see if the device has already been attached */
-	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
-		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
-			if (node == &target->node) {
-				return -EINVAL;
-			}
+	I3C_BUS_FOR_EACH_I3CDEV(target->bus, i3c_desc) {
+		if (i3c_desc == target) {
+			return -EINVAL;
 		}
 	}
 
-	status = i3c_determine_default_addr(target, &addr);
-	if (status != 0) {
-		return status;
+	addr = target->dynamic_addr ? target->dynamic_addr : target->static_addr;
+
+	/*
+	 * If it has a dynamic addr already assigned or a static address, check that it is free
+	 */
+	if (addr) {
+		if (!i3c_addr_slots_is_free(&data->attached_dev.addr_slots, addr)) {
+			return -EINVAL;
+		}
 	}
 
 	sys_slist_append(&data->attached_dev.devices.i3c, &target->node);
 
 	if (api->attach_i3c_device != NULL) {
-		status = api->attach_i3c_device(target->bus, target, addr);
+		status = api->attach_i3c_device(target->bus, target);
 	}
 
-	i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, addr);
+	if (addr) {
+		i3c_addr_slots_mark_i3c(&data->attached_dev.addr_slots, addr);
+	}
 
 	return status;
 }
@@ -376,15 +325,13 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)target->bus->data;
 	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
-	sys_snode_t *node;
 	int status = 0;
+	struct i3c_i2c_device_desc *i3c_i2c_desc;
 
 	/* check to see if the device has already been attached */
-	if (!sys_slist_is_empty(&data->attached_dev.devices.i2c)) {
-		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i2c, node) {
-			if (node == &target->node) {
-				return -EINVAL;
-			}
+	I3C_BUS_FOR_EACH_I2CDEV(target->bus, i3c_i2c_desc) {
+		if (i3c_i2c_desc == target) {
+			return -EINVAL;
 		}
 	}
 
