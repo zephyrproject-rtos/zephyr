@@ -36,12 +36,4 @@ config NXP_FW_LOADER
 config NXP_RF_IMU
 	default y if (BT || WIFI)
 
-if PM
-# For PM mode 3 we change this config to get better accuracy
-# when using the iKHz RTC clock as system clock.
-config SYS_CLOCK_TICKS_PER_SEC
-	default 1000
-	depends on $(dt_nodelabel_enabled,standby)
-endif
-
 endif # SOC_SERIES_RW6XX
