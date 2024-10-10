@@ -251,6 +251,7 @@
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2s/*nrfx*                       @anangl
 /drivers/i3c/i3c_cdns.c                   @XenuIsWatching
+/drivers/i3c/i3c_dw.c                     @XenuIsWatching
 /drivers/ieee802154/                      @rlubos @tbursztyka @jukkar @fgrandel
 /drivers/ieee802154/*b91*                 @andy-liu-telink
 /drivers/ieee802154/ieee802154_nrf5*      @ankuns
