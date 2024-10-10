@@ -4,5 +4,5 @@
  */
 
 &cpuapp_ram0x_region {
-	perm-execute;
+	nordic,access = <NRF_OWNER_ID_APPLICATION NRF_PERM_RWXS>;
 };
