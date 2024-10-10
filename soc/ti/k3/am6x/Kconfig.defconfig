@@ -27,9 +27,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 200000000 if SOC_SERIES_AM6X_A53
 	default 19200000 if SOC_SERIES_AM6X_R5
 
-config PINCTRL
-	default y
-
 if SERIAL
 
 config UART_NS16550
