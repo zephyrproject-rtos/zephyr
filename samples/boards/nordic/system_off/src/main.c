@@ -16,7 +16,12 @@
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/util.h>
 
+#if IS_ENABLED(CONFIG_GRTC_WAKEUP_ENABLE)
+#include <zephyr/drivers/timer/nrf_grtc_timer.h>
+#define DEEP_SLEEP_TIME_S 2
+#else
 static const struct gpio_dt_spec sw0 = GPIO_DT_SPEC_GET(DT_ALIAS(sw0), gpios);
+#endif
 
 int main(void)
 {
@@ -45,6 +50,15 @@ int main(void)
 		printf("Retained data not supported\n");
 	}
 
+#if IS_ENABLED(CONFIG_GRTC_WAKEUP_ENABLE)
+	int err = z_nrf_grtc_wakeup_prepare(DEEP_SLEEP_TIME_S * USEC_PER_SEC);
+
+	if (err < 0) {
+		printk("Unable to prepare GRTC as a wake up source (err = %d).\n", err);
+	} else {
+		printk("Entering system off; wait %u seconds to restart\n", DEEP_SLEEP_TIME_S);
+	}
+#else
 	/* configure sw0 as input, interrupt as level active to allow wake-up */
 	rc = gpio_pin_configure_dt(&sw0, GPIO_INPUT);
 	if (rc < 0) {
@@ -59,6 +73,7 @@ int main(void)
 	}
 
 	printf("Entering system off; press sw0 to restart\n");
+#endif
 
 	rc = pm_device_action_run(cons, PM_DEVICE_ACTION_SUSPEND);
 	if (rc < 0) {
