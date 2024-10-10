@@ -43,7 +43,7 @@ Hardware
 Supported Features
 ==================
 
-The same54_xpro board configuration supports the following hardware
+The ``same54_xpro`` board target supports the following hardware
 features:
 
 +---------------+------------+----------------------------+

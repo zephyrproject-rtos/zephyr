@@ -49,7 +49,7 @@ ARM V2M BEETLE provides the following hardware components:
 Supported Features
 ===================
 
-The v2m_beetle board configuration supports the following hardware features:
+The ``v2m_beetle`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
