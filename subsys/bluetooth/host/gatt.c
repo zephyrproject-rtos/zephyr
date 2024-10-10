@@ -6531,3 +6531,11 @@ void bt_gatt_req_set_mtu(struct bt_att_req *req, uint16_t mtu)
 	 * request types if needed.
 	 */
 }
+
+ssize_t bt_gatts_handler_fixed_size_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					 void *buf, uint16_t len, uint16_t offset)
+{
+	struct bt_sized_ptr *ptr = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, ptr->data, ptr->size);
+}
