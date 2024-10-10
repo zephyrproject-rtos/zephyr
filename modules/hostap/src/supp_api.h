@@ -309,6 +309,12 @@ int hapd_state(const struct device *dev, int *state);
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params);
+#else
+static inline int hapd_state(const struct device *dev, int *state)
+{
+	return -EINVAL;
+}
+#endif
 
 /**
  * @brief Get Wi-Fi SAP status
@@ -337,12 +343,6 @@ int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_
  * @return 0 if ok, < 0 if error
  */
 int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_params *params);
-#endif
-#else
-static inline int hapd_state(const struct device *dev, int *state)
-{
-	return -EINVAL;
-}
 #endif
 
 /**
