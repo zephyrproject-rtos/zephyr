@@ -196,7 +196,7 @@ static void init_app(void)
 
 	init_vlan();
 	init_tunnel();
-
+	init_ws();
 	init_usb();
 }
 

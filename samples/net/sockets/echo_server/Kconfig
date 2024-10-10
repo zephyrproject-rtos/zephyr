@@ -87,4 +87,21 @@ config NET_SAMPLE_CERTS_WITH_SC
 	  Enable this flag, if you are interested to run this
 	  application with signed certificates and keys.
 
+config NET_SAMPLE_WEBSOCKET_CONSOLE
+	bool "Websocket console support"
+	default y if WEBSOCKET_CONSOLE
+	help
+	  Enable this flag, if you are interested to enable websocket console.
+	  You can use the overlay-ws-console.conf to set websocket options.
+
+config NET_SAMPLE_HTTPS_SERVICE
+	bool "Enable HTTPS service for the Webconsole"
+	default y if NET_SAMPLE_WEBSOCKET_CONSOLE
+	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+
+config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
+	int "Port number for HTTPS service"
+	default 443
+	depends on NET_SAMPLE_HTTPS_SERVICE
+
 source "Kconfig.zephyr"
