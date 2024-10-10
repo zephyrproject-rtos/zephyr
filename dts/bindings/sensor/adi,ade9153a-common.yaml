@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Plentify (Pty) Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADE9153a Energy Metering IC with Autocalibration
+
+include: sensor-device.yaml
+
+properties:
+  cf-gpios:
+    type: phandle-array
+    description: |
+      The CF1 pin is a Calibration Frequency (CF) Logic Output. The CF1 and CF2 outputs provide
+      proportional power information based on the CFxSEL bits in the CFMODE register. Use these
+      outputs for operational and calibration purposes. Scale the full-scale output frequency by
+      writing to the CFxDEN registers, respectively.
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Interrupt Request Output (IRQn). This pin is an active low logic output. See the
+      Interrupts/Events section for information about events that trigger interrupts..
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESETn is an Active Low Reset Input. To initiate a hardware reset, this pin must be brought
+      low for a minimum of 10 μs.
