@@ -234,7 +234,6 @@ class CMake:
         self.cwd = None
         self.capture_output = True
 
-        self.defconfig = {}
         self.cmake_cache = {}
 
         self.instance = None
@@ -248,7 +247,8 @@ class CMake:
         self.jobserver = jobserver
 
     def parse_generated(self, filter_stages=[]):
-        self.defconfig = {}
+        if self.instance is not None:
+            self.instance.defconfig = {}
         return {}
 
     def run_build(self, args=[]):
@@ -468,8 +468,8 @@ class FilterBuilder(CMake):
 
 
         if not filter_stages or "kconfig" in filter_stages:
+            defconfig = {}
             with open(defconfig_path, "r") as fp:
-                defconfig = {}
                 for line in fp.readlines():
                     m = self.config_re.match(line)
                     if not m:
@@ -478,7 +478,7 @@ class FilterBuilder(CMake):
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
 
-            self.defconfig = defconfig
+            self.instance.defconfig = dict(sorted(defconfig.items()))
 
         cmake_conf = {}
         try:
@@ -497,7 +497,7 @@ class FilterBuilder(CMake):
         }
         filter_data.update(os.environ)
         if not filter_stages or "kconfig" in filter_stages:
-            filter_data.update(self.defconfig)
+            filter_data.update(self.instance.defconfig)
         filter_data.update(self.cmake_cache)
 
         if self.instance.sysbuild and self.env.options.device_testing:
@@ -1220,8 +1220,8 @@ class ProjectBuilder(FilterBuilder):
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
-                if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in self.defconfig and
-                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
+                if('CONFIG_FAKE_ENTROPY_NATIVE_POSIX' in instance.defconfig and
+                    instance.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_POSIX'] == 'y'):
                     instance.handler.seed = self.options.seed
 
             if self.options.extra_test_args and instance.platform.arch == "posix":

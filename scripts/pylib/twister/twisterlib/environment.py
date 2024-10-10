@@ -657,6 +657,13 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         """)
 
     parser.add_argument(
+        "--report-kconfig-symbols",
+        action="store_true",
+        help="""Report Kconfig symbols applied on build (listed in `.config` file)
+        in twister.json as `kconfig` property of test suites selected. Default: not reported.
+        """)
+
+    parser.add_argument(
         "--retry-failed", type=int, default=0,
         help="Retry failing tests again, up to the number of times specified.")
 
