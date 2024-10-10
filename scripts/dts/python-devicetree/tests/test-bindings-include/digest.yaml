@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Extends allow-and-blocklist-multilevel.yaml test case, adds:
+  - check of bindings and property specs paths
+  - check of grand-grandchild-binding level
+  - check grandchild-binding filters
+  - check setting "required: true" won't truncate included
+    child-binding's property definitions
+
+  All child-binding definitions come from a single file,
+  included multiple times, at different levels,
+  with different filters.
+
+compatible: vnd,digest
+
+# child-binding:
+# + child-prop-1
+#
+# grandchild-binding:
+# + gandchild-prop-1
+# + gandchild-prop-2
+include:
+  - name: digest_base.yaml
+    property-allowlist: [x]
+
+    child-binding:
+      property-allowlist: [child-prop-1]
+
+      child-binding:
+        property-blocklist: [grandchild-prop-blocked]
+
+properties:
+  top-prop:
+    type: int
+
+child-binding:
+  include:
+    # child-binding:
+    # ~ child-prop-1
+    # + x
+    # + z
+    - name: digest_base.yaml
+      property-blocklist: [y]
+
+      # grandchild-binding:
+      # ~ gandchild-prop-1
+      # ~ gandchild-prop-2
+      # + child-prop-1
+      # + child-prop-1
+      child-binding:
+        property-blocklist: [child-prop-blocked]
+
+        # grandgrandchild-binding:
+        # + gandchild-prop-1
+        # + gandchild-prop-2
+        child-binding:
+          property-blocklist: [grandchild-prop-blocked]
+
+  properties:
+    child-prop-1:
+      required: true
+    z:
+      required: true
+    cb-prop:
+      type: int
+
+  child-binding:
+    properties:
+      gcbb-prop:
+        type: int

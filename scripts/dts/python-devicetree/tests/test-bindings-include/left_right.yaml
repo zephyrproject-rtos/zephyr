@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Complements digest.yaml test case,
+  here child-binding definitions come from two files.
+
+compatible: vnd,left_right
+
+include:
+  - name: left.yaml
+    property-allowlist: [left-prop-1]
+    child-binding:
+      property-allowlist: [left-child-prop-1]
+
+  - name: right.yaml
+    property-allowlist: [right-prop-2]
+    child-binding:
+      property-allowlist: [right-child-prop-2]
+
+properties:
+  left-prop-1:
+    required: true
+  left-right-prop:
+    type: int
+
+child-binding:
+  properties:
+    left-child-prop-1:
+      required: true
+    child-prop:
+      type: int
+  child-binding:
+    properties:
+      grandchild-prop:
+        type: int

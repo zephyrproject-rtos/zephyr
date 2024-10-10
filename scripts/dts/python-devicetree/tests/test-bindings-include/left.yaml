@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Left include file for left_rigt.yaml.
+
+properties:
+  left-prop-1:
+    type: int
+  left-prop-2:
+    type: int
+
+child-binding:
+  properties:
+    left-child-prop-1:
+      type: int
+    left-child-prop-2:
+      type: int

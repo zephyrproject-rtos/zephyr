@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Base include file for the digest.yaml test case.
+
+properties:
+  x:
+    type: int
+  y:
+    type: int
+  z:
+    type: int
+
+child-binding:
+  properties:
+    child-prop-1:
+      type: int
+    child-prop-2:
+      type: int
+    child-prop-blocked:
+      type: int
+
+  child-binding:
+    properties:
+      grandchild-prop-1:
+        type: int
+      grandchild-prop-2:
+        type: int
+      grandchild-prop-blocked:
+        type: int

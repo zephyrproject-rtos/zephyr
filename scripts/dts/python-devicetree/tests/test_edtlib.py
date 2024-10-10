@@ -393,7 +393,163 @@ def test_include_filters_included_bindings():
     assert not top_blocks.prop2specs.get("x")
     assert top_blocks.prop2specs.get("y")
 
+def test_include_child_binding_digest() -> None:
+    '''Extends allow-and-blocklist-multilevel.yaml test case.
+    Adds:
+    - check of bindings and property specs paths
+    - check of grand-grandchild-binding level
+    - check grandchild-binding filters
+    - check setting "required: true" won't truncate included
+      child-binding's property definitions
 
+    All child-binding definitions come from a single file,
+    included multiple times, at different levels,
+    with different filters.
+    '''
+    fname2path = {
+        "digest_base.yaml": "test-bindings-include/digest_base.yaml",
+    }
+
+    binding = None
+    with from_here():
+        binding = edtlib.Binding("test-bindings-include/digest.yaml",
+                                 fname2path)
+
+    assert "digest.yaml" == _basename(binding.path)
+
+    assert {"x", "top-prop"} == set(binding.prop2specs.keys())
+    assert "digest_base.yaml" == _basename(binding.prop2specs["x"].path)
+    assert "digest.yaml" == _basename(
+        binding.prop2specs["top-prop"].path
+    )
+
+    assert "int" == binding.prop2specs["x"].type
+    assert not binding.prop2specs["x"].required
+
+
+    child_binding = binding.child_binding
+    assert child_binding
+    # Last modified semantic.
+    assert "digest.yaml" == _basename(child_binding.path)
+
+    assert {"x", "z", "child-prop-1", "cb-prop"} == set(
+        child_binding.prop2specs.keys()
+    )
+
+    assert "digest_base.yaml" == _basename(child_binding.prop2specs["x"].path)
+    # Taken "Last modfied here" semantic.
+    assert "digest.yaml" == _basename(
+        child_binding.prop2specs["child-prop-1"].path
+    )
+
+    assert "int" == child_binding.prop2specs["x"].type
+    assert not child_binding.prop2specs["x"].required
+
+    assert "int" == child_binding.prop2specs["z"].type
+    assert child_binding.prop2specs["z"].required
+
+    grandchild_binding = child_binding.child_binding
+    assert grandchild_binding
+    assert "digest_base.yaml" == _basename(grandchild_binding.path)
+
+    assert {
+        "child-prop-1",
+        "child-prop-2",
+        "grandchild-prop-1",
+        "grandchild-prop-2",
+        "gcbb-prop",
+    } == set(grandchild_binding.prop2specs.keys())
+
+    assert "digest_base.yaml" == _basename(
+        grandchild_binding.prop2specs["child-prop-1"].path
+    )
+    assert "digest_base.yaml" == _basename(
+        grandchild_binding.prop2specs["grandchild-prop-1"].path
+    )
+    assert "digest.yaml" == _basename(
+        grandchild_binding.prop2specs["gcbb-prop"].path
+    )
+
+    ggchild_binding = grandchild_binding.child_binding
+    assert ggchild_binding
+    assert "digest_base.yaml" == _basename(ggchild_binding.path)
+
+    assert {
+        "grandchild-prop-1",
+        "grandchild-prop-2",
+    } == set(ggchild_binding.prop2specs.keys())
+
+    assert "digest_base.yaml" == _basename(
+        ggchild_binding.prop2specs["grandchild-prop-1"].path
+    )
+    assert "digest_base.yaml" == _basename(
+        ggchild_binding.prop2specs["grandchild-prop-2"].path
+    )
+
+def test_include_multiple_child_bindings_digest() -> None:
+    '''Complement test case above, child-binding definitions come from two files.'''
+    fname2path = {
+        "left.yaml": "test-bindings-include/left.yaml",
+        "right.yaml": "test-bindings-include/right.yaml",
+    }
+
+    binding = None
+    with from_here():
+        binding = edtlib.Binding("test-bindings-include/left_right.yaml",
+                                 fname2path)
+    assert "left_right.yaml" == _basename(binding.path)
+    assert {"left-right-prop", "left-prop-1", "right-prop-2"} == set(
+        binding.prop2specs.keys()
+    )
+    assert "left_right.yaml" == _basename(
+        binding.prop2specs["left-right-prop"].path
+    )
+    # Taken "Last modified here" semantic.
+    assert "left_right.yaml" == _basename(binding.prop2specs["left-prop-1"].path)
+    assert "right.yaml" == _basename(binding.prop2specs["right-prop-2"].path)
+
+    assert "int" == binding.prop2specs["left-prop-1"].type
+    assert binding.prop2specs["left-prop-1"].required
+    assert "int" == binding.prop2specs["right-prop-2"].type
+    assert not binding.prop2specs["right-prop-2"].required
+
+    # Child-binding.
+    child_binding = binding.child_binding
+    assert child_binding
+    # Last modified semantic.
+    assert "left_right.yaml" == _basename(child_binding.path)
+
+    assert {"left-child-prop-1", "right-child-prop-2", "child-prop"} == set(
+        child_binding.prop2specs.keys()
+    )
+
+    assert "left_right.yaml" == _basename(
+        child_binding.prop2specs["left-child-prop-1"].path
+    )
+    assert "right.yaml" == _basename(
+        child_binding.prop2specs["right-child-prop-2"].path
+    )
+    assert "left_right.yaml" == _basename(
+        child_binding.prop2specs["child-prop"].path
+    )
+
+    assert "int" == child_binding.prop2specs["left-child-prop-1"].type
+    assert child_binding.prop2specs["left-child-prop-1"].required
+    assert "int" == child_binding.prop2specs["right-child-prop-2"].type
+    assert not child_binding.prop2specs["right-child-prop-2"].required
+
+    # GrandChild-binding.
+    grandchild_binding = child_binding.child_binding
+    assert grandchild_binding
+    assert "left_right.yaml" == _basename(grandchild_binding.path)
+
+    assert {
+        "grandchild-prop",
+    } == set(grandchild_binding.prop2specs.keys())
+
+    assert "left_right.yaml" == _basename(
+        grandchild_binding.prop2specs["grandchild-prop"].path
+    )
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
@@ -882,3 +1038,6 @@ def verify_phandle_array_prop(node, name, values):
             assert actual.data == data
         else:
             assert actual is None
+
+def _basename(path):
+    return os.path.basename(path or "?")

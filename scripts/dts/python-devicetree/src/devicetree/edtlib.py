@@ -223,25 +223,32 @@ class Binding:
         #   this binding itself defines or modifies
         self.prop2specs: Dict[str, 'PropertySpec'] = {}
 
+        # This binding's child-binding,
+        # using the same approach as above for property specifications:
+        # - we initially have no child-binding
+        # - we may inherit child-binding definitions from other bindings
+        #   when merging included files
+        # - eventually, we may update inherited child-binding definitions
+        #   with the content of the "child-binding" element of this binding's file
+        self.child_binding: Optional[Binding] = None
+        # Save child-binding element before merging.
+        if "child-binding" in raw:
+            raw_child_binding = deepcopy(raw["child-binding"])
+        else:
+            raw_child_binding = None
+
         # Merge any included files into self.raw. This also pulls in
         # inherited child binding definitions, so it has to be done
-        # before initializing those.
+        # before initializing this binding's child-binding.
         self.raw: dict = self._merge_includes(raw, self.path)
 
-        # Recursively initialize any child bindings. These don't
-        # require a 'compatible' or 'description' to be well defined,
-        # but they must be dicts.
-        if "child-binding" in raw:
-            if not isinstance(raw["child-binding"], dict):
-                _err(f"malformed 'child-binding:' in {self.path}, "
-                     "expected a binding (dictionary with keys/values)")
-            self.child_binding: Optional['Binding'] = Binding(
-                path, fname2path,
-                raw=raw["child-binding"],
-                require_compatible=False,
-                require_description=False)
-        else:
-            self.child_binding = None
+        # When this binding's file contains a child-binding element,
+        # its content will:
+        # - update the child-binding definitions inherited from included files,
+        #   if any
+        # - or initialize this binding's child-binding
+        if raw_child_binding:
+            self._update_child_binding(raw_child_binding)
 
         # Make sure this is a well defined object.
         self._check(require_compatible, require_description)
@@ -414,6 +421,18 @@ class Binding:
         # Register included property specs.
         self._add_included_prop2specs(fname, contents, allowlist, blocklist)
 
+        # Pull in child-binding definitions we may inherit
+        # from the included file.
+        if "child-binding" in contents:
+            self._add_included_child_binding(
+                path,
+                contents["child-binding"],
+                # Properties in child-binding have already been filtered,
+                # child_filter is only used to determine if the including
+                # binding takes the "Last modified here" semantic.
+                child_filter,
+            )
+
         return self._merge_includes(contents, path)
 
     def _add_included_prop2specs(self, fname: str, contents: dict,
@@ -454,6 +473,126 @@ class Binding:
         for prop, spec in inc_binding.prop2specs.items():
             if prop not in self.prop2specs:
                 self.prop2specs[prop] = spec
+
+    # Add child-binding definitions inherited from an included binding.
+    # - path: YAML file containing the "child-binding" element
+    # - raw: The content of the "child-binding" element
+    # - child_filter: filters applied by the including binding
+    def _add_included_child_binding(
+        self,
+        path: Optional[str],
+        raw: Dict[str, Any],
+        child_filter: Optional[dict],
+    ) -> None:
+        inc_child_binding = self._mk_child_binding(path, raw)
+
+        if self.child_binding or child_filter:
+            # Take "Last modified here" semantic when:
+            # - we've already included a child-binding
+            # - the including binding applies some filter
+            #   to the included child-binding's properties
+            child_binding = self._mk_child_binding(self.path, {})
+            if self.child_binding:
+                self._merge_child_binding(child_binding, self.child_binding)
+            self.child_binding = child_binding
+
+        if self.child_binding:
+            self._merge_child_binding(self.child_binding, inc_child_binding)
+        else:
+            self.child_binding = inc_child_binding
+
+    # Either:
+    # - update child-binding definitions we may inherited from included bindings
+    # - initialize this binding's child binding with its child-binding element
+    #
+    # raw_child_binding: content of the child-binding element
+    #                    in this binding file.
+    def _update_child_binding(self, raw_child_binding: Dict[str, Any]) -> None:
+        if self.child_binding:
+            raw_properties = raw_child_binding.get("properties", {})
+            if raw_properties:
+                # This binding's child-binding element may redefine properties
+                # we've already inherited from included bindings.
+                # This will typically happen when the including file
+                # (this binding) set "required: true" on the inherited property.
+                # We can't create a child binding based solely on this latest
+                # definition: we before have to update the redefined properties
+                # with the attributes (type, description) we inherited.
+                for prop, raw in raw_properties.items():
+                    if prop in self.child_binding.prop2specs:
+                        # A bit convoluted, but avoid accessing private
+                        # member PropertySpec._raw.
+                        inc_raw_prop = self.child_binding.prop2specs[
+                            prop
+                        ].binding.raw.get("properties", {})[prop]
+                        raw.update(inc_raw_prop)
+
+        # Last modified child-binding.
+        last_child_binding = self._mk_child_binding(
+            self.path, raw_child_binding
+        )
+
+        if self.child_binding:
+            # Merge this file's child-binding element with the child-binding
+            # definitions we inherited from included files.
+            if self.child_binding.path != self.path:
+                # Taking "Last modified here" semantic if not already taken
+                # when we merged the included bindings, e.g. if the
+                # including file filtered the included child-binding's properties.
+                child_binding = self._mk_child_binding(self.path, {})
+                self._merge_child_binding(child_binding, self.child_binding)
+                self.child_binding = child_binding
+
+            self._merge_child_binding(self.child_binding, last_child_binding)
+        else:
+            self.child_binding = last_child_binding
+
+    # Merge child bindings:
+    # - update child_binding's properties with properties
+    #   from other_child_binding
+    # - update child_binding's cell specifiers with specifiers
+    #   from other_child_binding
+    # - recursively merge child bindings of child_binding
+    #   and other_child_binding
+    def _merge_child_binding(
+        self,
+        child_binding: "Binding",
+        other_child_binding: "Binding",
+    ) -> None:
+        child_binding.prop2specs.update(other_child_binding.prop2specs)
+        child_binding.specifier2cells.update(
+            other_child_binding.specifier2cells
+        )
+
+        other_grandchild_binding = other_child_binding.child_binding
+        if other_grandchild_binding:
+            if child_binding.child_binding:
+                self._merge_child_binding(
+                    child_binding.child_binding, other_grandchild_binding
+                )
+            else:
+                child_binding.child_binding = other_grandchild_binding
+
+    def _mk_child_binding(
+        self, path: Optional[str], raw: Dict[str, Any]
+    ) -> "Binding":
+        # These don't require a 'compatible' or 'description' to be well defined,
+        # but they must be dicts.
+        if not isinstance(raw, dict):
+            _err(
+                f"malformed 'child-binding:' in {path}, "
+                "expected a binding (dictionary with keys/values)"
+            )
+        return Binding(
+            path,
+            self._fname2path,
+            raw,
+            require_compatible=False,
+            require_description=False,
+            # Filters already applied.
+            inc_allowlist=None,
+            inc_blocklist=None,
+        )
 
     def _check(self, require_compatible: bool, require_description: bool):
         # Does sanity checking on the binding.
