@@ -76,39 +76,6 @@ enum wifi_security_type {
 	/** @endcond */
 };
 
-/** suiteb types. */
-enum wifi_suiteb_type {
-	/** suiteb. */
-	WIFI_SUITEB = 1,
-	/** suiteb-192. */
-	WIFI_SUITEB_192,
-};
-
-/** gropu cipher and pairwise cipher types. */
-enum wifi_cipher_type {
-	WPA_CAPA_ENC_WEP40,
-	WPA_CAPA_ENC_WEP104,
-	WPA_CAPA_ENC_TKIP,
-	WPA_CAPA_ENC_CCMP,
-	WPA_CAPA_ENC_WEP128,
-	WPA_CAPA_ENC_GCMP,
-	WPA_CAPA_ENC_GCMP_256,
-	WPA_CAPA_ENC_CCMP_256,
-};
-
-/** gropu mgmt cipher types. */
-enum wifi_group_mgmt_cipher_type {
-	WPA_CAPA_ENC_BIP,
-	WPA_CAPA_ENC_BIP_GMAC_128,
-	WPA_CAPA_ENC_BIP_GMAC_256,
-	WPA_CAPA_ENC_BIP_CMAC_256,
-};
-
-struct wifi_cipher_desc {
-	unsigned int capa;
-	char *name;
-};
-
 /** Helper function to get user-friendly security type name. */
 const char *wifi_security_txt(enum wifi_security_type security);
 

@@ -501,7 +501,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"timeout", required_argument, 0, 't'},
 		{"anon-id", required_argument, 0, 'a'},
 		{"key-passwd", required_argument, 0, 'K'},
-		{"suiteb-type", required_argument, 0, 'S'},
 		{"help", no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -524,7 +523,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->security = WIFI_SECURITY_TYPE_NONE;
 	params->mfp = WIFI_MFP_OPTIONAL;
 
-	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:S:h",
+	while ((opt = getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
 				  long_options, &opt_index)) != -1) {
 		state = getopt_state_get();
 		switch (opt) {
@@ -644,10 +643,6 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 					    WIFI_ENT_PSWD_MAX_LEN);
 				return -EINVAL;
 			}
-			break;
-		case 'S':
-			params->suiteb_type = atoi(optarg);
-			printk("params->suiteb_type: %d\r\n", params->suiteb_type);
 			break;
 		case 'h':
 			return -ENOEXEC;
@@ -2891,10 +2886,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 		  "[-t, --timeout]: Timeout for the connection attempt (in seconds).\n"
 		  "[-a, --anon-id]: Anonymous identity for enterprise mode.\n"
 		  "[-K, --key-passwd]: Private key passwd for enterprise mode.\n"
-		  "[-S, --suiteb-type]: 1:suiteb, 2:suiteb-192.\n"
 		  "[-h, --help]: Print out the help for the connect command.\n",
 		  cmd_wifi_connect,
-		  2, 14),
+		  2, 13),
 	SHELL_CMD_ARG(disconnect, NULL, "Disconnect from the Wi-Fi AP.\n",
 		  cmd_wifi_disconnect,
 		  1, 0),
