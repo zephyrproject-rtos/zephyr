@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Laczen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &eeprom0;
+
+/ {
+	eeprom0: eeprom {
+		status = "okay";
+		compatible = "zephyr,sim-eeprom";
+		size = <DT_SIZE_K(16)>;
+	};
+
+	ramdisk0: ramdisk {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <64>;
+	};
+};
