@@ -91,7 +91,7 @@ More information about the i.MX7 SoC can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_meerkat96 board configuration supports the following hardware
+The Zephyr ``96b_meerkat96`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

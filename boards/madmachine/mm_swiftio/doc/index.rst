@@ -35,7 +35,7 @@ Hardware
 Supported Features
 ==================
 
-The mm_swiftio board configuration supports the following hardware
+The ``mm_swiftio`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

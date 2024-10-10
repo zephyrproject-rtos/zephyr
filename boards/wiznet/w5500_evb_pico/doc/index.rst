@@ -40,7 +40,7 @@ Hardware
 Supported Features
 ==================
 
-The w5500_evb_pico board configuration supports the following
+The ``w5500_evb_pico`` board target supports the following
 hardware features:
 
 .. list-table::

@@ -47,7 +47,7 @@ See the `Teensy 4.0 Website`_ for a complete hardware description.
 Supported Features
 ==================
 
-The teensy40 board configuration supports the following hardware
+The ``teensy40`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

@@ -48,7 +48,7 @@ More information about STM32F427VIT6 can be found here:
 Supported Features
 ==================
 
-The Zephyr 96b_aerocore2 board configuration supports the following hardware
+The Zephyr ``96b_aerocore2`` board target supports the following hardware
 features:
 
 +------------+------------+-------------------------------------+

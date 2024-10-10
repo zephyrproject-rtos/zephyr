@@ -46,7 +46,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_stm32_sensor_mez board configuration supports the following
+The Zephyr ``96b_stm32_sensor_mez`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------------------+

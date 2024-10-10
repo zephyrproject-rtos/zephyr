@@ -28,7 +28,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_nano_33_iot board configuration supports the following hardware
+The ``arduino_nano_33_iot`` board target supports the following hardware
 features:
 
 +-----------+------------+------------------------------------------+

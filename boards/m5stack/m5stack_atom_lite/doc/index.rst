@@ -27,7 +27,7 @@ It features the following integrated components:
 Supported Features
 ==================
 
-The Zephyr m5stack_atom_lite board configuration supports the following hardware features:
+The Zephyr ``m5stack_atom_lite`` board target supports the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |

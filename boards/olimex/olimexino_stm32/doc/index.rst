@@ -23,7 +23,7 @@ information and the datasheet.
 Supported Features
 ==================
 
-The olimexino_stm32 board configuration supports the following
+The ``olimexino_stm32`` board target supports the following
 hardware features:
 
 +-----------+------------+-------------------------+

@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The sam4s_xplained board configuration supports the following hardware
+The ``sam4s_xplained`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

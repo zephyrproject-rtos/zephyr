@@ -42,7 +42,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr stm32f401_mini board configuration supports the following
+The Zephyr ``stm32f401_mini`` board target supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+

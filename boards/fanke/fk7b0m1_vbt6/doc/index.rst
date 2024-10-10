@@ -57,7 +57,7 @@ More information about STM32H7B0VB can be found here:
 Supported Features
 ==================
 
-The Zephyr fk7b0m1_vbt6 board configuration supports the following hardware
+The Zephyr ``fk7b0m1_vbt6`` board target supports the following hardware
 features:
 
 +-------------+------------+-------------------------------------+

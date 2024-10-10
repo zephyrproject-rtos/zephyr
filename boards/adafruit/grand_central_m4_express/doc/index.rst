@@ -31,7 +31,7 @@ Hardware
 Supported Features
 ==================
 
-The adafruit_grand_central_m4_express board configuration supports the following
+The ``adafruit_grand_central_m4_express`` board target supports the following
 hardware features:
 
 +-----------+------------+------------------------------------------+

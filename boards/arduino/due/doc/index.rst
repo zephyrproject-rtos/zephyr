@@ -32,7 +32,7 @@ Hardware
 Supported Features
 ==================
 
-The arduino_due board configuration supports the following hardware features:
+The ``arduino_due`` board target supports the following hardware features:
 
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
