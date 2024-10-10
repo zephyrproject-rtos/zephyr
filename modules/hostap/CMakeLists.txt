@@ -340,10 +340,6 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	${HOSTAP_SRC_BASE}/eap_peer/eap_psk.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_psk_common.c
 
-	${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
-	${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
-	${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
-
 	${HOSTAP_SRC_BASE}/eap_peer/eap_pax.c
 	${HOSTAP_SRC_BASE}/eap_common/eap_pax_common.c
 
@@ -379,13 +375,23 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_EN
 	EAP_MSCHAPv2
 	EAP_LEAP
 	EAP_PSK
-	EAP_FAST
 	EAP_PAX
 	EAP_SAKE
 	EAP_GPSK
 	EAP_PWD
 	EAP_EKE
 	EAP_IKEv2
+)
+
+# Needs TLS1.3 and SESSION_TICKETS
+zephyr_library_sources_ifdef(CONFIG_EAP_FAST
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast.c
+  ${HOSTAP_SRC_BASE}/eap_peer/eap_fast_pac.c
+  ${HOSTAP_SRC_BASE}/eap_common/eap_fast_common.c
+)
+
+zephyr_library_compile_definitions_ifdef(CONFIG_EAP_FAST
+  EAP_FAST
 )
 
 zephyr_library_compile_definitions_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE

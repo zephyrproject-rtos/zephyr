@@ -38,13 +38,21 @@ module.
     $ cp client.pem samples/net/wifi/test_certs/
     $ cp client-key.pem samples/net/wifi/test_certs/
     $ cp ca.pem samples/net/wifi/test_certs/
-    $ west build -p -b <board> samples/net/wifi
+    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise.conf
+
+For using variable size network buffer, the following overlay file can be used:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi -- -DEXTRA_CONF_FILE=overlay-enterprise-variable-bufs.conf
+
+
 
 To initiate Wi-Fi connection, the following command can be used:
 
 .. code-block:: console
 
-    uart:~$ wifi connect -s <SSID> -k 5 -a anon -K whatever
+    uart:~$ wifi connect -s <SSID> -k 7 -a anon -K whatever
 
 Server certificate is also provided in the same directory for testing purposes.
 Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or ``hostapd``.

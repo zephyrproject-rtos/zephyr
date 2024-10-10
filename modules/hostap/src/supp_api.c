@@ -448,7 +448,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	int ret = 0;
 	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
-	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
 
 	if (!wpa_cli_cmd_v("remove_network all")) {
 		goto out;
@@ -511,17 +510,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
-		if (params->sae_password) {
-			if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
-			    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
-				wpa_printf(MSG_ERROR,
-					   "Passphrase should be in range (%d-%d) characters",
-					   WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
-				goto out;
-			}
-			strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
-			sae_null_terminated[params->sae_password_length] = '\0';
-		} else {
+		if (params->psk) {
 			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
 			    (params->psk_length > WIFI_PSK_MAX_LEN)) {
 				wpa_printf(MSG_ERROR,
@@ -553,8 +542,19 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
 			if (params->sae_password) {
+				uint8_t sae_null[WIFI_SAE_PSWD_MAX_LEN + 1];
+
+				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
+				    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+					wpa_printf(MSG_ERROR,
+						"Passphrase should be in range (%d-%d) characters",
+						WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
+					goto out;
+				}
+				strncpy(sae_null, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
+				sae_null[params->sae_password_length] = '\0';
 				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, sae_null_terminated)) {
+						   resp.network_id, sae_null)) {
 					goto out;
 				}
 			} else {
