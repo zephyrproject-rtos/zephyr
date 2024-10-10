@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_NPM2100
+	bool "nPM2100 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM2100_ENABLED
+	select I2C
+	help
+	  Enable the Nordic nPM2100 PMIC multi-function device driver

@@ -338,6 +338,18 @@
 				};
 			};
 
+			test_i2c_npm2100: pmic@14 {
+				compatible = "nordic,npm2100";
+				reg = <0x14>;
+
+				npm2100_gpio: gpio-controller {
+					compatible = "nordic,npm2100-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <2>;
+				};
+			};
+
 		};
 
 		nct3807_alert_1 {

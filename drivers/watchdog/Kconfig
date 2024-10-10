@@ -96,6 +96,8 @@ source "drivers/watchdog/Kconfig.gd32"
 
 source "drivers/watchdog/Kconfig.npm1300"
 
+source "drivers/watchdog/Kconfig.npm2100"
+
 source "drivers/watchdog/Kconfig.npm6001"
 
 source "drivers/watchdog/Kconfig.nxp_s32"

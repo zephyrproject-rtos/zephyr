@@ -1113,3 +1113,12 @@ test_i2c_mmc56x3: mmc56x3@92 {
 	magn-odr = <0>;
 	auto-self-reset;
 };
+
+test_i2c_npm2100: npm2100@93 {
+	compatible = "nordic,npm2100";
+	reg = <0x93>;
+
+	vbat {
+		compatible = "nordic,npm2100-vbat";
+	};
+};
