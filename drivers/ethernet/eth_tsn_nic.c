@@ -282,6 +282,7 @@ static int eth_tsn_nic_init(const struct device *dev)
 	pthread_spin_init(&data->tx_lock, PTHREAD_PROCESS_PRIVATE);
 	pthread_spin_init(&data->rx_lock, PTHREAD_PROCESS_PRIVATE);
 
+	/* TODO: Select proper values for the first three bytes */
 	gen_random_mac(data->mac_addr, 0x0, 0x0, 0xab);
 
 	printk("Ethernet init\n");
