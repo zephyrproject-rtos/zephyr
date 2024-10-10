@@ -629,7 +629,10 @@ static inline int zsock_ioctl_wrapper(int sock, unsigned long request, ...)
  * it may conflict with generic POSIX ``poll()`` function).
  * @endrst
  */
-__syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
+static inline int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	return zvfs_poll(fds, nfds, timeout);
+}
 
 /**
  * @brief Get various socket options

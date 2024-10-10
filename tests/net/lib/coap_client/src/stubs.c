@@ -16,7 +16,7 @@ DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_recvfrom, int, void *, size_t, int,
 DEFINE_FAKE_VALUE_FUNC(ssize_t, z_impl_zsock_sendto, int, void *, size_t, int,
 		       const struct sockaddr *, socklen_t);
 
-struct zsock_pollfd {
+struct zvfs_pollfd {
 	int fd;
 	short events;
 	short revents;
@@ -39,7 +39,7 @@ int z_impl_zsock_socket(int family, int type, int proto)
 	return 0;
 }
 
-int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
+int z_impl_zvfs_poll(struct zvfs_pollfd *fds, int nfds, int poll_timeout)
 {
 	LOG_INF("Polling, events %d", my_events);
 	k_sleep(K_MSEC(1));
