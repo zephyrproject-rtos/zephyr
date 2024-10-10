@@ -183,3 +183,7 @@ mikrobus_serial: &uart3 {};
 		};
 	};
 };
+
+&ulpt0 {
+	status = "okay";
+};
