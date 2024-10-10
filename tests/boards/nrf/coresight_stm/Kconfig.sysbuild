@@ -1,0 +1,31 @@
+# Copyright 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config CORESIGHT_STM_USE_REMOTE_1
+	bool "Use first remote core"
+	default "y" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpuapp"
+
+config CORESIGHT_STM_USE_REMOTE_2
+	bool "Use second remote core"
+
+config CORESIGHT_STM_USE_REMOTE_3
+	bool "Use third remote core"
+
+
+config REMOTE_1_BOARD
+string
+	default "nrf54h20dk/nrf54h20/cpurad" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpuapp"
+	depends on CORESIGHT_STM_USE_REMOTE_1
+
+config REMOTE_2_BOARD
+string
+	default "nrf54h20dk/nrf54h20/cpuppr" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpuapp"
+	depends on CORESIGHT_STM_USE_REMOTE_2
+
+config REMOTE_3_BOARD
+string
+	default "nrf54h20dk/nrf54h20/cpuflpr" if "$(BOARD)${BOARD_QUALIFIERS}" = "nrf54h20dk/nrf54h20/cpuapp"
+	depends on CORESIGHT_STM_USE_REMOTE_3
