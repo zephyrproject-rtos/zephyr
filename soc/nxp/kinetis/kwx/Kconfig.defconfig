@@ -25,10 +25,6 @@ choice RNG_GENERATOR_CHOICE
 	default XOSHIRO_RANDOM_GENERATOR
 endchoice
 
-config TINYCRYPT
-	default y
-	depends on ENTROPY_GENERATOR && SOC_MKW41Z4
-
 endif # SOC_MKW40Z4 || SOC_MKW41Z4
 
 endif # SOC_SERIES_KINETIS_KWX
