@@ -11,6 +11,8 @@ Follow this guide to:
 - Get the source code
 - Build, flash, and run a sample application
 
+Alternatively, use the experimental :ref:`Devcontainer support <devcontainer>`.
+
 .. _host_setup:
 
 Select and Update OS
