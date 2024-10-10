@@ -378,6 +378,8 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
 		return WIFI_SECURITY_TYPE_SAE;
+	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
+		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -1570,7 +1572,7 @@ int hapd_config_network(struct hostapd_iface *iface,
 		if (!hostapd_cli_cmd_v("set wpa 0")) {
 			goto out;
 		}
-		iface->bss[0]->conf->wpa_key_mgmt = 0;
+		iface->bss[0]->conf->wpa_key_mgmt = WPA_KEY_MGMT_NONE;
 	}
 
 	if (!hostapd_cli_cmd_v("set ieee80211w %d", params->mfp)) {
@@ -1631,6 +1633,80 @@ out:
 	return ret;
 }
 #endif
+
+int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	int ret = 0;
+	struct hostapd_iface *iface;
+	struct hostapd_config *conf;
+	struct hostapd_data *hapd;
+	struct hostapd_bss_config *bss;
+	struct hostapd_ssid *ssid;
+	struct hostapd_hw_modes *hw_mode;
+	int proto;    /* Wi-Fi secure protocol */
+	int key_mgmt; /*  Wi-Fi key management */
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	iface = get_hostapd_handle(dev);
+	if (!iface) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
+		goto out;
+	}
+
+	conf = iface->conf;
+	if (!conf) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Conf %s not found", dev->name);
+		goto out;
+	}
+
+	bss = conf->bss[0];
+	if (!bss) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Bss_conf %s not found", dev->name);
+		goto out;
+	}
+
+	hapd = iface->bss[0];
+	if (!hapd) {
+		ret = -1;
+		wpa_printf(MSG_ERROR, "Bss %s not found", dev->name);
+		goto out;
+	}
+
+	status->state = iface->state;
+	ssid = &bss->ssid;
+
+	os_memcpy(status->bssid, hapd->own_addr, WIFI_MAC_ADDR_LEN);
+	status->iface_mode = WPAS_MODE_AP;
+	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
+	key_mgmt = bss->wpa_key_mgmt;
+	proto = bss->wpa;
+	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
+	status->mfp = bss->ieee80211w;
+	status->channel = conf->channel;
+	os_memcpy(status->ssid, ssid->ssid, ssid->ssid_len);
+
+	status->dtim_period = bss->dtim_period;
+	status->beacon_interval = conf->beacon_int;
+
+	hw_mode = iface->current_mode;
+
+	status->link_mode = conf->ieee80211ax                          ? WIFI_6
+			    : conf->ieee80211ac                        ? WIFI_5
+			    : conf->ieee80211n                         ? WIFI_4
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211G ? WIFI_3
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211A ? WIFI_2
+			    : hw_mode->mode == HOSTAPD_MODE_IEEE80211B ? WIFI_1
+								       : WIFI_0;
+	status->twt_capable = (hw_mode->he_capab[IEEE80211_MODE_AP].mac_cap[0] & 0x04);
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
 
 int supplicant_ap_enable(const struct device *dev,
 			 struct wifi_connect_req_params *params)
@@ -1711,7 +1787,7 @@ int supplicant_ap_enable(const struct device *dev,
 		goto out;
 	}
 
-	/* No need to check for existing network to join for SoftAP*/
+	/* No need to check for existing network to join for SoftAP */
 	wpa_s->conf->ap_scan = 2;
 	/* Set BSS parameter max_num_sta to default configured value */
 	wpa_s->conf->max_num_sta = CONFIG_WIFI_MGMT_AP_MAX_NUM_STA;
