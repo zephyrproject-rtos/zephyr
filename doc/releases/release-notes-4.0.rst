@@ -300,6 +300,17 @@ Drivers and Sensors
 
 * SPI
 
+* Steppers
+
+  * Introduced stepper controller device driver subsystem selected with
+    :kconfig:option:`CONFIG_STEPPER`
+  * Introduced stepper shell commands for controlling and configuring
+    stepper motors with :kconfig:option:`CONFIG_STEPPER_SHELL`
+  * Added support for ADI TMC5041 (:dtcompatible:`adi,tmc5041`)
+  * Added support for gpio-stepper-controller (:dtcompatible:`gpio-stepper-controller`)
+  * Added stepper api test-suite
+  * Added stepper shell test-suite
+
 * USB
 
 * Video
