@@ -515,21 +515,6 @@ test_i2c_iis2iclx: iis2iclx@4c {
 	odr = <IIS2ICLX_DT_ODR_833Hz>;
 };
 
-test_i2c_wsen_hids: wsen_hids@4d {
-	compatible = "we,wsen-hids";
-	reg = <0x4d>;
-	drdy-gpios = <&test_gpio 0 0>;
-	odr = "1";
-};
-
-test_i2c_itds: itds@4e {
-	compatible = "we,wsen-itds";
-	reg = <0x4e>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = "800";
-	op-mode = "high-perf";
-};
-
 test_i2c_max17055: max17055@4f {
 	compatible = "maxim,max17055";
 	reg = <0x4f>;
@@ -663,15 +648,6 @@ test_i2c_akm09918c: akm09918c@5f {
 	reg = <0x5f>;
 };
 
-test_i2c_wsen_tids: wsen_tids@60 {
-	compatible = "we,wsen-tids";
-	reg = <0x60>;
-	int-gpios = <&test_gpio 0 0>;
-	odr = <25>;
-	temp-high-threshold = <0>;
-	temp-low-threshold = <0>;
-};
-
 test_i2c_vl53l1x: vl53l1x@61 {
 	compatible = "st,vl53l1x";
 	reg = <0x61>;
@@ -693,23 +669,10 @@ test_i2c_tmd2620: tmd2620@62 {
 	wait-time-factor = <0>;
 };
 
-test_i2c_wsen_pads: wsen_pads@63 {
-	compatible = "we,wsen-pads";
-	reg = <0x63>;
-	drdy-gpios = <&test_gpio 0 0>;
-	odr = <1>;
-};
-
 test_i2c_s11059: s11059@64 {
 	compatible = "hamamatsu,s11059";
 	reg = <0x64>;
 	integration-time = <546000>;
-};
-
-test_i2c_wsen_pdus: wsen_pdus@65 {
-	compatible = "we,wsen-pdus";
-	reg = <0x65>;
-	sensor-type = <3>;
 };
 
 test_i2c_veml7700: veml7700@66 {
