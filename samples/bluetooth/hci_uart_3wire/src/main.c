@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Xiaomi Coopration
+ * Copyright (c) 2024 Xiaomi Corporation
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
