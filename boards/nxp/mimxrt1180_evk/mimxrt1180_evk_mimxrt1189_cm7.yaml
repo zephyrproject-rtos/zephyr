@@ -20,4 +20,6 @@ supported:
   - i2c
   - counter
   - adc
+  - dma
+  - spi
 vendor: nxp
