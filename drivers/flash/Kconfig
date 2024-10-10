@@ -191,6 +191,8 @@ source "drivers/flash/Kconfig.nor"
 
 source "drivers/flash/Kconfig.rpi_pico"
 
+source "drivers/flash/Kconfig.nand"
+
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.stm32_qspi"
