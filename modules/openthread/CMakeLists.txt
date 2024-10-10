@@ -137,6 +137,10 @@ if(CONFIG_OPENTHREAD_POWER_SUPPLY)
   set(OT_POWER_SUPPLY ${CONFIG_OPENTHREAD_POWER_SUPPLY} CACHE STRING "Power supply configuration" FORCE)
 endif()
 
+if (CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION)
+  set(OT_CLI_VENDOR_EXTENSION ${CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION} CACHE STRING "Path to CMake file to define and link Openthread CLI vendor extension" FORCE)
+endif()
+
 set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORCE)
 
 # Zephyr logging options
