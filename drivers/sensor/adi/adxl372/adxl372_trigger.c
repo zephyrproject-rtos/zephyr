@@ -49,6 +49,7 @@ static void adxl372_thread_cb(const struct device *dev)
 
 	ret = gpio_pin_interrupt_configure_dt(&cfg->interrupt,
 					      GPIO_INT_EDGE_TO_ACTIVE);
+
 	__ASSERT(ret == 0, "Interrupt configuration failed");
 }
 
@@ -60,6 +61,10 @@ static void adxl372_gpio_callback(const struct device *dev,
 	const struct adxl372_dev_config *cfg = drv_data->dev->config;
 
 	gpio_pin_interrupt_configure_dt(&cfg->interrupt, GPIO_INT_DISABLE);
+
+	if (IS_ENABLED(CONFIG_ADXL372_STREAM)) {
+		adxl372_stream_irq_handler(drv_data->dev);
+	}
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -160,7 +165,7 @@ int adxl372_init_interrupt(const struct device *dev)
 		return -EINVAL;
 	}
 
-	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT);
+	ret = gpio_pin_configure_dt(&cfg->interrupt, GPIO_INPUT | GPIO_PUSH_PULL);
 	if (ret < 0) {
 		return ret;
 	}
