@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Meta Platforms.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IRQ manager is a pseudo device that provides APIs to allocate and free IRQs from
+  a range of interrupt lines provided by an interrupt controller.
+
+compatible: "zephyr,irq-manager"
+
+include: [base.yaml]
+
+properties:
+
+  interrupts:
+    description: Start of the managed IRQs. Only the first argument matters.
+    required: true
+
+  nr-irqs:
+    type: int
+    description: Number of interrupts
+    required: true
