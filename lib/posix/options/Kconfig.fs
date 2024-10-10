@@ -12,8 +12,15 @@ menuconfig POSIX_FILE_SYSTEM
 
 if POSIX_FILE_SYSTEM
 
+config POSIX_FILE_SYSTEM_FSTAT
+	bool "POSIX fstat() API support"
+	default n
+	help
+	  Select 'y' here to provide POSIX fstat() functionality.
+
 config POSIX_FILE_SYSTEM_ALIAS_FSTAT
 	bool
+	depends on POSIX_FILE_SYSTEM_FSTAT
 	help
 	  Select 'y' here and Zephyr will provide an alias for fstat() as _fstat().
 

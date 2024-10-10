@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/dirent.h>
+#include <stdio.h>
 #include <string.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/posix/sys/stat.h>
@@ -28,6 +29,9 @@ struct posix_fs_desc {
 	};
 	bool is_dir;
 	bool used;
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	char path[MAX_FILE_NAME];
+#endif
 };
 
 static struct posix_fs_desc desc_array[CONFIG_POSIX_OPEN_MAX];
@@ -120,6 +124,11 @@ int zvfs_open(const char *name, int flags)
 
 	zvfs_finalize_fd(fd, ptr, &fs_fd_op_vtable);
 
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	memset(ptr->path, 0, MAX_FILE_NAME);
+	snprintf(ptr->path, MAX_FILE_NAME, "%s", name);
+#endif
+
 	return fd;
 }
 
@@ -157,6 +166,15 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 		break;
 	}
+#if defined(CONFIG_POSIX_FILE_SYSTEM_FSTAT)
+	case ZFD_IOCTL_STAT: {
+		struct stat *buf = NULL;
+
+		buf = va_arg(args, struct stat *);
+		rc = stat(ptr->path, buf);
+		break;
+	}
+#endif
 	case ZFD_IOCTL_TRUNCATE: {
 		off_t length;
 
@@ -460,6 +478,11 @@ int mkdir(const char *path, mode_t mode)
 
 int fstat(int fildes, struct stat *buf)
 {
+	if (!IS_ENABLED(CONFIG_POSIX_FILE_SYSTEM_FSTAT)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
 	return zvfs_fstat(fildes, buf);
 }
 #ifdef CONFIG_POSIX_FILE_SYSTEM_ALIAS_FSTAT
