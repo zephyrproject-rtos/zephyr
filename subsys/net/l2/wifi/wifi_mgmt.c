@@ -503,6 +503,25 @@ void wifi_mgmt_raise_iface_status_event(struct net_if *iface,
 					sizeof(struct wifi_iface_status));
 }
 
+static int wifi_connection_status(uint32_t mgmt_request, struct net_if *iface, void *data,
+			  size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	int *status = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->connection_status == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!data || len != sizeof(*status)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->connection_status(dev, status);
+}
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECTION_STATUS, wifi_connection_status);
+
 #ifdef CONFIG_NET_STATISTICS_WIFI
 static int wifi_iface_stats(uint32_t mgmt_request, struct net_if *iface,
 			  void *data, size_t len)
