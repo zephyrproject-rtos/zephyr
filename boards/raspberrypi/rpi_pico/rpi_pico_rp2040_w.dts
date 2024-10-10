@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Dave Rensberger - Beechwoods Software
+ * Copyright (c) 2024 Steve Boylan <stephen.boylan@beechwoods.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,3 +8,40 @@
 /dts-v1/;
 
 #include "rpi_pico-common.dtsi"
+
+&pinctrl {
+	pio0_spi0_default: pio0_spi0_default {
+		/* gpio 25 is used for chip select, not assigned to the PIO */
+		group1 {
+			pinmux = <PIO0_P24>, <PIO0_P29>;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	pio0_spi0: pio0_spi0 {
+		pinctrl-0 = <&pio0_spi0_default>;
+		pinctrl-names = "default";
+
+		compatible = "raspberrypi,pico-spi-pio";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clocks = < &clocks RPI_PICO_CLKID_CLK_SYS >;
+		cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		clk-gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>;
+		sio-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+		airoc-wifi@0 {
+			status = "okay";
+			reg = < 0 >;
+			compatible = "infineon,airoc-wifi";
+			wifi-reg-on-gpios = < &gpio0 23 GPIO_ACTIVE_HIGH >;
+			bus-select-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
+			wifi-host-wake-gpios = < &gpio0 24 GPIO_ACTIVE_HIGH >;
+			spi-max-frequency = < 10000000 >;
+			spi-half-duplex;
+		};
+	};
+};

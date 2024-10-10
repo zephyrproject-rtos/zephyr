@@ -9,11 +9,10 @@
  * @brief AIROC Wi-Fi driver.
  */
 
-#define DT_DRV_COMPAT infineon_airoc_wifi
-
 #include <zephyr/logging/log.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #include <airoc_wifi.h>
+#include <airoc_whd_hal_common.h>
 
 LOG_MODULE_REGISTER(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 
@@ -77,7 +76,12 @@ static void airoc_event_task(void);
 static struct airoc_wifi_data airoc_wifi_data = {0};
 
 static struct airoc_wifi_config airoc_wifi_config = {
-	.sdhc_dev = DEVICE_DT_GET(DT_INST_PARENT(0)),
+#if defined(CONFIG_AIROC_WIFI_BUS_SDIO)
+	.bus_dev.bus_sdio = DEVICE_DT_GET(DT_INST_PARENT(0)),
+#elif defined(CONFIG_AIROC_WIFI_BUS_SPI)
+	.bus_dev.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), AIROC_WIFI_SPI_OPERATION, 0),
+	.bus_select_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), bus_select_gpios, {0}),
+#endif
 	.wifi_reg_on_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_reg_on_gpios, {0}),
 	.wifi_host_wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_host_wake_gpios, {0}),
 	.wifi_dev_wake_gpio = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(0), wifi_dev_wake_gpios, {0}),

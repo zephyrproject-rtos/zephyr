@@ -6,9 +6,8 @@ menuconfig WIFI_AIROC
 	bool "Infineon AIROC SoC Wi-Fi support"
 	select THREAD_CUSTOM_DATA
 	select WIFI_OFFLOAD
+	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
-	select SDIO_STACK
-	select SDHC
 	select WIFI_USE_NATIVE_NETWORKING
 	select USE_INFINEON_ABSTRACTION_RTOS
 	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
@@ -16,6 +15,24 @@ menuconfig WIFI_AIROC
 	  Enable Infineon AIROC SoC Wi-Fi support.
 
 if WIFI_AIROC
+
+choice
+	prompt "Bus Support"
+	default AIROC_WIFI_BUS_SDIO
+
+config AIROC_WIFI_BUS_SDIO
+	bool "SDIO Interface"
+	select SDIO_STACK
+	select SDHC
+
+config AIROC_WIFI_BUS_SPI
+	bool "SPI Interface"
+	select SPI
+
+endchoice
+
+config AIROC_WIFI_COUNTRY
+	string "Country code, see whd_country_code_t in whd_types.h"
 
 config AIROC_WIFI_EVENT_TASK_STACK_SIZE
 	int "Event Task Stack Size"
@@ -36,6 +53,17 @@ config AIROC_WIFI_CUSTOM
 	  Select Custom CYW43xx device/module. For this option,
 	  user must to provide path to FW, CLM and NVRAM for
 	  custom or vendor CYW43xx modules.
+
+if AIROC_WIFI_BUS_SPI
+
+config AIROC_WIFI_BUS_SPI_DATA_IRQ_MUX
+	bool "Data and IRQ GPIO is shared"
+	help
+		Enable logic when the SPI data GPIO is shared
+		with the host wake interrupt, which requires
+		switching GPIO modes for that pin.
+
+endif # AIROC_WIFI_BUS_SPI
 
 choice  AIROC_PART
 	prompt "Select AIROC part"
