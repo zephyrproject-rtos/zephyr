@@ -1,0 +1,5 @@
+board:
+  name: phyboard_nash
+  vendor: phytec
+  socs:
+  - name: mimx9352
