@@ -8,5 +8,6 @@ config MIPI_DBI_NXP_FLEXIO_LCDIF
 	depends on CLOCK_CONTROL
 	select MCUX_FLEXIO
 	select DMA
+	select PINCTRL
 	help
 	  Enable support for MIPI DBI driver for NXP FlexIO based LCDIF controller.

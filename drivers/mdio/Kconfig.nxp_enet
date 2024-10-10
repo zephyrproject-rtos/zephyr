@@ -5,6 +5,7 @@ config MDIO_NXP_ENET
 	bool "NXP ENET MDIO Driver"
 	default y
 	depends on DT_HAS_NXP_ENET_MDIO_ENABLED
+	select PINCTRL
 	help
 	  Enable NXP ENET MDIO Driver. This Kconfig can be disabled manually
 	  if all ethernet PHYs being used with ENET are not managed by MDIO bus.

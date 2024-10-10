@@ -6,5 +6,6 @@ config QDEC_NXP_S32
 	default y
 	depends on DT_HAS_NXP_QDEC_S32_ENABLED
 	select NXP_S32_EMIOS
+	select PINCTRL
 	help
 	  Enable drivers for NXP S32 QUADRATURE DECODER
