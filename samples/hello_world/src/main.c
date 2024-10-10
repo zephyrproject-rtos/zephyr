@@ -67,9 +67,9 @@ void Flash_Test(const struct device *flash, const struct device *dma, uint32_t F
 		printf("%s Writing the following data After Erasing Flash%s\n", ATTR_INF,ATTR_RST);
 		for(uint8_t i = 0; i < FLASH_RW_SIZE; i++) { 
 			flash_data_write[i] = ((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1)+((rand() % (FLASH_RW_SIZE - 1 + 1)) + 1);
-			printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
+			// printf("%s %d%s", ATTR_INF, flash_data_write[i],i%FORMATTER==0?"\n":"");
 		} 
-		printf("\n");
+		// printf("\n");
 		errorcode = flash_write(flash, FLASH_ADDR, flash_data_write, FLASH_RW_SIZE);
 	}
 
@@ -110,9 +110,9 @@ void Flash_Test(const struct device *flash, const struct device *dma, uint32_t F
 					printf("%s %d%s", ATTR_ERR, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
 					memmaptestfail = true;
 				} 
-				else {
-					printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
-				}
+				// else {
+					// printf("%s %d%s", ATTR_INF, MemMapReadAddr[i],i%FORMATTER==0?"\n":"");
+				// }
 			} printf("\n");
 			if(memmaptestfail) {
 				printf("%s CPU Memory mapped read failed\n", ATTR_ERR);	
@@ -194,9 +194,9 @@ void Flash_Test(const struct device *flash, const struct device *dma, uint32_t F
 						printf("%s %d%s", ATTR_ERR, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
 						memmaptestfail = true;
 					} 
-					else {
-						printf("%s %d%s", ATTR_INF, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
-					}
+					// else {
+						// printf("%s %d%s", ATTR_INF, MemMapReadDestAddr[i],i%FORMATTER==0?"\n":"");
+					// }
 				} 
 				printf("\n");
 				if(memmaptestfail) {
@@ -347,7 +347,6 @@ void pufs_otp_test(const struct device *pufs_otp)
 	}
 }
 
-
 void pufs_hash_sg_test(const struct device *pufs)
 {
 	int status = 0;
@@ -439,14 +438,14 @@ void pufs_hash_sg_test(const struct device *pufs)
 	} else {
 		for(uint8_t i = 0; i < lvHashPkt1.out_len; i++) {			
 			if(lvHashPkt1.out_buf[i] != pufs_sample_data_sha256[i]) {
-				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", \
-				ATTR_ERR,__func__,__LINE__,\
-				i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				// printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", 
+				// ATTR_ERR,__func__,__LINE__,
+				// i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 				status = -EINVAL;
 			} else {
-				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", \
-				ATTR_INF,__func__,__LINE__,\
-				i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				// printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", 
+				// ATTR_INF,__func__,__LINE__,
+				// i,lvHashPkt1.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 			}
 		}
 		if(status != 0) {
@@ -466,7 +465,6 @@ void pufs_hash_sg_test(const struct device *pufs)
 		}
 	}
 }
-
 
 void pufs_hash_test(const struct device *pufs)
 {
@@ -514,14 +512,14 @@ void pufs_hash_test(const struct device *pufs)
 	} else {
 		for(uint8_t i = 0; i < lvHashPkt.out_len; i++) {			
 			if(lvHashPkt.out_buf[i] != pufs_sample_data_sha256[i]) {
-				printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n", \
-				ATTR_ERR,__func__,__LINE__,\
-				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				// printf("%s%s(%d) out_buf[%d]0x%02x != in_buf[%d]:0x%02x %s\n",
+				// ATTR_ERR,__func__,__LINE__,
+				// i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 				status = -EINVAL;
 			} else {
-				printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n", \
-				ATTR_INF,__func__,__LINE__,\
-				i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
+				// printf("%s%s(%d) out_buf[%d]0x%02x == in_buf[%d]:0x%02x %s\n",
+				// ATTR_INF,__func__,__LINE__,
+				// i,lvHashPkt.out_buf[i],i,pufs_sample_data_sha256[i],ATTR_RST);
 			}
 		}
 		if(status != 0) {
@@ -649,9 +647,9 @@ void pufs_decryption_test(const struct device *pufs)
 	if(lvStatus != 0) {
 		printf("%s cipher_ctr_op Failed! Status:%d %s\n", ATTR_ERR, lvStatus, ATTR_RST);
 	} else {
-		printf("%s cipher_ctr_op Success! %s\n\n", ATTR_INF, ATTR_RST);
-		printf("%s Original: %s%s\n", ATTR_HIL,plain_text,ATTR_RST);
-		printf("%s Result:   %s%s\n", ATTR_HIL,lvCipherPkt.out_buf,ATTR_RST);
+		printf("%s cipher_ctr_op Success! %s\n", ATTR_INF, ATTR_RST);
+		printf("%s Original: %s%s", ATTR_HIL,plain_text,ATTR_RST);
+		printf("%s Result:   %s%s", ATTR_HIL,lvCipherPkt.out_buf,ATTR_RST);
 		bool comparison_ok = true;
 		for(int i = 0; i < strlen(lvCipherPkt.out_buf); i++) {
 			if(lvCipherPkt.out_buf[i] != plain_text[i]) {
@@ -675,6 +673,16 @@ void pufs_decryption_test(const struct device *pufs)
 	} else {
 		printf("%s cipher_free_session Success! %s\n", ATTR_INF, ATTR_RST);
 	}	
+}
+
+void pufs_rsa2048_verify_test(const struct device *dev)
+{
+
+}
+
+void pufs_ecdsa256_verify_test(const struct device *dev)
+{
+
 }
 
 int main(void)
@@ -704,6 +712,7 @@ int main(void)
 		printf("%s pufs has status disabled or driver is not initialized...%s\n", ATTR_ERR, ATTR_RST);
 	} else {
 		printf("%s pufs Object is Created %s\n", ATTR_INF, ATTR_RST);
+		// pufs_rsa2048_verify_test(pufs); while(true); // TODO Remove while
 		pufs_decryption_test(pufs);
 		pufs_hash_test(pufs);
 		pufs_hash_sg_test(pufs);

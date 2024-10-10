@@ -2,24 +2,24 @@
 
 #include <string.h>
 
-#ifndef RS_RTOS_PORT
-  #include "profiling_util.h"
-  #include "rs_crypto.h"
-  #include "rs_util.h"
-#else
+#if CONFIG_RS_RTOS_PORT
   #include <zephyr/sys/sys_io.h>
   #include <zephyr/kernel.h>
   #include "crypto_pufs.h"
   static volatile bool s_Asynch_Operation = false;
   void pufcc_set_asynch_ops_flag(bool Val) {s_Asynch_Operation = Val;}
   bool pufcc_get_asynch_ops_flag(void) {return s_Asynch_Operation;}
+#else
+  #include "profiling_util.h"
+  #include "rs_crypto.h"
+  #include "rs_util.h"
 #endif
 
 /*****************************************************************************
  * Macros
  ****************************************************************************/
 #define SG_DMA_MAX_DSCS_SIZE (512 - 8)  // Enough for 15 descriptors
-#ifndef RS_RTOS_PORT
+#if !CONFIG_RS_RTOS_PORT
   #define BUFFER_SIZE 512
 #endif
 #define PUFCC_MAX_BUSY_COUNT 8000000  // Max busy count for processing 10MB data
@@ -28,13 +28,13 @@
 /*****************************************************************************
  * Local variable declarations
  ****************************************************************************/
-#ifndef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
+  static struct pufcc_sg_dma_desc *sg_dma_descs =
+    (struct pufcc_sg_dma_desc *)__pufcc_descriptors;
+#else
   extern uint32_t __pufcc_descriptors;
   static struct pufcc_sg_dma_desc *sg_dma_descs =
     (struct pufcc_sg_dma_desc *)&__pufcc_descriptors;
-#else
-  static struct pufcc_sg_dma_desc *sg_dma_descs =
-    (struct pufcc_sg_dma_desc *)__pufcc_descriptors;
 #endif
 
 
@@ -586,7 +586,7 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
     return PUFCC_E_ERROR;
   }
 
-#ifndef RS_RTOS_PORT
+#if !CONFIG_RS_RTOS_PORT
   RS_PROFILE_CHECKPOINT("msg hash calc");
 #endif
 
@@ -648,7 +648,7 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
   memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_ECDSA_SIG_S_OFFSET,
          pufcc_buffer, PUFCC_ECDSA_256_LEN);
 
-#ifndef RS_RTOS_PORT
+#if !CONFIG_RS_RTOS_PORT
   RS_PROFILE_CHECKPOINT("misc verif ops");
 #endif
 
@@ -666,14 +666,14 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
   // Poll on busy status
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
-#ifndef RS_RTOS_PORT  
+#if !CONFIG_RS_RTOS_PORT  
   RS_PROFILE_CHECKPOINT("PKC op");
 #endif
 
   return status;
 }
 
-#ifndef RS_RTOS_PORT
+#if !CONFIG_RS_RTOS_PORT
 
   /**
    * @fn    pufcc_dma_transfer
@@ -971,7 +971,21 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
   return PUFCC_SUCCESS;
 }
 
-#ifndef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
+
+  int pufcc_clear_and_disable_intr(void) {
+    int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
+    struct pufcc_intrpt_reg *intrpt_reg_ptr =
+        (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
+
+    // Clear and disable interrupt
+    intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
+    intrpt_reg_ptr->intrpt_en = 0;
+
+    return status;
+  }
+
+#else
 
   int pufcc_dma_request_channel(struct pufcc_dma_dev *dev) {
     if (dev->is_dev_free) {
@@ -1164,20 +1178,6 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
     dev->callback(dev->callback_args, 0, status);
   }
 
-#else
-
-  int pufcc_clear_and_disable_intr(void) {
-    int status = (dma_regs->status_0 & PUFCC_DMA_ERROR_MASK ? -1 : 0);
-    struct pufcc_intrpt_reg *intrpt_reg_ptr =
-        (struct pufcc_intrpt_reg *)&dma_regs->interrupt;
-
-    // Clear and disable interrupt
-    intrpt_reg_ptr->intrpt_st = 1;  // Set to clear
-    intrpt_reg_ptr->intrpt_en = 0;
-
-    return status;
-  }
-
 #endif
 
 /**
@@ -1315,10 +1315,10 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
   int32_t busy_count = PUFCC_MAX_BUSY_COUNT;
 
   do {
-    #ifndef RS_RTOS_PORT
-      status = read_reg(status_reg_addr);
-    #else
+    #if CONFIG_RS_RTOS_PORT
       status = sys_read32((mem_addr_t)status_reg_addr);
+    #else
+      status = read_reg(status_reg_addr);
     #endif
     busy_count--;
   } while ((status & PUFCC_BUSY_BIT_MASK) && (busy_count > 0));

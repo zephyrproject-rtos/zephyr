@@ -3,14 +3,12 @@
 
 #include <stdint.h>
 
-#define RS_RTOS_PORT
-
-#ifndef RS_RTOS_PORT
-  #include "rs_crypto.h"
-  #include "rs_dma.h"
-#else
+#if CONFIG_RS_RTOS_PORT
   #include <stdbool.h>
   #include <stddef.h>
+#else
+  #include "rs_crypto.h"
+  #include "rs_dma.h"
 #endif
 
 /*** Generic PUFcc defines ***/
@@ -164,7 +162,7 @@ enum pufcc_otp_slot {
   PUFCC_OTPKEY_29,  // OTP key slot 29, 256 bits
   PUFCC_OTPKEY_30,  // OTP key slot 30, 256 bits
   PUFCC_OTPKEY_31,  // OTP key slot 31, 256 bits
-#ifdef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
   PUFCC_TOTAL_SLOTS // OTP Number of slots.
 #endif
 };
@@ -437,7 +435,7 @@ struct pufcc_pkc_regs {
   volatile uint32_t ecp_data[512];
 };
 
-#ifndef RS_RTOS_PORT
+#if !CONFIG_RS_RTOS_PORT
   struct pufcc_dma_dev {
     struct pufcc_dma_regs *regs;
     bool is_dev_free;
@@ -448,7 +446,7 @@ struct pufcc_pkc_regs {
   };
 #endif
 
-#ifdef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
 
   /**
    * @enum  rs_crypto_tfr_type
@@ -595,13 +593,13 @@ enum pufcc_status pufcc_ecdsa256_sign_verify(
     struct rs_crypto_ec256_sig *sig, struct rs_crypto_addr *msg_addr,
     struct rs_crypto_ec256_puk *pub_key);
 
-#ifndef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
+  bool pufcc_get_asynch_ops_flag(void);
+  void pufcc_set_asynch_ops_flag(bool Val); 
+#else                                    
   enum pufcc_status pufcc_dma_transfer(uint32_t src_addr, uint32_t dest_addr,
                                       uint32_t len, bool fixed_read,
                                       bool fixed_write);
-#else
-  bool pufcc_get_asynch_ops_flag(void);
-  void pufcc_set_asynch_ops_flag(bool Val);                                      
 #endif
 
 enum pufcc_status pufcc_otp_setup_wait(void);
@@ -620,7 +618,9 @@ enum pufcc_status pufcc_zeroize_otp(enum pufcc_otp_slot otp_slot);
 enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
                                       enum pufcc_otp_lock *lock_val);
 
-#ifndef RS_RTOS_PORT
+#if CONFIG_RS_RTOS_PORT
+  int pufcc_clear_and_disable_intr(void);
+#else
   int pufcc_dma_request_channel(struct pufcc_dma_dev *dev);
 
   void pufcc_dma_release_channel(struct pufcc_dma_dev *dev, int channel);
@@ -637,10 +637,6 @@ enum pufcc_status pufcc_get_otp_rwlck(enum pufcc_otp_slot otp_slot,
   enum rs_status pufcc_dma_stop_xfer(struct pufcc_dma_dev *dev, int channel);
 
   void pufcc_dma_irq_handler(struct pufcc_dma_dev *dev);
-#else
-
-  int pufcc_clear_and_disable_intr(void);
-
 #endif
 
 enum pufcc_status pufcc_init(uint32_t base_addr);

@@ -5,15 +5,20 @@
 
 menuconfig PUFCC_SECURITY
 	bool "PUF Security Hardware"
+	depends on DT_HAS_PUFSECURITY_PUFCC_ENABLED
 	help
 		Enable PUF Security Hardware.
 
 	if PUFCC_SECURITY
 
+		config RS_RTOS_PORT
+			bool
+
 		config CRYPTO_PUF_SECURITY
 			bool "PUF security Cryptographic Accelerator driver"
 			default n
 			depends on DT_HAS_PUFSECURITY_PUFCC_ENABLED
+			select RS_RTOS_PORT
 			help
 				Enable PUF Security based Cryptographic Accelerator driver.
 
@@ -21,6 +26,7 @@ menuconfig PUFCC_SECURITY
 			bool "PUF security One Time Programmable Memory"
 			default n
 			depends on DT_HAS_PUFSECURITY_OTP_ENABLED
+			select RS_RTOS_PORT
 			help
 				Enable PUF Security based One Time Programmable Memory.
 

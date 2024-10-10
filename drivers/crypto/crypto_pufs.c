@@ -201,12 +201,11 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (
+  uint16_t lvHashFlagsMask = (
                             CAP_NO_ENCRYPTION | CAP_SYNC_OPS | 
                             CAP_NO_IV_PREFIX |
                             CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS
-                         ), \
-       lvHashFlagsMask = 0xFFFF;
+                         );
   
   if(algo != CRYPTO_CIPHER_ALGO_AES) {
     LOG_ERR("%s(%d) UnSupported Algo. Only AES Supported\n", __func__, __LINE__);
@@ -225,8 +224,8 @@ static int pufs_cipher_begin_session(const struct device *dev, struct cipher_ctx
     return -ENOTSUP;    
   }
 
-  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
-    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
+  if(ctx->flags & (~lvHashFlagsMask)) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlagsMask);
     return -ENOTSUP;
   }
 
@@ -371,15 +370,15 @@ static int pufs_hash_begin_session(const struct device *dev, struct hash_ctx *ct
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  uint16_t lvHashFlagsMask = (CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
   
   if(algo != CRYPTO_HASH_ALGO_SHA256) {
     LOG_ERR("%s(%d) UnSupported Hash Algo. Only SHA256 Supported\n", __func__, __LINE__);
     return -ENOTSUP;
   }
 
-  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
-    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
+  if((ctx->flags & (~lvHashFlagsMask))) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlagsMask);
     return -ENOTSUP;
   }
 
@@ -502,7 +501,7 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
 
   struct pufs_data *lvPufsData = (struct pufs_data*)dev->data;
 
-  uint16_t lvHashFlags = (CAP_INPLACE_OPS | CAP_SYNC_OPS), lvHashFlagsMask = 0xFFFF;
+  uint16_t lvHashFlagsMask = (CAP_INPLACE_OPS | CAP_SYNC_OPS);
   
   if((algo != CRYPTO_SIGN_ALGO_ECDSA256) || (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
     LOG_ERR("%s(%d) Unupported Algo:%d. Supported Algo <ECDSA256, RSA2048>\n", __func__, __LINE__, algo);
@@ -517,8 +516,8 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
     }
   }
 
-  if((ctx->flags & lvHashFlagsMask) != (lvHashFlags)) {
-    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlags);
+  if((ctx->flags & (~lvHashFlagsMask))) {
+    LOG_ERR("%s(%d) UnSupported Flags. Supported Flags_Mask:%d\n", __func__, __LINE__, lvHashFlagsMask);
     return -ENOTSUP;
   }
 
