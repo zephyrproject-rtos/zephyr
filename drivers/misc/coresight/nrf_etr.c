@@ -17,6 +17,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/misc/coresight/nrf_etr.h>
 #include <zephyr/sys/printk.h>
+#include <dmm.h>
 #include <nrfx_tbm.h>
 #include <stdio.h>
 LOG_MODULE_REGISTER(cs_etr_tbm);
@@ -30,12 +31,6 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 		    (CONFIG_NRF_ETR_DECODE_DROP_PERIOD), (0))
 
 #define MIN_DATA (2 * CORESIGHT_TRACE_FRAME_SIZE32)
-
-#define MEMORY_SECTION(node)                                                                  \
-	COND_CODE_1(DT_NODE_HAS_PROP(node, memory_regions),                                   \
-		    (__attribute__((__section__(                                              \
-			    LINKER_DT_NODE_REGION_NAME(DT_PHANDLE(node, memory_regions)))))), \
-		    ())
 
 /* Since ETR debug is a part of logging infrastructure, logging cannot be used
  * for debugging. Printk is used (assuming CONFIG_LOG_PRINTK=n)
@@ -86,8 +81,8 @@ static bool volatile use_async_uart;
 
 static struct k_sem uart_sem;
 static const struct device *uart_dev = DEVICE_DT_GET(UART_NODE);
-static uint32_t frame_buf0[CORESIGHT_TRACE_FRAME_SIZE32] MEMORY_SECTION(UART_NODE);
-static uint32_t frame_buf1[CORESIGHT_TRACE_FRAME_SIZE32] MEMORY_SECTION(UART_NODE);
+static uint32_t frame_buf0[CORESIGHT_TRACE_FRAME_SIZE32] DMM_MEMORY_SECTION(UART_NODE);
+static uint32_t frame_buf1[CORESIGHT_TRACE_FRAME_SIZE32] DMM_MEMORY_SECTION(UART_NODE);
 static uint32_t frame_buf_decode[CORESIGHT_TRACE_FRAME_SIZE32];
 static uint32_t *frame_buf = IS_ENABLED(CONFIG_NRF_ETR_DECODE) ?
 				frame_buf_decode : frame_buf0;
