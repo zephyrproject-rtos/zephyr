@@ -167,12 +167,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(nxp_s32_netc_vsi) == 1, "Only one VSI enabl
 		.generate_mac = nxp_s32_eth##n##_generate_mac,					\
 	};											\
 												\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,							\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n,							\
 				nxp_s32_eth_initialize_common,					\
 				NULL,								\
 				&nxp_s32_eth##n##_data,						\
 				&nxp_s32_eth##n##_cfg,						\
-				CONFIG_ETH_NXP_S32_VSI_INIT_PRIORITY,				\
 				&nxp_s32_eth_api,						\
 				NET_ETH_MTU);
 

@@ -158,6 +158,6 @@ static const struct net_canbus_config net_canbus_cfg = {
 	.can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus))
 };
 
-NET_DEVICE_INIT(net_canbus, "NET_CANBUS", net_canbus_init, NULL, &net_canbus_ctx, &net_canbus_cfg,
-		CONFIG_NET_CANBUS_INIT_PRIORITY, &net_canbus_api, CANBUS_RAW_L2,
+NET_DEVICE_INSTANCE(net_canbus, net_canbus_init, NULL, &net_canbus_ctx, &net_canbus_cfg,
+		&net_canbus_api, CANBUS_RAW_L2,
 		NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);

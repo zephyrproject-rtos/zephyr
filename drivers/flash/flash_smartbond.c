@@ -284,5 +284,5 @@ static const struct flash_smartbond_config flash_smartbond_0_config = {
 	.qspif_base_address = DT_REG_ADDR(QSPIF_NODE),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &flash_smartbond_0_config,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &flash_smartbond_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &flash_smartbond_0_config,
+		      POST_KERNEL, &flash_smartbond_driver_api);

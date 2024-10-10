@@ -295,7 +295,6 @@ static struct wwdt_numaker_config wwdt_numaker_cfg_inst = {
 
 static struct wwdt_numaker_data wwdt_numaker_data_inst;
 
-DEVICE_DT_INST_DEFINE(0, wwdt_numaker_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, wwdt_numaker_init, NULL,
 		      &wwdt_numaker_data_inst, &wwdt_numaker_cfg_inst,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &wwdt_numaker_api);
+		      POST_KERNEL, &wwdt_numaker_api);

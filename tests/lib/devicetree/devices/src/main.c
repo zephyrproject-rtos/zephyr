@@ -34,30 +34,29 @@ static int dev_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(TEST_GPIO, dev_init, NULL,
-		 NULL, NULL, PRE_KERNEL_1, 90, NULL);
-DEVICE_DT_DEFINE(TEST_I2C, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 10, NULL);
-DEVICE_DT_DEFINE(TEST_DEVA, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 20, NULL);
-/* NB: Intentional init devb before required gpiox */
-DEVICE_DT_DEFINE(TEST_DEVB, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 30, NULL);
-DEVICE_DT_DEFINE(TEST_GPIOX, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 40, NULL);
-DEVICE_DT_DEFINE(TEST_DEVC, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 50, NULL);
-DEVICE_DT_DEFINE(TEST_PARTITION, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 60, NULL);
+DEVICE_INSTANCE(TEST_GPIO, dev_init, NULL,
+		 NULL, NULL, PRE_KERNEL_1, NULL);
+DEVICE_INSTANCE(TEST_I2C, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_DEVA, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_DEVB, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_GPIOX, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_DEVC, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(TEST_PARTITION, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* Device with both an existing and missing injected dependency */
-DEVICE_DT_DEFINE(TEST_GPIO_INJECTED, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 70, NULL, DT_DEP_ORD(TEST_DEVB), 999);
+DEVICE_INSTANCE(TEST_GPIO_INJECTED, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* Manually specified device */
-DEVICE_DEFINE(manual_dev, "Manual Device", dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 80, NULL);
+DEVICE_INSTANCE(manual_dev, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 /* Device with no nodelabel */
-DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
-		 NULL, NULL, POST_KERNEL, 90, NULL);
+DEVICE_INSTANCE(TEST_NOLABEL, dev_init, NULL,
+		 NULL, NULL, POST_KERNEL, NULL);
 
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
@@ -104,8 +103,8 @@ ZTEST(devicetree_devices, test_init_order)
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
 	zassert_equal(init_order[1], DEV_HDL(TEST_I2C));
 	zassert_equal(init_order[2], DEV_HDL(TEST_DEVA));
-	zassert_equal(init_order[3], DEV_HDL(TEST_DEVB));
-	zassert_equal(init_order[4], DEV_HDL(TEST_GPIOX));
+	zassert_equal(init_order[3], DEV_HDL(TEST_GPIOX));
+	zassert_equal(init_order[4], DEV_HDL(TEST_DEVB));
 	zassert_equal(init_order[5], DEV_HDL(TEST_DEVC));
 	zassert_equal(init_order[6], DEV_HDL(TEST_PARTITION));
 	zassert_equal(init_order[7], DEV_HDL(TEST_GPIO_INJECTED));
@@ -259,8 +258,7 @@ ZTEST(devicetree_devices, test_injected)
 	/* TEST_GPIO_INJECTED: TEST_DEVB */
 	dev = device_get_binding(DEVICE_DT_NAME(TEST_GPIO_INJECTED));
 	hdls = device_injected_handles_get(dev, &nhdls);
-	zassert_equal(nhdls, 1);
-	zassert_true(check_handle(DEV_HDL(TEST_DEVB), hdls, nhdls));
+	zassert_equal(nhdls, 0);
 }
 
 ZTEST(devicetree_devices, test_get_or_null)
@@ -284,8 +282,7 @@ ZTEST(devicetree_devices, test_supports)
 	/* TEST_DEVB: None */
 	dev = DEVICE_DT_GET(TEST_DEVB);
 	hdls = device_supported_handles_get(dev, &nhdls);
-	zassert_equal(nhdls, 1);
-	zassert_true(check_handle(DEV_HDL(TEST_GPIO_INJECTED), hdls, nhdls));
+	zassert_equal(nhdls, 0);
 
 	/* TEST_GPIO_INJECTED: None */
 	dev = DEVICE_DT_GET(TEST_GPIO_INJECTED);

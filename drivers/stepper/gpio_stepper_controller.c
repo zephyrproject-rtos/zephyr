@@ -338,9 +338,9 @@ static int gpio_stepper_motor_controller_init(const struct device *dev)
 		.get_micro_step_res = gpio_stepper_get_micro_step_res};
 
 #define GPIO_STEPPER_DEVICE_DEFINE(child)                                                          \
-	DEVICE_DT_DEFINE(child, gpio_stepper_motor_controller_init, NULL,                          \
+	DEVICE_INSTANCE(child, gpio_stepper_motor_controller_init, NULL,                           \
 			 &gpio_stepper_data_##child, &gpio_stepper_config_##child, POST_KERNEL,    \
-			 CONFIG_STEPPER_INIT_PRIORITY, &gpio_stepper_api_##child);
+			 &gpio_stepper_api_##child);
 
 #define GPIO_STEPPER_CONTROLLER_DEFINE(inst)                                                       \
 	DT_INST_FOREACH_CHILD(inst, GPIO_STEPPER_DEVICE_CONFIG_DEFINE);                            \

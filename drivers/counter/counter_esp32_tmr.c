@@ -271,13 +271,12 @@ static void counter_esp32_isr(void *arg)
 	};									 \
 										 \
 										 \
-	DEVICE_DT_INST_DEFINE(idx,						 \
+	DEVICE_INSTANCE_FROM_DT_INST(idx,					 \
 			      counter_esp32_init,				 \
 			      NULL,						 \
 			      &counter_data_##idx,				 \
 			      &counter_config_##idx,				 \
 			      PRE_KERNEL_1,					 \
-			      CONFIG_COUNTER_INIT_PRIORITY,			 \
 			      &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_COUNTER_INIT);

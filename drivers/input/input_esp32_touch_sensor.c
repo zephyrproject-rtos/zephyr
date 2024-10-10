@@ -341,12 +341,11 @@ static int esp32_touch_sensor_init(const struct device *dev)
 												\
 	static struct esp32_touch_sensor_data esp32_touch_sensor_data_##inst;			\
 												\
-	DEVICE_DT_INST_DEFINE(inst,								\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,							\
 			      &esp32_touch_sensor_init,						\
 			      NULL,								\
 			      &esp32_touch_sensor_data_##inst,					\
 			      &esp32_touch_sensor_config_##inst,				\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,				\
-			      NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_TOUCH_SENSOR_INIT)

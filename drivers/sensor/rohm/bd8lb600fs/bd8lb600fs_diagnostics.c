@@ -69,9 +69,8 @@ static int bd8lb600fs_diagnostics_init(const struct device *dev)
 		.parent_dev = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(                                                       \
 		inst, bd8lb600fs_diagnostics_init, NULL, &bd8lb600fs_diagnostics_data_##inst,      \
-		&bd8lb600fs_diagnostics_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,   \
-		&bd8lb600fs_diagnostics_driver_api);
+		&bd8lb600fs_diagnostics_config_##inst, POST_KERNEL, &bd8lb600fs_diagnostics_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BD8LB600FS_DIAGNOSTICS_DEFINE)

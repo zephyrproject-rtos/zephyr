@@ -242,12 +242,11 @@ static void mss_gpio_irq_handler(const struct device *dev)
 		.gpio_cfg_func = gpio_mss_gpio_cfg_func_##n	\
 	};	\
 	\
-	DEVICE_DT_INST_DEFINE(n,	\
-				mss_gpio_init,	\
+	DEVICE_INSTANCE_FROM_DT_INST(n,	\
+				mss_gpio_init,\
 				NULL,	\
-				&mss_gpio_data_##n, &mss_gpio_config_##n,	\
-				PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,	\
-				&mss_gpio_driver);	\
+				&mss_gpio_data_##n, &mss_gpio_config_##n,\
+				PRE_KERNEL_1, &mss_gpio_driver);\
 	\
 	static void gpio_mss_gpio_cfg_func_##n(void)	\
 	{	\

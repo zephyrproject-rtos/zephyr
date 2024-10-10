@@ -98,8 +98,7 @@ static const struct adc_driver_api ltc2451_api = {
 		.conversion_speed = DT_INST_PROP(index, conversion_speed), \
 	}; \
  \
-	DEVICE_DT_INST_DEFINE(index, &ltc2451_init, NULL, NULL, \
-			      &ltc2451_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, \
-			      &ltc2451_api);
+	DEVICE_INSTANCE_FROM_DT_INST(index, &ltc2451_init, NULL, NULL,\
+			      &ltc2451_cfg_##index, POST_KERNEL, &ltc2451_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LTC2451_DEFINE)

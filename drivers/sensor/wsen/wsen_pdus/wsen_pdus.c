@@ -99,13 +99,12 @@ static int pdus_init(const struct device *dev)
 		},                                                                        \
 		.sensor_type = (PDUS_SensorType_t) DT_INST_ENUM_IDX(inst, sensor_type)    \
 		};                                                                        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,             \
-			    pdus_init,                         \
-			    NULL,                              \
-			    &pdus_data_##inst,                 \
-			    &pdus_config_##inst,               \
-			    POST_KERNEL,                       \
-			    CONFIG_SENSOR_INIT_PRIORITY,       \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,      \
+			    pdus_init,                 \
+			    NULL,                      \
+			    &pdus_data_##inst,         \
+			    &pdus_config_##inst,       \
+			    POST_KERNEL,               \
 			    &pdus_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PDUS_DEFINE)

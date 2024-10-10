@@ -432,8 +432,7 @@ static int adc_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.pwr_func = pwr_on_ambiq_adc_##n,                                                  \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, adc_ambiq_pm_action);                                          \
-	DEVICE_DT_INST_DEFINE(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,   \
-			      &adc_ambiq_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,        \
-			      &adc_ambiq_driver_api_##n);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &adc_ambiq_init, PM_DEVICE_DT_INST_GET(n), &adc_ambiq_data_##n,\
+			      &adc_ambiq_config_##n, POST_KERNEL, &adc_ambiq_driver_api_##n);
 
 DT_INST_FOREACH_STATUS_OKAY(ADC_AMBIQ_INIT)

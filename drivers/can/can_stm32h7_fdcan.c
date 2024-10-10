@@ -271,11 +271,10 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 	static struct can_mcan_data can_mcan_data_##n =			    \
 		CAN_MCAN_DATA_INITIALIZER(NULL);			    \
 									    \
-	CAN_DEVICE_DT_INST_DEFINE(n, can_stm32h7_init, NULL,		    \
-				  &can_mcan_data_##n,			    \
-				  &can_mcan_cfg_##n,			    \
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,    \
-				  &can_stm32h7_driver_api);		    \
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(n, can_stm32h7_init, NULL,		    \
+				  &can_mcan_data_##n,				    \
+				  &can_mcan_cfg_##n,				    \
+				  POST_KERNEL, &can_stm32h7_driver_api),	    \
 									    \
 	static void stm32h7_mcan_irq_config_##n(void)			    \
 	{								    \

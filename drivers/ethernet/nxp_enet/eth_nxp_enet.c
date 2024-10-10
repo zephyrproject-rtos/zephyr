@@ -1006,10 +1006,9 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 											\
 		ETH_NXP_ENET_PM_DEVICE_INIT(n)						\
 											\
-		ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_init,			\
+		ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n, eth_nxp_enet_init,		\
 					ETH_NXP_ENET_PM_DEVICE_GET(n),			\
 					&nxp_enet_##n##_data, &nxp_enet_##n##_config,	\
-					CONFIG_ETH_INIT_PRIORITY,			\
 					&api_funcs, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_MAC_INIT)
@@ -1054,9 +1053,9 @@ static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
 static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\
 											\
 /* Init the module before any of the MAC, MDIO, or PTP clock */				\
-DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
+DEVICE_INSTANCE_FROM_DT_INST(n, nxp_enet_mod_init, NULL,				\
 		&nxp_enet_mod_data_##n, &nxp_enet_mod_cfg_##n,				\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet
@@ -1075,9 +1074,9 @@ static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {			\
 static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;				\
 											\
 /* Init the module before any of the MAC, MDIO, or PTP clock */				\
-DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
+DEVICE_INSTANCE_FROM_DT_INST(n, nxp_enet_mod_init, NULL,				\
 		&nxp_enet1g_mod_data_##n, &nxp_enet1g_mod_cfg_##n,			\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet1g

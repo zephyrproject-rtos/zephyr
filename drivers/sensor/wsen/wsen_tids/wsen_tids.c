@@ -192,13 +192,12 @@ static int tids_init(const struct device *dev)
  */
 
 #define TIDS_DEVICE_INIT(inst)                                        \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                   \
-				tids_init,                            \
-				NULL,                                 \
-				&tids_data_##inst,                    \
-				&tids_config_##inst,                  \
-				POST_KERNEL,                          \
-				CONFIG_SENSOR_INIT_PRIORITY,	      \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,                            \
+				tids_init,                                   \
+				NULL,                                        \
+				&tids_data_##inst,                           \
+				&tids_config_##inst,                         \
+				POST_KERNEL,                                 \
 				&tids_driver_api);
 
 #ifdef CONFIG_WSEN_TIDS_TRIGGER

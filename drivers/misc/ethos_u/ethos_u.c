@@ -167,7 +167,7 @@ static int ethosu_zephyr_init(const struct device *dev)
 		.irq_config = &ethosu_zephyr_irq_config_##n,                                       \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_dts_info_##n, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(n, ethosu_zephyr_init, NULL, &ethosu_data_##n, &ethosu_dts_info_##n,\
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(ETHOSU_DEVICE_INIT);

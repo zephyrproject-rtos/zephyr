@@ -232,12 +232,11 @@ int nxp_flexio_child_attach(const struct device *dev,
 		.irq_disable_func = mcux_flexio_irq_disable_func_##n,	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_flexio_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_flexio_init,		\
 				NULL,					\
 				&mcux_flexio_data_##n,			\
 				&mcux_flexio_config_##n,		\
 				POST_KERNEL,				\
-				CONFIG_MCUX_FLEXIO_INIT_PRIORITY,	\
 				NULL);					\
 									\
 	static void mcux_flexio_irq_config_func_##n(const struct device *dev) \

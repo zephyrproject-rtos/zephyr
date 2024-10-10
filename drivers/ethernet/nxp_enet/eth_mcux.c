@@ -1561,14 +1561,13 @@ static void eth_mcux_err_isr(const struct device *dev)
 									\
 	ETH_MCUX_PM_DEVICE_INIT(n)					\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(n,				\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(n,				\
 			    eth_init,					\
 			    ETH_MCUX_PM_DEVICE_GET(n),			\
 			    &eth##n##_context,				\
 			    &eth##n##_buffer_config,			\
-			    CONFIG_ETH_INIT_PRIORITY,			\
 			    &api_funcs,					\
-			    NET_ETH_MTU);				\
+			    NET_ETH_MTU),				\
 									\
 	static void eth##n##_config_func(void)				\
 	{								\
@@ -1738,8 +1737,8 @@ static int ptp_mcux_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+DEVICE_INSTANCE(mcux_ptp_clock_0, ptp_mcux_init,
 		NULL, &ptp_mcux_0_context, NULL, POST_KERNEL,
-		CONFIG_ETH_MCUX_PTP_CLOCK_INIT_PRIO, &api);
+		&api);
 
 #endif /* CONFIG_PTP_CLOCK_MCUX */

@@ -1032,11 +1032,10 @@ XMC4XXX_IRQ_STRUCT_INIT(index)						\
 	.fifo_rx_size = DT_INST_ENUM_IDX(index, fifo_rx_size),          \
 };									\
 									\
-	DEVICE_DT_INST_DEFINE(index, uart_xmc4xxx_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(index, uart_xmc4xxx_init,		\
 			    NULL,					\
 			    &xmc4xxx_data_##index,			\
 			    &xmc4xxx_config_##index, PRE_KERNEL_1,	\
-			    CONFIG_SERIAL_INIT_PRIORITY,		\
 			    &uart_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_INIT)

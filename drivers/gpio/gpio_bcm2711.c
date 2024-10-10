@@ -348,8 +348,7 @@ static const struct gpio_driver_api gpio_bcm2711_api = {
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,                  \
-			      &gpio_bcm2711_cfg_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,      \
-			      &gpio_bcm2711_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,           \
+			      &gpio_bcm2711_cfg_##n, PRE_KERNEL_1, &gpio_bcm2711_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_BCM2711_INST)

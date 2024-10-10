@@ -89,11 +89,10 @@ void dwmac_platform_init(struct dwmac_priv *p)
 /* Our private device instance */
 static struct dwmac_priv dwmac_instance;
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 			      dwmac_probe,
 			      NULL,
 			      &dwmac_instance,
 			      NULL,
-			      CONFIG_ETH_INIT_PRIORITY,
 			      &dwmac_api,
 			      NET_ETH_MTU);

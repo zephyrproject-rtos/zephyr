@@ -398,7 +398,7 @@ static const struct bt_hci_driver_api drv = {
 		}, \
 		.ipc = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &ipc_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &ipc_data_##inst, NULL,\
+			      POST_KERNEL, &drv)
 
 DT_INST_FOREACH_STATUS_OKAY(IPC_DEVICE_INIT)

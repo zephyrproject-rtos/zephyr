@@ -239,7 +239,7 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 		.num_children = ARRAY_SIZE(emuls_##n),                                             \
 	};                                                                                         \
 	static struct espi_emul_data espi_emul_data_##n;                                           \
-	DEVICE_DT_INST_DEFINE(n, &espi_emul_init, NULL, &espi_emul_data_##n, &espi_emul_cfg_##n,   \
-			      POST_KERNEL, CONFIG_ESPI_INIT_PRIORITY, &emul_espi_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &espi_emul_init, NULL, &espi_emul_data_##n, &espi_emul_cfg_##n,\
+			      POST_KERNEL, &emul_espi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESPI_EMUL_INIT)

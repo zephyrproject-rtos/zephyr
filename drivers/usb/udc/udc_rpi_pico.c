@@ -1149,9 +1149,8 @@ static const struct udc_api udc_rpi_pico_api = {
 		.priv = &udc_priv_##n,							\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(n, udc_rpi_pico_driver_preinit, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, udc_rpi_pico_driver_preinit, NULL,		\
 			      &udc_data_##n, &rpi_pico_config_##n,			\
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			      &udc_rpi_pico_api);
+			      POST_KERNEL, &udc_rpi_pico_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UDC_RPI_PICO_DEVICE_DEFINE)

@@ -931,13 +931,12 @@ static int dai_dmic_initialize_device(const struct device *dev)
 									\
 	PM_DEVICE_DT_INST_DEFINE(n, dmic_pm_action);			\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 		dai_dmic_initialize_device,				\
 		PM_DEVICE_DT_INST_GET(n),				\
 		&dai_intel_dmic_data_##n,				\
 		&dai_intel_dmic_properties_##n,				\
 		POST_KERNEL,						\
-		CONFIG_DAI_INIT_PRIORITY,				\
 		&dai_dmic_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(DAI_INTEL_DMIC_DEVICE_INIT)

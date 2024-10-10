@@ -1510,9 +1510,9 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_initialize,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0, eth_initialize,
 		    NULL, &eth0_data, &eth0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &eth_api, ETH_STM32_HAL_MTU);
+		    &eth_api, ETH_STM32_HAL_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 
@@ -1814,8 +1814,8 @@ static int ptp_stm32_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(stm32_ptp_clock_0, PTP_CLOCK_NAME, ptp_stm32_init,
+DEVICE_INSTANCE(stm32_ptp_clock_0, ptp_stm32_init,
 		NULL, &ptp_stm32_0_context, NULL, POST_KERNEL,
-		CONFIG_ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO, &api);
+		&api);
 
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */

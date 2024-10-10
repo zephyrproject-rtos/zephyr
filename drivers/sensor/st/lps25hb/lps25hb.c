@@ -183,8 +183,8 @@ static int lps25hb_init(const struct device *dev)
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lps25hb_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lps25hb_init, NULL,				\
 			      &lps25hb_data_##inst, &lps25hb_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);			\
+			      &lps25hb_api_funcs);						\
 
 DT_INST_FOREACH_STATUS_OKAY(LPS25HB_DEFINE)

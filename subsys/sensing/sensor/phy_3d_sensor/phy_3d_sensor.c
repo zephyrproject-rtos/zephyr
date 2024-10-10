@@ -238,10 +238,10 @@ static const struct sensing_sensor_register_info phy_3d_sensor_reg = {
 		.sensor_num = DT_INST_PROP_LEN(_inst, sensor_types),			\
 		.sensor_types = DT_PROP(DT_DRV_INST(_inst), sensor_types),		\
 	};										\
-	SENSING_SENSORS_DT_INST_DEFINE(_inst, &phy_3d_sensor_reg, NULL,			\
+	SENSING_SENSORS_INSTANCE_FROM_DT_INST(_inst, &phy_3d_sensor_reg, NULL,		\
 		&phy_3d_sensor_init, NULL,						\
 		&_CONCAT(data, _inst), &_CONCAT(cfg, _inst),				\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
+		POST_KERNEL,								\
 		&phy_3d_sensor_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SENSING_PHY_3D_SENSOR_DT_DEFINE);

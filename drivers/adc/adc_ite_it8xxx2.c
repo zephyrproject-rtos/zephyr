@@ -489,9 +489,8 @@ static const struct adc_it8xxx2_cfg adc_it8xxx2_cfg_0 = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, adc_it8xxx2_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, adc_it8xxx2_init,
 		      NULL,
 		      &adc_it8xxx2_data_0,
 		      &adc_it8xxx2_cfg_0, PRE_KERNEL_1,
-		      CONFIG_ADC_INIT_PRIORITY,
 		      &api_it8xxx2_driver_api);

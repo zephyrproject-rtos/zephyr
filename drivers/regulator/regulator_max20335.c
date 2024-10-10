@@ -347,11 +347,10 @@ static const struct regulator_driver_api api = {
 	};											\
 												\
 	static struct regulator_max20335_data regulator_max20335_data_##id;			\
-	DEVICE_DT_DEFINE(node_id, regulator_max20335_init, NULL,				\
+	DEVICE_INSTANCE(node_id, regulator_max20335_init, NULL,					\
 			 &regulator_max20335_data_##id,						\
 			 &regulator_max20335_config_##id,					\
 			 POST_KERNEL,								\
-			 CONFIG_REGULATOR_MAXIM_MAX20335_INIT_PRIORITY,				\
 			 &api);
 
 #define REGULATOR_MAX20335_DEFINE_COND(inst, child, source)					\
@@ -365,9 +364,8 @@ static const struct regulator_driver_api api = {
 		.bus = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),					\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(inst, regulator_max20335_common_init,				\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_max20335_common_init,			\
 			      NULL, NULL, &common_config_##inst, POST_KERNEL,			\
-			      CONFIG_REGULATOR_MAXIM_MAX20335_COMMON_INIT_PRIORITY,		\
 			      &parent_api);							\
 												\
 	REGULATOR_MAX20335_DEFINE_COND(inst, buck1, MAX20335_PMIC_SOURCE_BUCK1)			\

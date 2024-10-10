@@ -773,6 +773,31 @@ struct can_device_state {
 			pm, data, config, level, prio, api,		\
 			&(Z_DEVICE_STATE_NAME(Z_DEVICE_DT_DEV_ID(node_id)).devstate), \
 			__VA_ARGS__)
+/**
+ * @brief Like DEVICE_INSTANCE() with CAN device specifics.
+ *
+ * @details Defines a device which implements the CAN API. May generate a custom
+ * device_state container struct and init_fn wrapper when needed depending on
+ * @kconfig{CONFIG_CAN_STATS}.
+ *
+ * @param node_id   The devicetree node identifier.
+ * @param init_fn   Name of the init function of the driver.
+ * @param pm        PM device resources reference (NULL if device does not use PM).
+ * @param data      Pointer to the device's private data.
+ * @param config    The address to the structure containing the configuration
+ *                  information for this instance of the driver.
+ * @param level     The initialization level. See SYS_INIT() for
+ *                  details.
+ * @param api       Provides an initial pointer to the API function struct
+ *                  used by the driver. Can be NULL.
+ */
+#define CAN_DEVICE_INSTANCE(node_id, init_fn, pm, data, config, level, api) \
+	Z_CAN_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));             \
+	Z_CAN_INIT_FN(Z_DEVICE_DT_DEV_ID(node_id), init_fn)                 \
+	DEVICE_INSTANCE_EXTERNAL_STATE(node_id, init_fn, pm, data,          \
+				       config, level, api,                  \
+				       &(Z_DEVICE_STATE_NAME(               \
+						 Z_DEVICE_DT_DEV_ID(node_id)).devstate))
 
 #else /* CONFIG_CAN_STATS */
 
@@ -791,6 +816,9 @@ struct can_device_state {
 	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level,	\
 			 prio, api, __VA_ARGS__)
 
+#define CAN_DEVICE_INSTANCE(node_id, init_fn, pm, data, config, level, api) \
+	DEVICE_INSTANCE(node_id, init_fn, pm, data, config, level, api)
+
 #endif /* CONFIG_CAN_STATS */
 
 /**
@@ -802,6 +830,16 @@ struct can_device_state {
  */
 #define CAN_DEVICE_DT_INST_DEFINE(inst, ...)			\
 	CAN_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like CAN_DEVICE_INSTANCE() for an instance of a DT_DRV_COMPAT compatible
+ *
+ * @param inst Instance number. This is replaced by <tt>DT_DRV_COMPAT(inst)</tt>
+ *             in the call to CAN_DEVICE_INSTANCE().
+ * @param ...  Other parameters as expected by CAN_DEVICE_INSTANCE().
+ */
+#define CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, ...)		\
+	CAN_DEVICE_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
  * @name CAN controller configuration

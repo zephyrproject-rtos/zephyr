@@ -205,11 +205,10 @@ static int si7006_init(const struct device *dev)
 		.read_temp_cmd = temp_cmd,						\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, si7006_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, si7006_init, NULL,			\
 				     &si7006_data_##name##_##inst,			\
 				     &si7006_config_##name##_##inst,			\
-				     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-				     &si7006_api);
+				     POST_KERNEL, &si7006_api);
 
 #define DT_DRV_COMPAT silabs_si7006
 DT_INST_FOREACH_STATUS_OKAY_VARGS(SI7006_DEFINE, DT_DRV_COMPAT, SI7006_READ_OLD_TEMP);

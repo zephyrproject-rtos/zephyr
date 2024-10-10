@@ -74,5 +74,5 @@ static const struct reset_npcx_dev_config reset_npcx_config = {
 	.reg_base = (struct swrst_reg *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &reset_npcx_config, PRE_KERNEL_1,
-		      CONFIG_RESET_INIT_PRIORITY, &reset_npcx_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &reset_npcx_config, PRE_KERNEL_1,
+		      &reset_npcx_driver_api);

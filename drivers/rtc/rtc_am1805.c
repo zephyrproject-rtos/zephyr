@@ -592,8 +592,7 @@ static const struct am1805_config am1805_config_##inst = {					\
 												\
 static struct am1805_data am1805_data_##inst;							\
 												\
-DEVICE_DT_INST_DEFINE(inst, &am1805_init, NULL, &am1805_data_##inst,				\
-		      &am1805_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,		\
-		      &am1805_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(inst, &am1805_init, NULL, &am1805_data_##inst,			\
+		      &am1805_config_##inst, POST_KERNEL, &am1805_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AM1805_INIT)

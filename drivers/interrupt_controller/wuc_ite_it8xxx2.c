@@ -108,13 +108,12 @@ void it8xxx2_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t f
 		.reg_wubemr = (uint8_t *) DT_INST_REG_ADDR_BY_IDX(inst, 3),    \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(inst,					       \
-			      NULL,					       \
-			      NULL,					       \
-			      NULL,					       \
-			      &it8xxx2_wuc_cfg_##inst,			       \
-			      PRE_KERNEL_1,				       \
-			      CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	       \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					       \
+			      NULL,						       \
+			      NULL,						       \
+			      NULL,						       \
+			      &it8xxx2_wuc_cfg_##inst,				       \
+			      PRE_KERNEL_1,					       \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(IT8XXX2_WUC_INIT)

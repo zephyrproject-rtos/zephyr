@@ -202,9 +202,8 @@ static int pwm_gd32_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),		       \
 	};								       \
 									       \
-	DEVICE_DT_INST_DEFINE(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i,     \
-			      &pwm_gd32_config_##i, POST_KERNEL,	       \
-			      CONFIG_PWM_INIT_PRIORITY,			       \
+	DEVICE_INSTANCE_FROM_DT_INST(i, &pwm_gd32_init, NULL, &pwm_gd32_data_##i,\
+			      &pwm_gd32_config_##i, POST_KERNEL,	     \
 			      &pwm_gd32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_GD32_DEFINE)

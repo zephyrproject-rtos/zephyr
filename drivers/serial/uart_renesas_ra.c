@@ -724,7 +724,7 @@ err_txi:                                                                        
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, uart_ra_init, NULL, &uart_ra_data_##n, &uart_ra_cfg_##n,          \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_ra_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_ra_init, NULL, &uart_ra_data_##n, &uart_ra_cfg_##n,   \
+			      PRE_KERNEL_1, &uart_ra_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_RA_INIT)

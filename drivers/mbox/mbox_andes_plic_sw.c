@@ -217,6 +217,5 @@ static const struct mbox_driver_api mbox_andes_driver_api = {
 	.set_enabled = mbox_andes_set_enabled,
 };
 
-DEVICE_DT_INST_DEFINE(0, mbox_andes_init, NULL, &andes_mbox_data,
-		      &andes_mbox_conf, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY,
-		      &mbox_andes_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, mbox_andes_init, NULL, &andes_mbox_data,
+		      &andes_mbox_conf, PRE_KERNEL_1, &mbox_andes_driver_api);

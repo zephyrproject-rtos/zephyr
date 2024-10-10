@@ -56,13 +56,13 @@ static const struct gpio_mmio32_config _CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _cfg
 	.mask	= _mask,								\
 };											\
 											\
-DEVICE_DT_DEFINE(node_id,								\
-		    &gpio_mmio32_init,							\
-		    NULL,								\
-		    &_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _ctx),			\
-		    &_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _cfg),			\
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
-		    &gpio_mmio32_api)
+DEVICE_INSTANCE(node_id,								\
+		&gpio_mmio32_init,							\
+		NULL,									\
+		&_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _ctx),				\
+		&_CONCAT(Z_DEVICE_DT_DEV_ID(node_id), _cfg),				\
+		PRE_KERNEL_1,								\
+		&gpio_mmio32_api)
 
 
 #else /* CONFIG_GPIO_MMIO32 */

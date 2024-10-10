@@ -538,8 +538,7 @@ static const struct uart_driver_api uart_altera_jtag_driver_api = {
 
 #ifdef CONFIG_UART_ALTERA_JTAG_HAL
 #define UART_ALTERA_JTAG_DEVICE_INIT(n)						\
-DEVICE_DT_INST_DEFINE(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,	\
-		      CONFIG_SERIAL_INIT_PRIORITY,					\
+DEVICE_INSTANCE_FROM_DT_INST(n, uart_altera_jtag_init, NULL, NULL, NULL, PRE_KERNEL_1,\
 		      &uart_altera_jtag_driver_api);
 #else
 
@@ -575,13 +574,12 @@ static const struct uart_altera_jtag_device_config uart_altera_jtag_dev_cfg_##n 
 	.base = DT_INST_REG_ADDR(n),					\
 	UART_ALTERA_JTAG_CONFIG_INIT(n)					\
 };											\
-DEVICE_DT_INST_DEFINE(n,							\
-		      uart_altera_jtag_init,				\
-		      NULL,									\
-		      &uart_altera_jtag_device_data_##n,	\
-		      &uart_altera_jtag_dev_cfg_##n,		\
-		      PRE_KERNEL_1,							\
-		      CONFIG_SERIAL_INIT_PRIORITY,			\
+DEVICE_INSTANCE_FROM_DT_INST(n,							\
+		      uart_altera_jtag_init,					\
+		      NULL,							\
+		      &uart_altera_jtag_device_data_##n,			\
+		      &uart_altera_jtag_dev_cfg_##n,				\
+		      PRE_KERNEL_1,						\
 		      &uart_altera_jtag_driver_api);
 #endif /* CONFIG_UART_ALTERA_JTAG_HAL */
 

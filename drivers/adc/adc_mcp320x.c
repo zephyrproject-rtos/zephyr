@@ -319,12 +319,11 @@ static const struct adc_driver_api mcp320x_adc_api = {
 					 SPI_WORD_SET(8), 0), \
 		.channels = ch, \
 	}; \
-	DEVICE_DT_DEFINE(INST_DT_MCP320X(n, t), \
-			 &mcp320x_init, NULL, \
-			 &mcp##t##_data_##n, \
-			 &mcp##t##_config_##n, POST_KERNEL, \
-			 CONFIG_ADC_INIT_PRIORITY, \
-			 &mcp320x_adc_api)
+	DEVICE_INSTANCE(INST_DT_MCP320X(n, t), \
+			&mcp320x_init, NULL, \
+			&mcp##t##_data_##n, \
+			&mcp##t##_config_##n, POST_KERNEL, \
+			&mcp320x_adc_api)
 
 /*
  * MCP3204: 4 channels

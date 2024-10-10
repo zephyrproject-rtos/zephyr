@@ -337,8 +337,7 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		.irq_config_func = i2c_irq_config_func_##n,                                        \
 		.pwr_func = pwr_on_ambiq_i2c_##n};                                                 \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_pm_action);                                          \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n, \
-				  &i2c_ambiq_config##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
-				  &i2c_ambiq_driver_api);
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, i2c_ambiq_init, PM_DEVICE_DT_INST_GET(n), &i2c_ambiq_data##n,\
+				  &i2c_ambiq_config##n, POST_KERNEL, &i2c_ambiq_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AMBIQ_I2C_DEFINE)

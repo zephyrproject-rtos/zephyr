@@ -177,8 +177,7 @@ static const struct flash_esp32_dev_config flash_esp32_config = {
 	.controller = (spi_dev_t *) DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, flash_esp32_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, flash_esp32_init,
 		      NULL,
 		      &flash_esp32_data, &flash_esp32_config,
-		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &flash_esp32_driver_api);
+		      POST_KERNEL, &flash_esp32_driver_api);

@@ -616,7 +616,7 @@ static const struct regulator_driver_api api = {
 			DT_INST_ENUM_IDX_OR(inst, cirrus_initial_switched_capacitor_mode, -1) + 1, \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_cp9314_init, NULL, &data_##inst, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_CP9314_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_cp9314_init, NULL, &data_##inst, &config_##inst,\
+			      POST_KERNEL, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_CP9314_DEFINE)

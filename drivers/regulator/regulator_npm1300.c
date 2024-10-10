@@ -655,8 +655,8 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 		.retention_gpios = GPIO_DT_SPEC_GET_OR(node_id, retention_gpios, {0}),             \
 		.pwm_gpios = GPIO_DT_SPEC_GET_OR(node_id, pwm_gpios, {0})};                        \
                                                                                                    \
-	DEVICE_DT_DEFINE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,          \
-			 POST_KERNEL, CONFIG_REGULATOR_NPM1300_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE(node_id, regulator_npm1300_init, NULL, &data_##id, &config_##id,           \
+			 POST_KERNEL, &api);
 
 #define REGULATOR_NPM1300_DEFINE_COND(inst, child, source)                                         \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \
@@ -672,9 +672,8 @@ static const struct regulator_driver_api api = {.enable = regulator_npm1300_enab
 				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 3, {0}),       \
 				   GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, dvs_gpios, 4, {0})}};     \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_npm1300_common_init, NULL, NULL, &config_##inst,     \
-			      POST_KERNEL, CONFIG_REGULATOR_NPM1300_COMMON_INIT_PRIORITY,          \
-			      &parent_api);                                                        \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, regulator_npm1300_common_init, NULL, NULL, &config_##inst,\
+			      POST_KERNEL, &parent_api);                                           \
                                                                                                    \
 	REGULATOR_NPM1300_DEFINE_COND(inst, buck1, NPM1300_SOURCE_BUCK1)                           \
 	REGULATOR_NPM1300_DEFINE_COND(inst, buck2, NPM1300_SOURCE_BUCK2)                           \

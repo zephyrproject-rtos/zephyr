@@ -198,12 +198,11 @@ static int uart_it8xxx2_init(const struct device *dev)
 	static struct uart_it8xxx2_data uart_it8xxx2_data_##inst;              \
 									       \
 	PM_DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_pm_action);                \
-	DEVICE_DT_INST_DEFINE(inst, uart_it8xxx2_init,                         \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, uart_it8xxx2_init,                  \
 			      PM_DEVICE_DT_INST_GET(inst),                     \
 			      &uart_it8xxx2_data_##inst,                       \
 			      &uart_it8xxx2_cfg_##inst,                        \
 			      PRE_KERNEL_1,                                    \
-			      CONFIG_UART_ITE_IT8XXX2_INIT_PRIORITY,           \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_ITE_IT8XXX2_INIT)

@@ -1097,12 +1097,11 @@ static const struct uart_driver_api uart_xec_driver_api = {
 		.uart_config.flow_ctrl = DEV_DATA_FLOW_CTRL(n),		\
 	};								\
 	PM_DEVICE_DT_INST_DEFINE(n, uart_xec_pm_action);		\
-	DEVICE_DT_INST_DEFINE(n, uart_xec_init,				\
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_xec_init,			\
 			      PM_DEVICE_DT_INST_GET(n),			\
 			      &uart_xec_dev_data_##n,			\
 			      &uart_xec_dev_cfg_##n,			\
 			      PRE_KERNEL_1,				\
-			      CONFIG_SERIAL_INIT_PRIORITY,		\
 			      &uart_xec_driver_api);			\
 	UART_XEC_IRQ_FUNC_DEFINE(n)
 

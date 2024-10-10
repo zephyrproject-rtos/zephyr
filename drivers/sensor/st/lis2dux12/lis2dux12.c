@@ -379,9 +379,9 @@ static int lis2dux12_init(const struct device *dev)
  */
 
 #define LIS2DUX12_DEVICE_INIT(inst)								\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, lis2dux12_init, NULL, &lis2dux12_data_##inst,	\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, lis2dux12_init, NULL, &lis2dux12_data_##inst,	\
 				     &lis2dux12_config_##inst, POST_KERNEL,			\
-				     CONFIG_SENSOR_INIT_PRIORITY, &lis2dux12_driver_api);
+				     &lis2dux12_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.

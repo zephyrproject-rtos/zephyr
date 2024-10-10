@@ -70,5 +70,5 @@ static const struct reset_gd32_config config = {
 	.base = DT_REG_ADDR(DT_INST_PARENT(0)),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_RESET_INIT_PRIORITY, &reset_gd32_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
+		      &reset_gd32_driver_api);

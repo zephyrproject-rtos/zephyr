@@ -205,10 +205,9 @@ static void init_inputs(const struct device *dev)
 	}									\
 										\
 										\
-	SENSOR_DEVICE_DT_INST_DEFINE(n, qdec_mcux_##n##_init, NULL,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n, qdec_mcux_##n##_init, NULL,	\
 			      &qdec_mcux_##n##_data, &qdec_mcux_##n##_config,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-			      &qdec_mcux_api);					\
+			      POST_KERNEL, &qdec_mcux_api);			\
 										\
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_MCUX_INIT)

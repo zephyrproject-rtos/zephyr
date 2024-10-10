@@ -189,5 +189,5 @@ static int nuclei_eclic_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nuclei_eclic_init, NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(0, nuclei_eclic_init, NULL, NULL, NULL,
+		      PRE_KERNEL_1, NULL);

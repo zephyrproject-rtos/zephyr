@@ -145,50 +145,42 @@ static int my_driver_sub_pri_2_init(const struct device *dev)
  *
  * @details Test that kernel shall provide control over device driver
  * initialization order, using initialization level and priority for each
- * instance. We use DEVICE_DEFINE to define device instances and set
+ * instance. We use DEVICE_INSTANCE to define device instances and set
  * it's level and priority here, then we run check function later after
  * all of this instance finish their initialization.
  *
  * @ingroup kernel_device_tests
  */
-DEVICE_DEFINE(my_driver_level_1, MY_DRIVER_LV_1, &my_driver_lv_1_init,
+DEVICE_INSTANCE(my_driver_level_1, &my_driver_lv_1_init,
 		NULL, NULL, NULL, PRE_KERNEL_1,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
+		&funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_level_2, MY_DRIVER_LV_2, &my_driver_lv_2_init,
+DEVICE_INSTANCE(my_driver_level_2, &my_driver_lv_2_init,
 		NULL, NULL, NULL, PRE_KERNEL_2,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
+		&funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_level_3, MY_DRIVER_LV_3, &my_driver_lv_3_init,
+DEVICE_INSTANCE(my_driver_level_3, &my_driver_lv_3_init,
 		NULL, NULL, NULL, POST_KERNEL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs_my_drivers);
+		&funcs_my_drivers);
 
 /* We use priority value of 20 to create a possible sorting conflict with
  * priority value of 2.  So if the linker sorting isn't working correctly
  * we'll find out.
  */
-DEVICE_DEFINE(my_driver_priority_4, MY_DRIVER_PRI_4,
-		&my_driver_pri_4_init, NULL, NULL, NULL, POST_KERNEL, 20,
-		&funcs_my_drivers);
+DEVICE_INSTANCE(my_driver_priority_4, &my_driver_pri_4_init, NULL, NULL, NULL, POST_KERNEL, &funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_priority_1, MY_DRIVER_PRI_1,
-		&my_driver_pri_1_init, NULL, NULL, NULL, POST_KERNEL, 1,
-		&funcs_my_drivers);
+DEVICE_INSTANCE(my_driver_priority_1, &my_driver_pri_1_init, NULL, NULL, NULL, POST_KERNEL, &funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_priority_2, MY_DRIVER_PRI_2,
-		&my_driver_pri_2_init, NULL, NULL, NULL, POST_KERNEL, 2,
-		&funcs_my_drivers);
+DEVICE_INSTANCE(my_driver_priority_2, &my_driver_pri_2_init, NULL, NULL, NULL, POST_KERNEL, &funcs_my_drivers);
 
-DEVICE_DEFINE(my_driver_priority_3, MY_DRIVER_PRI_3,
-		&my_driver_pri_3_init, NULL, NULL, NULL, POST_KERNEL, 3,
-		&funcs_my_drivers);
+DEVICE_INSTANCE(my_driver_priority_3, &my_driver_pri_3_init, NULL, NULL, NULL, POST_KERNEL, &funcs_my_drivers);
 
 /* Create several devices at the same init priority that depend on each
  * other in devicetree so that we can validate linker sorting.
  */
-DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_0), my_driver_sub_pri_0_init,
-		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_1), my_driver_sub_pri_1_init,
-		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
-DEVICE_DT_DEFINE(DT_NODELABEL(fakedomain_2), my_driver_sub_pri_2_init,
-		NULL, NULL, NULL, POST_KERNEL, 33, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(fakedomain_0), my_driver_sub_pri_0_init,
+		NULL, NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(fakedomain_1), my_driver_sub_pri_1_init,
+		NULL, NULL, NULL, POST_KERNEL, NULL);
+DEVICE_INSTANCE(DT_NODELABEL(fakedomain_2), my_driver_sub_pri_2_init,
+		NULL, NULL, NULL, POST_KERNEL, NULL);

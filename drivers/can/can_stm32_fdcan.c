@@ -604,10 +604,9 @@ static void config_can_##inst##_irq(void)                                      \
 		CAN_MCAN_DATA_INITIALIZER(NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)						\
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init, NULL,			\
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, can_stm32fd_init, NULL,		\
 				  &can_mcan_data_##inst, &can_mcan_cfg_##inst,	\
-				  POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,	\
-				  &can_stm32fd_driver_api);
+				  POST_KERNEL, &can_stm32fd_driver_api);
 
 #define CAN_STM32FD_INST(inst)          \
 CAN_STM32FD_BUILD_ASSERT_MRAM_CFG(inst) \

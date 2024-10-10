@@ -213,9 +213,9 @@ static int ist8310_init(const struct device *dev)
 	static struct ist8310_data ist8310_data_##inst;                                            \
 	static const struct ist8310_config ist8310_config_##inst = {IST8310_BUS_CFG(inst)};        \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, ist8310_init, NULL, &ist8310_data_##inst,               \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, ist8310_init, NULL, &ist8310_data_##inst,        \
 				     &ist8310_config_##inst, POST_KERNEL,                          \
-				     CONFIG_SENSOR_INIT_PRIORITY, &ist8310_api_funcs);
+				     &ist8310_api_funcs);
 
 /* Create the struct device for every status "okay" node in the devicetree. */
 DT_INST_FOREACH_STATUS_OKAY(IST8310_DEFINE)

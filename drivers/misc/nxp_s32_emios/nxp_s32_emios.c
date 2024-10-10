@@ -128,13 +128,12 @@ static int nxp_s32_emios_init(const struct device *dev)
 		.mcl_info = (Emios_Mcl_Ip_ConfigType *)&nxp_s32_emios_##n##_mcl_config,		\
 		.irq_config = nxp_s32_emios_##n##_interrupt_config,				\
 	};											\
-	DEVICE_DT_INST_DEFINE(n,								\
+	DEVICE_INSTANCE_FROM_DT_INST(n,								\
 			&nxp_s32_emios_init,							\
 			NULL,									\
 			NULL,									\
 			&nxp_s32_emios_##n##_config,						\
 			POST_KERNEL,								\
-			CONFIG_NXP_S32_EMIOS_INIT_PRIORITY,					\
 			NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_S32_EMIOS_INIT_DEVICE)

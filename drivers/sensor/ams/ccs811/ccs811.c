@@ -580,9 +580,8 @@ out:
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, wake_gpios, { 0 }),			\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(0, ccs811_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(0, ccs811_init, NULL,				\
 			      &ccs811_data_##inst, &ccs811_config_##inst,			\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &ccs811_driver_api);						\
+			      POST_KERNEL, &ccs811_driver_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(CCS811_DEFINE)

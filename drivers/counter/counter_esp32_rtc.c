@@ -237,11 +237,10 @@ static void counter_esp32_isr(void *arg)
 	}
 }
 
-DEVICE_DT_INST_DEFINE(0,
+DEVICE_INSTANCE_FROM_DT_INST(0,
 		      &counter_esp32_init,
 		      NULL,
 		      &counter_data,
 		      &counter_config,
 		      POST_KERNEL,
-		      CONFIG_COUNTER_INIT_PRIORITY,
 		      &rtc_timer_esp32_api);

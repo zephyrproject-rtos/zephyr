@@ -688,9 +688,9 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 
 PM_DEVICE_DT_INST_DEFINE(0, rtc_stm32_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &rtc_stm32_init, PM_DEVICE_DT_INST_GET(0),
+DEVICE_INSTANCE_FROM_DT_INST(0, &rtc_stm32_init, PM_DEVICE_DT_INST_GET(0),
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
-		    CONFIG_COUNTER_INIT_PRIORITY, &rtc_stm32_driver_api);
+		    &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(const struct device *dev)
 {

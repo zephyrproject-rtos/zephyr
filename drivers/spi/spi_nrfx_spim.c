@@ -729,13 +729,12 @@ static int spi_nrfx_init(const struct device *dev)
 		     !(DT_GPIO_FLAGS(SPIM(idx), wake_gpios) & GPIO_ACTIVE_LOW),\
 		     "WAKE line must be configured as active high");	       \
 	PM_DEVICE_DT_DEFINE(SPIM(idx), spim_nrfx_pm_action);		       \
-	DEVICE_DT_DEFINE(SPIM(idx),					       \
-		      spi_nrfx_init,					       \
-		      PM_DEVICE_DT_GET(SPIM(idx)),			       \
-		      &spi_##idx##_data,				       \
-		      &spi_##idx##z_config,				       \
-		      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		       \
-		      &spi_nrfx_driver_api)
+	DEVICE_INSTANCE(SPIM(idx),						       \
+		      spi_nrfx_init,						       \
+		      PM_DEVICE_DT_GET(SPIM(idx)),				       \
+		      &spi_##idx##_data,					       \
+		      &spi_##idx##z_config,					       \
+		      POST_KERNEL, &spi_nrfx_driver_api)
 
 #define SPIM_MEMORY_SECTION(idx)					       \
 	COND_CODE_1(SPIM_HAS_PROP(idx, memory_regions),			       \

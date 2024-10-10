@@ -223,9 +223,9 @@ static struct ipm_driver_api xlnx_ipi_api = {
 			xlnx_ipi_reg_info_zynqmp[DT_PROP(ch_node, remote_ipi_id)].ipi_ch_bit,      \
 		.host_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), host_ipi_reg),             \
 	};                                                                                         \
-	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &xlnx_ipi_child_data##ch_node,			   \
-			 &xlnx_ipi_child_config##ch_node, POST_KERNEL,                             \
-			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &xlnx_ipi_api);
+	DEVICE_INSTANCE(ch_node, NULL, NULL, &xlnx_ipi_child_data##ch_node,			   \
+			 &xlnx_ipi_child_config##ch_node, POST_KERNEL,				   \
+			 &xlnx_ipi_api);
 
 #define XLNX_IPI(inst)                                                                             \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, XLNX_IPI_CHILD);                                   \

@@ -843,13 +843,12 @@ static const struct pwm_driver_api pwm_nxp_s32_driver_api = {
 		EMIOS_PWM_PULSE_CAPTURE_GET_CONFIG(n)						\
 	};											\
 	static struct pwm_nxp_s32_data pwm_nxp_s32_data_##n;					\
-	DEVICE_DT_INST_DEFINE(n,								\
+	DEVICE_INSTANCE_FROM_DT_INST(n,								\
 			&pwm_nxp_s32_init,							\
 			NULL,									\
 			&pwm_nxp_s32_data_##n,							\
 			&pwm_nxp_s32_config_##n,						\
 			POST_KERNEL,								\
-			CONFIG_PWM_INIT_PRIORITY,						\
 			&pwm_nxp_s32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PWM_NXP_S32_INIT_DEVICE)

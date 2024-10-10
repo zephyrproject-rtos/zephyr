@@ -414,10 +414,9 @@ static int ps2_xec_init(const struct device *dev)
 									\
 	PM_DEVICE_DT_INST_DEFINE(i, ps2_xec_pm_action);		\
 									\
-	DEVICE_DT_INST_DEFINE(i, &ps2_xec_init,				\
+	DEVICE_INSTANCE_FROM_DT_INST(i, &ps2_xec_init,			\
 		PM_DEVICE_DT_INST_GET(i),				\
 		&ps2_xec_port_data_##i, &ps2_xec_config_##i,		\
-		POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,			\
-		&ps2_xec_driver_api);
+		POST_KERNEL, &ps2_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PS2_XEC_DEVICE)

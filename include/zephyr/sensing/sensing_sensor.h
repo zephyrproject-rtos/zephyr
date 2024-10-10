@@ -379,6 +379,36 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
 	SENSING_SENSORS_DEFINE(node, reg_ptr, cb_list_ptr);
 
 /**
+ * @brief Like SENSOR_DEVICE_INSTANCE() with sensing specifics.
+ *
+ * @details Defines a sensor which implements the sensor API. May define an
+ * element in the sensing sensor iterable section used to enumerate all sensing
+ * sensors.
+ *
+ * @param node The devicetree node identifier.
+ * @param reg_ptr Pointer to the device's sensing_sensor_register_info.
+ * @param cb_list_ptr Pointer to sensing callback list.
+ * @param init_fn Name of the init function of the driver.
+ * @param pm_device PM device resources reference (NULL if device does not use
+ * PM).
+ * @param data_ptr Pointer to the device's private data.
+ * @param cfg_ptr The address to the structure containing the configuration
+ * information for this instance of the driver.
+ * @param level The initialization level. See init.h for details.
+ * @param api_ptr Provides an initial pointer to the API function struct used
+ * by the driver. Can be NULL.
+ */
+#define SENSING_SENSORS_INSTANCE(node, reg_ptr, cb_list_ptr,		\
+				 init_fn, pm_device,			\
+				 data_ptr, cfg_ptr, level, api_ptr)	\
+	SENSOR_DEVICE_INSTANCE(node, init_fn, pm_device,		\
+			       data_ptr, cfg_ptr, level, api_ptr);	\
+	SENSING_CONNECTIONS_DEFINE(node,				\
+				   DT_PROP_LEN_OR(node, reporters, 0),	\
+				   cb_list_ptr);			\
+	SENSING_SENSORS_DEFINE(node, reg_ptr, cb_list_ptr);
+
+/**
  * @brief Like SENSING_SENSORS_DT_DEFINE() for an instance of a DT_DRV_COMPAT
  * compatible
  *
@@ -389,6 +419,16 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
 #define SENSING_SENSORS_DT_INST_DEFINE(inst, ...)	\
 	SENSING_SENSORS_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
+/**
+ * @brief Like SENSING_SENSORS_INSTANCE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSING_SENSORS_INSTANCE().
+ * @param ... other parameters as expected by SENSING_SENSORS_INSTANCE().
+ */
+#define SENSING_SENSORS_INSTANCE_FROM_DT_INST(inst, ...)		\
+	SENSING_SENSORS_INSTANCE(DT_DRV_INST(inst), __VA_ARGS__)
 /**
  * @brief Get reporter handles	of a given sensor instance by sensor type.
  *

@@ -298,10 +298,9 @@ static int simplelink_init(const struct device *dev)
 	return 0;
 }
 
-NET_DEVICE_OFFLOAD_INIT(simplelink, CONFIG_WIFI_SIMPLELINK_NAME,
-			simplelink_init, NULL,
+NET_DEVICE_OFFLOAD_INSTANCE(simplelink, simplelink_init, NULL,
 			&simplelink_data, NULL,
-			CONFIG_WIFI_INIT_PRIORITY, &simplelink_api,
+			&simplelink_api,
 			CONFIG_WIFI_SIMPLELINK_MAX_PACKET_SIZE);
 
 CONNECTIVITY_WIFI_MGMT_BIND(simplelink);

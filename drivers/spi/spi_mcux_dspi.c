@@ -916,13 +916,12 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		    DT_INST_PROP(id, nxp_rx_tx_chn_share),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),		\
 	};								\
-	DEVICE_DT_INST_DEFINE(id,					\
+	DEVICE_INSTANCE_FROM_DT_INST(id,				\
 			    spi_mcux_init,				\
 			    NULL,					\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
 			    POST_KERNEL,				\
-			    CONFIG_SPI_INIT_PRIORITY,		\
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(const struct device *dev)	\
 	{								\

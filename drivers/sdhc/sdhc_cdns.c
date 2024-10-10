@@ -289,13 +289,12 @@ static const struct sdhc_driver_api sdhc_cdns_api = {
 			.ocr_voltage = OCR_3_3_3_4 | OCR_3_2_3_3,	\
 		},							\
 	};								\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			&sdhc_cdns_init,				\
 			NULL,						\
 			&sdhc_cdns_data_##inst,				\
 			&sdhc_cdns_config_##inst,			\
 			POST_KERNEL,					\
-			CONFIG_SDHC_INIT_PRIORITY,			\
 			&sdhc_cdns_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_CDNS_INIT)

@@ -324,8 +324,8 @@ static const struct adc_driver_api tla2021_driver_api = {
 		IF_ENABLED(CONFIG_ADC_ASYNC,                                                       \
 			   (.acq_lock = Z_SEM_INITIALIZER(inst_##n##_data.acq_lock, 0, 1),))       \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config,        \
-			      POST_KERNEL, CONFIG_ADC_TLA2021_INIT_PRIORITY, &tla2021_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &tla2021_init, NULL, &inst_##n##_data, &inst_##n##_config, \
+			      POST_KERNEL, &tla2021_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLA2021_INIT)
 

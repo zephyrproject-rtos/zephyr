@@ -2139,13 +2139,12 @@ static const struct i3c_driver_api mcux_i3c_driver_api = {
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(id, i3c_scl_hz, 0),	\
 		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(id, i2c_scl_hz, 0),	\
 	};									\
-	DEVICE_DT_INST_DEFINE(id,						\
+	DEVICE_INSTANCE_FROM_DT_INST(id,					\
 			      mcux_i3c_init,					\
 			      NULL,						\
 			      &mcux_i3c_data_##id,				\
 			      &mcux_i3c_config_##id,				\
 			      POST_KERNEL,					\
-			      CONFIG_I3C_CONTROLLER_INIT_PRIORITY,		\
 			      &mcux_i3c_driver_api);				\
 	static void mcux_i3c_config_func_##id(const struct device *dev)		\
 	{									\

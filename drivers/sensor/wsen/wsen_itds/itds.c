@@ -407,9 +407,8 @@ static const struct itds_device_config itds_config_##idx = {		\
 	WSEN_ITDS_CFG_IRQ(idx)						\
 };									\
 									\
-SENSOR_DEVICE_DT_INST_DEFINE(idx, itds_init, NULL,			\
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(idx, itds_init, NULL,		\
 		    &itds_data_##idx, &itds_config_##idx,		\
-		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,		\
-		    &itds_api);						\
+		    POST_KERNEL, &itds_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(WSEN_ITDS_INIT)

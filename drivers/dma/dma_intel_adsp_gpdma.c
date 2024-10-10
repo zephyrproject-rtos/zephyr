@@ -548,12 +548,11 @@ static const struct dma_driver_api intel_adsp_gpdma_driver_api = {
 									\
 	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_pm_action);		\
 									\
-	DEVICE_DT_INST_DEFINE(inst,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst,				\
 			      &intel_adsp_gpdma_init,			\
 			      PM_DEVICE_DT_INST_GET(inst),		\
 			      &intel_adsp_gpdma##inst##_data,		\
 			      &intel_adsp_gpdma##inst##_config, POST_KERNEL,\
-			      CONFIG_DMA_INIT_PRIORITY,		\
 			      &intel_adsp_gpdma_driver_api);		\
 									\
 	static void intel_adsp_gpdma##inst##_irq_config(void)		\

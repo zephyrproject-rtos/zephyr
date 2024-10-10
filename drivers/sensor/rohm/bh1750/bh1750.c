@@ -215,8 +215,8 @@ static int bh1750_init(const struct device *dev)
 		.mtreg = DT_INST_PROP(_num, mtreg),				       \
 		.resolution = DT_INST_PROP(_num, resolution)			       \
 	};									       \
-	SENSOR_DEVICE_DT_INST_DEFINE(_num, bh1750_init, NULL,				       \
-			      &bh1750_data_##_num, &bh1750_config_##_num, POST_KERNEL, \
-			      CONFIG_SENSOR_INIT_PRIORITY, &bh1750_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(_num, bh1750_init, NULL,				       \
+			      &bh1750_data_##_num, &bh1750_config_##_num, POST_KERNEL,		       \
+			      &bh1750_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_BH1750)

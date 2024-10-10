@@ -764,8 +764,8 @@ static void ra_spi_eri_isr(const struct device *dev)
 		return 0;                                                                          \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),           \
+	DEVICE_INSTANCE_FROM_DT_INST(index, spi_b_ra_init##index, PM_DEVICE_DT_INST_GET(index),    \
 			      &ra_spi_data_##index, &ra_spi_config_##index, POST_KERNEL,           \
-			      CONFIG_SPI_INIT_PRIORITY, &ra_spi_driver_api);
+			      &ra_spi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RA_SPI_INIT)

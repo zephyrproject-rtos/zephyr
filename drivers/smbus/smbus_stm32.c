@@ -283,8 +283,8 @@ static const struct smbus_driver_api smbus_stm32_api = {
                                                                                                    \
 	static struct smbus_stm32_data smbus_stm32_data_##n;                                       \
                                                                                                    \
-	SMBUS_DEVICE_DT_INST_DEFINE(n, smbus_stm32_init, NULL, &smbus_stm32_data_##n,              \
+	SMBUS_DEVICE_INSTANCE_FROM_DT_INST(n, smbus_stm32_init, NULL, &smbus_stm32_data_##n,       \
 				    &smbus_stm32_config_##n, POST_KERNEL,                          \
-				    CONFIG_SMBUS_INIT_PRIORITY, &smbus_stm32_api);
+				    &smbus_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMBUS_STM32_DEVICE_INIT)

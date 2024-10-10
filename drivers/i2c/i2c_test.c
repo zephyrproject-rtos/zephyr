@@ -33,7 +33,7 @@ static const struct i2c_driver_api vnd_i2c_api = {
 };
 
 #define VND_I2C_INIT(n)							       \
-	I2C_DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,      \
-				  CONFIG_I2C_INIT_PRIORITY, &vnd_i2c_api);
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, POST_KERNEL,\
+				  &vnd_i2c_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_I2C_INIT)

@@ -2334,9 +2334,9 @@ static struct eth_sam_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0,
 		    eth_initialize, NULL, &eth0_data,
-		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
+		    &eth0_config, &eth_api,
 		    GMAC_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
@@ -2417,8 +2417,8 @@ static int ptp_gmac_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(gmac_ptp_clock_0, PTP_CLOCK_NAME, ptp_gmac_init,
+DEVICE_INSTANCE(gmac_ptp_clock_0, ptp_gmac_init,
 		NULL, &ptp_gmac_0_context, NULL, POST_KERNEL,
-		CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
+		&ptp_api);
 
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */

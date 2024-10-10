@@ -1,0 +1,5 @@
+device:
+  net_canbus:
+    init:
+      dependencies:
+        - zephyr,canbus

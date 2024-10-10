@@ -332,13 +332,12 @@ static const struct i2c_driver_api i2c_sifive_api = {
 		.f_sys = SIFIVE_PERIPHERAL_CLOCK_FREQUENCY, \
 		.f_bus = DT_INST_PROP(n, clock_frequency), \
 	}; \
-	I2C_DEVICE_DT_INST_DEFINE(n, \
-			    i2c_sifive_init, \
-			    NULL, \
-			    NULL, \
-			    &i2c_sifive_cfg_##n, \
-			    POST_KERNEL, \
-			    CONFIG_I2C_INIT_PRIORITY, \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n,\
+			    i2c_sifive_init,\
+			    NULL,    \
+			    NULL,    \
+			    &i2c_sifive_cfg_##n,\
+			    POST_KERNEL,\
 			    &i2c_sifive_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_SIFIVE_INIT)

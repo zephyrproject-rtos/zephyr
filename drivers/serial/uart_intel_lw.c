@@ -1013,13 +1013,12 @@ static const struct uart_intel_lw_device_config uart_intel_lw_dev_cfg_##n = {   
 	UART_INTEL_LW_IRQ_CONFIG_INIT(n)                                          \
 };                                                                                \
 	                                                                          \
-DEVICE_DT_INST_DEFINE(n,                                                          \
+DEVICE_INSTANCE_FROM_DT_INST(n,                                                   \
 		      uart_intel_lw_init,                                         \
 		      NULL,                                                       \
 		      &uart_intel_lw_dev_data_##n,                                \
 		      &uart_intel_lw_dev_cfg_##n,                                 \
 		      PRE_KERNEL_1,                                               \
-		      CONFIG_SERIAL_INIT_PRIORITY,                                \
 		      &uart_intel_lw_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(UART_INTEL_LW_DEVICE_INIT)

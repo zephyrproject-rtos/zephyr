@@ -409,5 +409,5 @@ static const struct fpga_driver_api mpfs_fpga_api = {
 	.get_status = mpfs_fpga_get_status,
 };
 
-DEVICE_DT_INST_DEFINE(0, &mpfs_fpga_init, NULL, &fpga_data, &fpga_config, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mpfs_fpga_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, &mpfs_fpga_init, NULL, &fpga_data, &fpga_config, POST_KERNEL,
+		      &mpfs_fpga_api);

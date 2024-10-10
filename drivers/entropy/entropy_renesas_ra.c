@@ -45,5 +45,5 @@ static int entropy_ra_rsip_trng_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, entropy_ra_rsip_trng_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_ENTROPY_INIT_PRIORITY, &entropy_ra_rsip_trng_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, entropy_ra_rsip_trng_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      &entropy_ra_rsip_trng_api);

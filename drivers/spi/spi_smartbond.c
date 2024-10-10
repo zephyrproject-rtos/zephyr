@@ -1328,12 +1328,11 @@ static int spi_smartbond_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_smartbond_##id##_data, ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)};                            \
 	PM_DEVICE_DT_INST_DEFINE(id, spi_smartbond_pm_action);                                     \
-	DEVICE_DT_INST_DEFINE(id,                                                                  \
+	DEVICE_INSTANCE_FROM_DT_INST(id,                                                           \
 			      spi_smartbond_init,                                                  \
 			      PM_DEVICE_DT_INST_GET(id),                                           \
 			      &spi_smartbond_##id##_data,                                          \
 			      &spi_smartbond_##id##_cfg,                                           \
-			      POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,                               \
-			      &spi_smartbond_driver_api);
+			      POST_KERNEL, &spi_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SMARTBOND_DEVICE)

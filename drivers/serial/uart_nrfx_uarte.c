@@ -2065,13 +2065,12 @@ static int uarte_nrfx_pm_action(const struct device *dev,
 									       \
 	PM_DEVICE_DT_DEFINE(UARTE(idx), uarte_nrfx_pm_action);		       \
 									       \
-	DEVICE_DT_DEFINE(UARTE(idx),					       \
-		      uarte_##idx##_init,				       \
-		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
-		      &uarte_##idx##_data,				       \
-		      &uarte_##idx##z_config,				       \
-		      PRE_KERNEL_1,					       \
-		      CONFIG_SERIAL_INIT_PRIORITY,			       \
+	DEVICE_INSTANCE(UARTE(idx),						       \
+		      uarte_##idx##_init,					       \
+		      PM_DEVICE_DT_GET(UARTE(idx)),				       \
+		      &uarte_##idx##_data,					       \
+		      &uarte_##idx##z_config,					       \
+		      PRE_KERNEL_1,						       \
 		      &uart_nrfx_uarte_driver_api)
 
 #define UARTE_INT_DRIVEN(idx)						       \

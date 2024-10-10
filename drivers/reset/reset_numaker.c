@@ -70,5 +70,5 @@ static const struct reset_numaker_config config = {
 	.base = (uint32_t)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
-		      CONFIG_RESET_INIT_PRIORITY, &reset_numaker_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, &config, PRE_KERNEL_1,
+		      &reset_numaker_driver_api);

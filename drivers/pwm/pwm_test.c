@@ -59,7 +59,7 @@ static const struct pwm_driver_api vnd_pwm_api = {
 };
 
 #define VND_PWM_INIT(n)							       \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, NULL, POST_KERNEL,	       \
-			      CONFIG_PWM_INIT_PRIORITY, &vnd_pwm_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, NULL, POST_KERNEL,	       \
+			      &vnd_pwm_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_PWM_INIT)

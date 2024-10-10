@@ -197,8 +197,8 @@ static struct mipi_dbi_driver_api mipi_dbi_stm32_fmc_driver_api = {
                                                                                                    \
 	static struct mipi_dbi_stm32_fmc_data mipi_dbi_stm32_fmc_data_##n;                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, mipi_dbi_stm32_fmc_init, NULL, &mipi_dbi_stm32_fmc_data_##n,      \
+	DEVICE_INSTANCE_FROM_DT_INST(n, mipi_dbi_stm32_fmc_init, NULL, &mipi_dbi_stm32_fmc_data_##n,\
 			      &mipi_dbi_stm32_fmc_config_##n, POST_KERNEL,                         \
-			      CONFIG_MIPI_DBI_INIT_PRIORITY, &mipi_dbi_stm32_fmc_driver_api);
+			      &mipi_dbi_stm32_fmc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_STM32_FMC_INIT)

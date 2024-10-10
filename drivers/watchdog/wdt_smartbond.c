@@ -132,5 +132,5 @@ static int wdg_smartbond_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, wdg_smartbond_init, NULL, &wdog_smartbond_dev_data, NULL, POST_KERNEL,
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdg_smartbond_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, wdg_smartbond_init, NULL, &wdog_smartbond_dev_data, NULL, POST_KERNEL,
+		      &wdg_smartbond_api);

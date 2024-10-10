@@ -397,13 +397,12 @@ static int tmp108_init(const struct device *dev)
 						       alert_gpios, { 0 }),\
 		.reg_def = t##_CONF					   \
 	};								   \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			   \
 			      &tmp108_init,				   \
 			      NULL,					   \
 			      &tmp108_prv_data_##inst##t,		   \
 			      &tmp108_config_##inst##t,			   \
 			      POST_KERNEL,				   \
-			      CONFIG_SENSOR_INIT_PRIORITY,		   \
 			      &tmp108_driver_api);
 
 #define TMP108_INIT(n) TMP108_DEFINE(n, TI_TMP108)

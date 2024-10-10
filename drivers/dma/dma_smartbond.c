@@ -1036,11 +1036,10 @@ static int dma_smartbond_init(const struct device *dev)
 	\
 	static struct dma_smartbond_data dma_smartbond_data_ ## inst; \
 	\
-	DEVICE_DT_INST_DEFINE(0, dma_smartbond_init, \
-		PM_DEVICE_DT_INST_GET(inst), \
-		&dma_smartbond_data_ ## inst, NULL,	\
-		POST_KERNEL, \
-		CONFIG_DMA_INIT_PRIORITY, \
+	DEVICE_INSTANCE_FROM_DT_INST(0, dma_smartbond_init,\
+		PM_DEVICE_DT_INST_GET(inst),         \
+		&dma_smartbond_data_ ## inst, NULL, \
+		POST_KERNEL,                         \
 		&dma_smartbond_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTBOND_DMA_INIT)

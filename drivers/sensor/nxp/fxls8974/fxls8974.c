@@ -628,13 +628,12 @@ static const struct sensor_driver_api fxls8974_driver_api = {
 		\
 		static struct fxls8974_data fxls8974_data_##n;					\
 		\
-		SENSOR_DEVICE_DT_INST_DEFINE(n,							\
+		SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,						\
 						fxls8974_init,					\
 						NULL,						\
 						&fxls8974_data_##n,				\
 						&fxls8974_config_##n,				\
 						POST_KERNEL,					\
-						CONFIG_SENSOR_INIT_PRIORITY,			\
 						&fxls8974_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(FXLS8974_INIT)

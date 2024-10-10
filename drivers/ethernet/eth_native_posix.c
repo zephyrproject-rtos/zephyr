@@ -487,10 +487,8 @@ static const struct ethernet_api eth_if_api = {
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 
 #define DEFINE_ETH_DEVICE(x, _)						\
-	ETH_NET_DEVICE_INIT(eth_native_posix_##x,			\
-			    CONFIG_ETH_NATIVE_POSIX_DRV_NAME #x,	\
+	ETH_NET_DEVICE_INSTANCE(eth_native_posix_##x,			\
 			    NULL, NULL,	&eth_context_data_##x, NULL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &eth_if_api,				\
 			    NET_ETH_MTU)
 
@@ -583,14 +581,12 @@ static const struct ptp_clock_driver_api api = {
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
 
 #define DEFINE_PTP_DEVICE(x, _)						\
-	DEVICE_DEFINE(eth_native_posix_ptp_clock_##x,			\
-			    PTP_CLOCK_NAME "_" #x,			\
+	DEVICE_INSTANCE(eth_native_posix_ptp_clock_##x,			\
 			    ptp_init_##x,				\
 			    NULL,					\
 			    &ptp_context_##x,				\
 			    NULL,					\
 			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &api)
 
 LISTIFY(CONFIG_ETH_NATIVE_POSIX_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);

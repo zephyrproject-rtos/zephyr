@@ -474,8 +474,8 @@ static const struct i2c_driver_api i2c_xmc4_driver_api = {
 		XMC4_IRQ_HANDLER_STRUCT_INIT(n)                                                    \
 	};                                                                                         \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, ifx_xmc4_i2c_init, NULL, &ifx_xmc4_i2c_data##n,               \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, ifx_xmc4_i2c_init, NULL, &ifx_xmc4_i2c_data##n,        \
 				  &i2c_xmc4_cfg_##n, POST_KERNEL,                                  \
-				  CONFIG_I2C_INIT_PRIORITY, &i2c_xmc4_driver_api);
+				  &i2c_xmc4_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_XMC4_I2C_INIT)

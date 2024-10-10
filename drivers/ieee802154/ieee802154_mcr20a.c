@@ -1464,13 +1464,12 @@ static const struct ieee802154_radio_api mcr20a_radio_api = {
 };
 
 #if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_DT_INST_DEFINE(0, mcr20a_init, NULL, &mcr20a_context_data,
+DEVICE_INSTANCE_FROM_DT_INST(0, mcr20a_init, NULL, &mcr20a_context_data,
 		      &mcr20a_config, POST_KERNEL,
-		      CONFIG_IEEE802154_MCR20A_INIT_PRIO, &mcr20a_radio_api);
+		      &mcr20a_radio_api);
 #else
-NET_DEVICE_DT_INST_DEFINE(0, mcr20a_init, NULL, &mcr20a_context_data,
-			  &mcr20a_config, CONFIG_IEEE802154_MCR20A_INIT_PRIO,
-			  &mcr20a_radio_api, IEEE802154_L2,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0, mcr20a_init, NULL, &mcr20a_context_data,
+			  &mcr20a_config, &mcr20a_radio_api, IEEE802154_L2,
 			  NET_L2_GET_CTX_TYPE(IEEE802154_L2),
 			  MCR20A_PSDU_LENGTH);
 #endif

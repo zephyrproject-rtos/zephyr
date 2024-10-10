@@ -523,8 +523,7 @@ static int sam_flash_init(const struct device *dev)
 												\
 	static struct sam_flash_data sam_flash_data##inst;					\
 												\
-	DEVICE_DT_INST_DEFINE(inst, sam_flash_init, NULL, &sam_flash_data##inst,		\
-			      &sam_flash_config##inst, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,	\
-			      &sam_flash_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, sam_flash_init, NULL, &sam_flash_data##inst,		\
+			      &sam_flash_config##inst, POST_KERNEL, &sam_flash_api);
 
 SAM_FLASH_CONTROLLER(0)

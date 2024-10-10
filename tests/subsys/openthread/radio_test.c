@@ -71,7 +71,7 @@ static struct ieee802154_radio_api rapi = {.get_capabilities = get_capabilities,
 					   .ed_scan = scan_mock};
 
 #define DT_DRV_COMPAT vnd_ieee802154
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, 0, &rapi);
+DEVICE_INSTANCE_FROM_DT_INST(0, NULL, NULL, NULL, NULL, POST_KERNEL, &rapi);
 
 static const struct device *const radio = DEVICE_DT_INST_GET(0);
 

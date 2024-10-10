@@ -258,13 +258,12 @@ static const struct sensor_driver_api sgp40_api = {
 								\
 	PM_DEVICE_DT_INST_DEFINE(n, sgp40_pm_action);		\
 								\
-	SENSOR_DEVICE_DT_INST_DEFINE(n,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(n,			\
 			      sgp40_init,			\
-			      PM_DEVICE_DT_INST_GET(n),	\
+			      PM_DEVICE_DT_INST_GET(n),		\
 			      &sgp40_data_##n,			\
 			      &sgp40_config_##n,		\
 			      POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY,	\
 			      &sgp40_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SGP40_INIT)

@@ -589,14 +589,13 @@ static int bmp388_init(const struct device *dev)
 		.iir_filter = DT_INST_ENUM_IDX(inst, iir_filter),	   \
 	};								   \
 	PM_DEVICE_DT_INST_DEFINE(inst, bmp388_pm_action);		   \
-	SENSOR_DEVICE_DT_INST_DEFINE(					   \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(				   \
 		inst,							   \
 		bmp388_init,						   \
 		PM_DEVICE_DT_INST_GET(inst),				   \
 		&bmp388_data_##inst,					   \
 		&bmp388_config_##inst,					   \
 		POST_KERNEL,						   \
-		CONFIG_SENSOR_INIT_PRIORITY,				   \
 		&bmp388_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BMP388_INST)

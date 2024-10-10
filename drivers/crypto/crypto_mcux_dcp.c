@@ -344,8 +344,8 @@ static const struct crypto_driver_api crypto_dcp_api = {
 		.base = (DCP_Type *)DT_INST_REG_ADDR(inst),					\
 	};											\
 	static struct crypto_dcp_data crypto_dcp_data_##inst;					\
-	DEVICE_DT_INST_DEFINE(inst, crypto_dcp_init, NULL,					\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, crypto_dcp_init, NULL,				\
 			      &crypto_dcp_data_##inst, &crypto_dcp_config_##inst,		\
-			      POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY, &crypto_dcp_api);
+			      POST_KERNEL, &crypto_dcp_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CRYPTO_DCP_DEFINE)

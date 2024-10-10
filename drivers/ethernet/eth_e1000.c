@@ -307,12 +307,11 @@ static const struct ethernet_api e1000_api = {
 		.config_func = e1000_config_##inst,			\
 	};								\
 									\
-	ETH_NET_DEVICE_DT_INST_DEFINE(inst,				\
+	ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 				      e1000_probe,			\
 				      NULL,				\
 				      &dev_##inst,			\
 				      &config_##inst,			\
-				      CONFIG_ETH_INIT_PRIORITY,		\
 				      &e1000_api,			\
 				      NET_ETH_MTU);
 
@@ -434,10 +433,9 @@ static int ptp_e1000_init(const struct device *port)
 		.eth_context = DEVICE_DT_INST_GET(inst)->data,		\
 	};								\
 									\
-	DEVICE_DEFINE(e1000_ptp_clock, PTP_CLOCK_NAME,			\
-		      ptp_e1000_init, NULL,				\
+	DEVICE_INSTANCE(e1000_ptp_clock, ptp_e1000_init, NULL,		\
 		      &ptp_e1000_context_##inst, NULL, POST_KERNEL,	\
-		      CONFIG_APPLICATION_INIT_PRIORITY, &api);
+		      &api);
 
 DT_INST_FOREACH_STATUS_OKAY(E1000_PTP_INIT);
 

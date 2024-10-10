@@ -1151,7 +1151,7 @@ static const struct ppp_api ppp_if_api = {
 #endif
 };
 
-NET_DEVICE_INIT(ppp, CONFIG_NET_PPP_DRV_NAME, ppp_driver_init,
+NET_DEVICE_INSTANCE(ppp, ppp_driver_init,
 		NULL, &ppp_driver_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ppp_if_api,
+		&ppp_if_api,
 		PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), PPP_MTU);

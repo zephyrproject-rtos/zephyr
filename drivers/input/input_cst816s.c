@@ -300,8 +300,7 @@ static int cst816s_init(const struct device *dev)
 			.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),                \
 	};                                                                                         \
 	static struct cst816s_data cst816s_data_##index;                                           \
-	DEVICE_DT_INST_DEFINE(index, cst816s_init, NULL, &cst816s_data_##index,                    \
-			      &cst816s_config_##index, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,    \
-			      NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(index, cst816s_init, NULL, &cst816s_data_##index,             \
+			      &cst816s_config_##index, POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(CST816S_DEFINE)

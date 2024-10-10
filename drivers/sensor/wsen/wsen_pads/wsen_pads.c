@@ -207,13 +207,12 @@ static int pads_init(const struct device *dev)
  */
 
 #define PADS_DEVICE_INIT(inst)                                                          \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                                  \
-			      pads_init,                                                \
-			      NULL,                                                     \
-			      &pads_data_##inst,                                        \
-			      &pads_config_##inst,                                      \
-			      POST_KERNEL,                                              \
-			      CONFIG_SENSOR_INIT_PRIORITY,                              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,                                           \
+			      pads_init,                                                    \
+			      NULL,                                                         \
+			      &pads_data_##inst,                                            \
+			      &pads_config_##inst,                                          \
+			      POST_KERNEL,                                                  \
 			      &pads_driver_api);
 
 #ifdef CONFIG_WSEN_PADS_TRIGGER

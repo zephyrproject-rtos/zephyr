@@ -102,8 +102,7 @@ static const struct reset_driver_api aspeed_reset_api = {
 	static const struct reset_aspeed_config reset_aspeed_cfg_##n = {                           \
 		.syscon = DEVICE_DT_GET(DT_NODELABEL(syscon)),                                     \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &reset_aspeed_cfg_##n,                          \
-			      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                    \
-			      &aspeed_reset_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, NULL, NULL, NULL, &reset_aspeed_cfg_##n,                   \
+			      PRE_KERNEL_1, &aspeed_reset_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ASPEED_RESET_INIT)

@@ -170,12 +170,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),	      \
 	};							      \
 								      \
-	I2C_DEVICE_DT_INST_DEFINE(inst, i2c_b91_init,		      \
-				  NULL,				      \
-				  &i2c_b91_data_##inst,		      \
-				  &i2c_b91_cfg_##inst,		      \
-				  POST_KERNEL,			      \
-				  CONFIG_I2C_INIT_PRIORITY,	      \
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(inst, i2c_b91_init,		      \
+				  NULL,					      \
+				  &i2c_b91_data_##inst,			      \
+				  &i2c_b91_cfg_##inst,			      \
+				  POST_KERNEL,				      \
 				  &i2c_b91_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_B91_INIT)

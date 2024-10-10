@@ -167,9 +167,8 @@ static const struct w1_driver_api ds2484_driver_api = {
 	};                                                                                         \
 	static struct ds2484_data inst_##inst##_data;                                              \
 	PM_DEVICE_DT_INST_DEFINE(inst, ds2484_pm_control);                                         \
-	DEVICE_DT_INST_DEFINE(inst, ds2484_init, PM_DEVICE_DT_INST_GET(inst), &inst_##inst##_data, \
-			      &inst_##inst##_config, POST_KERNEL, CONFIG_W1_INIT_PRIORITY,         \
-			      &ds2484_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, ds2484_init, PM_DEVICE_DT_INST_GET(inst), &inst_##inst##_data,\
+			      &inst_##inst##_config, POST_KERNEL, &ds2484_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DS2484_INIT)
 

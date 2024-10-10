@@ -254,9 +254,9 @@ static struct it8xxx2_kbd_data it8xxx2_kbd_data_0;
 
 PM_DEVICE_DT_INST_DEFINE(0, input_kbd_matrix_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0),
+DEVICE_INSTANCE_FROM_DT_INST(0, &it8xxx2_kbd_init, PM_DEVICE_DT_INST_GET(0),
 		      &it8xxx2_kbd_data_0, &it8xxx2_kbd_cfg_0,
-		      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
+		      POST_KERNEL, NULL);
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
 	     IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME),

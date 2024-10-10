@@ -223,8 +223,8 @@ static const struct mdio_driver_api mdio_dwcxgmac_driver_api = {
 #define MDIO_DWCXGMAC_DEVICE(n)                                                                    \
 	MDIO_DWCXGMAC_CONFIG(n);                                                                   \
 	static struct mdio_dwcxgmac_dev_data mdio_dwcxgmac_dev_data##n;                            \
-	DEVICE_DT_INST_DEFINE(n, &mdio_dwcxgmac_initialize, NULL, &mdio_dwcxgmac_dev_data##n,      \
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mdio_dwcxgmac_initialize, NULL, &mdio_dwcxgmac_dev_data##n,\
 			      &mdio_dwcxgmac_dev_config_##n, POST_KERNEL,                          \
-			      CONFIG_MDIO_INIT_PRIORITY, &mdio_dwcxgmac_driver_api);
+			      &mdio_dwcxgmac_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MDIO_DWCXGMAC_DEVICE)

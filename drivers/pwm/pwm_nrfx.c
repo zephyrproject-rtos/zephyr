@@ -383,12 +383,11 @@ static int pwm_nrfx_pm_action(const struct device *dev,
 		return pwm_nrfx_init(dev);				      \
 	};								      \
 	PM_DEVICE_DT_DEFINE(PWM(idx), pwm_nrfx_pm_action);		      \
-	DEVICE_DT_DEFINE(PWM(idx),					      \
-			 pwm_nrfx_init##idx, PM_DEVICE_DT_GET(PWM(idx)),      \
-			 &pwm_nrfx_##idx##_data,			      \
-			 &pwm_nrfx_##idx##_config,			      \
-			 POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		      \
-			 &pwm_nrfx_drv_api_funcs)
+	DEVICE_INSTANCE(PWM(idx),						      \
+			 pwm_nrfx_init##idx, PM_DEVICE_DT_GET(PWM(idx)),	      \
+			 &pwm_nrfx_##idx##_data,				      \
+			 &pwm_nrfx_##idx##_config,				      \
+			 POST_KERNEL, &pwm_nrfx_drv_api_funcs)
 
 #ifdef CONFIG_HAS_HW_NRF_PWM0
 PWM_NRFX_DEVICE(0);

@@ -199,11 +199,10 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_lptmr_init, NULL,			\
 		&mcux_lptmr_data_##n,						\
 		&mcux_lptmr_config_##n,						\
-		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
-		&mcux_lptmr_driver_api);
+		POST_KERNEL, &mcux_lptmr_driver_api);
 
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_LPTMR_DEVICE_INIT)

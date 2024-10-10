@@ -56,7 +56,7 @@ static const struct mbox_driver_api bellboard_tx_driver_api = {
 		.bellboard = (NRF_BELLBOARD_Type *)DT_INST_REG_ADDR(inst),                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
-			      CONFIG_MBOX_INIT_PRIORITY, &bellboard_tx_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,             \
+			      &bellboard_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(BELLBOARD_REMOTE_DEFINE)

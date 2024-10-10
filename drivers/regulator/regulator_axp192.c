@@ -375,8 +375,8 @@ static int regulator_axp192_init(const struct device *dev)
 		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
 		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
 		LOG_INSTANCE_PTR_INIT(log, name, node_id)};                                        \
-	DEVICE_DT_DEFINE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id,           \
-			 POST_KERNEL, CONFIG_REGULATOR_AXP192_INIT_PRIORITY, &api);
+	DEVICE_INSTANCE(node_id, regulator_axp192_init, NULL, &data_##id, &config_##id,            \
+			 POST_KERNEL, &api);
 
 #define REGULATOR_AXP192_DEFINE_COND(inst, child)                                                  \
 	COND_CODE_1(DT_NODE_EXISTS(DT_INST_CHILD(inst, child)),                                    \

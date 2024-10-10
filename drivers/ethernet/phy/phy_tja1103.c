@@ -454,8 +454,7 @@ static const struct ethphy_driver_api phy_tja1103_api = {
 		.sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.sem, 1, 1),                          \
 		.offload_sem = Z_SEM_INITIALIZER(phy_tja1103_data_##n.offload_sem, 0, 1),          \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &phy_tja1103_init, NULL, &phy_tja1103_data_##n,                   \
-			      &phy_tja1103_config_##n, POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,      \
-			      &phy_tja1103_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, &phy_tja1103_init, NULL, &phy_tja1103_data_##n,            \
+			      &phy_tja1103_config_##n, POST_KERNEL, &phy_tja1103_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TJA1103_INITIALIZE)

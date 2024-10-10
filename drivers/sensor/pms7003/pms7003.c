@@ -191,8 +191,8 @@ static int pms7003_init(const struct device *dev)
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(inst)),					\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &pms7003_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &pms7003_init, NULL,				\
 			      &pms7003_data_##inst, &pms7003_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);			\
+			      &pms7003_api);							\
 
 DT_INST_FOREACH_STATUS_OKAY(PMS7003_DEFINE)

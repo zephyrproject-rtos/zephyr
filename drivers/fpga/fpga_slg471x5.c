@@ -175,9 +175,9 @@ static int fpga_slg471x5_init(const struct device *dev)
 		.try_unconfigured = DT_INST_NODE_HAS_PROP(inst, try_unconfigured),                 \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, fpga_slg471x5_init, NULL, &fpga_slg##type##_data_##inst,       \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, fpga_slg471x5_init, NULL, &fpga_slg##type##_data_##inst,\
 			      &fpga_slg##type##_config_##inst, POST_KERNEL,                        \
-			      CONFIG_FPGA_INIT_PRIORITY, &fpga_slg471x5_api)
+			      &fpga_slg471x5_api)
 
 #define FPGA_SLG47105_VERIFY_LIST                                                                  \
 	{                                                                                          \

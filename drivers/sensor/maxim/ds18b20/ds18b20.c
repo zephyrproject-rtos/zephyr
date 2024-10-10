@@ -349,13 +349,12 @@ static int ds18b20_init(const struct device *dev)
 	static struct ds18b20_data data_##name##_##inst;			\
 	static const struct ds18b20_config config_##name##_##inst =	\
 		DS18B20_CONFIG_INIT(inst, family_code, chip_type);	\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,			\
 			      ds18b20_init,				\
 			      NULL,					\
 			      &data_##name##_##inst,			\
 			      &config_##name##_##inst,			\
 			      POST_KERNEL,				\
-			      CONFIG_SENSOR_INIT_PRIORITY,		\
 			      &ds18b20_driver_api);
 
 #define DT_DRV_COMPAT maxim_ds18b20

@@ -461,9 +461,8 @@ static int paw32xx_pm_action(const struct device *dev,
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, paw32xx_pm_action);				\
 										\
-	DEVICE_DT_INST_DEFINE(n, paw32xx_init, PM_DEVICE_DT_INST_GET(n),	\
+	DEVICE_INSTANCE_FROM_DT_INST(n, paw32xx_init, PM_DEVICE_DT_INST_GET(n),	\
 			      &paw32xx_data_##n, &paw32xx_cfg_##n,		\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
-			      NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PAW32XX_INIT)

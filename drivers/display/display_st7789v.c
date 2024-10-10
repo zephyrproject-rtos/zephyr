@@ -407,9 +407,8 @@ static const struct display_driver_api st7789v_api = {
 											\
 	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);				\
 											\
-	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),		\
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),	\
 			&st7789v_data_ ## inst, &st7789v_config_ ## inst,		\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,			\
-			&st7789v_api);
+			POST_KERNEL, &st7789v_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7789V_INIT)

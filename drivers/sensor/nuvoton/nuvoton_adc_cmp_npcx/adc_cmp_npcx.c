@@ -262,10 +262,9 @@ static const struct sensor_driver_api adc_cmp_npcx_api = {
 		.comparison = DT_INST_STRING_TOKEN_OR(inst,			\
 			comparison, ADC_CMP_NPCX_UNDEFINED)			\
 	};									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adc_cmp_npcx_init, NULL,		\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, adc_cmp_npcx_init, NULL,	\
 			      &adc_cmp_npcx_data_##inst,			\
 			      &adc_cmp_npcx_config_##inst, POST_KERNEL,		\
-			      CONFIG_SENSOR_INIT_PRIORITY,			\
 			      &adc_cmp_npcx_api);				\
 	BUILD_ASSERT(DT_INST_STRING_TOKEN_OR(inst, thr_sel, inst) <		\
 		     DT_PROP(DT_INST_IO_CHANNELS_CTLR(inst), threshold_count),	\

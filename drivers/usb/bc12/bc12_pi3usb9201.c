@@ -615,8 +615,8 @@ static int pi3usb9201_init(const struct device *dev)
 		.charging_mode = DT_INST_STRING_UPPER_TOKEN(inst, charging_mode),                  \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, pi3usb9201_init, NULL, &pi3usb9201_data_##inst,                \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, pi3usb9201_init, NULL, &pi3usb9201_data_##inst,         \
 			      &pi3usb9201_config_##inst, POST_KERNEL,                              \
-			      CONFIG_APPLICATION_INIT_PRIORITY, &pi3usb9201_driver_api);
+			      &pi3usb9201_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PI2USB9201_DEFINE)

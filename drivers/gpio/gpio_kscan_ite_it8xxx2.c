@@ -244,13 +244,12 @@ static const struct gpio_kscan_cfg gpio_kscan_it8xxx2_cfg_##inst = {           \
 									       \
 static struct gpio_kscan_data gpio_kscan_it8xxx2_data_##inst;                  \
 									       \
-DEVICE_DT_INST_DEFINE(inst,                                                    \
+DEVICE_INSTANCE_FROM_DT_INST(inst,                                             \
 		      NULL,                                                    \
 		      NULL,                                                    \
 		      &gpio_kscan_it8xxx2_data_##inst,                         \
 		      &gpio_kscan_it8xxx2_cfg_##inst,                          \
 		      PRE_KERNEL_1,                                            \
-		      CONFIG_GPIO_INIT_PRIORITY,                               \
 		      &gpio_kscan_it8xxx2_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_KSCAN_IT8XXX2_INIT)

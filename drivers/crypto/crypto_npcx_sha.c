@@ -208,7 +208,6 @@ static const struct crypto_driver_api npcx_crypto_api = {
 	.query_hw_caps = npcx_query_caps,
 };
 
-DEVICE_DT_INST_DEFINE(0, npcx_hash_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_CRYPTO_INIT_PRIORITY,
-		      &npcx_crypto_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, npcx_hash_init, NULL, NULL, NULL, POST_KERNEL, &npcx_crypto_api);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one 'nuvoton,npcx-sha' compatible node can be supported");

@@ -816,14 +816,12 @@ static struct ieee802154_cc13xx_cc26xx_data ieee802154_cc13xx_cc26xx_data = {
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_PHY_IEEE802154)
-NET_DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
+NET_DEVICE_INSTANCE_FROM_DT_INST(0, ieee802154_cc13xx_cc26xx_init, NULL,
 			  &ieee802154_cc13xx_cc26xx_data, NULL,
-			  CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
 			  &ieee802154_cc13xx_cc26xx_radio_api, L2,
 			  L2_CTX_TYPE, MTU);
 #else
-DEVICE_DT_INST_DEFINE(0, ieee802154_cc13xx_cc26xx_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, ieee802154_cc13xx_cc26xx_init, NULL,
 		      &ieee802154_cc13xx_cc26xx_data, NULL, POST_KERNEL,
-		      CONFIG_IEEE802154_CC13XX_CC26XX_INIT_PRIO,
 		      &ieee802154_cc13xx_cc26xx_radio_api);
 #endif

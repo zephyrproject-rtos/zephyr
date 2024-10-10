@@ -178,13 +178,12 @@ static int memc_flexspi_w956a8mbya_init(const struct device *dev)
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),	  \
 	};							  \
 								  \
-	DEVICE_DT_INST_DEFINE(n,				  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,				  \
 			      memc_flexspi_w956a8mbya_init,	  \
 			      NULL,				  \
 			      &memc_flexspi_w956a8mbya_data_##n,  \
 			      &memc_flexspi_w956a8mbya_config_##n,  \
 			      POST_KERNEL,			  \
-			      CONFIG_MEMC_INIT_PRIORITY, \
 			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_FLEXSPI_W956A8MBYA)

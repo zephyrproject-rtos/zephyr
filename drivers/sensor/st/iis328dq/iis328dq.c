@@ -367,9 +367,9 @@ static int iis328dq_init(const struct device *dev)
  */
 
 #define IIS328DQ_DEVICE_INIT(inst)                                                                 \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis328dq_init, NULL, &iis328dq_data_##inst,             \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, iis328dq_init, NULL, &iis328dq_data_##inst,      \
 				     &iis328dq_config_##inst, POST_KERNEL,                         \
-				     CONFIG_SENSOR_INIT_PRIORITY, &iis328dq_driver_api);
+				     &iis328dq_driver_api);
 
 #ifdef CONFIG_IIS328DQ_TRIGGER
 #ifdef CONFIG_IIS328DQ_THRESHOLD

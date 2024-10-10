@@ -268,6 +268,5 @@ static const struct tco_config wdt_config = {
 	.base = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, wdt_init, NULL, &wdt_data, &wdt_config,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &tco_driver_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, wdt_init, NULL, &wdt_data, &wdt_config,
+		      POST_KERNEL, &tco_driver_api);

@@ -428,10 +428,9 @@ static int gpio_qdec_pm_action(const struct device *dev,
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, gpio_qdec_pm_action);			\
 										\
-	DEVICE_DT_INST_DEFINE(n, gpio_qdec_init, PM_DEVICE_DT_INST_GET(n),	\
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_qdec_init, PM_DEVICE_DT_INST_GET(n),\
 			      &gpio_qdec_data_##n,				\
 			      &gpio_qdec_cfg_##n,				\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
-			      NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(QDEC_GPIO_INIT)

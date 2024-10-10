@@ -124,9 +124,9 @@ static int nct38xx_gpio_init(const struct device *dev)
 	static struct gpio_nct38xx_data gpio_nct38xx_data_##inst = {                               \
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, nct38xx_gpio_init, NULL, &gpio_nct38xx_data_##inst,            \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, nct38xx_gpio_init, NULL, &gpio_nct38xx_data_##inst,     \
 			      &gpio_nct38xx_cfg_##inst, POST_KERNEL,                               \
-			      CONFIG_GPIO_NCT38XX_INIT_PRIORITY, NULL);
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NCT38XX_DEVICE_INSTANCE)
 

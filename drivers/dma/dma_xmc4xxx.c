@@ -495,9 +495,9 @@ static const struct dma_driver_api dma_xmc4xxx_driver_api = {
 		.channels = dma_xmc4xxx##inst##_channels,                       \
 	};                                                                      \
 										\
-	DEVICE_DT_INST_DEFINE(inst, &dma_xmc4xxx_init, NULL,                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &dma_xmc4xxx_init, NULL,             \
 			      &dma_xmc4xxx##inst##_data,                        \
 			      &dma_xmc4xxx##inst##_config, PRE_KERNEL_1,        \
-			      CONFIG_DMA_INIT_PRIORITY, &dma_xmc4xxx_driver_api);
+			      &dma_xmc4xxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(XMC4XXX_DMA_INIT)

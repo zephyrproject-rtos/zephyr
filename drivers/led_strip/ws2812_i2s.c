@@ -261,7 +261,7 @@ static const struct led_strip_driver_api ws2812_i2s_api = {
 		.nibble_zero = DT_INST_PROP(idx, nibble_zero),                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, ws2812_i2s_init, NULL, NULL, &ws2812_i2s_##idx##_cfg,           \
-			      POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY, &ws2812_i2s_api);
+	DEVICE_INSTANCE_FROM_DT_INST(idx, ws2812_i2s_init, NULL, NULL, &ws2812_i2s_##idx##_cfg,    \
+			      POST_KERNEL, &ws2812_i2s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_I2S_DEVICE)

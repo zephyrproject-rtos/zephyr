@@ -585,9 +585,8 @@ static int pmw3610_pm_action(const struct device *dev,
 										\
 	PM_DEVICE_DT_INST_DEFINE(n, pmw3610_pm_action);				\
 										\
-	DEVICE_DT_INST_DEFINE(n, pmw3610_init, PM_DEVICE_DT_INST_GET(n),	\
+	DEVICE_INSTANCE_FROM_DT_INST(n, pmw3610_init, PM_DEVICE_DT_INST_GET(n),	\
 			      &pmw3610_data_##n, &pmw3610_cfg_##n,		\
-			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,		\
-			      NULL);
+			      POST_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(PMW3610_INIT)

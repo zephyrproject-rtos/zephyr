@@ -65,7 +65,6 @@ static const struct entropy_driver_api entropy_b91_trng_api = {
 };
 
 /* Entropy driver registration */
-DEVICE_DT_INST_DEFINE(0, entropy_b91_trng_init,
+DEVICE_INSTANCE_FROM_DT_INST(0, entropy_b91_trng_init,
 		      NULL, NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_ENTROPY_INIT_PRIORITY,
-		      &entropy_b91_trng_api);
+		      PRE_KERNEL_1, &entropy_b91_trng_api);

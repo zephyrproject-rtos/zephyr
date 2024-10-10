@@ -442,8 +442,7 @@ static const struct uart_driver_api uart_numaker_driver_api = {
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, uart_numaker_init, NULL, &uart_numaker_data_##inst,            \
-			      &uart_numaker_cfg_##inst, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
-			      &uart_numaker_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, uart_numaker_init, NULL, &uart_numaker_data_##inst,     \
+			      &uart_numaker_cfg_##inst, PRE_KERNEL_1, &uart_numaker_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(NUMAKER_UART_INIT)

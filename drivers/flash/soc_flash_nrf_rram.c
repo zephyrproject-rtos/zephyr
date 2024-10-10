@@ -365,5 +365,4 @@ static int nrf_rram_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,
-		      &nrf_rram_api);
+DEVICE_INSTANCE_FROM_DT_INST(0, nrf_rram_init, NULL, NULL, NULL, POST_KERNEL, &nrf_rram_api);

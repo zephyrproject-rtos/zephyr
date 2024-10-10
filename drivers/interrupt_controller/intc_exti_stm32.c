@@ -228,11 +228,10 @@ static int stm32_exti_init(const struct device *dev)
 }
 
 static struct stm32_exti_data exti_data;
-DEVICE_DT_DEFINE(EXTI_NODE, &stm32_exti_init,
+DEVICE_INSTANCE(EXTI_NODE, &stm32_exti_init,
 		 NULL,
 		 &exti_data, NULL,
-		 PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		 NULL);
+		 PRE_KERNEL_1, NULL);
 
 /**
  * @brief EXTI GPIO interrupt controller API implementation

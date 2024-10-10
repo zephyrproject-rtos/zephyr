@@ -219,9 +219,8 @@ static int sht3xd_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(inst),				\
 		SHT3XD_TRIGGER_INIT(inst)					\
 	};									\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, sht3xd_init, NULL,			\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, sht3xd_init, NULL,		\
 		&sht3xd0_data_##inst, &sht3xd0_cfg_##inst,			\
-		POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
-		&sht3xd_driver_api);
+		POST_KERNEL, &sht3xd_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SHT3XD_DEFINE)

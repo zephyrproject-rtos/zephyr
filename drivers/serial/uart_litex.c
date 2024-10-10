@@ -366,8 +366,7 @@ static int uart_litex_init(const struct device *dev)
 		.baud_rate = DT_INST_PROP(n, current_speed),                                       \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.config_func = uart_irq_config##n,))};   \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, uart_litex_init, NULL, &uart_litex_data_##n,                      \
-			      &uart_litex_dev_cfg_##n, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      (void *)&uart_litex_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_litex_init, NULL, &uart_litex_data_##n,               \
+			      &uart_litex_dev_cfg_##n, PRE_KERNEL_1, (void *)&uart_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(LITEX_UART_INIT)

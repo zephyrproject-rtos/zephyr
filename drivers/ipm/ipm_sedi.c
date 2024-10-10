@@ -285,13 +285,12 @@ static const struct ipm_driver_api ipm_funcs = {
 			    DT_INST_IRQ(n, sense));			\
 	}								\
 	PM_DEVICE_DT_DEFINE(DT_NODELABEL(ipm##n), ipm_power_ctrl);	\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			      &ipm_init,				\
-			      PM_DEVICE_DT_GET(DT_NODELABEL(ipm##n)),   \
+			      PM_DEVICE_DT_GET(DT_NODELABEL(ipm##n)),	\
 			      &ipm_data_##n,				\
 			      &ipm_config_##n,				\
 			      POST_KERNEL,				\
-			      0,					\
 			      &ipm_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(IPM_SEDI_DEV_DEFINE)

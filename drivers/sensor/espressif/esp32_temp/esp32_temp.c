@@ -91,9 +91,8 @@ static int esp32_temp_init(const struct device *dev)
 		.range = (temp_sensor_dac_offset_t) DT_INST_PROP(inst, range),			\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, esp32_temp_init, NULL,				\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, esp32_temp_init, NULL,			\
 			      &esp32_temp_dev_data_##inst, &esp32_temp_dev_config_##inst,	\
-			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,				\
-			      &esp32_temp_driver_api);						\
+			      POST_KERNEL, &esp32_temp_driver_api);				\
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_TEMP_DEFINE)

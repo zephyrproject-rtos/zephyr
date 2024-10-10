@@ -77,6 +77,6 @@ static const struct intc_mtk_cfg dev_cfg##N = {			\
 	.sw_isr_off = (N + 1) * 32,				\
 	.enable_reg = (void *)DT_INST_REG_ADDR(N),		\
 	.status_reg = (void *)DT_INST_PROP(N, status_reg) };	\
-DEVICE_DT_INST_DEFINE(N, NULL, NULL, NULL, &dev_cfg##N, PRE_KERNEL_1, 0, NULL);
+DEVICE_INSTANCE_FROM_DT_INST(N, NULL, NULL, NULL, &dev_cfg##N, PRE_KERNEL_1, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEF_DEV);

@@ -90,7 +90,6 @@ static const struct rtc_driver_api rtc_fake_driver_api = {
 };
 
 #define RTC_FAKE_DEVICE_INIT(inst)                                                                 \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
-			      &rtc_fake_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, NULL, NULL, POST_KERNEL, &rtc_fake_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_FAKE_DEVICE_INIT);

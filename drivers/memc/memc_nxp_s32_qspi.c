@@ -185,13 +185,12 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 		.controller_cfg = &memc_nxp_s32_qspi_controller_cfg_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 	};										\
-	DEVICE_DT_INST_DEFINE(n,							\
+	DEVICE_INSTANCE_FROM_DT_INST(n,							\
 		memc_nxp_s32_qspi_init,							\
 		NULL,									\
 		&memc_nxp_s32_qspi_data_##n,						\
 		&memc_nxp_s32_qspi_config_##n,						\
 		POST_KERNEL,								\
-		CONFIG_MEMC_INIT_PRIORITY,						\
 		NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_NXP_S32_QSPI_INIT_DEVICE)

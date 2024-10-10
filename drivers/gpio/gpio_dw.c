@@ -464,8 +464,8 @@ static int gpio_dw_initialize(const struct device *port)
 		.base_addr = DT_INST_REG_ADDR(n),						\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, gpio_dw_initialize, NULL, &gpio_##n##_runtime,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, gpio_dw_initialize, NULL, &gpio_##n##_runtime,		\
 		      &gpio_dw_config_##n, PRE_KERNEL_1,					\
-		      CONFIG_GPIO_INIT_PRIORITY, &api_funcs);					\
+		      &api_funcs);								\
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DW_INIT)

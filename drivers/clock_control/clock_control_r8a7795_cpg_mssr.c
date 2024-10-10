@@ -284,13 +284,12 @@ static const struct clock_control_driver_api r8a7795_cpg_mssr_api = {
 		.cmn.set_rate_helper = r8a7795_set_rate_helper			  \
 	};									  \
 										  \
-	DEVICE_DT_INST_DEFINE(inst,						  \
+	DEVICE_INSTANCE_FROM_DT_INST(inst,					  \
 			      r8a7795_cpg_mssr_init,				  \
 			      NULL,						  \
 			      &r8a7795_cpg_mssr##inst##_data,			  \
 			      &r8a7795_cpg_mssr##inst##_config,			  \
 			      PRE_KERNEL_1,					  \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,		  \
 			      &r8a7795_cpg_mssr_api);
 
 DT_INST_FOREACH_STATUS_OKAY(R8A7795_MSSR_INIT)

@@ -32,8 +32,7 @@ static struct emul_espi_host_stub_dev_config stub_host_config;
 static struct emul_espi_host_stub_dev_api stub_host_api;
 
 #define EMUL_ESPI_HOST_DEVICE_STUB(n)                                                              \
-	DEVICE_DT_INST_DEFINE(n, &emul_espi_host_init_stub, NULL, &stub_host_data,                 \
-			      &stub_host_config, POST_KERNEL, CONFIG_ESPI_INIT_PRIORITY,           \
-			      &stub_host_api)
+	DEVICE_INSTANCE_FROM_DT_INST(n, &emul_espi_host_init_stub, NULL, &stub_host_data,          \
+			      &stub_host_config, POST_KERNEL, &stub_host_api)
 
 DT_INST_FOREACH_STATUS_OKAY(EMUL_ESPI_HOST_DEVICE_STUB);

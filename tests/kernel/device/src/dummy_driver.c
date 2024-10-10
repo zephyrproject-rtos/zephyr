@@ -35,8 +35,8 @@ int dummy_init(const struct device *dev)
 /**
  * @cond INTERNAL_HIDDEN
  */
-DEVICE_DEFINE(dummy_driver, DUMMY_DRIVER_NAME, dummy_init, NULL, NULL, NULL,
-	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+DEVICE_INSTANCE(dummy_driver, dummy_init, NULL, NULL, NULL,
+	      POST_KERNEL, &funcs);
 
 /**
  * @endcond

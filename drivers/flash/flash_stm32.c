@@ -586,6 +586,6 @@ static int stm32_flash_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, stm32_flash_init, NULL,
 		    &flash_data, NULL, POST_KERNEL,
-		    CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);
+		    &flash_stm32_api);

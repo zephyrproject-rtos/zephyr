@@ -946,8 +946,7 @@ static const struct i2c_driver_api iproc_i2c_driver_api = {
                                                                                                    \
 	static struct iproc_i2c_data iproc_i2c_data_##n;                                           \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, &iproc_i2c_init, NULL, &iproc_i2c_data_##n,                   \
-				  &iproc_i2c_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,    \
-				  &iproc_i2c_driver_api);
+	I2C_DEVICE_INSTANCE_FROM_DT_INST(n, &iproc_i2c_init, NULL, &iproc_i2c_data_##n,            \
+				  &iproc_i2c_config_##n, POST_KERNEL, &iproc_i2c_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IPROC_I2C_DEVICE_INIT)

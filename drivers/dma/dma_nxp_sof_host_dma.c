@@ -303,7 +303,6 @@ static struct sof_host_dma_data sof_host_dma_data = {
 };
 
 /* assumption: only 1 SOF_HOST_DMA instance */
-DEVICE_DT_INST_DEFINE(0, sof_host_dma_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, sof_host_dma_init, NULL,
 		      &sof_host_dma_data, NULL,
-		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,
-		      &sof_host_dma_api);
+		      PRE_KERNEL_1, &sof_host_dma_api);

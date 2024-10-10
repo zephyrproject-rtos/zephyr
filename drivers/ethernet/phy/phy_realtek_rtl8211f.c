@@ -674,9 +674,8 @@ static const struct ethphy_driver_api rt_rtl8211f_phy_api = {
 										\
 	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &phy_rt_rtl8211f_init, NULL,		\
 			&rt_rtl8211f_##n##_data, &rt_rtl8211f_##n##_config,	\
-			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
-			&rt_rtl8211f_phy_api);
+			POST_KERNEL, &rt_rtl8211f_phy_api);
 
 DT_INST_FOREACH_STATUS_OKAY(REALTEK_RTL8211F_INIT)

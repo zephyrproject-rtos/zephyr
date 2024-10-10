@@ -263,8 +263,7 @@ static const struct sensor_driver_api ina230_driver_api = {
 				   DT_INST_PROP(inst, rshunt_micro_ohms))),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, alert_gpios), (INA230_CFG_IRQ(inst)),      \
 			    ())};                                                                  \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, &ina230_init, NULL, &drv_data_##inst,                   \
-				     &drv_config_##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, \
-				     &ina230_driver_api);
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, &ina230_init, NULL, &drv_data_##inst,            \
+				     &drv_config_##inst, POST_KERNEL, &ina230_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INA230_DRIVER_INIT)

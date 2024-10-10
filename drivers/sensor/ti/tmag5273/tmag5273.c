@@ -1242,8 +1242,8 @@ static const struct sensor_driver_api tmag5273_driver_api = {
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
 		IF_ENABLED(CONFIG_CRC, (.crc_enabled = DT_INST_PROP(inst, crc_enabled),))};        \
 	static struct tmag5273_data tmag5273_driver_data##inst;                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,       \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, tmag5273_init, NULL, &tmag5273_driver_data##inst,\
 				     &tmag5273_driver_cfg##inst, POST_KERNEL,                      \
-				     CONFIG_SENSOR_INIT_PRIORITY, &tmag5273_driver_api);
+				     &tmag5273_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TMAG5273_DEFINE)

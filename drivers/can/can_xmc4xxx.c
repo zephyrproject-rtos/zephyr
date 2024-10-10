@@ -932,8 +932,8 @@ static const struct can_driver_api can_xmc4xxx_api_funcs = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
                                                                                                    \
-	CAN_DEVICE_DT_INST_DEFINE(inst, can_xmc4xxx_init, NULL, &can_xmc4xxx_data_##inst,          \
+	CAN_DEVICE_INSTANCE_FROM_DT_INST(inst, can_xmc4xxx_init, NULL, &can_xmc4xxx_data_##inst,   \
 				  &can_xmc4xxx_config_##inst, POST_KERNEL,                         \
-				  CONFIG_CAN_INIT_PRIORITY, &can_xmc4xxx_api_funcs);
+				  &can_xmc4xxx_api_funcs);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_XMC4XXX_INIT)

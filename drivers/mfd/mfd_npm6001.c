@@ -93,7 +93,7 @@ static int mfd_npm6001_init(const struct device *dev)
 			     NPM6001_PADDRIVESTRENGTH_SDA_HIGH)),                                  \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL,      \
-			      CONFIG_MFD_NPM6001_INIT_PRIORITY, NULL);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mfd_npm6001_init, NULL, NULL, &config##inst, POST_KERNEL,\
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM6001_DEFINE)

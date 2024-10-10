@@ -944,13 +944,12 @@ static const struct flash_driver_api flash_andes_qspi_api = {
 			ANDES_QSPI_SFDP_DEVICETREE_PROP(n)		\
 		};							\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			&flash_andes_qspi_init,				\
 			NULL,						\
 			&flash_andes_qspi_data_##n,			\
 			&flash_andes_qspi_config_##n,			\
 			POST_KERNEL,					\
-			CONFIG_FLASH_ANDES_QSPI_INIT_PRIORITY,		\
 			&flash_andes_qspi_api);				\
 									\
 	static void flash_andes_qspi_configure_##n(void)		\

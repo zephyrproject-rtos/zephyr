@@ -211,8 +211,8 @@ static int stts751_init(const struct device *dev)
 			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
 	};											\
 												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, stts751_init, NULL,					\
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst, stts751_init, NULL,				\
 			      &stts751_data_##inst, &stts751_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &stts751_api_funcs);			\
+			      &stts751_api_funcs);						\
 
 DT_INST_FOREACH_STATUS_OKAY(STTS751_DEFINE)

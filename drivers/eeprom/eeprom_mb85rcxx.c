@@ -226,8 +226,7 @@ static const struct eeprom_driver_api mb85rcxx_driver_api = {
 		.addr_width = DT_INST_PROP(inst, address_width),                                   \
 		.readonly = DT_INST_PROP(inst, read_only)};                                        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, mb85rcxx_init, NULL, &mb85rcxx_data_##inst,                    \
-			      &mb85rcxx_config_##inst, POST_KERNEL, CONFIG_EEPROM_INIT_PRIORITY,   \
-			      &mb85rcxx_driver_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, mb85rcxx_init, NULL, &mb85rcxx_data_##inst,             \
+			      &mb85rcxx_config_##inst, POST_KERNEL, &mb85rcxx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MB85RCXX_DEFINE)

@@ -1005,8 +1005,8 @@ static struct eth_xmc4xxx_data eth_xmc4xxx_data = {
 	.mac_addr = DT_INST_PROP_OR(0, local_mac_address, {0}),
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth_xmc4xxx_config,
-			      CONFIG_ETH_INIT_PRIORITY, &eth_xmc4xxx_api, NET_ETH_MTU);
+ETH_NET_DEVICE_INSTANCE_FROM_DT_INST(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth_xmc4xxx_config,
+			      &eth_xmc4xxx_api, NET_ETH_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
 
@@ -1132,8 +1132,7 @@ static int ptp_clock_xmc4xxx_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, ptp_clock_xmc4xxx_init, NULL,
-	      &ptp_xmc4xxx_context_0, NULL, POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY,
-	      &ptp_api_xmc4xxx);
+DEVICE_INSTANCE(xmc4xxx_ptp_clock_0, ptp_clock_xmc4xxx_init, NULL,
+	      &ptp_xmc4xxx_context_0, NULL, POST_KERNEL, &ptp_api_xmc4xxx);
 
 #endif /* CONFIG_PTP_CLOCK_XMC4XXX */

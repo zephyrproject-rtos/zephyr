@@ -88,9 +88,8 @@ int tle9104_diagnostics_init(const struct device *dev)
 		.parent = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                             \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(                                                              \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(                                                       \
 		inst, tle9104_diagnostics_init, NULL, &tle9104_diagnostics_data_##inst,            \
-		&tle9104_diagnostics_config##inst, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,       \
-		&tle9104_diagnostics_driver_api);
+		&tle9104_diagnostics_config##inst, POST_KERNEL, &tle9104_diagnostics_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TLE9104_DIAGNOSTICS_DEFINE)

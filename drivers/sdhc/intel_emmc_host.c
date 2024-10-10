@@ -1342,7 +1342,7 @@ static const struct sdhc_driver_api emmc_api = {
                                                                                                    \
 	static struct emmc_data emmc_priv_data_##n;                                                \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, emmc_init, NULL, &emmc_priv_data_##n, &emmc_config_data_##n,      \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &emmc_api);
+	DEVICE_INSTANCE_FROM_DT_INST(n, emmc_init, NULL, &emmc_priv_data_##n, &emmc_config_data_##n,\
+			      POST_KERNEL, &emmc_api);
 
 DT_INST_FOREACH_STATUS_OKAY(EMMC_HOST_DEV_CFG)

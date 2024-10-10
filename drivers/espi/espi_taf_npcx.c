@@ -551,7 +551,6 @@ static const struct espi_taf_npcx_config espi_taf_npcx_config = {
 	.max_rd_sz = DT_INST_STRING_TOKEN(0, max_read_sz),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_taf_npcx_init, NULL,
+DEVICE_INSTANCE_FROM_DT_INST(0, &espi_taf_npcx_init, NULL,
 			&npcx_espi_taf_data, &espi_taf_npcx_config,
-			PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
-			&espi_taf_npcx_driver_api);
+			PRE_KERNEL_2, &espi_taf_npcx_driver_api);

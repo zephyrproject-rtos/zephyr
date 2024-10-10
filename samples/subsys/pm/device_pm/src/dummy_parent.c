@@ -51,6 +51,6 @@ int dummy_parent_init(const struct device *dev)
 
 PM_DEVICE_DEFINE(dummy_parent, dummy_parent_pm_action);
 
-DEVICE_DEFINE(dummy_parent, DUMMY_PARENT_NAME, &dummy_parent_init,
+DEVICE_INSTANCE(dummy_parent, &dummy_parent_init,
 		    PM_DEVICE_GET(dummy_parent), NULL, NULL, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &funcs);
+		    &funcs);

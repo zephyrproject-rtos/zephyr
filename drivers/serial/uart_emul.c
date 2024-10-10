@@ -1050,7 +1050,7 @@ int uart_emul_register(const struct device *dev, struct uart_emul *emul)
 	}                                                                                          \
 	SYS_INIT(uart_emul_post_init_##inst, POST_KERNEL, CONFIG_UART_EMUL_DEVICE_INIT_PRIORITY);  \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,     \
-			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, &uart_emul_api);
+	DEVICE_INSTANCE_FROM_DT_INST(inst, NULL, NULL, &uart_emul_data_##inst, &uart_emul_cfg_##inst,\
+			      PRE_KERNEL_1, &uart_emul_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_UART_EMUL)

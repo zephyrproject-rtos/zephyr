@@ -329,9 +329,8 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 	.is_ntc = DT_INST_PROP_OR(0, ntc, false)
 };
 
-SENSOR_DEVICE_DT_INST_DEFINE(0, stm32_temp_init, NULL,
+SENSOR_DEVICE_INSTANCE_FROM_DT_INST(0, stm32_temp_init, NULL,
 			     &stm32_temp_dev_data, &stm32_temp_dev_config,
-			     POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-			     &stm32_temp_driver_api);
+			     POST_KERNEL, &stm32_temp_driver_api);
 
 #endif /* !DT_NODE_HAS_STATUS_OKAY(DT_INST_IO_CHANNELS_CTLR(0)) */

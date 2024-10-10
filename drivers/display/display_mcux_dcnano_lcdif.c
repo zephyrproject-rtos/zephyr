@@ -338,13 +338,12 @@ static const struct display_driver_api mcux_dcnano_lcdif_api = {
 		.fb_ptr = MCUX_DCNANO_LCDIF_FRAMEBUFFER(n),			\
 		.fb_bytes = MCUX_DCNANO_LCDIF_FB_SIZE(n),			\
 	};									\
-	DEVICE_DT_INST_DEFINE(n,						\
+	DEVICE_INSTANCE_FROM_DT_INST(n,						\
 		&mcux_dcnano_lcdif_init,					\
 		NULL,								\
 		&mcux_dcnano_lcdif_data_##n,					\
 		&mcux_dcnano_lcdif_config_##n,					\
 		POST_KERNEL,							\
-		CONFIG_DISPLAY_INIT_PRIORITY,					\
 		&mcux_dcnano_lcdif_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DCNANO_LCDIF_DEVICE_INIT)

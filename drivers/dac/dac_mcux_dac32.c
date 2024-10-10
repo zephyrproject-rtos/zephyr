@@ -123,10 +123,9 @@ static const struct dac_driver_api mcux_dac32_driver_api = {
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, mcux_dac32_init, NULL,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, mcux_dac32_init, NULL,		\
 			&mcux_dac32_data_##n,				\
 			&mcux_dac32_config_##n,				\
-			POST_KERNEL, CONFIG_DAC_INIT_PRIORITY,		\
-			&mcux_dac32_driver_api);
+			POST_KERNEL, &mcux_dac32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_DAC32_INIT)

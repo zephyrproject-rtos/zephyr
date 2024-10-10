@@ -1238,14 +1238,14 @@ static const struct led_driver_api grow_r502a_leds_api = {
 		(.int_gpios = GPIO_DT_SPEC_INST_GET_OR(index, int_gpios, {}),))			\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,		\
+	DEVICE_INSTANCE_FROM_DT_INST(index, &grow_r502a_init, NULL, &grow_r502a_data_##index,	\
 				&grow_r502a_config_##index, POST_KERNEL,			\
-				CONFIG_SENSOR_INIT_PRIORITY, &grow_r502a_api);			\
+				&grow_r502a_api);						\
 
 #define GROW_R502A_LED_INIT(index)								\
-	DEVICE_DT_INST_DEFINE(index, NULL, NULL, &grow_r502a_data_##index,			\
+	DEVICE_INSTANCE_FROM_DT_INST(index, NULL, NULL, &grow_r502a_data_##index,		\
 				&grow_r502a_config_##index, POST_KERNEL,			\
-				CONFIG_LED_INIT_PRIORITY, &grow_r502a_leds_api);		\
+				&grow_r502a_leds_api);						\
 
 #define DT_DRV_COMPAT hzgrow_r502a
 DT_INST_FOREACH_STATUS_OKAY(GROW_R502A_INIT)

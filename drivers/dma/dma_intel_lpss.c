@@ -161,12 +161,11 @@ static const struct dma_driver_api dma_intel_lpss_driver_api = {
 		.channel_data = &dma_intel_lpss##n,			\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n,					\
+	DEVICE_INSTANCE_FROM_DT_INST(n,					\
 			    NULL,					\
 			    NULL,					\
 			    &dma_intel_lpss##n##_data,			\
 			    &dma_intel_lpss##n##_config, PRE_KERNEL_1,	\
-			    CONFIG_DMA_INIT_PRIORITY,			\
 			    &dma_intel_lpss_driver_api);		\
 
 DT_INST_FOREACH_STATUS_OKAY(DMA_INTEL_LPSS_INIT)

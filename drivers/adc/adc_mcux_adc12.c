@@ -305,10 +305,9 @@ static int mcux_adc12_init(const struct device *dev)
 		ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_##n, ctx),	\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(n, &mcux_adc12_init,			\
+	DEVICE_INSTANCE_FROM_DT_INST(n, &mcux_adc12_init,		\
 			    NULL, &mcux_adc12_data_##n,			\
 			    &mcux_adc12_config_##n, POST_KERNEL,	\
-			    CONFIG_ADC_INIT_PRIORITY,			\
 			    &mcux_adc12_driver_api_##n);		\
 									\
 	static void mcux_adc12_config_func_##n(const struct device *dev) \

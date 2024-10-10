@@ -233,12 +233,11 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 		.length = DT_INST_PROP(idx, chain_length),		\
 	};								\
 									\
-	DEVICE_DT_INST_DEFINE(idx,					\
+	DEVICE_INSTANCE_FROM_DT_INST(idx,				\
 			    ws2812_gpio_##idx##_init,			\
 			    NULL,					\
 			    NULL,					\
 			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
-			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
 			    &ws2812_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WS2812_GPIO_DEVICE)

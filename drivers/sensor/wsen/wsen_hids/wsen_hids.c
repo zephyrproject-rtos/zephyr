@@ -213,13 +213,12 @@ static int hids_init(const struct device *dev)
  */
 
 #define HIDS_DEVICE_INIT(inst)                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,                                             \
+	SENSOR_DEVICE_INSTANCE_FROM_DT_INST(inst,                                      \
 			      hids_init,                                               \
 			      NULL,                                                    \
 			      &hids_data_##inst,                                       \
 			      &hids_config_##inst,                                     \
 			      POST_KERNEL,                                             \
-			      CONFIG_SENSOR_INIT_PRIORITY,                             \
 			      &hids_driver_api);
 
 #ifdef CONFIG_WSEN_HIDS_TRIGGER

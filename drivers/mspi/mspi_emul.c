@@ -897,13 +897,12 @@ static struct emul_mspi_driver_api emul_mspi_driver_api = {
 		.ctx.callback          = 0,                                                       \
 		.ctx.callback_ctx      = 0,                                                       \
 	};                                                                                        \
-	DEVICE_DT_INST_DEFINE(n,                                                                  \
+	DEVICE_INSTANCE_FROM_DT_INST(n,                                                           \
 			      &mspi_emul_init,                                                    \
 			      NULL,                                                               \
 			      &mspi_emul_data_##n,                                                \
 			      &mspi_emul_cfg_##n,                                                 \
 			      POST_KERNEL,                                                        \
-			      CONFIG_MSPI_INIT_PRIORITY,                                          \
 			      &emul_mspi_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSPI_EMUL_INIT)

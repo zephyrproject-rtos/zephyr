@@ -565,13 +565,12 @@ static const struct uart_driver_api uart_b91_driver_api = {
 										    \
 	static struct uart_b91_data uart_b91_data_##n;				    \
 										    \
-	DEVICE_DT_INST_DEFINE(n, uart_b91_driver_init,				    \
-			      NULL,						    \
-			      &uart_b91_data_##n,				    \
-			      &uart_b91_cfg_##n,				    \
-			      PRE_KERNEL_1,					    \
-			      CONFIG_SERIAL_INIT_PRIORITY,			    \
-			      (void *)&uart_b91_driver_api);			    \
+	DEVICE_INSTANCE_FROM_DT_INST(n, uart_b91_driver_init,				    \
+			      NULL,							    \
+			      &uart_b91_data_##n,					    \
+			      &uart_b91_cfg_##n,					    \
+			      PRE_KERNEL_1,						    \
+			      (void *)&uart_b91_driver_api);				    \
 										    \
 	static void uart_b91_irq_connect_##n(void)				    \
 	{									    \

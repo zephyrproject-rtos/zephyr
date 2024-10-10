@@ -636,8 +636,8 @@ static const struct display_driver_api gc9x01x_api = {
 	};                                                                                         \
 	static struct gc9x01x_data gc9x01x_data_##inst;                                            \
 	PM_DEVICE_DT_INST_DEFINE(inst, gc9x01x_pm_action);                                         \
-	DEVICE_DT_INST_DEFINE(inst, &gc9x01x_init, PM_DEVICE_DT_INST_GET(inst),                    \
+	DEVICE_INSTANCE_FROM_DT_INST(inst, &gc9x01x_init, PM_DEVICE_DT_INST_GET(inst),             \
 			      &gc9x01x_data_##inst, &gc9x01x_config_##inst, POST_KERNEL,           \
-			      CONFIG_DISPLAY_INIT_PRIORITY, &gc9x01x_api);
+			      &gc9x01x_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GC9X01X_INIT)
