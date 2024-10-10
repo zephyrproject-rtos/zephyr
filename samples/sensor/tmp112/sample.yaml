@@ -5,7 +5,8 @@ tests:
     harness: console
     tags: sensors
     depends_on: i2c
-    filter: dt_compat_enabled("ti,tmp112")
+    platform_allow:
+      - frdm_k64f
     harness_config:
       type: one_line
       regex:

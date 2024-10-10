@@ -10,5 +10,7 @@ tests:
     build_only: true
     harness: sensor
     tags: sensors
-    depends_on: serial
-    filter: dt_compat_enabled("winsen,mhz19b")
+    depends_on:
+      - serial
+    platform_allow:
+      - nucleo_g0b1re

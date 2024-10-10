@@ -11,4 +11,5 @@ tests:
     harness: sensor
     build_only: true
     depends_on: serial
-    filter: dt_compat_enabled("hzgrow,r502a")
+    platform_allow:
+      - esp32_devkitc_wroom/esp32/procpu

@@ -8,4 +8,5 @@ toolchain:
   - xtools
 supported:
   - counter
+  - lis2dh
 vendor: st

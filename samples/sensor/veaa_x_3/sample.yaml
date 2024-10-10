@@ -4,5 +4,8 @@ tests:
   sample.sensor.veaa_x_3:
     harness: sensor
     tags: sensors
-    filter: dt_compat_enabled("festo,veaa-x-3")
-    depends_on: adc dac
+    depends_on:
+      - adc
+      - dac
+    platform_allow:
+      - nucleo_h563zi

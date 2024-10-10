@@ -7,7 +7,10 @@ tests:
   sample.sensor.max44009:
     tags: sensors
     harness: console
-    depends_on: i2c
+    depends_on:
+      - i2c
+    platform_allow:
+      - frdm_k64f
     harness_config:
       type: multi_line
       ordered: true
@@ -15,4 +18,3 @@ tests:
         - "MAX44009 light sensor application"
         - "sensor: lum reading: (.*)"
       fixture: fixture_i2c_max44009
-    filter: dt_compat_enabled("maxim,max44009")

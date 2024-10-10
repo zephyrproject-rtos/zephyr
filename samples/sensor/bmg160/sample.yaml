@@ -7,4 +7,7 @@ tests:
     depends_on:
       - i2c
       - gpio
-    filter: dt_compat_enabled("bosch,bmg160")
+    platform_allow:
+      - frdm_k64f
+    integration_platforms:
+      - frdm_k64f

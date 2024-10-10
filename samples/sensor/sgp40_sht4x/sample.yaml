@@ -9,5 +9,6 @@ sample:
 tests:
   sample.sensor.sgp40_sht4x:
     build_only: true
-    platform_allow: blackpill_f411ce
+    platform_allow:
+      - blackpill_f411ce
     tags: sensors

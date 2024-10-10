@@ -4,7 +4,10 @@ sample:
 tests:
   sample.sensor.iaqcore:
     harness: sensor
-    tags: samples
+    tags:
+      - iAQcore
+    platform_allow:
+      - nucleo_f446re
     depends_on:
       - i2c
       - arduino_i2c
