@@ -215,3 +215,7 @@ You can dump all of the descriptors in an image using::
 You can list all known standard descriptor names using::
 
    west bindesc list
+
+You can print the offset of the descriptors inside the image using::
+
+   west bindesc get_offset
