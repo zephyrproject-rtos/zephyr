@@ -625,6 +625,15 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Hook for adding runner-specific options.'''
 
     @classmethod
+    def args_from_previous_runner(cls, previous_runner,
+                                  args: argparse.Namespace):
+        '''Update arguments from a previously created runner.
+
+        This is intended for propagating relevant user responses
+        between multiple runs of the same runner, for example a
+        JTAG serial number.'''
+
+    @classmethod
     def create(cls, cfg: RunnerConfig,
                args: argparse.Namespace) -> 'ZephyrBinaryRunner':
         '''Create an instance from command-line arguments.

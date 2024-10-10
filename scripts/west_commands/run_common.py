@@ -284,13 +284,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
         if len(entry.boards) == 0:
             del used_cmds[i]
 
+    prev_runner = None
     for d in domains:
-        do_run_common_image(command, user_args, user_runner_args,
-                            used_cmds, board_image_count, d.build_dir)
+        prev_runner = do_run_common_image(command, user_args, user_runner_args, used_cmds,
+                                          board_image_count, d.build_dir, prev_runner)
 
 
 def do_run_common_image(command, user_args, user_runner_args, used_cmds,
-                        board_image_count, build_dir=None,):
+                        board_image_count, build_dir=None, prev_runner=None):
     global re
     command_name = command.name
     if build_dir is None:
@@ -440,6 +441,10 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     if unknown:
         log.die(f'runner {runner_name} received unknown arguments: {unknown}')
 
+    # Propagate useful args from previous domain invocations
+    if prev_runner is not None:
+        runner_cls.args_from_previous_runner(prev_runner, args)
+
     # Override args with any user_args. The latter must take
     # precedence, or e.g. --hex-file on the command line would be
     # ignored in favor of a board.cmake setting.
@@ -470,6 +475,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
         else:
             log.err('verbose mode enabled, dumping stack:', fatal=True)
             raise
+    return runner
 
 def get_build_dir(args, die_if_none=True):
     # Get the build directory for the given argument list and environment.
