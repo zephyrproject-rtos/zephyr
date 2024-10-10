@@ -380,8 +380,8 @@ conn_is_valid:
 						 NULL);
 	}
 
-	if (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	    own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+	if (own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_PUBLIC ||
+	    own_addr_type == BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);

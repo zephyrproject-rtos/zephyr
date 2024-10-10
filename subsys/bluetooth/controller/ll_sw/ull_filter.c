@@ -1153,8 +1153,8 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 	uint8_t sec_idx;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
-	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
-	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type != BT_HCI_OWN_ADDR_RPA_OR_PUBLIC &&
+	    adv->own_addr_type != BT_HCI_OWN_ADDR_RPA_OR_RANDOM) {
 		return;
 	}
 
