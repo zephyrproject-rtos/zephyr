@@ -70,7 +70,8 @@ uint32_t table_ll_channel[] = {
 	LISTIFY(DT_INST_PROP(0, dma_channels), DMAMUX_CHANNEL, (,))
 };
 
-#if !defined(CONFIG_SOC_SERIES_STM32G0X)
+#if !defined(CONFIG_SOC_SERIES_STM32G0X) && \
+	!defined(CONFIG_SOC_SERIES_STM32C0X)
 #define dmamux_channel_typedef DMAMUX_Channel_TypeDef
 #else
 #define dmamux_channel_typedef const DMAMUX_Channel_TypeDef
