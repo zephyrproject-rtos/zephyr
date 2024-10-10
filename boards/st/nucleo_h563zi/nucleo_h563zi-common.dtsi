@@ -78,6 +78,13 @@
 	status = "okay";
 };
 
+&i3c1 {
+    pinctrl-0 =  <&i3c1_scl_pd12 &i3c1_sda_pd13>;
+    i3c-scl-hz = <12500000>;
+    i2c-scl-hz = <400000>;
+    status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(240)>;

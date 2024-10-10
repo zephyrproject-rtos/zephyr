@@ -118,5 +118,6 @@ rsource "Kconfig.nxp"
 rsource "Kconfig.cdns"
 rsource "Kconfig.npcx"
 rsource "Kconfig.test"
+rsource "Kconfig.stm32"
 
 endif # I3C

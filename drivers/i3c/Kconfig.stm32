@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Your Company
+#
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_STM32_I3C := st,stm32-i3c
+module = I3C_STM32
+module-str = i3c_stm32
+
+source "subsys/logging/Kconfig.template.log_config"
+config I3C_STM32
+    bool "STM32 I3C driver support"
+    depends on DT_HAS_ST_STM32_I3C_ENABLED
+    select USE_STM32_HAL_I3C
+    default y
+    help
+      Enable support for I3C on STM32 microcontrollers.
+
+config I3C_STM32_POLL
+    bool "Enables I3C polling mode"
+    depends on I3C_STM32
+    default n
+    help
+      Enables polling mode for I3C on STM32 microcontrollers.
+
+config I3C_STM32_DMA
+    bool "STM32 I3C DMA driver support"
+    depends on I3C_STM32 && DMA_STM32U5 && !I3C_STM32_POLL
+    help
+      Enables support for I3C DMA mode on STM32 microcontrollers.
+      This option is incompatible with I3C_STM32_POLL
+
+config I3C_STM32_DMA_FIFO_HEAP_SIZE
+    int "Status FIFO and control FIFO heap"
+    depends on I3C_STM32_DMA
+    default 2048
+    help
+      Configures the heap size for dynamically allocating the regions for
+      storing status FIFO and control FIFO words which will be used by the DMA.
+      This value depends on the maximum number of messages that will be sent
+      during a single transfer. 2KB guarantees enough heap size for sending 256
+      messages on a single transfer.

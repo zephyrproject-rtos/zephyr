@@ -15,3 +15,9 @@ include:
 properties:
   label:
     type: string
+
+  supports-setaasa:
+    type: boolean
+    description: |
+      Indicates if the device supports the CCC SETAASA. If true, it will
+      be used as an optimization for bus initialization.
