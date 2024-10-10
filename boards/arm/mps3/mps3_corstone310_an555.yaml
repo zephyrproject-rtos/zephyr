@@ -1,16 +1,14 @@
-#
-# Copyright (c) 2019-2021 Linaro Limited
-#
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
-#
 
-identifier: mps3/an547
-name: Arm MPS3-AN547
+identifier: mps3/corstone310/an555
+name: Arm MPS3-AN555
 type: mcu
 arch: arm
-ram: 512
-flash: 512
-simulation: qemu
+ram: 32
+flash: 32
+simulation: armfvp
+simulation_exec: FVP_Corstone_SSE-310
 toolchain:
   - gnuarmemb
   - zephyr
