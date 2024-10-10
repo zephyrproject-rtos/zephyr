@@ -6,52 +6,16 @@
 
 #define DT_DRV_COMPAT microcrystal_rv3028
 
-#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/rtc.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/sys/util.h>
+#include "rtc_rv3028.h"
 #include "rtc_utils.h"
 
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
-/* RV3028 RAM register addresses */
-#define RV3028_REG_SECONDS              0x00
-#define RV3028_REG_MINUTES              0x01
-#define RV3028_REG_HOURS                0x02
-#define RV3028_REG_WEEKDAY              0x03
-#define RV3028_REG_DATE                 0x04
-#define RV3028_REG_MONTH                0x05
-#define RV3028_REG_YEAR                 0x06
-#define RV3028_REG_ALARM_MINUTES        0x07
-#define RV3028_REG_ALARM_HOURS          0x08
-#define RV3028_REG_ALARM_WEEKDAY        0x09
-#define RV3028_REG_STATUS               0x0E
-#define RV3028_REG_CONTROL1             0x0F
-#define RV3028_REG_CONTROL2             0x10
-#define RV3028_REG_EVENT_CONTROL        0x13
-#define RV3028_REG_TS_COUNT             0x14
-#define RV3028_REG_TS_SECONDS           0x15
-#define RV3028_REG_TS_MINUTES           0x16
-#define RV3028_REG_TS_HOURS             0x17
-#define RV3028_REG_TS_DATE              0x18
-#define RV3028_REG_TS_MONTH             0x19
-#define RV3028_REG_TS_YEAR              0x1A
-#define RV3028_REG_UNIXTIME0            0x1B
-#define RV3028_REG_UNIXTIME1            0x1C
-#define RV3028_REG_UNIXTIME2            0x1D
-#define RV3028_REG_UNIXTIME3            0x1E
-#define RV3028_REG_USER_RAM1            0x1F
-#define RV3028_REG_USER_RAM2            0x20
-#define RV3028_REG_EEPROM_ADDRESS       0x25
-#define RV3028_REG_EEPROM_DATA          0x26
-#define RV3028_REG_EEPROM_COMMAND       0x27
-#define RV3028_REG_ID                   0x28
-#define RV3028_REG_CLKOUT               0x35
-#define RV3028_REG_OFFSET               0x36
-#define RV3028_REG_BACKUP               0x37
-
+/* RV3028 registers bit masks */
 #define RV3028_CONTROL1_TD              BIT(0)
 #define RV3028_CONTROL1_TE              GENMASK(2, 1)
 #define RV3028_CONTROL1_EERD            BIT(3)
@@ -67,15 +31,6 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 #define RV3028_CONTROL2_UIE             BIT(5)
 #define RV3028_CONTROL2_TSE             BIT(7)
 
-#define RV3028_STATUS_PORF              BIT(0)
-#define RV3028_STATUS_EVF               BIT(1)
-#define RV3028_STATUS_AF                BIT(2)
-#define RV3028_STATUS_TF                BIT(3)
-#define RV3028_STATUS_UF                BIT(4)
-#define RV3028_STATUS_BSF               BIT(5)
-#define RV3028_STATUS_CLKF              BIT(6)
-#define RV3028_STATUS_EEBUSY            BIT(7)
-
 #define RV3028_CLKOUT_FD                GENMASK(2, 0)
 #define RV3028_CLKOUT_PORIE             BIT(3)
 #define RV3028_CLKOUT_CLKSY             BIT(6)
@@ -90,13 +45,6 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 #define RV3028_BSM_LEVEL                0x3
 #define RV3028_BSM_DIRECT               0x1
 #define RV3028_BSM_DISABLED             0x0
-
-/* RV3028 EE command register values */
-#define RV3028_EEPROM_CMD_INIT          0x00
-#define RV3028_EEPROM_CMD_UPDATE        0x11
-#define RV3028_EEPROM_CMD_REFRESH       0x12
-#define RV3028_EEPROM_CMD_WRITE         0x21
-#define RV3028_EEPROM_CMD_READ          0x22
 
 #define RV3028_SECONDS_MASK             GENMASK(6, 0)
 #define RV3028_MINUTES_MASK             GENMASK(6, 0)
@@ -122,10 +70,6 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
-
-#define RV3028_EEBUSY_READ_POLL_MS      1
-#define RV3028_EEBUSY_WRITE_POLL_MS     10
-#define RV3028_EEBUSY_TIMEOUT_MS        100
 
 /* RTC alarm time fields supported by the RV3028 */
 #define RV3028_RTC_ALARM_TIME_MASK                                                                 \
@@ -170,21 +114,21 @@ struct rv3028_data {
 #endif /* RV3028_INT_GPIOS_IN_USE */
 };
 
-static void rv3028_lock_sem(const struct device *dev)
+void rv3028_lock_sem(const struct device *dev)
 {
 	struct rv3028_data *data = dev->data;
 
 	(void)k_sem_take(&data->lock, K_FOREVER);
 }
 
-static void rv3028_unlock_sem(const struct device *dev)
+void rv3028_unlock_sem(const struct device *dev)
 {
 	struct rv3028_data *data = dev->data;
 
 	k_sem_give(&data->lock);
 }
 
-static int rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
+int rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
 {
 	const struct rv3028_config *config = dev->config;
 	int err;
@@ -198,12 +142,12 @@ static int rv3028_read_regs(const struct device *dev, uint8_t addr, void *buf, s
 	return 0;
 }
 
-static int rv3028_read_reg8(const struct device *dev, uint8_t addr, uint8_t *val)
+int rv3028_read_reg8(const struct device *dev, uint8_t addr, uint8_t *val)
 {
 	return rv3028_read_regs(dev, addr, val, sizeof(*val));
 }
 
-static int rv3028_write_regs(const struct device *dev, uint8_t addr, void *buf, size_t len)
+int rv3028_write_regs(const struct device *dev, uint8_t addr, const void *buf, size_t len)
 {
 	const struct rv3028_config *config = dev->config;
 	uint8_t block[sizeof(addr) + len];
@@ -221,12 +165,12 @@ static int rv3028_write_regs(const struct device *dev, uint8_t addr, void *buf, 
 	return 0;
 }
 
-static int rv3028_write_reg8(const struct device *dev, uint8_t addr, uint8_t val)
+int rv3028_write_reg8(const struct device *dev, uint8_t addr, uint8_t val)
 {
 	return rv3028_write_regs(dev, addr, &val, sizeof(val));
 }
 
-static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
+int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
 {
 	const struct rv3028_config *config = dev->config;
 	int err;
@@ -241,7 +185,7 @@ static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t ma
 	return 0;
 }
 
-static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
+int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -268,12 +212,12 @@ static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 	return 0;
 }
 
-static int rv3028_exit_eerd(const struct device *dev)
+int rv3028_exit_eerd(const struct device *dev)
 {
 	return rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD, 0);
 }
 
-static int rv3028_enter_eerd(const struct device *dev)
+int rv3028_enter_eerd(const struct device *dev)
 {
 	uint8_t ctrl1;
 	bool eerd;
@@ -301,7 +245,7 @@ static int rv3028_enter_eerd(const struct device *dev)
 	return ret;
 }
 
-static int rv3028_eeprom_command(const struct device *dev, uint8_t command)
+int rv3028_eeprom_command(const struct device *dev, uint8_t command)
 {
 	int err;
 
@@ -483,7 +427,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	date[5] = bin2bcd(timeptr->tm_mon + RV3028_MONTH_OFFSET) & RV3028_MONTH_MASK;
 	date[6] = bin2bcd(timeptr->tm_year - RV3028_YEAR_OFFSET) & RV3028_YEAR_MASK;
 
-	err = rv3028_write_regs(dev, RV3028_REG_SECONDS, &date, sizeof(date));
+	err = rv3028_write_regs(dev, RV3028_REG_SECONDS, date, sizeof(date));
 	if (err) {
 		goto unlock;
 	}
@@ -599,7 +543,7 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 		timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min, mask);
 
 	/* Write registers RV3028_REG_ALARM_MINUTES through RV3028_REG_ALARM_WEEKDAY */
-	return rv3028_write_regs(dev, RV3028_REG_ALARM_MINUTES, &regs, sizeof(regs));
+	return rv3028_write_regs(dev, RV3028_REG_ALARM_MINUTES, regs, sizeof(regs));
 }
 
 static int rv3028_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
@@ -909,7 +853,7 @@ static const struct rtc_driver_api rv3028_driver_api = {
 	 (FIELD_PREP(RV3028_BACKUP_TCR, DT_INST_ENUM_IDX_OR(inst, trickle_resistor_ohms, 0))) |    \
 	 (DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms) ? RV3028_BACKUP_TCE : 0))
 
-#define RV3028_INIT(inst)                                                                          \
+#define RV3028_DEFINE(inst)                                                                        \
 	static const struct rv3028_config rv3028_config_##inst = {                                 \
 		.i2c = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),          \
@@ -923,4 +867,4 @@ static const struct rtc_driver_api rv3028_driver_api = {
 			      &rv3028_config_##inst, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY,        \
 			      &rv3028_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(RV3028_INIT)
+DT_INST_FOREACH_STATUS_OKAY(RV3028_DEFINE)
