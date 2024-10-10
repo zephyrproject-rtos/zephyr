@@ -349,6 +349,9 @@ struct bt_l2cap_chan_ops {
 	 *  @kconfig{CONFIG_BT_L2CAP_SEG_RECV} is enabled and seg_recv is
 	 *  supplied.
 	 *
+	 *  If the application returns -EINPROGRESS, the reference
+	 *  @p buf was moved.
+	 *
 	 *  @return 0 in case of success or negative value in case of error.
 	 *  @return -EINPROGRESS in case where user has to confirm once the data
 	 *                       has been processed by calling
