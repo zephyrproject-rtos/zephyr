@@ -7,6 +7,9 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <hal/nrf_gpio.h>
+#ifdef CONFIG_SOC_NRF54H20_GPD
+#include <nrf/gpd.h>
+#endif
 
 BUILD_ASSERT(((NRF_PULL_NONE == NRF_GPIO_PIN_NOPULL) &&
 	      (NRF_PULL_DOWN == NRF_GPIO_PIN_PULLDOWN) &&
@@ -352,6 +355,21 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 		if (psel != PSEL_DISCONNECTED) {
 			uint32_t pin = psel;
 
+#ifdef CONFIG_SOC_NRF54H20_GPD
+			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
+				int ret;
+				uint32_t d_pin = pin;
+				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
+
+				ret = nrf_gpd_request(NRF_GPD_SLOW_ACTIVE);
+				if (ret < 0) {
+					return ret;
+				}
+
+				port->RETAINCLR = BIT(d_pin);
+			}
+#endif /* CONFIG_SOC_NRF54H20_GPD */
+
 			if (write != NO_WRITE) {
 				nrf_gpio_pin_write(pin, write);
 			}
@@ -367,6 +385,20 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 #if NRF_GPIO_HAS_CLOCKPIN
 			nrf_gpio_pin_clock_set(pin, NRF_GET_CLOCKPIN_ENABLE(pins[i]));
 #endif
+#ifdef CONFIG_SOC_NRF54H20_GPD
+			if (NRF_GET_GPD_FAST_ACTIVE1(pins[i]) == 1U) {
+				int ret;
+				uint32_t d_pin = pin;
+				NRF_GPIO_Type *port = nrf_gpio_pin_port_decode(&d_pin);
+
+				port->RETAINSET = BIT(d_pin);
+
+				ret = nrf_gpd_release(NRF_GPD_SLOW_ACTIVE);
+				if (ret < 0) {
+					return ret;
+				}
+			}
+#endif /* CONFIG_SOC_NRF54H20_GPD */
 		}
 	}
 
