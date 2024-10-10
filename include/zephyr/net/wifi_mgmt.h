@@ -108,9 +108,7 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS,
 	/** Get RTS threshold */
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
-	/** WPS config */
-	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
-	/** @cond INTERNAL_HIDDEN */
+/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
 };
@@ -258,10 +256,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
-
-#define NET_REQUEST_WIFI_WPS_CONFIG (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_CONFIG)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -1085,26 +1079,6 @@ struct wifi_dpp_params {
 	};
 };
 
-#define WIFI_WPS_PIN_MAX_LEN 8
-
-/** Operation for WPS */
-enum wifi_wps_op {
-	/** WPS pbc */
-	WIFI_WPS_PBC = 0,
-	/** Get WPS pin number */
-	WIFI_WPS_PIN_GET = 1,
-	/** Set WPS pin number */
-	WIFI_WPS_PIN_SET = 2,
-};
-
-/** Wi-Fi wps setup */
-struct wifi_wps_config_params {
-	/** wps operation */
-	enum wifi_wps_op oper;
-	/** pin value*/
-	char pin[WIFI_WPS_PIN_MAX_LEN + 1];
-};
-
 #include <zephyr/net/net_if.h>
 
 /** Scan result callback
@@ -1354,14 +1328,6 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*get_rts_threshold)(const struct device *dev, unsigned int *rts_threshold);
-	/** Start a WPS PBC/PIN connection
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params wps operarion parameters
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
 };
 
 /** Wi-Fi management offload API */

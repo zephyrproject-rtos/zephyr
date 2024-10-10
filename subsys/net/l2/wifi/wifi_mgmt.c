@@ -842,21 +842,6 @@ static int wifi_get_connection_params(uint32_t mgmt_request, struct net_if *ifac
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
 
-static int wifi_wps_config(uint32_t mgmt_request, struct net_if *iface, void *data, size_t len)
-{
-	const struct device *dev = net_if_get_device(iface);
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
-	struct wifi_wps_config_params *params = data;
-
-	if (wifi_mgmt_api == NULL || wifi_mgmt_api->wps_config == NULL) {
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->wps_config(dev, params);
-}
-
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG, wifi_wps_config);
-
 static int wifi_set_rts_threshold(uint32_t mgmt_request, struct net_if *iface,
 				  void *data, size_t len)
 {

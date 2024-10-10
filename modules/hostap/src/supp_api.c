@@ -35,9 +35,7 @@ static struct wifi_connect_req_params last_wifi_conn_params;
 
 enum requested_ops {
 	CONNECT = 0,
-	DISCONNECT,
-	WPS_PBC,
-	WPS_PIN,
+	DISCONNECT
 };
 
 enum status_thread_state {
@@ -1481,91 +1479,6 @@ int supplicant_get_wifi_conn_params(const struct device *dev,
 	memcpy(params, &last_wifi_conn_params, sizeof(struct wifi_connect_req_params));
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
-}
-
-static int supplicant_wps_pbc(const struct device *dev)
-{
-	struct wpa_supplicant *wpa_s;
-	int ret = -1;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("wps_pbc")) {
-		goto out;
-	}
-
-	wpas_api_ctrl.dev = dev;
-	wpas_api_ctrl.requested_op = WPS_PBC;
-
-	ret = 0;
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-
-	return ret;
-}
-
-static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_params *params)
-{
-	struct wpa_supplicant *wpa_s;
-	char *get_pin_cmd = "WPS_PIN get";
-	int ret = -1;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		ret = -1;
-		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
-		goto out;
-	}
-
-	if (params->oper == WIFI_WPS_PIN_GET) {
-		if (zephyr_wpa_cli_cmd_resp(get_pin_cmd, params->pin)) {
-			goto out;
-		}
-	} else if (params->oper == WIFI_WPS_PIN_SET) {
-		if (!wpa_cli_cmd_v("wps_check_pin %s", params->pin)) {
-			goto out;
-		}
-
-		if (!wpa_cli_cmd_v("wps_pin any %s", params->pin)) {
-			goto out;
-		}
-
-		wpas_api_ctrl.dev = dev;
-		wpas_api_ctrl.requested_op = WPS_PIN;
-	} else {
-		wpa_printf(MSG_ERROR, "Error wps pin operation : %d", params->oper);
-		goto out;
-	}
-
-	ret = 0;
-
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-
-	return ret;
-}
-
-int supplicant_wps_config(const struct device *dev, struct wifi_wps_config_params *params)
-{
-	int ret = 0;
-
-	if (params->oper == WIFI_WPS_PBC) {
-		ret = supplicant_wps_pbc(dev);
-	} else if (params->oper == WIFI_WPS_PIN_GET || params->oper == WIFI_WPS_PIN_SET) {
-		ret = supplicant_wps_pin(dev, params);
-	}
-
 	return ret;
 }
 
