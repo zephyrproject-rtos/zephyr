@@ -70,7 +70,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
 	.set_btwt = supplicant_set_btwt,
-	.set_rts_threshold = supplicant_set_rts_threshold,
 	.get_power_save_config = supplicant_get_power_save_config,
 	.reg_domain = supplicant_reg_domain,
 	.mode = supplicant_mode,
@@ -114,7 +113,6 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 	.dpp_dispatch = hapd_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.ap_config_params = supplicant_ap_config_params,
-	.set_rts_threshold = supplicant_set_rts_threshold,
 };
 
 DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);
