@@ -45,6 +45,8 @@ static int  eth_xlnx_gem_start_device(const struct device *dev);
 static int  eth_xlnx_gem_stop_device(const struct device *dev);
 static enum ethernet_hw_caps
 	eth_xlnx_gem_get_capabilities(const struct device *dev);
+static int eth_xlnx_gem_get_config(const struct device *dev,
+	enum ethernet_config_type type, struct ethernet_config *config);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev);
 #endif
@@ -66,6 +68,7 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev);
 static const struct ethernet_api eth_xlnx_gem_apis = {
 	.iface_api.init   = eth_xlnx_gem_iface_init,
 	.get_capabilities = eth_xlnx_gem_get_capabilities,
+	.get_config  = eth_xlnx_gem_get_config,
 	.send		  = eth_xlnx_gem_send,
 	.start		  = eth_xlnx_gem_start_device,
 	.stop		  = eth_xlnx_gem_stop_device,
@@ -654,6 +657,43 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
 	return caps;
 }
 
+/**
+ * @brief GEM config request function
+ * Fills out the config struct with more detailed
+ * information regaring the RX/TX HW checksum 
+ * offloading capabilities of the device.
+ *
+ * @param dev Pointer to the device data
+ * @param type Enum to select the config type
+ * @retval config Pointer to the config data
+ * @return 0 if the requested config type is supported
+ */
+static int eth_xlnx_gem_get_config(const struct device *dev,
+	enum ethernet_config_type type,
+	struct ethernet_config *config)
+{
+	int ret = -1;
+	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
+
+	if(type == ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT)
+	{
+		if (dev_conf->enable_rx_chksum_offload) {
+			config->chksum_support = NET_IF_CHECKSUM_IPV4_HEADER | NET_IF_CHECKSUM_IPV4_TCP | NET_IF_CHECKSUM_IPV4_UDP | NET_IF_CHECKSUM_IPV6_HEADER | NET_IF_CHECKSUM_IPV6_TCP | NET_IF_CHECKSUM_IPV6_UDP;
+		}
+		ret = 0;
+	}
+
+	if(type == ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT)
+	{
+		if (dev_conf->enable_tx_chksum_offload) {
+			config->chksum_support = NET_IF_CHECKSUM_IPV4_HEADER | NET_IF_CHECKSUM_IPV4_TCP | NET_IF_CHECKSUM_IPV4_UDP | NET_IF_CHECKSUM_IPV6_HEADER | NET_IF_CHECKSUM_IPV6_TCP | NET_IF_CHECKSUM_IPV6_UDP;
+		}
+		ret = 0;
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_NET_STATISTICS_ETHERNET
 /**
  * @brief GEM statistics data request function
@@ -772,9 +812,9 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	 * The frequency of the PLL to which the divisors shall be applied are
 	 * provided in the respective GEM's device tree data.
 	 */
-	for (div0 = 1; div0 < 64; div0++) {
-		for (div1 = 1; div1 < 64; div1++) {
-			tmp = ((dev_conf->pll_clock_frequency / div0) / div1);
+	for (div1 = 1; div1 < 64; div1++) {
+		for (div0 = 1; div0 < 64; div0++) {
+			tmp = ((dev_conf->pll_clock_frequency / div1) / div0);
 			if (tmp >= (target - 10) && tmp <= (target + 10)) {
 				break;
 			}
