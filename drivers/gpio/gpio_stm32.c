@@ -701,6 +701,18 @@ static int gpio_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_STM32H7RSX
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpioo), okay) ||  DT_NODE_HAS_STATUS(DT_NODELABEL(gpiop), okay)
+	LL_PWR_EnableXSPIM1(); /* Required for powering GPIO O and P */
+#endif /* gpioo || gpio p */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpion), okay)
+	LL_PWR_EnableXSPIM2(); /* Required for powering GPIO N */
+#endif /* gpio n */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpiom), okay)
+	LL_PWR_EnableUSBVoltageDetector(); /* Required for powering GPIO M */
+#endif /* gpiom */
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
+
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
