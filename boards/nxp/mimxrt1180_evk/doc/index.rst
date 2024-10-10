@@ -102,6 +102,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| QTMR      | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
