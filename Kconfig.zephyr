@@ -664,12 +664,13 @@ config OUTPUT_SYMBOLS
 
 config OUTPUT_DISASSEMBLY
 	bool "Create a disassembly file"
+	default y
 	help
 	  Create an .lst file with the assembly listing of the firmware.
 
 config OUTPUT_DISASSEMBLE_ALL
 	bool "Disassemble all sections with source. Fill zeros."
-	default n
+	default y
 	depends on OUTPUT_DISASSEMBLY
 	help
 	  The .lst file will contain complete disassembly of the firmware
@@ -722,6 +723,12 @@ config BUILD_OUTPUT_BIN
 	help
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
+
+config BUILD_OUTPUT_TSV_STRIPPED_HEX
+        bool "Build a Stripped Hex file"
+        default n
+        help
+          Build a "raw" hex zephyr/zephyrstrp.hex in the build directory.
 
 config BUILD_OUTPUT_EFI
 	bool "Build as an EFI application"

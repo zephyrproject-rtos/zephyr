@@ -5,3 +5,4 @@ board:
   - name: 'an547'
     variants:
     - name: 'ns'
+    - name: 'tsv'

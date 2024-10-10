@@ -1,0 +1,9 @@
+family:
+  - name: tsi
+    series:
+      - name: skyp_v1
+        socs:
+          - name: skyp
+            cpuclusters:
+              - name: m85
+              - name: txe
