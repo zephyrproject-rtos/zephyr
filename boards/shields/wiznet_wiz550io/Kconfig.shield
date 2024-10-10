@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Grant Ramsay
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_WIZNET_WIZ550IO
+	def_bool $(shields_list_contains,wiznet_wiz550io)
+
+if SHIELD_WIZNET_WIZ550IO
+
+config WIZ550IO_PRE_INIT_PRIORITY
+	int "WIZ550io pre init priority"
+	default 79
+	help
+	  WIZ550io pre init must occur before W5500 init.
+	  The default is ETH_INIT_PRIORITY - 1.
+
+config WIZ550IO_POST_INIT_PRIORITY
+	int "WIZ550io post init priority"
+	default 91
+	help
+	  WIZ550io post init must occur after net iface init.
+	  The default is CONFIG_NET_INIT_PRIO + 1.
+
+endif # SHIELD_WIZNET_WIZ550IO
