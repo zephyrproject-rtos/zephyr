@@ -20,6 +20,7 @@ the following devices:
 * RRAM
 * :abbr:`GPIO (General Purpose Input Output)`
 * :abbr:`TWIM (I2C-compatible two-wire interface master with EasyDMA)`
+* MEMCONF
 * :abbr:`MPU (Memory Protection Unit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * :abbr:`PWM (Pulse Width Modulation)`
@@ -64,6 +65,8 @@ hardware features:
 | GPIO      | on-chip    | gpio                 |
 +-----------+------------+----------------------+
 | TWIM      | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| MEMCONF   | on-chip    | retained_mem         |
 +-----------+------------+----------------------+
 | MPU       | on-chip    | arch/arm             |
 +-----------+------------+----------------------+
