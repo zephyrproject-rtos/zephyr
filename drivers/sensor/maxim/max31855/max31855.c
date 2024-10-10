@@ -68,7 +68,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 
 	switch (chan) {
 
-	case SENSOR_CHAN_AMBIENT_TEMP:
+	case SENSOR_CHAN_THRMCP_TEMP:
 		temp = (temp >> THERMOCOUPLE_TEMPERATURE_POS) & 0x3fff;
 
 		/* if sign bit is set, make value negative */
@@ -82,7 +82,7 @@ static int max31855_channel_get(const struct device *dev, enum sensor_channel ch
 		val->val2 = (temp - val->val1 * 100) * 10000;
 		break;
 
-	case SENSOR_CHAN_DIE_TEMP:
+	case SENSOR_CHAN_THRMCP_COLD_JUNCTION_TEMP:
 		temp = (temp >> INTERNAL_TEMPERATURE_POS) & 0xfff;
 
 		/* if sign bit is set, make value negative */
