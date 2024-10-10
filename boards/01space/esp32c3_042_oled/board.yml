@@ -1,5 +1,6 @@
 board:
   name: esp32c3_042_oled
+  full_name: ESP32C3 0.42 OLED
   vendor: 01space
   socs:
   - name: esp32c3

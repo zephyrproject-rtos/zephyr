@@ -1,5 +1,6 @@
 board:
   name: imx8qxp_mek
+  full_name: i.MX 8QuadXPlus Multisensory Enablement Kit (MEK)
   vendor: nxp
   socs:
     - name: mimx8qx6

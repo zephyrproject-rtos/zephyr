@@ -1,5 +1,6 @@
 board:
   name: stm32l4r9i_disco
+  full_name: STM32L4R9I Discovery
   vendor: st
   socs:
     - name: stm32l4r9xx

@@ -1,5 +1,6 @@
 board:
   name: stm32h7s78_dk
+  full_name: STM32H7S78-DK Discovery
   vendor: st
   socs:
     - name: stm32h7s7xx

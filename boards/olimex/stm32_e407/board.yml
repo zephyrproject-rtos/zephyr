@@ -1,5 +1,6 @@
 board:
   name: olimex_stm32_e407
+  full_name: OLIMEX-STM32-E407
   vendor: olimex
   socs:
     - name: stm32f407xx

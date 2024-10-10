@@ -1,5 +1,6 @@
 board:
   name: lpcxpresso55s06
+  full_name: LPCXpresso55S06
   vendor: nxp
   socs:
     - name: lpc55s06

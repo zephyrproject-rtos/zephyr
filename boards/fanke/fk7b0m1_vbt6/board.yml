@@ -1,5 +1,6 @@
 board:
   name: fk7b0m1_vbt6
+  full_name: FK7B0M1-VBT6
   vendor: fanke
   socs:
     - name: stm32h7b0xx

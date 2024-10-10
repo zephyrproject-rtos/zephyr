@@ -3,6 +3,7 @@
 
 board:
   name: nucleo_h503rb
+  full_name: Nucleo H503RB
   vendor: st
   socs:
     - name: stm32h503xx

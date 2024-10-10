@@ -3,6 +3,7 @@
 
 board:
   name: apard32690
+  full_name: AD-APARD32690-SL
   vendor: adi
   socs:
     - name: max32690

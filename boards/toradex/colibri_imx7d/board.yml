@@ -1,5 +1,6 @@
 board:
   name: colibri_imx7d
+  full_name: i.MX 7 Computer on Module - Colibri iMX7
   vendor: toradex
   socs:
     - name: mcimx7d

@@ -1,5 +1,6 @@
 board:
   name: nrf52_adafruit_feather
+  full_name: nRF52 Adafruit Feather
   vendor: adafruit
   socs:
   - name: nrf52832

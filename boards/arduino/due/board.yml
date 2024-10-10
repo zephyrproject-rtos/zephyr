@@ -1,5 +1,6 @@
 board:
   name: arduino_due
+  full_name: Arduino Due
   vendor: arduino
   socs:
     - name: sam3x8e

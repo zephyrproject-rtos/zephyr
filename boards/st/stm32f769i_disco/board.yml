@@ -1,5 +1,6 @@
 board:
   name: stm32f769i_disco
+  full_name: STM32F769I Discovery
   vendor: st
   socs:
     - name: stm32f769xx

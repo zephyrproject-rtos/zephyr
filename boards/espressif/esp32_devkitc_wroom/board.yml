@@ -1,5 +1,6 @@
 board:
   name: esp32_devkitc_wroom
+  full_name: ESP32-DevKitC-WROOM
   vendor: espressif
   socs:
   - name: esp32

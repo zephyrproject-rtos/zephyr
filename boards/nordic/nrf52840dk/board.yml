@@ -1,5 +1,6 @@
 board:
   name: nrf52840dk
+  full_name: nRF52840 DK
   vendor: nordic
   socs:
   # Physical nRF52840 SoC on PCA10056

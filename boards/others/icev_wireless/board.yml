@@ -1,5 +1,6 @@
 board:
   name: icev_wireless
+  full_name: ICE-V Wireless
   vendor: others
   socs:
   - name: esp32c3

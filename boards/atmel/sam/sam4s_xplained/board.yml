@@ -1,5 +1,6 @@
 board:
   name: sam4s_xplained
+  full_name: SAM4S Xplained
   vendor: atmel
   socs:
     - name: sam4s16c

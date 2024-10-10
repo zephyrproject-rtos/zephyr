@@ -1,5 +1,6 @@
 board:
   name: imx8mn_evk
+  full_name: i.MX8MN EVK (Cortex-A53)
   vendor: nxp
   socs:
   - name: mimx8mn6

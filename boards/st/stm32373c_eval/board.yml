@@ -1,5 +1,6 @@
 board:
   name: stm32373c_eval
+  full_name: STM32373C Evaluation
   vendor: st
   socs:
     - name: stm32f373xc

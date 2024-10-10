@@ -1,5 +1,6 @@
 board:
   name: arty_a7
+  full_name: Arty
   vendor: digilent
   socs:
   - name: designstart_fpga_cortex_m1

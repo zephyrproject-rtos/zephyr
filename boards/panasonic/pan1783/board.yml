@@ -1,13 +1,16 @@
 boards:
 - name: pan1783_evb
+  full_name: PAN1783 Evaluation Board
   vendor: panasonic
   socs:
   - name: nrf5340
 - name: pan1783a_evb
+  full_name: PAN1783A Evaluation Board
   vendor: panasonic
   socs:
   - name: nrf5340
 - name: pan1783a_pa_evb
+  full_name: PAN1783A-PA Evaluation Board
   vendor: panasonic
   socs:
   - name: nrf5340

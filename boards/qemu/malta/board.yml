@@ -1,5 +1,6 @@
 board:
   name: qemu_malta
+  full_name: QEMU Emulation for MIPS Malta
   vendor: qemu
   socs:
   - name: qemu_malta

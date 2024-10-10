@@ -1,5 +1,6 @@
 board:
   name: lpcxpresso51u68
+  full_name: LPCXPRESSO51U68
   vendor: nxp
   socs:
     - name: lpc51u68

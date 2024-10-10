@@ -1,5 +1,6 @@
 board:
   name: frdm_kl25z
+  full_name: FRDM-KL25Z
   vendor: nxp
   socs:
     - name: mkl25z4

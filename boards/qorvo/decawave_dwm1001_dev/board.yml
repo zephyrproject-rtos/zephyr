@@ -1,5 +1,6 @@
 board:
   name: decawave_dwm1001_dev
+  full_name: Decawave DWM1001
   vendor: qorvo
   socs:
   - name: nrf52832

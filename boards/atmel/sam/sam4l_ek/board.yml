@@ -1,5 +1,6 @@
 board:
   name: sam4l_ek
+  full_name: SAM4L-EK
   vendor: atmel
   socs:
     - name: sam4lc4c

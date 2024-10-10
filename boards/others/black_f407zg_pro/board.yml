@@ -1,5 +1,6 @@
 board:
   name: black_f407zg_pro
+  full_name: Black STM32 F407ZG Pro Development Board
   vendor: others
   socs:
     - name: stm32f407xx

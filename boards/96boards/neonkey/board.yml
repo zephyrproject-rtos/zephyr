@@ -1,5 +1,6 @@
 board:
   name: 96b_neonkey
+  full_name: Neonkey
   vendor: 96boards
   socs:
     - name: stm32f411xe

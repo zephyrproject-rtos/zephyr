@@ -1,5 +1,6 @@
 board:
   name: mercury_xu
+  full_name: MERCURY-XU
   vendor: enclustra
   socs:
   - name: zynqmp_rpu

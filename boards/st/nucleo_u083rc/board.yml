@@ -1,5 +1,6 @@
 board:
   name: nucleo_u083rc
+  full_name: Nucleo U083RC
   vendor: st
   socs:
     - name: stm32u083xx

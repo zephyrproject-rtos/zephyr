@@ -1,5 +1,6 @@
 board:
   name: ev11l78a
+  full_name: UPD301C Basic Sink Application Example
   vendor: microchip
   socs:
     - name: samd20e16

@@ -1,5 +1,6 @@
 board:
   name: blueclover_plt_demo_v2
+  full_name: Blue Clover PLT Demo V2 nRF52832
   vendor: bcdevices
   socs:
   - name: nrf52832

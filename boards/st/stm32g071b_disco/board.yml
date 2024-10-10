@@ -1,5 +1,6 @@
 board:
   name: stm32g071b_disco
+  full_name: STM32G071B Discovery
   vendor: st
   socs:
     - name: stm32g071xx

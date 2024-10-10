@@ -1,5 +1,6 @@
 board:
   name: pinnacle_100_dvk
+  full_name: Pinnacle 100 DVK
   vendor: ezurio
   socs:
   - name: nrf52840

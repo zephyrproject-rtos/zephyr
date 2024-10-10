@@ -1,5 +1,6 @@
 board:
   name: nucleo_l4r5zi
+  full_name: Nucleo L4R5ZI
   vendor: st
   socs:
     - name: stm32l4r5xx

@@ -1,5 +1,6 @@
 board:
   name: stm32u083c_dk
+  full_name: STM32U083C-DK
   vendor: st
   socs:
     - name: stm32u083xx

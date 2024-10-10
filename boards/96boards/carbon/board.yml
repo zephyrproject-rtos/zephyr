@@ -1,5 +1,6 @@
 board:
   name: 96b_carbon
+  full_name: Carbon
   vendor: 96boards
   socs:
   - name: stm32f401xe
