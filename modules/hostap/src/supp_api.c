@@ -690,8 +690,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
 					goto out;
 				}
-				strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
-				sae_null_terminated[params->sae_password_length] = '\0';
 			} else {
 				if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
 					(params->psk_length > WIFI_PSK_MAX_LEN)) {
@@ -700,9 +698,13 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
 					goto out;
 				}
-				strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
-				psk_null_terminated[params->psk_length] = '\0';
 			}
+
+			strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
+			sae_null_terminated[params->sae_password_length] = '\0';
+
+			strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
+			psk_null_terminated[params->psk_length] = '\0';
 		}
 
 		/* SAP - only open and WPA2-PSK are supported for now */

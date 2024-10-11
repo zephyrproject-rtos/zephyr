@@ -611,7 +611,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		case 'p':
 			params->psk = state->optarg;
 			params->psk_length = strlen(params->psk);
-			params->sae_password = optarg;
+			params->sae_password = state->optarg;
 			params->sae_password_length = strlen(params->sae_password);
 			break;
 		case 'c':
