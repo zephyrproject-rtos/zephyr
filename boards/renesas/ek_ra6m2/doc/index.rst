@@ -51,7 +51,7 @@ The key features of the EK-RA6M2 board are categorized in three groups as follow
 
 - USB Full Speed Host and Device (micro-AB connector)
 
-.. figure:: ek-ra6m2-board.webp
+.. figure:: ek_ra6m2.webp
 	:align: center
 	:alt: RA6M2 Evaluation Kit
 
@@ -61,7 +61,7 @@ Hardware
 ********
 Detailed hardware feature for the RA6M2 MCU group can be found at `RA6M2 Group User's Manual Hardware`_
 
-.. figure:: ra6m2-block-diagram.webp
+.. figure:: ra6m2_block_diagram.webp
 	:width: 871px
 	:align: center
 	:alt: RA6M2 MCU group feature
