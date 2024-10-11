@@ -21,7 +21,6 @@
   font-size: 14px;
   border-radius: 50px;
   padding: 10px 18px;
-  flex: 1 1 200px;
   background-color: var(--input-background-color);
   color: var(--body-color);
   transition: all 0.3s ease;
@@ -31,8 +30,23 @@
 .filter-form input:focus, .filter-form select:focus {
   border-color: var(--input-focus-border-color);
 }
-.select-container {
+
+.form-group {
   flex: 1 1 200px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  margin-bottom: 10px;
+}
+
+.filter-form .form-group label {
+  color: var(--body-color);
+  font-size: 10px;
+  text-transform: uppercase;
+  padding-left: 18px;
+  margin-bottom: 5px;
+}
+
+.select-container {
   position: relative;
 }
 
