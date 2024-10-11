@@ -1,0 +1,14 @@
+description: |
+  MSPM0 flash memory. This binding is for the flash memory itself, not
+  the flash controller peripheral. For that, see the
+  "ti,mspm0-flash-controller" binding.
+
+include: soc-nv-flash.yaml
+
+compatible: ti,mspm0-nv-flash
+
+properties:
+  max-erase-time:
+    type: int
+    description: max erase time(millisecond) of a flash sector or page or half-page
+    required: false
