@@ -14,7 +14,7 @@ Directives
 - ``zephyr:code-sample::`` - Defines a code sample.
 - ``zephyr:code-sample-category::`` - Defines a category for grouping code samples.
 - ``zephyr:code-sample-listing::`` - Shows a listing of code samples found in a given category.
-- ``zephyr:board-catalog::`` - Show a listing of boards supported by Zephyr.
+- ``zephyr:board-catalog::`` - Shows a listing of boards supported by Zephyr.
 
 Roles
 -----
