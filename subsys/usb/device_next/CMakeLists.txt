@@ -87,6 +87,11 @@ zephyr_library_sources_ifdef(
   class/usbd_dfu.c
 )
 
+zephyr_library_sources_ifdef(
+  CONFIG_USBD_DFU_FLASH
+  class/usbd_dfu_flash.c
+)
+
 zephyr_linker_sources_ifdef(
   CONFIG_USBD_DFU
   SECTIONS class/usbd_dfu.ld
