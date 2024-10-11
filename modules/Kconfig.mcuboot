@@ -62,6 +62,13 @@ config MCUBOOT_SIGNATURE_KEY_FILE
 
 	  If left empty, you must sign the Zephyr binaries manually.
 
+config MCUBOOT_SIGNATURE_TYPE_PURE
+	bool "Verify signature over the image instead of image hash"
+	depends on !BOOT_ENCRYPTION
+	help
+	  The MCUboot has been configured to verify signature of
+	  application image directly on the image instead of hash.
+
 config MCUBOOT_ENCRYPTION_KEY_FILE
 	string "Path to the mcuboot encryption key file"
 	default ""
