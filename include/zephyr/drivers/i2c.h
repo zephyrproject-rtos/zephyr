@@ -271,6 +271,10 @@ __subsystem struct i2c_target_driver_api {
 /** Target device responds to 10-bit addressing. */
 #define I2C_TARGET_FLAGS_ADDR_10_BITS	BIT(0)
 
+#define I2C_TARGET_FLAGS_SECONDARY_ADDR	BIT(2)
+
+#define I2C_TARGET_FLAGS_ERROR_TIMEOUT	BIT(10)
+
 /** @brief Function called when a write to the device is initiated.
  *
  * This function is invoked by the controller when the bus completes a

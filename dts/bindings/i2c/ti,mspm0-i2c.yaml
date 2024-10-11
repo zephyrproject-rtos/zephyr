@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 I2C
+
+compatible: "ti,mspm0-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  primary-address:
+    type: int
+    required: false
+  
+  secondary-address:
+    type: int
+    required: false
+  
+  secondary-mask:
+    type: int
+    required: false

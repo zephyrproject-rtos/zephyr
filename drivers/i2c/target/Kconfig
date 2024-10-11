@@ -25,6 +25,11 @@ config I2C_TARGET_BUFFER_MODE
 	help
 	  This is an option to enable buffer mode.
 
+config I2C_TARGET_TIMEOUT
+	bool "I2C Target timeout option"
+	help 
+		This option enables a target to timeout if the SCL line is held low.
+
 source "drivers/i2c/target/Kconfig.eeprom"
 
 endif # I2C_TARGET

@@ -1,0 +1,11 @@
+common: 
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+    harness: ztest
+
+tests:
+  drivers.i2c.target_api:
+    platform_allow: 
+      - lp_mspm0g3507

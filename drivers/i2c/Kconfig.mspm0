@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Texas Instruments
+
+config I2C_MSPM0
+	bool "TI I2C MSPM0 driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_I2C_ENABLED
+	select PINCTRL
+	help
+	  Enable support for I2C on the TI MSPM0 series.
+
+config I2C_CONTROLLER_TIMEOUT
+	bool "I2C Controller Timeout"
+	default new
+	help
+	  Enable support for timeout feature of device
+
+config I2C_MSPM0_MULTI_TARGET_ADDRESS
+	bool "I2C Multi Target Address"
+	default y
+	help 
+	  Enable a target peripheral to respond to multiple addresses, including an address range. 
