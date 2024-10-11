@@ -218,7 +218,7 @@ def map_regs(log_only):
     global cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
     cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
-    ace15 = did in [ 0x7e28 ]
+    ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
     ace30 = did in [ 0xe428 ]
 
