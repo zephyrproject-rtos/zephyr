@@ -4,34 +4,47 @@
 #}
 
 <form class="filter-form" aria-label="Filter boards by name, architecture, and vendor">
-  <input type="text" id="name" placeholder="Name" style="flex-basis: 100%"
-         aria-label="Name" />
-  <div class="select-container">
-    <select id="arch" aria-label="Architecture">
-      <option value="" disabled selected>Select an architecture</option>
-      <option value="nios2">Altera Nios II</option>
-      <option value="arm">ARM</option>
-      <option value="arm64">ARM 64</option>
-      <option value="mips">MIPS</option>
-      <option value="posix">POSIX</option>
-      <option value="riscv">RISC-V</option>
-      <option value="sparc">SPARC</option>
-      <option value="arc">Synopsys DesignWare ARC</option>
-      <option value="x86">x86</option>
-      <option value="xtensa">Xtensa</option>
-    </select>
+
+  <div class="form-group" style="flex-basis: 100%">
+    <label for="name">Name</label>
+    <input type="text" id="name"
+      placeholder='Name (or partial name) of the board, e.g. "reel board", "nucleo", &hellip;'
+      oninput="filterBoards()" />
   </div>
-  <div class="select-container" style="flex-basis: 400px">
-    <select id="vendor" aria-label="Vendor">
-      <option value="" disabled selected>Select a vendor</option>
-      {# Only show those vendors that have actual boards in the catalog.
-         Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the
-         JavaScript code later #}
-      {% for vendor in (catalog.boards | items | map(attribute='1.vendor') | unique ) %}
-      <option value="{{ vendor }}">{{ catalog.vendors[vendor] }}</option>
-      {% endfor %}
-    </select>
+
+  <div class="form-group">
+    <label for="arch">Architecture</label>
+    <div class="select-container">
+      <select id="arch">
+        <option value="" disabled selected>Select an architecture</option>
+        <option value="nios2">Altera Nios II</option>
+        <option value="arm">ARM</option>
+        <option value="arm64">ARM 64</option>
+        <option value="mips">MIPS</option>
+        <option value="posix">POSIX</option>
+        <option value="riscv">RISC-V</option>
+        <option value="sparc">SPARC</option>
+        <option value="arc">Synopsys DesignWare ARC</option>
+        <option value="x86">x86</option>
+        <option value="xtensa">Xtensa</option>
+      </select>
+    </div>
   </div>
+
+  <div class="form-group" style="flex-basis: 400px">
+    <label for="vendor">Vendor</label>
+    <div class="select-container">
+      <select id="vendor">
+        <option value="" disabled selected>Select a vendor</option>
+        {# Only show those vendors that have actual boards in the catalog.
+           Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
+        {% for vendor in (catalog.boards | items | map(attribute='1.vendor') | unique ) %}
+        <option value="{{ vendor }}">{{ catalog.vendors[vendor] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
 </form>
 
 <div id="form-options" style="text-align: center; margin-bottom: 20px">
