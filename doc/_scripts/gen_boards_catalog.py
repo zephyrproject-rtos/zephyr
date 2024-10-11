@@ -99,22 +99,8 @@ def get_catalog():
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
-        full_name = board.full_name
+        full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
-
-        if not full_name:
-            # If full commercial name of the board is not available through board.full_name, we look
-            # for the title in the board's documentation page.
-            # /!\ This is a temporary solution until #79571 sets all the full names in the boards
-            if doc_page:
-                with open(doc_page, "r") as f:
-                    lines = f.readlines()
-                    for i, line in enumerate(lines):
-                        if line.startswith("#"):
-                            full_name = lines[i - 1].strip()
-                            break
-            else:
-                full_name = board.name
 
         board_catalog[board.name] = {
             "full_name": full_name,
