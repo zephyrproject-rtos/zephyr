@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(crypto_cc23x0, CONFIG_CRYPTO_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <string.h>
@@ -80,6 +83,22 @@ struct crypto_cc23x0_data {
 #endif
 };
 
+static inline void crypto_cc23x0_pm_policy_state_lock_get(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void crypto_cc23x0_pm_policy_state_lock_put(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+#endif
+}
+
 static void crypto_cc23x0_isr(const struct device *dev)
 {
 	struct crypto_cc23x0_data *data = dev->data;
@@ -102,16 +121,40 @@ static void crypto_cc23x0_isr(const struct device *dev)
 	AESClearInterrupt(status);
 }
 
-static void crypto_cc23x0_cleanup(const struct device *dev)
+#ifdef CONFIG_CRYPTO_CC23X0_DMA
+static int crypto_cc23x0_dma_enable(const struct device *dev, bool *dma_enabled)
+{
+	const struct crypto_cc23x0_config *cfg = dev->config;
+	int ret;
+
+	ret = pm_device_runtime_get(cfg->dma_dev);
+	if (ret) {
+		LOG_ERR("Failed to resume DMA");
+		*dma_enabled = false;
+	} else {
+		*dma_enabled = true;
+	}
+
+	return ret;
+}
+#endif
+
+static void crypto_cc23x0_cleanup(const struct device *dev, bool dma_enabled)
 {
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	const struct crypto_cc23x0_config *cfg = dev->config;
 
 	dma_stop(cfg->dma_dev, cfg->dma_channel_b);
 	dma_stop(cfg->dma_dev, cfg->dma_channel_a);
+
 	AESDisableDMA();
+
+	if (dma_enabled) {
+		pm_device_runtime_put(cfg->dma_dev);
+	}
 #else
 	ARG_UNUSED(dev);
+	ARG_UNUSED(dma_enabled);
 #endif
 	AESClearAUTOCFGTrigger();
 	AESClearAUTOCFGBusHalt();
@@ -124,6 +167,7 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 	struct crypto_cc23x0_data *data = dev->data;
 	int out_bytes_processed = 0;
 	int ret;
+	bool dma_enabled = false;
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	uint32_t int_flags = AES_IMASK_CHBDONE;
 	const struct crypto_cc23x0_config *cfg = dev->config;
@@ -186,6 +230,8 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 
 	k_mutex_lock(&data->device_mutex, K_FOREVER);
 
+	crypto_cc23x0_pm_policy_state_lock_get();
+
 	/* Enable interrupts */
 	AESSetIMASK(int_flags);
 
@@ -198,6 +244,11 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 		      AES_AUTOCFG_TRGAES_WRBUF3S);
 
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
+	ret = crypto_cc23x0_dma_enable(dev, &dma_enabled);
+	if (ret) {
+		goto cleanup;
+	}
+
 	/* Setup the DMA for the AES engine */
 	AESSetupDMA(AES_DMA_ADRCHA_BUF0 |
 		    AES_DMA_TRGCHA_AESSTART |
@@ -209,11 +260,13 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
+		LOG_ERR("Failed to configure DMA CHA");
 		goto cleanup;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_b, &dma_cfg_chb);
 	if (ret) {
+		LOG_ERR("Failed to configure DMA CHB");
 		goto cleanup;
 	}
 
@@ -265,7 +318,8 @@ static int crypto_cc23x0_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *
 #endif
 
 cleanup:
-	crypto_cc23x0_cleanup(dev);
+	crypto_cc23x0_cleanup(dev, dma_enabled);
+	crypto_cc23x0_pm_policy_state_lock_put();
 	k_mutex_unlock(&data->device_mutex);
 	pkt->out_len = out_bytes_processed;
 
@@ -281,6 +335,7 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 	int bytes_processed = 0;
 	int iv_len;
 	int ret;
+	bool dma_enabled = false;
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	uint32_t int_flags = AES_IMASK_CHBDONE;
 	const struct crypto_cc23x0_config *cfg = dev->config;
@@ -345,6 +400,8 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 
 	k_mutex_lock(&data->device_mutex, K_FOREVER);
 
+	crypto_cc23x0_pm_policy_state_lock_get();
+
 	/* Enable interrupts */
 	AESSetIMASK(int_flags);
 
@@ -359,6 +416,11 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 		      AES_AUTOCFG_CTRSIZE_CTR128);
 
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
+	ret = crypto_cc23x0_dma_enable(dev, &dma_enabled);
+	if (ret) {
+		goto cleanup;
+	}
+
 	/* Setup the DMA for the AES engine */
 	AESSetupDMA(AES_DMA_ADRCHA_TXTX0 |
 		    AES_DMA_TRGCHA_AESDONE |
@@ -367,11 +429,13 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
+		LOG_ERR("Failed to configure DMA CHA");
 		goto cleanup;
 	}
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_b, &dma_cfg_chb);
 	if (ret) {
+		LOG_ERR("Failed to configure DMA CHB");
 		goto cleanup;
 	}
 
@@ -433,7 +497,8 @@ static int crypto_cc23x0_ctr(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uin
 #endif
 
 cleanup:
-	crypto_cc23x0_cleanup(dev);
+	crypto_cc23x0_cleanup(dev, dma_enabled);
+	crypto_cc23x0_pm_policy_state_lock_put();
 	k_mutex_unlock(&data->device_mutex);
 	pkt->out_len = bytes_processed;
 
@@ -448,6 +513,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 	uint32_t iv[AES_BLOCK_SIZE_WORDS] = { 0 };
 	int bytes_processed = 0;
 	int ret;
+	bool dma_enabled = false;
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	uint32_t int_flags = AES_IMASK_CHADONE;
 	const struct crypto_cc23x0_config *cfg = dev->config;
@@ -492,6 +558,8 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 	k_mutex_lock(&data->device_mutex, K_FOREVER);
 
+	crypto_cc23x0_pm_policy_state_lock_get();
+
 	/* Enable interrupts */
 	AESSetIMASK(int_flags);
 
@@ -506,6 +574,13 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 	/* Write zero'd IV */
 	AESWriteIV32(iv);
 
+#ifdef CONFIG_CRYPTO_CC23X0_DMA
+	ret = crypto_cc23x0_dma_enable(dev, &dma_enabled);
+	if (ret) {
+		goto out;
+	}
+#endif
+
 	if (b0) {
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 		/* Setup the DMA for the AES engine */
@@ -514,6 +589,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 		ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 		if (ret) {
+			LOG_ERR("Failed to configure DMA CHA");
 			goto out;
 		}
 
@@ -546,6 +622,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 		ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 		if (ret) {
+			LOG_ERR("Failed to configure DMA CHA");
 			goto out;
 		}
 
@@ -578,6 +655,7 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel_a, &dma_cfg_cha);
 	if (ret) {
+		LOG_ERR("Failed to configure DMA CHA");
 		goto out;
 	}
 
@@ -624,7 +702,8 @@ static int crypto_cc23x0_cmac(struct cipher_ctx *ctx, struct cipher_pkt *pkt,
 	AESReadTag(pkt->out_buf);
 
 out:
-	crypto_cc23x0_cleanup(dev);
+	crypto_cc23x0_cleanup(dev, dma_enabled);
+	crypto_cc23x0_pm_policy_state_lock_put();
 	k_mutex_unlock(&data->device_mutex);
 	pkt->out_len = bytes_processed;
 
@@ -979,6 +1058,7 @@ static int crypto_cc23x0_init(const struct device *dev)
 {
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 	const struct crypto_cc23x0_config *cfg = dev->config;
+	int ret;
 #endif
 	struct crypto_cc23x0_data *data = dev->data;
 
@@ -1000,6 +1080,12 @@ static int crypto_cc23x0_init(const struct device *dev)
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
 	}
+
+	ret = pm_device_runtime_enable(cfg->dma_dev);
+	if (ret) {
+		LOG_ERR("Failed to enable DMA runtime PM");
+		return ret;
+	}
 #else
 	k_sem_init(&data->aes_done, 0, 1);
 #endif
@@ -1015,6 +1101,26 @@ static DEVICE_API(crypto, crypto_enc_funcs) = {
 
 static struct crypto_cc23x0_data crypto_cc23x0_dev_data;
 
+#ifdef CONFIG_PM_DEVICE
+
+static int crypto_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_LAES);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_LAES);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
+
+PM_DEVICE_DT_INST_DEFINE(0, crypto_cc23x0_pm_action);
+
 #ifdef CONFIG_CRYPTO_CC23X0_DMA
 static const struct crypto_cc23x0_config crypto_cc23x0_dev_config = {
 	.dma_dev = DEVICE_DT_GET(TI_CC23X0_DT_INST_DMA_CTLR(0, cha)),
@@ -1026,7 +1132,7 @@ static const struct crypto_cc23x0_config crypto_cc23x0_dev_config = {
 
 DEVICE_DT_INST_DEFINE(0,
 		      crypto_cc23x0_init,
-		      NULL,
+		      PM_DEVICE_DT_INST_GET(0),
 		      &crypto_cc23x0_dev_data,
 		      &crypto_cc23x0_dev_config,
 		      POST_KERNEL,
@@ -1035,7 +1141,7 @@ DEVICE_DT_INST_DEFINE(0,
 #else
 DEVICE_DT_INST_DEFINE(0,
 		      crypto_cc23x0_init,
-		      NULL,
+		      PM_DEVICE_DT_INST_GET(0),
 		      &crypto_cc23x0_dev_data,
 		      NULL,
 		      POST_KERNEL,
