@@ -198,4 +198,43 @@
 		pinmux = <&alt4d_mdio_en>;
 	};
 
+	/omit-if-no-ref/ pwm0_sl_gp82: pwm0-sel {
+		pinmux = <&alt4_pwm0_sl>;
+	};
+
+	/omit-if-no-ref/ pwm1_sl_gp04: pwm1-sel {
+		pinmux = <&alt4_pwm1_sl>;
+	};
+
+	/omit-if-no-ref/ pwm2_sl_gp36: pwm2-sel {
+		pinmux = <&alt4_pwm2_sl>;
+	};
+
+	/omit-if-no-ref/ pwm3_sl_gp64: pwm3-sel {
+		pinmux = <&alt4_pwm3_sl>;
+	};
+
+	/omit-if-no-ref/ pwm4_sl_gpa0: pwm4-sel {
+		pinmux = <&alt4_pwm4_sl>;
+	};
+
+	/omit-if-no-ref/ pwm5_sl_gpa3: pwm5-sel {
+		pinmux = <&alt4_pwm5_sl>;
+	};
+
+	/omit-if-no-ref/ pwm6_sl_gpa5: pwm6-sel {
+		pinmux = <&alt5_pwm6_sl>;
+	};
+
+	/omit-if-no-ref/ pwm7_sl_gp00: pwm7-sel {
+		pinmux = <&alt5_pwm7_sl>;
+	};
+
+	/omit-if-no-ref/ pwm8_sl_gp02: pwm8-sel {
+		pinmux = <&alt5_pwm8_sl>;
+	};
+
+	/omit-if-no-ref/ pwm9_sl_gp06: pwm9-sel {
+		pinmux = <&alt5_pwm9_sl>;
+	};
 };

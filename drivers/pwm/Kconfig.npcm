@@ -1,0 +1,13 @@
+# NPCM PWM driver configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_NPCM
+	bool "Nuvoton NPCM Enhanced Super I/O (eSIO) PWM driver"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_PWM_ENABLED
+	help
+	  This option enables the PWM driver for NPCM family of
+	  processors.
+	  Say y if you wish to use pwm ports on NPCM MCU.

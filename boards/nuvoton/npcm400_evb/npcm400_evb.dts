@@ -214,3 +214,9 @@
 	prescaler = <2>;
 	status = "okay";
 };
+
+&pwm5 {
+	pinctrl-0 = <&pwm4_sl_gpa0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
