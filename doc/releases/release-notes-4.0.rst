@@ -107,6 +107,9 @@ Bluetooth
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
     connection (experimental).
+  * Added :kconfig:option:`CONFIG_BT_CONN_TX_NOTIFY_WQ`.
+    The option allows using a separate workqueue for connection TX notify processing
+    (:c:func:`bt_conn_tx_notify`) to make Bluetooth stack more independent from the system workqueue.
 
   * The host now disconnects from the peer upon ATT timeout.
 
