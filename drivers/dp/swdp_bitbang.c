@@ -677,7 +677,6 @@ static int sw_port_off(const struct device *dev)
 
 static int sw_gpio_init(const struct device *dev)
 {
-	const struct sw_config *config = dev->config;
 	struct sw_cfg_data *sw_data = dev->data;
 	int ret;
 
