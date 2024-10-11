@@ -30,6 +30,9 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 
 #include "eth.h"
 
+#define ETH_ALEN 6
+
+/* TODO: use sizeof() after implementing tx/rx */
 #define BUFFER_SIZE (1500 + 60) /* Ethernet MTU + TSN Metadata */
 
 #define DESC_MAGIC 0xAD4B0000UL
@@ -48,8 +51,8 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 
 /* Temporary macros: need to be deleted later */
 #define RX_ENGINE_REG_ADDR 0x1b08001000
-#define RX_SGDMA_REG_ADDR 0x1b08005000
-#define RX_REGS_SIZE 0x1000
+#define RX_SGDMA_REG_ADDR  0x1b08005000
+#define RX_REGS_SIZE       0x1000
 
 struct dma_tsn_nic_engine_regs {
 	uint32_t identifier;
@@ -176,6 +179,7 @@ static struct net_stats_eth *get_stats(const struct device *dev)
 static int eth_tsn_nic_start(const struct device *dev)
 {
 	struct eth_tsn_nic_data *data = dev->data;
+	mm_reg_t rx_regs, rx_sgdma_regs;
 
 	data->rx_desc.src_addr_lo = sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->res));
 	data->rx_desc.src_addr_hi = sys_cpu_to_le32(PCI_DMA_H((uintptr_t)&data->res));
@@ -186,7 +190,6 @@ static int eth_tsn_nic_start(const struct device *dev)
 	 * TODO: Find out how to move this to dma driver
 	 * or how to access dma registers from here
 	 */
-	mm_reg_t rx_regs, rx_sgdma_regs;
 	device_map(&rx_regs, RX_ENGINE_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
 	device_map(&rx_sgdma_regs, RX_SGDMA_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
 
@@ -282,6 +285,7 @@ static const struct ethernet_api eth_tsn_nic_api = {
 
 static int eth_tsn_nic_init(const struct device *dev)
 {
+	struct eth_tsn_nic_config *config = dev->config;
 	struct eth_tsn_nic_data *data = dev->data;
 
 	pthread_spin_init(&data->tx_lock, PTHREAD_PROCESS_PRIVATE);
@@ -295,17 +299,15 @@ static int eth_tsn_nic_init(const struct device *dev)
 	eth_tsn_nic_start(dev); /* TODO: This is for test only: this is called by zephyr subsys */
 
 	/* Test logs */
-	/*
 	mm_reg_t test_dma_addr;
 
 	device_map(&test_dma_addr, 0x1b08000000, 0x4000, K_MEM_CACHE_NONE);
-	printk("H2C engine id: 0x%x\n", sys_read32(test_dma_addr));
-	printk("H2C engine control: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
+	printk("H2C engine id: 0x%08x\n", sys_read32(test_dma_addr));
+	printk("H2C engine control: 0x%08x\n", sys_read32(test_dma_addr + 0x0004));
 	dma_start(config->dma_dev, 0);
 	printk("H2C engine start\n");
-	printk("H2C engine control: 0x%x\n", sys_read32(test_dma_addr + 0x0004));
-	printk("C2H engine control: 0x%x\n", sys_read32(test_dma_addr + 0x1004));
-	*/
+	printk("H2C engine control: 0x%08x\n", sys_read32(test_dma_addr + 0x0004));
+	printk("C2H engine control: 0x%08x\n", sys_read32(test_dma_addr + 0x1004));
 
 	return 0;
 }
