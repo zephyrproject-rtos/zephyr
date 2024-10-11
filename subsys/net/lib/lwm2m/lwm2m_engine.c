@@ -96,6 +96,8 @@ static sys_slist_t engine_service_list;
 static K_KERNEL_STACK_DEFINE(engine_thread_stack, CONFIG_LWM2M_ENGINE_STACK_SIZE);
 static struct k_thread engine_thread_data;
 
+static K_MUTEX_DEFINE(engine_lock);
+
 #define MAX_POLL_FD CONFIG_ZVFS_POLL_MAX
 
 /* Resources */
@@ -1283,6 +1285,16 @@ int lwm2m_engine_resume(void)
 	lwm2m_engine_wake_up();
 
 	return 0;
+}
+
+void lwm2m_engine_lock(void)
+{
+	(void)k_mutex_lock(&engine_lock, K_FOREVER);
+}
+
+void lwm2m_engine_unlock(void)
+{
+	k_mutex_unlock(&engine_lock);
 }
 
 static int lwm2m_engine_init(void)

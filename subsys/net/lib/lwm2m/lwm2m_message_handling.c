@@ -519,16 +519,22 @@ struct lwm2m_message *find_msg(struct coap_pending *pending, struct coap_reply *
 
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx)
 {
+	struct lwm2m_message *msg = NULL;
 	size_t i;
+
+	lwm2m_engine_lock();
 
 	for (i = 0; i < CONFIG_LWM2M_ENGINE_MAX_MESSAGES; i++) {
 		if (!messages[i].ctx) {
 			messages[i].ctx = client_ctx;
-			return &messages[i];
+			msg = &messages[i];
+			break;
 		}
 	}
 
-	return NULL;
+	lwm2m_engine_unlock();
+
+	return msg;
 }
 
 void lm2m_message_clear_allocations(struct lwm2m_message *msg)
@@ -561,11 +567,13 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	}
 
 	if (release) {
+		lwm2m_engine_lock();
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 		release_output_block_ctx(&msg->out.block_ctx);
 		release_body_encode_buffer(&msg->body_encode_buffer.data);
 #endif
 		(void)memset(msg, 0, sizeof(*msg));
+		lwm2m_engine_unlock();
 	} else {
 		msg->message_timeout_cb = NULL;
 		(void)memset(&msg->cpkt, 0, sizeof(msg->cpkt));
