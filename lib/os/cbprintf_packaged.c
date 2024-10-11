@@ -242,10 +242,10 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 #define STR_POS_MASK BIT_MASK(7)
 
 /* Buffer offset abstraction for better code clarity. */
-#define BUF_OFFSET offset
+#define BUF_OFFSET ((uintptr_t)buf - (uintptr_t)buf0)
 
-	uint8_t *buf = packaged;   /* buffer start (may be NULL) */
-	size_t offset = 0;         /* current buffer position */
+	uint8_t *buf0 = packaged;  /* buffer start (may be NULL) */
+	uint8_t *buf = buf0;       /* current buffer position */
 	unsigned int size;         /* current argument's size */
 	unsigned int align;        /* current argument's required alignment */
 	uint8_t str_ptr_pos[16];   /* string pointer positions */
@@ -294,16 +294,16 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 *
 	 * Refer to union cbprintf_package_hdr for more details.
 	 */
-	offset += sizeof(*pkg_hdr);
+	buf += sizeof(*pkg_hdr);
 
 	/*
-	 * When buf is NULL we don't store anything.
+	 * When buf0 is NULL we don't store anything.
 	 * Instead we count the needed space to store the data.
 	 * In this case, incoming len argument indicates the anticipated
 	 * buffer "misalignment" offset.
 	 */
-	if (buf == NULL) {
-		offset += len % CBPRINTF_PACKAGE_ALIGNMENT;
+	if (buf0 == NULL) {
+		buf += len % CBPRINTF_PACKAGE_ALIGNMENT;
 		/*
 		 * The space to store the data is represented by both the
 		 * buffer offset as well as the extra string data to be
@@ -324,7 +324,7 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 	 * Otherwise we must ensure we can store at least
 	 * the pointer to the format string itself.
 	 */
-	if ((buf != NULL) && (BUF_OFFSET + sizeof(char *)) > len) {
+	if ((buf0 != NULL) && (BUF_OFFSET + sizeof(char *)) > len) {
 		return -ENOSPC;
 	}
 
@@ -355,18 +355,18 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 			size = sizeof(int);
 
 			/* align destination buffer location */
-			offset = ROUND_UP(offset, align);
+			buf = (void *)ROUND_UP(buf, align);
 
 			/* make sure the data fits */
-			if (buf != NULL && BUF_OFFSET + size > len) {
+			if (buf0 != NULL && BUF_OFFSET + size > len) {
 				return -ENOSPC;
 			}
 
-			if (buf != NULL) {
-				*(int *)(buf + offset) = arg_tag;
+			if (buf0 != NULL) {
+				*(int *)buf = arg_tag;
 			}
 
-			offset += sizeof(int);
+			buf += sizeof(int);
 
 			if (arg_tag == CBPRINTF_PACKAGE_ARG_TYPE_END) {
 				/* End of arguments */
@@ -430,21 +430,21 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 				}
 
 				/* align destination buffer location */
-				offset = ROUND_UP(offset, align);
-				if (buf != NULL) {
+				buf = (void *) ROUND_UP(buf, align);
+				if (buf0 != NULL) {
 					/* make sure it fits */
 					if ((BUF_OFFSET + size) > len) {
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy((buf + offset), (uint8_t *)&v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
-						*(long double *)(buf + offset) = v.ld;
+						*(long double *)buf = v.ld;
 					} else {
-						*(double *)(buf + offset) = v.d;
+						*(double *)buf = v.d;
 					}
 				}
-				offset += size;
+				buf += size;
 				parsing = false;
 				continue;
 			}
@@ -577,21 +577,21 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 					size = sizeof(double);
 				}
 				/* align destination buffer location */
-				offset = ROUND_UP(offset, align);
-				if (buf != NULL) {
+				buf = (void *) ROUND_UP(buf, align);
+				if (buf0 != NULL) {
 					/* make sure it fits */
 					if (BUF_OFFSET + size > len) {
 						return -ENOSPC;
 					}
 					if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-						memcpy(buf + offset, (uint8_t *)&v, size);
+						memcpy(buf, (uint8_t *)&v, size);
 					} else if (fmt[-1] == 'L') {
-						*(long double *)(buf + offset) = v.ld;
+						*(long double *)buf = v.ld;
 					} else {
-						*(double *)(buf + offset) = v.d;
+						*(double *)buf = v.d;
 					}
 				}
-				offset += size;
+				buf += size;
 				parsing = false;
 				continue;
 			}
@@ -603,10 +603,10 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		}
 
 		/* align destination buffer location */
-		offset = ROUND_UP(offset, align);
+		buf = (void *) ROUND_UP(buf, align);
 
 		/* make sure the data fits */
-		if ((buf != NULL) && (BUF_OFFSET + size) > len) {
+		if ((buf0 != NULL) && (BUF_OFFSET + size) > len) {
 			return -ENOSPC;
 		}
 
@@ -614,8 +614,8 @@ int cbvprintf_package(void *packaged, size_t len, uint32_t flags,
 		if (is_str_arg) {
 			s = va_arg(ap, char *);
 process_string:
-			if (buf != NULL) {
-				*(const char **)(buf + offset) = s;
+			if (buf0 != NULL) {
+				*(const char **)buf = s;
 			}
 
 			bool is_ro = (fros_cnt-- > 0) ? true : ptr_in_rodata(s);
@@ -642,7 +642,7 @@ process_string:
 					return -EINVAL;
 				}
 
-				if (buf != NULL) {
+				if (buf0 != NULL) {
 					/*
 					 * Remember string pointer location.
 					 * We will append non-ro strings later.
@@ -678,34 +678,34 @@ process_string:
 
 				s_idx++;
 			}
-			offset += sizeof(char *);
+			buf += sizeof(char *);
 
 			is_str_arg = false;
 		} else if (size == sizeof(int)) {
 			int v = va_arg(ap, int);
 
-			if (buf != NULL) {
-				*(int *)(buf + offset) = v;
+			if (buf0 != NULL) {
+				*(int *)buf = v;
 			}
-			offset += sizeof(int);
+			buf += sizeof(int);
 		} else if (size == sizeof(long)) {
 			long v = va_arg(ap, long);
 
-			if (buf != NULL) {
-				*(long *)(buf + offset) = v;
+			if (buf0 != NULL) {
+				*(long *)buf = v;
 			}
-			offset += sizeof(long);
+			buf += sizeof(long);
 		} else if (size == sizeof(long long)) {
 			long long v = va_arg(ap, long long);
 
-			if (buf != NULL) {
+			if (buf0 != NULL) {
 				if (Z_CBPRINTF_VA_STACK_LL_DBL_MEMCPY) {
-					memcpy(buf + offset, (uint8_t *)&v, sizeof(long long));
+					memcpy(buf, (uint8_t *)&v, sizeof(long long));
 				} else {
-					*(long long *)(buf + offset) = v;
+					*(long long *)buf = v;
 				}
 			}
-			offset += sizeof(long long);
+			buf += sizeof(long long);
 		} else {
 			__ASSERT(false, "unexpected size %u", size);
 			return -EINVAL;
@@ -727,12 +727,12 @@ process_string:
 	 * If all we wanted was to count required buffer size
 	 * then we have it now.
 	 */
-	if (buf == NULL) {
+	if (buf0 == NULL) {
 		return BUF_OFFSET + len - CBPRINTF_PACKAGE_ALIGNMENT;
 	}
 
 	/* Clear our buffer header. We made room for it initially. */
-	*(char **)buf = NULL;
+	*(char **)buf0 = NULL;
 
 	/* Record end of argument list. */
 	pkg_hdr->desc.len = BUF_OFFSET / sizeof(int);
@@ -767,8 +767,8 @@ process_string:
 				return -ENOSPC;
 			}
 			/* store the pointer position prefix */
-			*(buf + offset) = pos;
-			++offset;
+			*buf = pos;
+			++buf;
 		}
 	}
 
@@ -781,13 +781,12 @@ process_string:
 
 		if (rws_pos_en) {
 			size = 0;
-			*(buf + offset) = str_ptr_arg[i];
-			offset++;
+			*buf++ = str_ptr_arg[i];
 		} else {
 			/* retrieve the string pointer */
-			s = *(char **)(buf + str_ptr_pos[i] * sizeof(int));
+			s = *(char **)(buf0 + str_ptr_pos[i] * sizeof(int));
 			/* clear the in-buffer pointer (less entropy if compressed) */
-			*(char **)(buf + str_ptr_pos[i] * sizeof(int)) = NULL;
+			*(char **)(buf0 + str_ptr_pos[i] * sizeof(int)) = NULL;
 			/* find the string length including terminating '\0' */
 			size = strlen(s) + 1;
 		}
@@ -797,11 +796,11 @@ process_string:
 			return -ENOSPC;
 		}
 		/* store the pointer position prefix */
-		*(buf + offset) = str_ptr_pos[i];
-		++offset;
+		*buf = str_ptr_pos[i];
+		++buf;
 		/* copy the string with its terminating '\0' */
-		memcpy(buf + offset, (uint8_t *)s, size);
-		offset += size;
+		memcpy(buf, (uint8_t *)s, size);
+		buf += size;
 	}
 
 	/*
