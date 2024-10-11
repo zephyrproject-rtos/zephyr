@@ -133,6 +133,7 @@ config BT_CONN_TX_NOTIFY_WQ
 	bool "Use a separate workqueue for connection TX notify processing [EXPERIMENTAL]"
 	depends on BT_CONN_TX
 	select EXPERIMENTAL
+	default y
 	help
 	  Use a separate workqueue instead of system workqueue for
 	  bt_conn_tx_notify processing. The option can be used to make Bluetooth
