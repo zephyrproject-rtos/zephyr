@@ -424,7 +424,8 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
 	enum igmp_version version;
 	int ret;
-	int igmp_buf_len = pkt->buffer->len - net_pkt_ip_hdr_len(pkt);
+	int igmp_buf_len =
+		pkt->buffer->len - (net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
 
 	/* Detect IGMP type (RFC 3376 ch 7.1) */
 	if (igmp_buf_len == 8) {
