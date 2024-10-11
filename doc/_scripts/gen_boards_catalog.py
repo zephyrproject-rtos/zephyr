@@ -5,7 +5,7 @@ import logging
 from collections import namedtuple
 from pathlib import Path
 
-import list_boards
+import list_boards, list_hardware
 import pykwalify
 import yaml
 import zephyr_module
@@ -14,6 +14,7 @@ from gen_devicetree_rest import VndLookup
 ZEPHYR_BASE = Path(__file__).parents[2]
 
 logger = logging.getLogger(__name__)
+
 
 def guess_file_from_patterns(directory, patterns, name, extensions):
     for pattern in patterns:
@@ -77,6 +78,7 @@ def get_catalog():
     )
 
     boards = list_boards.find_v2_boards(args_find_boards)
+    systems = list_hardware.find_v2_systems(args_find_boards)
     board_catalog = {}
 
     for board in boards:
@@ -99,6 +101,7 @@ def get_catalog():
             except Exception as e:
                 logger.error(f"Error parsing twister file {twister_file}: {e}")
 
+        socs = {soc.name for soc in board.socs}
         full_name = board.full_name or board.name
         doc_page = guess_doc_page(board)
 
@@ -107,7 +110,14 @@ def get_catalog():
             "doc_page": doc_page.relative_to(ZEPHYR_BASE).as_posix() if doc_page else None,
             "vendor": vendor,
             "archs": list(archs),
+            "socs": list(socs),
             "image": guess_image(board),
         }
 
-    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor}
+    socs_hierarchy = {}
+    for soc in systems.get_socs():
+        family = soc.family or "<no family>"
+        series = soc.series or "<no series>"
+        socs_hierarchy.setdefault(family, {}).setdefault(series, []).append(soc.name)
+
+    return {"boards": board_catalog, "vendors": vnd_lookup.vnd2vendor, "socs": socs_hierarchy}
