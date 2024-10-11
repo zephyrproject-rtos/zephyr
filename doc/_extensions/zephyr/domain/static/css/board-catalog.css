@@ -28,7 +28,7 @@
   box-shadow: none;
 }
 
-.filter-form input:focus .filter-form select:focus {
+.filter-form input:focus, .filter-form select:focus {
   border-color: var(--input-focus-border-color);
 }
 .select-container {
