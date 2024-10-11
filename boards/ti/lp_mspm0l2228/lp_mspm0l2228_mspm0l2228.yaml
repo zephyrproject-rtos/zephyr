@@ -1,0 +1,16 @@
+identifier: lp_mspm0l2228/mspm0l2228
+name: LP_MSPM0L2228_MSPM0L2228
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - i2c
+  - pinctrl
+  - uart
+vendor: ti

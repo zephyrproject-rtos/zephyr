@@ -1,0 +1,105 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/dts-v1/;
+
+#include <ti/mspm0l122x_l222x/mspm0l2228.dtsi>
+#include <ti/mspm0l122x_l222x/mspm0l222x-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "TI LP_MSPM0L2228/MSPM0L2228";
+	compatible = "ti,mspm0l2228";
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &btn0;
+		sw1 = &btn1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flashctl;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpioa 23 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+		led1: led_1 {
+			gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+		led2: led_2 {
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+		btn0: btn_0 {
+			gpios = <&gpiob 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 3";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+		btn1: btn_1 {
+			gpios = <&gpioa 18 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Switch 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&clkmux {
+	clock-source = <&sysosc>;
+	clock-frequency = <DT_FREQ_M(32)>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
+	pinctrl-names = "default";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa17_pull_up &i2c1_sda_pa18_pull_up>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&adc0 {
+	ti,clk-source = <MSP_ADC_CLOCK_ULPCLK>;
+	ti,clk-divider = <8>;
+	ti,clk-range = <MSP_ADC_CLOCK_RANGE_24TO32>;
+	vref-mv = <2500>;
+	pinctrl-0 = <&adc0_pa25>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "disabled";
+}; 
