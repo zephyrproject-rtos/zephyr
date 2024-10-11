@@ -2381,9 +2381,9 @@ IPC:
   status: maintained
   maintainers:
     - doki-nordic
-    - arnopo
   collaborators:
     - carlocaione
+    - arnopo
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
