@@ -119,6 +119,24 @@
 			status = "disabled";
 		};
 
+		eusart0: eusart@5b010000 {
+			compatible = "silabs,gecko-spi-eusart";
+			reg = <0x5B010000 0x4000>;
+			interrupts = <11 0>, <12 0>;
+			interrupt-names = "rx", "tx";
+			clocks = <&cmu CLOCK_EUSART0 CLOCK_BRANCH_EUSART0CLK>;
+			status = "disabled";
+		};
+
+		eusart1: eusart@500a0000 {
+			compatible = "silabs,gecko-spi-eusart";
+			reg = <0x500A0000 0x4000>;
+			interrupts = <13 0>, <14 0>;
+			interrupt-names = "rx", "tx";
+			clocks = <&cmu CLOCK_EUSART1 CLOCK_BRANCH_EM01GRPCCLK>;
+			status = "disabled";
+		};
+
 		burtc0: burtc@50064000 {
 			compatible = "silabs,gecko-burtc";
 			reg = <0x50064000 0x3034>;

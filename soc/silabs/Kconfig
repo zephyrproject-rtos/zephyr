@@ -105,6 +105,12 @@ config SOC_GECKO_USART
 	  Set if the Universal Synchronous Asynchronous Receiver/Transmitter (USART)
 	  HAL module is used.
 
+config SOC_GECKO_EUSART
+	bool
+	help
+	  Set if the Extended Universal Synchronous Asynchronous Receiver/Transmitter (EUSART)
+	  HAL module is used.
+
 config SOC_GECKO_WDOG
 	bool
 	help
