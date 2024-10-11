@@ -389,13 +389,6 @@ static void ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_ready_thread_locked(struct k_thread *thread)
-{
-	if (thread_active_elsewhere(thread) == NULL) {
-		ready_thread(thread);
-	}
-}
-
 void z_ready_thread(struct k_thread *thread)
 {
 	K_SPINLOCK(&_sched_spinlock) {
