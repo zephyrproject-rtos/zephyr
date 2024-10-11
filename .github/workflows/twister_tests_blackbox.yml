@@ -21,7 +21,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
         os: [ubuntu-22.04]
     container:
       image: ghcr.io/zephyrproject-rtos/ci:v0.26.13
