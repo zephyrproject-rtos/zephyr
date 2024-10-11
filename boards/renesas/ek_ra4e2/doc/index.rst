@@ -61,7 +61,7 @@ RA MCU
 
 - CAN FD (3-pin header)
 
-.. figure:: ek-ra4e2-board.webp
+.. figure:: ek_ra4e2.webp
 	:align: center
 	:alt: RA4E2 Evaluation Kit
 
@@ -71,7 +71,7 @@ Hardware
 ********
 Detail Hardware feature for the RA4E2 MCU group can be found at `RA4E2 Group User's Manual Hardware`_
 
-.. figure:: ra4e2-block-diagram.webp
+.. figure:: ra4e2_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA4E2 MCU group feature

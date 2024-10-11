@@ -57,7 +57,7 @@ all of which are controlled by the Main MCU firmware
 
 - USB Full Speed Debug and Device (micro-AB connector)
 
-.. figure:: ek-ra6m1-board.webp
+.. figure:: ek_ra6m1.webp
 	:align: center
 	:alt: RA6M1 Evaluation Kit
 
@@ -67,7 +67,7 @@ Hardware
 ********
 Detailed hardware feature for the RA6M1 MCU group can be found at `RA6M1 Group User's Manual Hardware`_
 
-.. figure:: ra6m1-block-diagram.webp
+.. figure:: ra6m1_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA6M1 MCU group feature
