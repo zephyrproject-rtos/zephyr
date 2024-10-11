@@ -27,6 +27,14 @@
 
 LOG_MODULE_DECLARE(LPS2XDF, CONFIG_SENSOR_LOG_LEVEL);
 
+int lps2xdf_config_int(const struct device *dev)
+{
+	const struct lps2xdf_config *const cfg = dev->config;
+	const struct lps2xdf_chip_api *chip_api = cfg->chip_api;
+
+	return chip_api->config_interrupt(dev);
+}
+
 int lps2xdf_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
@@ -111,7 +119,6 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 {
 	struct lps2xdf_data *lps2xdf = dev->data;
 	const struct lps2xdf_config *cfg = dev->config;
-	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret;
 
 	/* setup data ready gpio interrupt */
@@ -164,32 +171,10 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 	LOG_DBG("drdy_pulsed is %d", (int)cfg->drdy_pulsed);
 
 	/* enable drdy in pulsed/latched mode */
-	if (variant == DEVICE_VARIANT_LPS22DF) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_lps22df)
-		lps22df_int_mode_t mode;
-
-		if (lps22df_interrupt_mode_get(ctx, &mode) < 0) {
-			return -EIO;
-		}
-		mode.drdy_latched = ~cfg->drdy_pulsed;
-		if (lps22df_interrupt_mode_set(ctx, &mode) < 0) {
-			return -EIO;
-		}
-#endif
-	} else if (variant == DEVICE_VARIANT_LPS28DFW) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_lps28dfw)
-		lps28dfw_int_mode_t mode;
-
-		if (lps28dfw_interrupt_mode_get(ctx, &mode) < 0) {
-			return -EIO;
-		}
-		mode.drdy_latched = ~cfg->drdy_pulsed;
-		if (lps28dfw_interrupt_mode_set(ctx, &mode) < 0) {
-			return -EIO;
-		}
-#endif
-	} else {
-		return -ENOTSUP;
+	ret = lps2xdf_config_int(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not configure interrupt mode");
+		return ret;
 	}
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) ||\
