@@ -237,4 +237,45 @@
 	/omit-if-no-ref/ pwm9_sl_gp06: pwm9-sel {
 		pinmux = <&alt5_pwm9_sl>;
 	};
+
+	/omit-if-no-ref/ ta0_sl_gp83: ta0_sel {
+		pinmux = <&alt3_ta0_sl>;
+	};
+
+	/omit-if-no-ref/ ta1_sl_gp05: ta1_sel {
+		pinmux = <&alt3_ta1_sl>;
+	};
+
+	/omit-if-no-ref/ ta2_sl_gp37: ta2_sel {
+		pinmux = <&alt3_ta2_sl>;
+	};
+
+	/omit-if-no-ref/ ta3_sl_gp81: ta3_sel {
+		pinmux = <&alt3_ta3_sl>;
+	};
+
+	/omit-if-no-ref/ ta4_sl_gpa1: ta4_sel {
+		pinmux = <&alt3_ta4_sl>;
+	};
+
+	/omit-if-no-ref/ ta5_sl_gpa4: ta5_sel {
+		pinmux = <&alt3_ta5_sl>;
+	};
+
+	/omit-if-no-ref/ ta6_sl_gpa6: ta6_sel {
+		pinmux = <&alt3_ta6_sl>;
+	};
+
+	/omit-if-no-ref/ ta7_sl_gp01: ta7_sel {
+		pinmux = <&alt3_ta7_sl>;
+	};
+
+	/omit-if-no-ref/ ta8_sl_gp03: ta8_sel {
+		pinmux = <&alt4_ta8_sl>;
+	};
+
+	/omit-if-no-ref/ ta9_sl_gp07: ta9_sel {
+		pinmux = <&alt4_ta9_sl>;
+	};
+
 };

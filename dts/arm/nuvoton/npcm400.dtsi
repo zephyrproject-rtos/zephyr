@@ -36,3 +36,9 @@
 		mapped-addr = <0x80000>;
         };
 };
+
+&tach3 {
+	pin-static;
+	pinctrl-0 = <&ta3_sl_gp81>;
+	pinctrl-names = "default";
+};

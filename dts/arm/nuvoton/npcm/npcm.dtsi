@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/npcm_clock.h>
 #include <zephyr/dt-bindings/flash_controller/npcm_qspi.h>
+#include <zephyr/dt-bindings/sensor/npcm_tach.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pinctrl/npcm-pinctrl.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -421,6 +422,30 @@
 			reg = <0x40006a00 0x200>;
 			interrupts = <20 3>;
 			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL3 5>;
+			status = "disabled";
+		};
+
+		tach1: tach@400e1000 {
+			compatible = "nuvoton,npcm-tach";
+			reg = <0x400e1000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 5>;
+			tach-channel = <1>;
+			status = "disabled";
+		};
+
+		tach2: tach@400e3000 {
+			compatible = "nuvoton,npcm-tach";
+			reg = <0x400e3000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 6>;
+			tach-channel = <2>;
+			status = "disabled";
+		};
+
+		tach3: tach@400e5000 {
+			compatible = "nuvoton,npcm-tach";
+			reg = <0x400e5000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_LFCLK NPCM_PWDWN_CTL1 7>;
+			tach-channel = <3>;
 			status = "disabled";
 		};
 

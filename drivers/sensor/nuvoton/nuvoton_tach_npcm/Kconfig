@@ -1,0 +1,12 @@
+# NPCM tachometer sensor configuration options
+
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_NPCM
+	bool "Nuvoton NPCM Tachometer sensor"
+	default y
+	depends on DT_HAS_NUVOTON_NPCM_TACH_ENABLED
+	depends on SOC_FAMILY_NPCM
+	help
+	  Enable the "Nuvoton NPCM tachometer sensor.

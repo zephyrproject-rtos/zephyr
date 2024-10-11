@@ -1743,32 +1743,37 @@ struct tach_reg {
 
 /* TACH register fields */
 #define NPCM_TCKC_LOW_PWR                7
-#define NPCM_TCKC_PLS_ACC_CLK            6
 #define NPCM_TCKC_C1CSEL_FIELD           FIELD(0, 3)
 #define NPCM_TCKC_C2CSEL_FIELD           FIELD(3, 3)
 #define NPCM_TMCTRL_MDSEL_FIELD          FIELD(0, 3)
 #define NPCM_TMCTRL_TAEN                 5
-#define NPCM_TMCTRL_TBEN                 6
 #define NPCM_TMCTRL_TAEDG                3
-#define NPCM_TMCTRL_TBEDG                4
 #define NPCM_TCFG_TADBEN                 6
-#define NPCM_TCFG_TBDBEN                 7
+#define NPCM_TCFG_MFT_IN_SEL             FIELD(2, 4)
 #define NPCM_TECTRL_TAPND                0
 #define NPCM_TECTRL_TBPND                1
 #define NPCM_TECTRL_TCPND                2
 #define NPCM_TECTRL_TDPND                3
+#define NPCM_TECTRL_TEPND                4
+#define NPCM_TECTRL_TFPND                5
 #define NPCM_TECLR_TACLR                 0
 #define NPCM_TECLR_TBCLR                 1
 #define NPCM_TECLR_TCCLR                 2
 #define NPCM_TECLR_TDCLR                 3
+#define NPCM_TECLR_TECLR                 4
+#define NPCM_TECLR_TFCLR                 5
 #define NPCM_TIEN_TAIEN                  0
 #define NPCM_TIEN_TBIEN                  1
 #define NPCM_TIEN_TCIEN                  2
 #define NPCM_TIEN_TDIEN                  3
+#define NPCM_TIEN_TEIEN                  4
+#define NPCM_TIEN_TFIEN                  5
 #define NPCM_TWUEN_TAWEN                 0
 #define NPCM_TWUEN_TBWEN                 1
 #define NPCM_TWUEN_TCWEN                 2
 #define NPCM_TWUEN_TDWEN                 3
+#define NPCM_TWUEN_TEWEN                 4
+#define NPCM_TWUEN_TFWEN                 5
 
 /* Debug Interface registers */
 struct dbg_reg {

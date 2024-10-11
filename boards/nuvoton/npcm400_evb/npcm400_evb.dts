@@ -220,3 +220,12 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&tach1 {
+	pin-select = <NPCM_TACH_PIN_SELECT_4>; /* Select tach pin 4 as input pin */
+	sample-clk = <NPCM_TACH_FREQ_LFCLK>; /* Use LFCLK as sampling clock */
+	pulses-per-round = <2>; /* number of pulses per round of encoder */
+	pinctrl-0 = <&ta4_sl_gpa1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
