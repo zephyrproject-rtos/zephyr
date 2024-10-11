@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Texas Instruments
+
+config SOC_FLASH_MSPM0
+	bool "MSPM0 Flash driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	  This option enables the TI MSPM0 Flash controller driver.
+
+config FLASH_MSPM0_LAYOUT_PAGE_SIZE
+	int "Page size to use for FLASH_LAYOUT feature"
+	default 1024
+	help
+		When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support that API.
+		By default the page size corresponds to the sector size (1024) for MSPM0
+		flash memory. Other options may include the XK-byte erase size (X),
+		the block size (Y), or any non-zero multiple of the sector size.
