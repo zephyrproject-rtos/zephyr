@@ -248,7 +248,6 @@ ipc0: &cpuapp_cpurad_ipc {
 	pinctrl-0 = <&uart136_default>;
 	pinctrl-1 = <&uart136_sleep>;
 	pinctrl-names = "default", "sleep";
-	hw-flow-control;
 };
 
 &gpio6 {
