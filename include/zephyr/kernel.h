@@ -4818,6 +4818,8 @@ struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	/** Receive message queue */
 	_wait_q_t rx_msg_queue;
+	/** Sync send queue */
+	_wait_q_t matched_queue;
 	struct k_spinlock lock;
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mbox)
@@ -4834,6 +4836,7 @@ struct k_mbox {
 	{ \
 	.tx_msg_queue = Z_WAIT_Q_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = Z_WAIT_Q_INIT(&obj.rx_msg_queue), \
+	.matched_queue = Z_WAIT_Q_INIT(&obj.matched_queue), \
 	}
 
 /**

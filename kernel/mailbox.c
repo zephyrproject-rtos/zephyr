@@ -88,6 +88,7 @@ void k_mbox_init(struct k_mbox *mbox)
 {
 	z_waitq_init(&mbox->tx_msg_queue);
 	z_waitq_init(&mbox->rx_msg_queue);
+	z_waitq_init(&mbox->matched_queue);
 	mbox->lock = (struct k_spinlock) {};
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
@@ -187,8 +188,8 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
 	/* synchronous send: wake up sending thread */
+	z_unpend_thread_no_timeout(sending_thread);
 	arch_thread_return_value_set(sending_thread, 0);
-	z_mark_thread_as_not_pending(sending_thread);
 	z_ready_thread(sending_thread);
 	z_reschedule_unlocked();
 }
@@ -255,10 +256,10 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
 
 			/*
-			 * synchronous send: pend current thread (unqueued)
+			 * synchronous send: pend current thread
 			 * until the receiver consumes the message
 			 */
-			int ret = z_pend_curr(&mbox->lock, key, NULL, K_FOREVER);
+			int ret = z_pend_curr(&mbox->lock, key, &mbox->matched_queue, K_FOREVER);
 
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox, timeout, ret);
 
