@@ -45,6 +45,21 @@
     </div>
   </div>
 
+  <div class="form-group">
+    <label for="family">Family</label>
+    <select id="family" name="family" size="10" multiple></select>
+  </div>
+
+  <div class="form-group">
+    <label for="series">Series</label>
+    <select id="series" name="series" size="10" multiple></select>
+  </div>
+
+  <div class="form-group">
+    <label for="soc">SoC</label>
+    <select id="soc" name="soc" size="10" multiple></select>
+  </div>
+
 </form>
 
 <div id="form-options" style="text-align: center; margin-bottom: 20px">
@@ -52,7 +67,7 @@
     id="reset-filters"
     class="btn btn-info btn-disabled fa fa-times"
     tabindex="0"
-    onclick="document.querySelector('.filter-form').reset(); filterBoards(); updateURL();">
+    onclick="resetForm()">
     Reset Filters
   </button>
   <button
@@ -71,3 +86,7 @@
   {% include "board-card.html" %}
   {% endfor %}
 </div>
+
+<script>
+  socs_data = {{ catalog.socs | tojson }};
+</script>

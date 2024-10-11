@@ -46,6 +46,19 @@
   margin-bottom: 5px;
 }
 
+.filter-form #family, .filter-form #series, .filter-form #soc {
+  overflow: auto;
+  border-radius: 8px;
+  padding-right: 18px;
+}
+
+.filter-form #family option:checked,
+.filter-form #series option:checked,
+.filter-form #soc option:checked {
+  background-color: var(--admonition-note-title-background-color);
+  color: var(--admonition-note-title-color);
+}
+
 .select-container {
   position: relative;
 }
