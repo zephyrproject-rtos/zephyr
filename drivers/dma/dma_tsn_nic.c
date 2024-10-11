@@ -197,7 +197,7 @@ static int get_engine_id(struct dma_tsn_nic_engine_regs *regs)
 static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 {
 	uint32_t align_bytes, granularity_bytes, address_bits;
-	uint32_t tmp;
+	uint32_t tmp, flags;
 
 	sys_write32(DMA_CTRL_NON_INCR_ADDR, (mem_addr_t)&regs->control_w1c);
 	tmp = sys_read32((mem_addr_t)&regs->alignments);
@@ -212,24 +212,17 @@ static int engine_init_regs(struct dma_tsn_nic_engine_regs *regs)
 		address_bits = 64;
 	}
 
-	tmp = DMA_CTRL_IE_DESC_ALIGN_MISMATCH;
-	tmp |= DMA_CTRL_IE_MAGIC_STOPPED;
-	tmp |= DMA_CTRL_IE_IDLE_STOPPED;
-	tmp |= DMA_CTRL_IE_READ_ERROR;
-	tmp |= DMA_CTRL_IE_DESC_ERROR;
-	tmp |= DMA_CTRL_IE_DESC_STOPPED;
-	tmp |= DMA_CTRL_IE_DESC_COMPLETED;
+	flags = (DMA_CTRL_IE_DESC_ALIGN_MISMATCH | DMA_CTRL_IE_MAGIC_STOPPED |
+		 DMA_CTRL_IE_IDLE_STOPPED | DMA_CTRL_IE_READ_ERROR | DMA_CTRL_IE_DESC_ERROR |
+		 DMA_CTRL_IE_DESC_STOPPED | DMA_CTRL_IE_DESC_COMPLETED);
 
-	sys_write32(tmp, (mem_addr_t)&regs->interrupt_enable_mask);
+	sys_write32(flags, (mem_addr_t)&regs->interrupt_enable_mask);
 
-	tmp = DMA_CTRL_RUN_STOP;
-	tmp |= DMA_CTRL_IE_READ_ERROR;
-	tmp |= DMA_CTRL_IE_DESC_ERROR;
-	tmp |= DMA_CTRL_IE_DESC_ALIGN_MISMATCH;
-	tmp |= DMA_CTRL_IE_MAGIC_STOPPED;
-	tmp |= DMA_CTRL_POLL_MODE_WB;
+	flags = (DMA_CTRL_RUN_STOP | DMA_CTRL_IE_READ_ERROR | DMA_CTRL_IE_DESC_ERROR |
+		 DMA_CTRL_IE_DESC_ALIGN_MISMATCH | DMA_CTRL_IE_MAGIC_STOPPED |
+		 DMA_CTRL_POLL_MODE_WB);
 
-	sys_write32(tmp, (mem_addr_t)&regs->control);
+	sys_write32(flags, (mem_addr_t)&regs->control);
 
 	return 0;
 }
