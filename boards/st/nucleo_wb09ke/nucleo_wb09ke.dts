@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,bt-c2h-uart = &usart1;
 	};
 
 	leds: leds {
@@ -95,6 +96,10 @@
 	slow-clock = <&clk_lse>;
 };
 
+&bt_hci_wb0 {
+	status = "okay";
+};
+
 &usart1 {
 	pinctrl-0 = <&usart1_tx_pa1 &usart1_rx_pb0>;
 	pinctrl-names = "default";
@@ -115,4 +120,17 @@
 	/* Select 64MHz clock for SPI3 */
 	clocks = <&rcc STM32_CLOCK_BUS_APB1 (1 << 14)>,
 		<&rcc STM32_SRC_SYSCLK SPI3_I2S3_SEL(3)>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Set 32KB of storage at the end of 512KB flash */
+		storage_partition: partition@78000 {
+			label = "storage";
+			reg = <0x00078000 DT_SIZE_K(32)>;
+		};
+	};
 };
