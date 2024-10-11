@@ -11,7 +11,7 @@ menuconfig LPS2XDF
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i2c) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i2c)
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i3c) ||\
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i3c) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),spi)
 	select HAS_STMEMSC
