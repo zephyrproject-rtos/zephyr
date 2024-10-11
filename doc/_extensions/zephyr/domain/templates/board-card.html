@@ -14,6 +14,7 @@
   data-name="{{ board.full_name}}"
   data-arch="{{ board.archs | join(" ") }}"
   data-vendor="{{ board.vendor }}"
+  data-socs="{{ board.socs | join(" ") }}"
   tabindex="0">
   <div class="vendor">{{ catalog.vendors[board.vendor] }}</div>
   {% if board.image -%}
