@@ -11,14 +11,14 @@
 #include <zephyr/types.h>
 #include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
 
-#define MSP_GPIO_RESISTOR_PULL_DOWN (16)
-#define MSP_GPIO_RESISTOR_PULL_UP   (17)
-#define MSP_GPIO_INPUT_ENABLE       (18)
-#define MSP_GPIO_HYSTERESIS_ENABLED (19)
-#define MSP_GPIO_OPEN_DRAIN_OUTPUT  (25)
-#define MSP_GPIO_INVERSION_ENABLED  (26)
+#define MSP_GPIO_RESISTOR_PULL_DOWN 16
+#define MSP_GPIO_RESISTOR_PULL_UP   17
+#define MSP_GPIO_INPUT_ENABLE       18
+#define MSP_GPIO_HYSTERESIS_ENABLED 19
+#define MSP_GPIO_OPEN_DRAIN_OUTPUT  25
+#define MSP_GPIO_INVERSION_ENABLED  26
 
-#define MSP_GPIO_HIGH_DRIVE (20)
+#define MSP_GPIO_HIGH_DRIVE 20
 
 #define MSP_PINMUX_INIT(node_id) DT_PROP(node_id, pinmux)
 
@@ -26,8 +26,8 @@
 	((DT_PROP(node_id, bias_pull_up) << MSP_GPIO_RESISTOR_PULL_UP) |                           \
 	 (DT_PROP(node_id, bias_pull_down) << MSP_GPIO_RESISTOR_PULL_DOWN) |                       \
 	 (DT_PROP(node_id, drive_open_drain) << MSP_GPIO_OPEN_DRAIN_OUTPUT) |                      \
-	 (DT_PROP(node_id, ti_hysteresis) << MSP_GPIO_HYSTERESIS_ENABLED) |                        \
-	 (DT_PROP(node_id, ti_invert) << MSP_GPIO_INVERSION_ENABLED) |                             \
+	 (DT_PROP(node_id, ti_hysteresis_enable) << MSP_GPIO_HYSTERESIS_ENABLED) |                 \
+	 (DT_PROP(node_id, ti_invert_enable) << MSP_GPIO_INVERSION_ENABLED) |                      \
 	 (DT_PROP(node_id, input_enable) << MSP_GPIO_INPUT_ENABLE))
 
 typedef struct pinctrl_soc_pin {

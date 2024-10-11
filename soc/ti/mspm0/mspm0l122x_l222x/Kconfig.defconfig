@@ -1,0 +1,13 @@
+# TI MSPM0L122X_L222X
+
+# Copyright (c) 2024 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MSPM0L122X_L222X
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default "$(DT_MSPM0_CLKMUX_CPU_FREQ)" if "$(dt_nodelabel_enabled,clkmux)"
+
+rsource "Kconfig.defconfig.mspm0l*"
+
+endif # SOC_SERIES_MSPM0L122X_L222X
