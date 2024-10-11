@@ -1,0 +1,61 @@
+description: TI MSPM0 ADC12
+
+compatible: "ti,mspm0-adc12"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  ti,clk-source:
+    type: int
+    required: true
+    description: |
+      ADC clock source.
+      Check available options in dt_bindings/adc/mspm0_adc.h
+
+  ti,clk-range:
+    type: int
+    required: true
+    description: |
+      ADC clock range.
+      Must be selected accordingly to ti,clk-source.
+      Check available options in dt_bindings/adc/mspm0_adc.h
+
+
+  ti,clk-divider:
+    type: int
+    required: true
+    enum:
+      - 1 # clock is not divided
+      - 2
+      - 4
+      - 8
+      - 16
+      - 24
+      - 32
+      - 48
+    description: |
+      Sample clock divider:
+      Applies to the ti,clk-source.
+
+  vref-mv:
+    type: int
+    default: 2500
+    description: Voltage reference in mV
+
+io-channel-cells:
+  - input
