@@ -8,6 +8,7 @@ menuconfig ADXL362
 	default y
 	depends on DT_HAS_ADI_ADXL362_ENABLED
 	select SPI
+	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
 	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
 
@@ -78,6 +79,15 @@ config ADXL362_TRIGGER_OWN_THREAD
 	select ADXL362_TRIGGER
 
 endchoice
+
+config ADXL362_STREAM
+	bool "Use FIFO to stream data"
+	select ADXL362_TRIGGER
+	default y
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO.
 
 config ADXL362_TRIGGER
 	bool
