@@ -4,10 +4,6 @@
  * Copyright (c) 2023 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
- *
- * Datasheets:
- * https://www.st.com/resource/en/datasheet/lps22df.pdf
- * https://www.st.com/resource/en/datasheet/lps28dfw.pdf
  */
 
 #ifndef ZEPHYR_DRIVERS_SENSOR_LPS2XDF_LPS2XDF_H_
@@ -15,6 +11,10 @@
 
 #include <stdint.h>
 #include <stmemsc.h>
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_ilps22qs)
+#include "ilps22qs_reg.h"
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_lps28dfw)
 #include "lps28dfw_reg.h"
@@ -32,6 +32,7 @@
 #define LPS2XDF_SWRESET_WAIT_TIME_US 50
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	#define ON_I3C_BUS(cfg) (cfg->i3c.bus != NULL)
 #else
@@ -62,6 +63,7 @@ struct lps2xdf_chip_api {
 enum sensor_variant {
 	DEVICE_VARIANT_LPS22DF = 0,
 	DEVICE_VARIANT_LPS28DFW = 1,
+	DEVICE_VARIANT_ILPS22QS = 2,
 };
 
 
@@ -69,13 +71,16 @@ struct lps2xdf_config {
 	stmdev_ctx_t ctx;
 	union {
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i2c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i2c))
 		const struct i2c_dt_spec i2c;
 #endif
-#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, spi)
+#if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, spi) ||\
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, spi))
 		const struct spi_dt_spec spi;
 #endif
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 		struct i3c_device_desc **i3c;
 #endif
@@ -91,6 +96,7 @@ struct lps2xdf_config {
 #endif
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	struct {
 		const struct device *bus;
@@ -122,6 +128,7 @@ struct lps2xdf_data {
 #endif /* CONFIG_LPS2XDF_TRIGGER */
 
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps22df, i3c) || \
+	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_ilps22qs, i3c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(st_lps28dfw, i3c))
 	struct i3c_device_desc *i3c_dev;
 #endif
