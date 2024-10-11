@@ -5,22 +5,22 @@
 
 <a
   class="board-card"
-  {% if board.doc_page %}
+  {% if board.doc_page -%}
   href="../{{ board.doc_page | replace(".rst", ".html") }}"
-  {% else %}
+  {% else -%}
   href="#"
-  {% endif %}
+  {% endif -%}
   aria-label="Open the documentation page for {{ board.full_name }}"
   data-name="{{ board.full_name}}"
   data-arch="{{ board.archs | join(" ") }}"
   data-vendor="{{ board.vendor }}"
   tabindex="0">
   <div class="vendor">{{ catalog.vendors[board.vendor] }}</div>
-  {% if board.image %}
+  {% if board.image -%}
   <img alt="A picture of the {{ board.name }} board" src="{{ board.image }}" class="picture" />
-  {% else %}
+  {% else -%}
   <div class="no-picture fa fa-microchip picture"></div>
-  {% endif %}
+  {% endif -%}
   <div class="board-name">{{ board.full_name }}</div>
   <div class="arch">{{ board.archs | join(", ") }}</div>
 </a>
