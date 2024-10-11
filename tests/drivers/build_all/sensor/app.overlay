@@ -146,7 +146,8 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
-				   <&test_gpio 0 0>;	/* 0x2f */
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;	/* 0x30 */
 
 			#include "spi.dtsi"
 		};
