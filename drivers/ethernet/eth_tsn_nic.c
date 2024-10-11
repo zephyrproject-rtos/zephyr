@@ -46,6 +46,11 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #define DMA_ENGINE_START 16268831
 #define DMA_ENGINE_STOP  16268830
 
+/* Temporary macros: need to be deleted later */
+#define RX_ENGINE_REG_ADDR 0x1b08001000
+#define RX_SGDMA_REG_ADDR 0x1b08005000
+#define RX_REGS_SIZE 0x1000
+
 struct dma_tsn_nic_engine_regs {
 	uint32_t identifier;
 	uint32_t control;
@@ -181,9 +186,6 @@ static int eth_tsn_nic_start(const struct device *dev)
 	 * TODO: Find out how to move this to dma driver
 	 * or how to access dma registers from here
 	 */
-#define RX_ENGINE_REG_ADDR 0x1b08001000
-#define RX_SGDMA_REG_ADDR 0x1b08005000
-#define RX_REGS_SIZE 0x1000
 	mm_reg_t rx_regs, rx_sgdma_regs;
 	device_map(&rx_regs, RX_ENGINE_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
 	device_map(&rx_sgdma_regs, RX_SGDMA_REG_ADDR, RX_REGS_SIZE, K_MEM_CACHE_NONE);
