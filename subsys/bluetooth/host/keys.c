@@ -457,7 +457,7 @@ static int keys_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(keys, "keys", keys_set, keys_commit);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, keys, "keys", keys_set, keys_commit);
 
 #endif /* CONFIG_BT_SETTINGS */
 

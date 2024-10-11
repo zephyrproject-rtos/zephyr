@@ -28,6 +28,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/byteorder.h>
 
+#include "../common/settings.h"
+
 #define LOG_LEVEL CONFIG_BT_SERVICE_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_dis);
@@ -450,6 +452,6 @@ static int dis_set(const char *name, size_t len_rd, settings_read_cb read_cb, vo
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_dis, "bt/dis", NULL, dis_set, NULL, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, dis, "dis", dis_set, NULL);
 
 #endif /* CONFIG_BT_DIS_SETTINGS*/

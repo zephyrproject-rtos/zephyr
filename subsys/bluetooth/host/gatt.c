@@ -5874,7 +5874,7 @@ static int ccc_set_cb(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return ccc_set(name, len_rd, read_cb, cb_arg);
 }
 
-BT_SETTINGS_DEFINE(ccc, "ccc", ccc_set_cb, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, ccc, "ccc", ccc_set_cb, NULL);
 
 static int ccc_set_direct(const char *key, size_t len, settings_read_cb read_cb,
 			  void *cb_arg, void *param)
@@ -6234,7 +6234,7 @@ static int sc_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(sc, "sc", sc_set, sc_commit);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, sc, "sc", sc_set, sc_commit);
 #endif /* CONFIG_BT_GATT_SERVICE_CHANGED */
 
 #if defined(CONFIG_BT_GATT_CACHING)
@@ -6324,7 +6324,7 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(cf, "cf", cf_set, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, cf, "cf", cf_set, NULL);
 
 static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
@@ -6355,7 +6355,7 @@ static int db_hash_commit(void)
 	return 0;
 }
 
-BT_SETTINGS_DEFINE(hash, "hash", db_hash_set, db_hash_commit);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, hash, "hash", db_hash_set, db_hash_commit);
 #endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */
 

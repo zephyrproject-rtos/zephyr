@@ -190,6 +190,10 @@ struct settings_handler_static {
 /**
  * Define a static handler for settings items
  *
+ * @note
+ * The order of @p _commit calls for settings handlers depends on
+ * @p _hname alphabetical order.
+ *
  * @param _hname handler name
  * @param _tree subtree name
  * @param _get get routine (can be NULL)
