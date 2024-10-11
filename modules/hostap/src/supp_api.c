@@ -1055,6 +1055,10 @@ out:
 		wifi_mgmt_raise_disconnect_complete_event(iface, ret);
 	}
 
+	if (!wpa_cli_cmd_v("remove_network all")) {
+		wpa_printf(MSG_ERROR, "Failed to remove all networks");
+	}
+
 	return ret;
 }
 
