@@ -39,9 +39,6 @@ function updateURL() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  updateBoardCount();
-  populateFormFromURL();
-
   const form = document.querySelector(".filter-form");
 
   // sort vendors alphabetically
@@ -54,6 +51,8 @@ document.addEventListener("DOMContentLoaded", function () {
   vendorOptions.forEach((option) => {
     vendorSelect.appendChild(option);
   });
+
+  populateFormFromURL();
 
   form.addEventListener("submit", function (event) {
     event.preventDefault();
