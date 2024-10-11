@@ -40,6 +40,15 @@
 #define WDT_MIN_WINDOW	320U
 #define WDT_OPT 0
 #define WDG_FEED_INTERVAL (WDT_MIN_WINDOW + ((WDT_MAX_WINDOW - WDT_MIN_WINDOW) / 4))
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_mspm0_watchdog)
+#define WDT_MAX_WINDOW 3000U
+#define WDT_MIN_WINDOW 375U
+// Minimum window is stored as fraction of count and is rounded up as per spec.
+// Thus giving a minimum window that is not an exact fraction may make an
+// initial sleep for the window and a feed fail and reset pre-maturely. Please
+// consult the implentation details for more information.
+#define WDG_FEED_INTERVAL (WDT_MIN_WINDOW + (WDT_MAX_WINDOW - WDT_MIN_WINDOW)/2)
+#define WDT_ALLOW_CALLBACK 0
 #endif
 
 #ifndef WDT_ALLOW_CALLBACK
@@ -55,7 +64,7 @@
 #endif
 
 #ifndef WDG_FEED_INTERVAL
-#define WDG_FEED_INTERVAL 50U
+#define WDG_FEED_INTERVAL 5U
 #endif
 
 #ifndef WDT_OPT
