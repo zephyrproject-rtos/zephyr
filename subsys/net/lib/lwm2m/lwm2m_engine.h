@@ -375,4 +375,14 @@ int lwm2m_sock_nfds(void);
  */
 void lwm2m_engine_wake_up(void);
 
+/**
+ * @brief Locks the access to shared LwM2M engine variables.
+ */
+void lwm2m_engine_lock(void);
+
+/**
+ * @brief Unlocks the access to shared LwM2M engine variables.
+ */
+void lwm2m_engine_unlock(void);
+
 #endif /* LWM2M_ENGINE_H */
