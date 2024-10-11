@@ -12,8 +12,9 @@
 /* Base64-encoded string buffer size of in_size bytes */
 #define BT_SETTINGS_SIZE(in_size) ((((((in_size) - 1) / 3) * 4) + 4) + 1)
 
+/* Add `_1` prefix to ensure BT Subsystem always commit after BT. */
 #define BT_SETTINGS_DEFINE(_hname, _subtree, _set, _commit)                                        \
-	SETTINGS_STATIC_HANDLER_DEFINE(bt_##_hname, "bt/" _subtree, NULL, _set, _commit, NULL)
+	SETTINGS_STATIC_HANDLER_DEFINE(_1_bt_##_hname, "bt/" _subtree, NULL, _set, _commit, NULL)
 
 #define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
 

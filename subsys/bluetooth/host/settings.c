@@ -281,7 +281,8 @@ static int commit_settings(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt, "bt", NULL, set_setting, commit_settings, NULL);
+/* Add `_0` prefix to ensure BT always commit firstly. */
+SETTINGS_STATIC_HANDLER_DEFINE(_0_bt, "bt", NULL, set_setting, commit_settings, NULL);
 
 int bt_settings_init(void)
 {

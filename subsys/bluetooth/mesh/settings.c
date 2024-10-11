@@ -117,7 +117,8 @@ static int mesh_commit(void)
 	return 0;
 }
 
-SETTINGS_STATIC_HANDLER_DEFINE(bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
+/* Add `_2` prefix to ensure BT Mesh always commit after BT and BT Subsystem. */
+SETTINGS_STATIC_HANDLER_DEFINE(_2_bt_mesh, "bt/mesh", NULL, NULL, mesh_commit,
 			       NULL);
 
 /* Pending flags that use K_NO_WAIT as the storage timeout */
