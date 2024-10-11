@@ -8,4 +8,13 @@ if SOC_SERIES_STM32WB0X
 config NUM_IRQS
 	default 32
 
+config BT_AUTO_PHY_UPDATE
+	default n
+
+config BT_AUTO_DATA_LEN_UPDATE
+	default n
+
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
 endif # SOC_SERIES_STM32WB0X
