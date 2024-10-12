@@ -14,6 +14,7 @@ function toggleDisplayMode(btn) {
 }
 
 function populateFormFromURL() {
+  // TODO restore supported_features
   const params = ["name", "arch", "vendor", "soc"];
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
   params.forEach((param) => {
@@ -33,6 +34,7 @@ function populateFormFromURL() {
 }
 
 function updateURL() {
+  // TODO add backup of supported_features
   const params = ["name", "arch", "vendor", "soc"];
   const hashParams = new URLSearchParams(window.location.hash.slice(1));
 
@@ -84,6 +86,88 @@ function fillSocSocSelect(families, series = undefined, selectOnFill = false) {
   });
 }
 
+function setupHWCapabilitiesField() {
+  let selectedTags = [];
+
+  const tagContainer = document.getElementById('tag-container');
+  const tagInput = document.getElementById('tag-input');
+  const datalist = document.getElementById('tag-list');
+
+  const tagCounts = Array.from(document.querySelectorAll('.board-card')).reduce((acc, board) => {
+    board.getAttribute('data-supported-features').split(' ').forEach(tag => {
+      acc[tag] = (acc[tag] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const allTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(entry => entry[0]);
+
+  // Add tag
+  function addTag(tag) {
+    if (selectedTags.includes(tag) || tag === "" || !allTags.includes(tag)) return;
+    selectedTags.push(tag);
+
+    const tagElement = document.createElement('span');
+    tagElement.classList.add('tag');
+    tagElement.textContent = tag;
+    tagElement.onclick = () => removeTag(tag);
+    tagContainer.insertBefore(tagElement, tagInput);
+
+    tagInput.value = ''; // Clear input
+    updateDatalist(); // Update the available suggestions
+  }
+
+  // Remove tag
+  function removeTag(tag) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+    document.querySelectorAll('.tag').forEach(el => {
+      if (el.textContent.includes(tag)) el.remove();
+    });
+    updateDatalist(); // Update the suggestions when a tag is removed
+  }
+
+  // Update the datalist options based on selected tags
+  function updateDatalist() {
+    datalist.innerHTML = ''; // Clear existing options
+    const filteredTags = allTags.filter(tag => !selectedTags.includes(tag)); // Filter out selected tags
+
+    filteredTags.forEach(tag => {
+      const option = document.createElement('option');
+      option.value = tag;
+      datalist.appendChild(option);
+    });
+
+    filterBoards();
+  }
+
+  // Handle selection from datalist or Enter key to add tag
+  tagInput.addEventListener('input', () => {
+    if (allTags.includes(tagInput.value)) {
+      addTag(tagInput.value);
+    }
+  });
+
+  // Add tag when pressing the Enter key
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && allTags.includes(tagInput.value)) {
+      addTag(tagInput.value);
+      e.preventDefault();
+    }
+  });
+
+  // Delete tag when pressing the Backspace key
+  tagInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace' && tagInput.value === '' && selectedTags.length > 0) {
+      removeTag(selectedTags[selectedTags.length - 1]);
+    }
+  });
+
+  // Initialize the datalist
+  updateDatalist();
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   const form = document.querySelector(".filter-form");
 
@@ -101,8 +185,9 @@ document.addEventListener("DOMContentLoaded", function () {
   fillSocFamilySelect();
   fillSocSeriesSelect();
   fillSocSocSelect();
-
   populateFormFromURL();
+
+  setupHWCapabilitiesField();
 
   socFamilySelect = document.getElementById("family");
   socFamilySelect.addEventListener("change", () => {
@@ -142,6 +227,8 @@ function resetForm() {
   fillSocFamilySelect();
   fillSocSeriesSelect();
   fillSocSocSelect();
+  // todo clear supported_features
+
   filterBoards();
 }
 
@@ -160,6 +247,8 @@ function filterBoards() {
   const vendorSelect = document.getElementById("vendor").value;
   const socSocSelect = document.getElementById("soc");
 
+  const selectedTags = [...document.querySelectorAll('.tag')].map(tag => tag.textContent);
+
   const resetFiltersBtn = document.getElementById("reset-filters");
   if (nameInput || archSelect || vendorSelect || socSocSelect.selectedOptions.length) {
     resetFiltersBtn.classList.remove("btn-disabled");
@@ -174,6 +263,7 @@ function filterBoards() {
     const boardArchs = board.getAttribute("data-arch").split(" ");
     const boardVendor = board.getAttribute("data-vendor");
     const boardSocs = board.getAttribute("data-socs").split(" ");
+    const boardSupportedFeatures = board.getAttribute("data-supported-features").split(" ");
 
     let matches = true;
 
@@ -183,7 +273,8 @@ function filterBoards() {
       !(nameInput && !boardName.includes(nameInput)) &&
       !(archSelect && !boardArchs.includes(archSelect)) &&
       !(vendorSelect && boardVendor !== vendorSelect) &&
-      (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc)));
+      (selectedSocs.length === 0 || selectedSocs.some((soc) => boardSocs.includes(soc))) &&
+      (selectedTags.length === 0 || selectedTags.every((tag) => boardSupportedFeatures.includes(tag)));
 
     board.classList.toggle("hidden", !matches);
   });
