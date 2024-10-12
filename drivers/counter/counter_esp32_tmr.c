@@ -256,6 +256,13 @@ static void counter_esp32_isr(void *arg)
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 }
 
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+#define CLK_LL_PLL_40M_FREQ MHZ(40)
+#define CLOCK_SOURCE_FREQ   CLK_LL_PLL_40M_FREQ
+#else
+#define CLOCK_SOURCE_FREQ APB_CLK_FREQ
+#endif
+
 #define ESP32_COUNTER_GET_CLK_DIV(idx)						 \
 	(((DT_INST_PROP(idx, prescaler) & UINT16_MAX) < 2) ?			 \
 	2 : (DT_INST_PROP(idx, prescaler) & UINT16_MAX))
@@ -265,11 +272,11 @@ static void counter_esp32_isr(void *arg)
 	static struct counter_esp32_data counter_data_##idx;			 \
 										 \
 	static const struct counter_esp32_config counter_config_##idx = {	 \
-		.counter_info = {						 \
-			.max_top_value = UINT32_MAX,				 \
-			.freq = (APB_CLK_FREQ / ESP32_COUNTER_GET_CLK_DIV(idx)), \
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			 \
-			.channels = 1						 \
+		.counter_info = {                                                     \
+			.max_top_value = UINT32_MAX,                                  \
+			.freq = (CLOCK_SOURCE_FREQ / ESP32_COUNTER_GET_CLK_DIV(idx)), \
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,                        \
+			.channels = 1                                                 \
 		},								 \
 		.config = {							 \
 			.alarm_en = TIMER_ALARM_DIS,				 \
