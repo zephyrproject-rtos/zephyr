@@ -23,4 +23,5 @@ supported:
   - pwm
   - counter
   - regulator
+  - adc
 vendor: nxp
