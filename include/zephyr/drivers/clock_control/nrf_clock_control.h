@@ -117,6 +117,13 @@ int z_nrf_clock_calibration_count(void);
  */
 int z_nrf_clock_calibration_skips_count(void);
 
+
+/** @brief Returns information if LF clock calibration is in progress.
+ *
+ * @return True if calibration is in progress, false otherwise.
+ */
+bool z_nrf_clock_calibration_is_in_progress(void);
+
 /** @brief Get onoff service for given clock subsystem.
  *
  * @param sys Subsystem.
