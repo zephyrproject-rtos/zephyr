@@ -68,6 +68,8 @@ The FRDM-MCXN236 board configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| VREF      | on-chip    | regulator                           |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
