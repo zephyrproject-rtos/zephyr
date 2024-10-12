@@ -128,13 +128,28 @@ config NRF_WIFI_IF_AUTO_START
 	bool "Wi-Fi interface auto start on boot"
 	default y
 
+choice NRF_WIFI_FW_BLOB_HANDLING
+	prompt "nRF70 Firmware blob handling"
+	default NRF_WIFI_PATCHES_BUILTIN
+
+config NRF_WIFI_BUILD_ONLY_MODE
+	bool "Build only mode"
+	help
+	  Enable this option to build the driver without firmware loading, removes
+	  dependency on firmware binary and patches.
+	  This is useful to check the build and link errors.
+
 config NRF_WIFI_PATCHES_BUILTIN
 	bool "Store nRF70 FW patches as part of the driver"
-	default y
-	depends on !NRF_WIFI_BUILD_ONLY_MODE
 	help
 	  Select this option to store nRF70 FW patches as part of the driver.
 	  This option impacts the code memory footprint of the driver.
+
+config NRF_WIFI_PATCHES_EXTERNAL
+	bool "Load nRF70 FW patches from external binary"
+	help
+	  Select this option to load nRF70 FW patches from an external tooling.
+endchoice
 
 config NRF_WIFI_LOW_POWER
 	bool "low power mode in nRF Wi-Fi chipsets"
@@ -689,12 +704,5 @@ config NRF_WIFI_QOS_NULL_BASED_RETRIEVAL
 	  depending on the delay. Ideal for heavy buffered traffic.
 
 endchoice
-
-config NRF_WIFI_BUILD_ONLY_MODE
-	bool "Build only mode"
-	help
-	  Enable this option to build the driver without firmware loading, removes
-	  dependency on firmware binary and patches.
-	  This is useful to check the build and link errors.
 
 endif # WIFI_NRF70

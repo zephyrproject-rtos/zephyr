@@ -142,7 +142,7 @@ if (CONFIG_NRF_WIFI_BUILD_ONLY_MODE)
   This is only for building (CI) purposes and will not work on a real device.
   ------------------------------------------------------------------------
   ")
-else()
+elseif(CONFIG_NRF_WIFI_PATCHES_BUILTIN)
   # RPU FW patch binaries based on the selected configuration
   if(CONFIG_NRF70_SYSTEM_MODE)
     set(NRF70_PATCH ${FW_BINS_BASE}/default/nrf70.bin)
