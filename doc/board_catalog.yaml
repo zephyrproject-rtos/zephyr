@@ -1,0 +1,6450 @@
+96b_aerocore2:
+  archs:
+  - arm
+  doc_page: boards/96boards/aerocore2/doc/index.rst
+  full_name: Aerocore2
+  image: ../_images/96b_aerocore2.jpg
+  socs:
+  - stm32f427xx
+  supported_features: {}
+  vendor: 96boards
+96b_argonkey:
+  archs:
+  - arm
+  doc_page: boards/96boards/argonkey/doc/index.rst
+  full_name: Argonkey
+  image: ../_images/96b_argonkey.jpg
+  socs:
+  - stm32f412cx
+  supported_features: {}
+  vendor: 96boards
+96b_avenger96:
+  archs:
+  - arm
+  doc_page: boards/96boards/avenger96/doc/index.rst
+  full_name: Avenger96
+  image: ../_images/96b_avenger96.jpg
+  socs:
+  - stm32mp157cxx
+  supported_features: {}
+  vendor: 96boards
+96b_carbon:
+  archs:
+  - arm
+  doc_page: boards/96boards/carbon/doc/stm32f401xe.rst
+  full_name: Carbon
+  image: ../_images/96b_carbon.jpg
+  socs:
+  - nrf51822
+  - stm32f401xe
+  supported_features: {}
+  vendor: 96boards
+96b_meerkat96:
+  archs:
+  - arm
+  doc_page: boards/96boards/meerkat96/doc/index.rst
+  full_name: Meerkat96
+  image: ../_images/96b_meerkat96.jpg
+  socs:
+  - mcimx7d
+  supported_features: {}
+  vendor: 96boards
+96b_neonkey:
+  archs:
+  - arm
+  doc_page: boards/96boards/neonkey/doc/index.rst
+  full_name: Neonkey
+  image: ../_images/96b_neonkey.jpg
+  socs:
+  - stm32f411xe
+  supported_features: {}
+  vendor: 96boards
+96b_nitrogen:
+  archs:
+  - arm
+  doc_page: boards/96boards/nitrogen/doc/index.rst
+  full_name: Nitrogen
+  image: ../_images/96b_nitrogen.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: 96boards
+96b_stm32_sensor_mez:
+  archs:
+  - arm
+  doc_page: boards/96boards/stm32_sensor_mez/doc/index.rst
+  full_name: STM32 Sensor Mezzanine
+  image: ../_images/96b_stm32_sensor_mez.jpg
+  socs:
+  - stm32f446xx
+  supported_features: {}
+  vendor: 96boards
+96b_wistrio:
+  archs:
+  - arm
+  doc_page: boards/96boards/wistrio/doc/96b_wistrio.rst
+  full_name: WisTrio
+  image: ../_images/96b-wistrio.jpg
+  socs:
+  - stm32l151xba
+  supported_features: {}
+  vendor: 96boards
+acn52832:
+  archs:
+  - arm
+  doc_page: boards/aconno/acn52832/doc/index.rst
+  full_name: acn52832
+  image: ''
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: aconno
+acrn:
+  archs:
+  - x86
+  doc_page: boards/acrn/acrn/doc/index.rst
+  full_name: ACRN hypervisor
+  image: ../_images/ACRN-Hybrid.jpg
+  socs:
+  - atom
+  supported_features: {}
+  vendor: acrn
+acrn_ehl_crb:
+  archs:
+  - x86
+  doc_page: boards/acrn/acrn/doc/index.rst
+  full_name: ACRN on EHL hypervisor
+  image: ../_images/ACRN-Hybrid.jpg
+  socs:
+  - elkhart_lake
+  supported_features: {}
+  vendor: acrn
+actinius_icarus:
+  archs:
+  - arm
+  doc_page: boards/actinius/icarus/doc/index.rst
+  full_name: Icarus
+  image: ../_images/Icarus_front.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: actinius
+actinius_icarus_bee:
+  archs:
+  - arm
+  doc_page: boards/actinius/icarus_bee/doc/index.rst
+  full_name: Icarus Bee
+  image: ../_images/icarus-bee.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: actinius
+actinius_icarus_som:
+  archs:
+  - arm
+  doc_page: boards/actinius/icarus_som/doc/index.rst
+  full_name: Icarus SoM
+  image: ../_images/icarus-som.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: actinius
+actinius_icarus_som_dk:
+  archs:
+  - arm
+  doc_page: boards/actinius/icarus_som_dk/doc/index.rst
+  full_name: Icarus SoM DK
+  image: ../_images/icarus_som_dk.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: actinius
+adafruit_feather_m0_basic_proto:
+  archs:
+  - arm
+  doc_page: boards/adafruit/feather_m0_basic_proto/doc/index.rst
+  full_name: Feather M0 Basic Proto
+  image: ../_images/adafruit_feather_m0_basic_proto.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: adafruit
+adafruit_feather_m0_lora:
+  archs:
+  - arm
+  doc_page: boards/adafruit/feather_m0_lora/doc/index.rst
+  full_name: Feather M0 LoRa
+  image: ../_images/adafruit_feather_m0_lora.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: adafruit
+adafruit_feather_nrf52840:
+  archs:
+  - arm
+  doc_page: boards/adafruit/feather_nrf52840/doc/index.rst
+  full_name: Feather nRF52840 (Express, Sense)
+  image: ../_images/adafruit_feather_nrf52840_sense.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: adafruit
+adafruit_feather_stm32f405:
+  archs:
+  - arm
+  doc_page: boards/adafruit/feather_stm32f405/doc/index.rst
+  full_name: Feather STM32F405 Express
+  image: ../_images/adafruit_feather_stm32f405.jpg
+  socs:
+  - stm32f405xx
+  supported_features: {}
+  vendor: adafruit
+adafruit_grand_central_m4_express:
+  archs:
+  - arm
+  doc_page: boards/adafruit/grand_central_m4_express/doc/index.rst
+  full_name: Grand Central M4 Express
+  image: ../_images/adafruit_grand_central_m4_express.webp
+  socs:
+  - samd51p20a
+  supported_features: {}
+  vendor: adafruit
+adafruit_itsybitsy:
+  archs:
+  - arm
+  doc_page: boards/adafruit/itsybitsy/doc/index.rst
+  full_name: ItsyBitsy nRF52840
+  image: ../_images/adafruit_itsybitsy_nrf52840.jpeg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: adafruit
+adafruit_itsybitsy_m4_express:
+  archs:
+  - arm
+  doc_page: boards/adafruit/itsybitsy_m4_express/doc/index.rst
+  full_name: ItsyBitsy M4 Express
+  image: ../_images/adafruit_itsybitsy_m4_express.jpg
+  socs:
+  - samd51g19a
+  supported_features: {}
+  vendor: adafruit
+adafruit_kb2040:
+  archs:
+  - arm
+  doc_page: boards/adafruit/kb2040/doc/index.rst
+  full_name: KB2040
+  image: ../_images/kb2040.jpg
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: adafruit
+adafruit_qt_py_rp2040:
+  archs:
+  - arm
+  doc_page: boards/adafruit/qt_py_rp2040/doc/index.rst
+  full_name: QT Py RP2040
+  image: ../_images/qtpy_rp2040.jpg
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: adafruit
+adafruit_trinket_m0:
+  archs:
+  - arm
+  doc_page: boards/adafruit/trinket_m0/doc/index.rst
+  full_name: Trinket M0
+  image: ../_images/adafruit_trinket_m0.jpg
+  socs:
+  - samd21e18a
+  supported_features: {}
+  vendor: adafruit
+adi_eval_adin1110ebz:
+  archs:
+  - arm
+  doc_page: boards/adi/eval_adin1110ebz/doc/index.rst
+  full_name: EVAL-ADIN1110EVB Evaluation board
+  image: ../_images/adi_eval_adin1110ebz.webp
+  socs:
+  - stm32l4s5xx
+  supported_features: {}
+  vendor: adi
+adi_eval_adin2111ebz:
+  archs:
+  - arm
+  doc_page: boards/adi/eval_adin2111ebz/doc/index.rst
+  full_name: EVAL-ADIN2111EVB Evaluation board
+  image: ../_images/adi_eval_adin2111ebz.webp
+  socs:
+  - stm32l4s5xx
+  supported_features: {}
+  vendor: adi
+adi_sdp_k1:
+  archs:
+  - arm
+  doc_page: boards/adi/sdp_k1/doc/index.rst
+  full_name: SDP-K1
+  image: ../_images/adi_sdp_k1.webp
+  socs:
+  - stm32f469xx
+  supported_features: {}
+  vendor: adi
+adp_xc7k:
+  archs:
+  - riscv
+  doc_page: boards/andestech/adp_xc7k_ae350/doc/index.rst
+  full_name: ADP-XC7K AE350
+  image: ../_images/adp_xc7k160.jpg
+  socs:
+  - ae350
+  supported_features: {}
+  vendor: andestech
+altera_max10:
+  archs:
+  - nios2
+  doc_page: boards/altr/max10/doc/index.rst
+  full_name: MAX10
+  image: ../_images/altera_max10.jpg
+  socs:
+  - zephyr_nios2f
+  supported_features: {}
+  vendor: altr
+apard32690:
+  archs:
+  - arm
+  doc_page: boards/adi/apard32690/doc/index.rst
+  full_name: AD-APARD32690-SL
+  image: ../_images/apard32690_img.webp
+  socs:
+  - max32690
+  supported_features: {}
+  vendor: adi
+apollo3_evb:
+  archs:
+  - arm
+  doc_page: boards/ambiq/apollo3_evb/doc/index.rst
+  full_name: Apollo3 Blue EVB
+  image: ../_images/apollo3-blue-soc-eval-board.jpg
+  socs:
+  - apollo3_blue
+  supported_features: {}
+  vendor: ambiq
+apollo3p_evb:
+  archs:
+  - arm
+  doc_page: boards/ambiq/apollo3p_evb/doc/index.rst
+  full_name: Apollo3 Blue Plus EVB
+  image: ../_images/apollo3-blue-plus-soc-eval-board.jpg
+  socs:
+  - apollo3p_blue
+  supported_features: {}
+  vendor: ambiq
+apollo4p_blue_kxr_evb:
+  archs:
+  - arm
+  doc_page: boards/ambiq/apollo4p_blue_kxr_evb/doc/index.rst
+  full_name: Apollo4 Blue Plus KXR EVB
+  image: ../_images/apollo4-blue-plus-kxr-soc-eval-board.jpg
+  socs:
+  - apollo4p_blue
+  supported_features: {}
+  vendor: ambiq
+apollo4p_evb:
+  archs:
+  - arm
+  doc_page: boards/ambiq/apollo4p_evb/doc/index.rst
+  full_name: Apollo4P EVB
+  image: ../_images/apollo4-plus-soc-eval-board.jpg
+  socs:
+  - apollo4p
+  supported_features: {}
+  vendor: ambiq
+arduino_due:
+  archs:
+  - arm
+  doc_page: boards/arduino/due/doc/index.rst
+  full_name: Arduino Due
+  image: ../_images/arduino_due.jpg
+  socs:
+  - sam3x8e
+  supported_features: {}
+  vendor: arduino
+arduino_giga_r1:
+  archs:
+  - arm
+  doc_page: boards/arduino/giga_r1/doc/index.rst
+  full_name: Arduino GIGA R1 WiFi
+  image: ../_images/arduino_giga_r1.jpg
+  socs:
+  - stm32h747xx
+  supported_features: {}
+  vendor: arduino
+arduino_mkrzero:
+  archs:
+  - arm
+  doc_page: boards/arduino/mkrzero/doc/index.rst
+  full_name: Arduino MKR Zero
+  image: ../_images/arduino_mkrzero.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: arduino
+arduino_nano_33_ble:
+  archs:
+  - arm
+  doc_page: boards/arduino/nano_33_ble/doc/index.rst
+  full_name: Arduino Nano 33 BLE (Sense)
+  image: ../_images/arduino_nano_33_ble_sense.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: arduino
+arduino_nano_33_iot:
+  archs:
+  - arm
+  doc_page: boards/arduino/nano_33_iot/doc/index.rst
+  full_name: Arduino Nano 33 IOT
+  image: ../_images/nano_33_iot.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: arduino
+arduino_nicla_sense_me:
+  archs:
+  - arm
+  doc_page: boards/arduino/nicla_sense_me/doc/index.rst
+  full_name: Arduino Nicla Sense ME
+  image: ../_images/arduino_nicla_sense_me.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: arduino
+arduino_nicla_vision:
+  archs:
+  - arm
+  doc_page: boards/arduino/nicla_vision/doc/index.rst
+  full_name: Arduino Nicla Vision
+  image: ../_images/arduino_nicla_vision.webp
+  socs:
+  - stm32h747xx
+  supported_features: {}
+  vendor: arduino
+arduino_opta:
+  archs:
+  - arm
+  doc_page: boards/arduino/opta/doc/index.rst
+  full_name: Arduino OPTA
+  image: ../_images/arduino_opta.jpeg
+  socs:
+  - stm32h747xx
+  supported_features: {}
+  vendor: arduino
+arduino_portenta_h7:
+  archs:
+  - arm
+  doc_page: boards/arduino/portenta_h7/doc/index.rst
+  full_name: Arduino Portenta H7
+  image: ../_images/arduino_portenta_h7.jpeg
+  socs:
+  - stm32h747xx
+  supported_features: {}
+  vendor: arduino
+arduino_uno_r4_minima:
+  archs:
+  - arm
+  doc_page: boards/arduino/uno_r4/doc/index.rst
+  full_name: Arduino UNO R4 Minima
+  image: ''
+  socs:
+  - r7fa4m1ab3cfm
+  supported_features: {}
+  vendor: arduino
+arduino_uno_r4_wifi:
+  archs:
+  - arm
+  doc_page: boards/arduino/uno_r4/doc/index.rst
+  full_name: Arduino UNO R4 WiFi
+  image: ''
+  socs:
+  - r7fa4m1ab3cfm
+  supported_features: {}
+  vendor: arduino
+arduino_zero:
+  archs:
+  - arm
+  doc_page: boards/arduino/zero/doc/index.rst
+  full_name: Arduino/Genuino Zero
+  image: ../_images/arduino_zero.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: arduino
+arty_a7:
+  archs:
+  - arm
+  doc_page: boards/digilent/arty_a7/doc/index.rst
+  full_name: Arty
+  image: ../_images/arty_a7-35.jpg
+  socs:
+  - designstart_fpga_cortex_m1
+  - designstart_fpga_cortex_m3
+  supported_features: {}
+  vendor: digilent
+ast1030_evb:
+  archs:
+  - arm
+  doc_page: boards/aspeed/ast1030_evb/doc/index.rst
+  full_name: AST1030_EVB
+  image: ../_images/ast1030_evb.jpg
+  socs:
+  - ast1030
+  supported_features: {}
+  vendor: aspeed
+az3166_iotdevkit:
+  archs:
+  - arm
+  doc_page: boards/mxchip/az3166_iotdevkit/doc/index.rst
+  full_name: AZ3166 MXChip IoT DevKit
+  image: ../_images/az3166-iotdevkit.webp
+  socs:
+  - stm32f412rx
+  supported_features: {}
+  vendor: mxchip
+b_g474e_dpow1:
+  archs:
+  - arm
+  doc_page: boards/st/b_g474e_dpow1/doc/index.rst
+  full_name: B-G474E-DPOW1 Discovery
+  image: ../_images/b_g474e_dpow1.jpg
+  socs:
+  - stm32g474xx
+  supported_features: {}
+  vendor: st
+b_l072z_lrwan1:
+  archs:
+  - arm
+  doc_page: boards/st/b_l072z_lrwan1/doc/index.rst
+  full_name: B-L072Z-LRWAN1 Discovery kit
+  image: ../_images/b_l072z_lrwan1.jpg
+  socs:
+  - stm32l072xx
+  supported_features: {}
+  vendor: st
+b_l4s5i_iot01a:
+  archs:
+  - arm
+  doc_page: boards/st/b_l4s5i_iot01a/doc/index.rst
+  full_name: B-L4S5I-IOT01A Discovery kit
+  image: ../_images/b-l4s5i_iot01a.jpg
+  socs:
+  - stm32l4s5xx
+  supported_features: {}
+  vendor: st
+b_u585i_iot02a:
+  archs:
+  - arm
+  doc_page: boards/st/b_u585i_iot02a/doc/index.rst
+  full_name: B-U585I-IOT02A Discovery kit
+  image: ../_images/b-u585i-iot02a.jpg
+  socs:
+  - stm32u585xx
+  supported_features: {}
+  vendor: st
+bbc_microbit:
+  archs:
+  - arm
+  doc_page: boards/bbc/microbit/doc/index.rst
+  full_name: micro:bit
+  image: ../_images/bbc_microbit.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: bbc
+bbc_microbit_v2:
+  archs:
+  - arm
+  doc_page: boards/bbc/microbit_v2/doc/index.rst
+  full_name: micro:bit V2
+  image: ../_images/bbc_microbit2.jpg
+  socs:
+  - nrf52833
+  supported_features: {}
+  vendor: bbc
+bcm958401m2:
+  archs:
+  - arm
+  doc_page: boards/brcm/bcm958401m2/doc/index.rst
+  full_name: BCM958401M2
+  image: ''
+  socs:
+  - bcm58400
+  supported_features: {}
+  vendor: brcm
+bcm958402m2:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/brcm/bcm958402m2/doc/m7.rst
+  full_name: BCM958402M2 (Cortex-M7)
+  image: ''
+  socs:
+  - bcm58402
+  supported_features: {}
+  vendor: brcm
+beagleconnect_freedom:
+  archs:
+  - arm
+  doc_page: boards/beagle/beagleconnect_freedom/doc/index.rst
+  full_name: BeagleConnect Freedom
+  image: ../_images/beagleconnect_freedom.webp
+  socs:
+  - cc1352p7
+  supported_features: {}
+  vendor: beagle
+beagleplay:
+  archs:
+  - arm
+  doc_page: boards/beagle/beagleplay/doc/beagleplay_cc1352p7.rst
+  full_name: BeaglePlay (CC1352)
+  image: ../_images/beagle_play.webp
+  socs:
+  - cc1352p7
+  supported_features: {}
+  vendor: beagle
+beaglev_fire:
+  archs:
+  - riscv
+  doc_page: boards/beagle/beaglev_fire/doc/index.rst
+  full_name: "BeagleV\xAE-Fire"
+  image: ../_images/BeagleV-Fire-Front-Annotated-768x432.webp
+  socs:
+  - polarfire
+  supported_features: {}
+  vendor: beagle
+bl5340_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl5340_dvk/doc/index.rst
+  full_name: BL5340 DVK
+  image: ../_images/bl5340_dvk_top.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: ezurio
+bl652_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl652_dvk/doc/bl652_dvk.rst
+  full_name: BL652 DVK
+  image: ../_images/bl652_dvk.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: ezurio
+bl653_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl653_dvk/doc/bl653_dvk.rst
+  full_name: BL653 DVK
+  image: ../_images/bl653_dvk.jpg
+  socs:
+  - nrf52833
+  supported_features: {}
+  vendor: ezurio
+bl654_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl654_dvk/doc/bl654_dvk.rst
+  full_name: BL654 DVK
+  image: ../_images/bl654_dvk.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+bl654_sensor_board:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl654_sensor_board/doc/bl654_sensor_board.rst
+  full_name: BL654 Sensor Board
+  image: ../_images/bl654_sensor_board.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+bl654_usb:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bl654_usb/doc/bl654_usb.rst
+  full_name: BL654 USB (451-00004)
+  image: ../_images/bl654_usb.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+black_f407ve:
+  archs:
+  - arm
+  doc_page: boards/others/black_f407ve/doc/index.rst
+  full_name: Black STM32 F407VE Development Board
+  image: ../_images/black_f407ve.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: zephyr
+black_f407zg_pro:
+  archs:
+  - arm
+  doc_page: boards/others/black_f407zg_pro/doc/index.rst
+  full_name: Black STM32 F407ZG Pro Development Board
+  image: ../_images/black_f407zg_pro.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: zephyr
+blackpill_f401cc:
+  archs:
+  - arm
+  doc_page: boards/weact/blackpill_f401cc/doc/index.rst
+  full_name: Black Pill V1.2
+  image: ../_images/Blackpill_Pinout.jpg
+  socs:
+  - stm32f401xc
+  supported_features: {}
+  vendor: weact
+blackpill_f401ce:
+  archs:
+  - arm
+  doc_page: boards/weact/blackpill_f401ce/doc/index.rst
+  full_name: Black Pill V3.0
+  image: ../_images/Blackpill_Pinout.jpg
+  socs:
+  - stm32f401xe
+  supported_features: {}
+  vendor: weact
+blackpill_f411ce:
+  archs:
+  - arm
+  doc_page: boards/weact/blackpill_f411ce/doc/index.rst
+  full_name: Black Pill V2.0
+  image: ../_images/Blackpill_Pinout.jpg
+  socs:
+  - stm32f411xe
+  supported_features: {}
+  vendor: weact
+blueclover_plt_demo_v2:
+  archs:
+  - arm
+  doc_page: boards/bcdevices/plt_demo_v2/doc/index.rst
+  full_name: Blue Clover PLT Demo V2 nRF52832
+  image: ../_images/blueclover_plt_demo_v2.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: bcdevices
+bt510:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bt510/doc/bt510.rst
+  full_name: Sentrius BT510 Sensor
+  image: ../_images/bt510.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+bt610:
+  archs:
+  - arm
+  doc_page: boards/ezurio/bt610/doc/bt610.rst
+  full_name: Sentrius BT610 Sensor
+  image: ../_images/bt610_back.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+bytesensi_l:
+  archs:
+  - arm
+  doc_page: boards/bytesatwork/bytesensi_l/doc/index.rst
+  full_name: byteSENSI-L
+  image: ../_images/byteSENSI-L.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: bytesatwork
+cc1352p1_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/cc1352p1_launchxl/doc/index.rst
+  full_name: CC1352P1 LaunchXL
+  image: ../_images/cc1352p1_launchxl.jpg
+  socs:
+  - cc1352p
+  supported_features: {}
+  vendor: ti
+cc1352p7_lp:
+  archs:
+  - arm
+  doc_page: boards/ti/cc1352p7_launchpad/doc/index.rst
+  full_name: CC1352P7 LaunchPad
+  image: ../_images/lp-cc1352p7-top.jpg
+  socs:
+  - cc1352p7
+  supported_features: {}
+  vendor: ti
+cc1352r1_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/cc1352r1_launchxl/doc/index.rst
+  full_name: CC1352R1 LaunchXL
+  image: ../_images/cc1352r1_launchxl.jpg
+  socs:
+  - cc1352r
+  supported_features: {}
+  vendor: ti
+cc1352r_sensortag:
+  archs:
+  - arm
+  doc_page: boards/ti/cc1352r_sensortag/doc/index.rst
+  full_name: CC1352R SensorTag
+  image: ../_images/cc1352r_sensortag.jpg
+  socs:
+  - cc1352r
+  supported_features: {}
+  vendor: ti
+cc26x2r1_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/cc26x2r1_launchxl/doc/index.rst
+  full_name: CC26x2R1 LaunchXL
+  image: ../_images/cc26x2r1_launchxl.jpg
+  socs:
+  - cc2652r
+  supported_features: {}
+  vendor: ti
+cc3220sf_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/cc3220sf_launchxl/doc/index.rst
+  full_name: CC3220SF LaunchXL
+  image: ''
+  socs:
+  - cc3220sf
+  supported_features: {}
+  vendor: ti
+cc3235sf_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/cc3235sf_launchxl/doc/index.rst
+  full_name: CC3235SF LaunchXL
+  image: ''
+  socs:
+  - cc3235sf
+  supported_features: {}
+  vendor: ti
+circuitdojo_feather:
+  archs:
+  - arm
+  doc_page: boards/circuitdojo/feather/doc/index.rst
+  full_name: nRF9160 Feather
+  image: ../_images/circuitdojo_feather_nrf9160.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: circuitdojo
+colibri_imx7d:
+  archs:
+  - arm
+  doc_page: boards/toradex/colibri_imx7d/doc/index.rst
+  full_name: i.MX 7 Computer on Module - Colibri iMX7
+  image: ../_images/colibri_imx7d.jpg
+  socs:
+  - mcimx7d
+  supported_features: {}
+  vendor: toradex
+contextualelectronics_abc:
+  archs:
+  - arm
+  doc_page: boards/contextualelectronics/abc/doc/index.rst
+  full_name: Advanced BLE Cell
+  image: ../_images/contextualelectronics_abc.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: contextualelectronics
+cortex_r8_virtual:
+  archs:
+  - arm
+  doc_page: boards/renode/cortex_r8_virtual/doc/index.rst
+  full_name: Cortex-R8 Virtual
+  image: ''
+  socs:
+  - cortex_r8_virtual
+  supported_features: {}
+  vendor: renode
+croxel_cx1825:
+  archs:
+  - arm
+  doc_page: boards/croxel/croxel_cx1825/doc/index.rst
+  full_name: CX1825 nRF52840
+  image: ../_images/cx1825_nrf52840.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: croxel
+ctcc:
+  archs:
+  - arm
+  doc_page: boards/ct/ctcc/doc/index.rst
+  full_name: Connectivity Card nRF52840
+  image: ../_images/ctcc_nrf52840_mpcie.webp
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ct
+cy8ckit_062_ble:
+  archs:
+  - arm
+  doc_page: boards/cypress/cy8ckit_062_ble/doc/index.rst
+  full_name: PSoC63 BLE Pioneer Kit
+  image: ../_images/cy8ckit-062-ble.jpg
+  socs:
+  - cy8c6347
+  supported_features: {}
+  vendor: cypress
+cy8ckit_062_wifi_bt:
+  archs:
+  - arm
+  doc_page: boards/cypress/cy8ckit_062_wifi_bt/doc/index.rst
+  full_name: PSoC6 WiFi-BT Pioneer Kit
+  image: ../_images/cy8ckit_062_wifi_bt_m0.jpg
+  socs:
+  - cy8c6247
+  supported_features: {}
+  vendor: cypress
+cy8ckit_062s4:
+  archs:
+  - arm
+  doc_page: boards/infineon/cy8ckit_062s4/doc/index.rst
+  full_name: PSOC 62S4 Pioneer Kit
+  image: ../_images/cy8ckit_062s4.png
+  socs:
+  - cy8c6244lqi_s4d92
+  supported_features: {}
+  vendor: infineon
+cy8cproto_062_4343w:
+  archs:
+  - arm
+  doc_page: boards/infineon/cy8cproto_062_4343w/doc/index.rst
+  full_name: CY8CPROTO-062-4343W
+  image: ../_images/board.jpg
+  socs:
+  - cy8c624abzi_s2d44
+  supported_features: {}
+  vendor: infineon
+cy8cproto_063_ble:
+  archs:
+  - arm
+  doc_page: boards/infineon/cy8cproto_063_ble/doc/index.rst
+  full_name: CY8CPROTO-063-BLE
+  image: ../_images/cy8cproto-063-ble.jpg
+  socs:
+  - cyble_416045_02
+  supported_features: {}
+  vendor: infineon
+cyclonev_socdk:
+  archs:
+  - arm
+  doc_page: boards/intel/socfpga_std/cyclonev_socdk/doc/index.rst
+  full_name: "Cyclone\xAE V SoC Development Kit"
+  image: ../_images/cyclonev_socdk.jpg
+  socs:
+  - cyclonev
+  supported_features: {}
+  vendor: intel
+cyw920829m2evk_02:
+  archs:
+  - arm
+  doc_page: boards/infineon/cyw920829m2evk_02/doc/index.rst
+  full_name: CYW920829M2EVK-02
+  image: ../_images/cyw920829m2evk_02.webp
+  socs:
+  - cyw20829b0lkml
+  supported_features: {}
+  vendor: infineon
+da14695_dk_usb:
+  archs:
+  - arm
+  doc_page: boards/renesas/da14695_dk_usb/doc/index.rst
+  full_name: DA14695 Development Kit USB
+  image: ../_images/da14695-00hqdevkt-u-usb-board.jpg
+  socs:
+  - da14695
+  supported_features: {}
+  vendor: renesas
+da1469x_dk_pro:
+  archs:
+  - arm
+  doc_page: boards/renesas/da1469x_dk_pro/doc/index.rst
+  full_name: DA1469x Development Kit Pro
+  image: ../_images/da14695-00hqdevkt-board.jpg
+  socs:
+  - da14699
+  supported_features: {}
+  vendor: renesas
+decawave_dwm1001_dev:
+  archs:
+  - arm
+  doc_page: boards/qorvo/decawave_dwm1001_dev/doc/index.rst
+  full_name: Decawave DWM1001
+  image: ''
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: qorvo
+degu_evk:
+  archs:
+  - arm
+  doc_page: boards/atmarktechno/degu_evk/doc/index.rst
+  full_name: Degu Evaluation Kit
+  image: ../_images/degu_evk.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: atmarktechno
+disco_l475_iot1:
+  archs:
+  - arm
+  doc_page: boards/st/disco_l475_iot1/doc/index.rst
+  full_name: Disco L475 IOT01 (B-L475E-IOT01A)
+  image: ../_images/disco_l475_iot1.jpg
+  socs:
+  - stm32l475xx
+  supported_features: {}
+  vendor: st
+dragino_lsn50:
+  archs:
+  - arm
+  doc_page: boards/dragino/lsn50/doc/index.rst
+  full_name: LSN50 LoRA Sensor Node
+  image: ../_images/dragino_lsn50.jpg
+  socs:
+  - stm32l072xx
+  supported_features: {}
+  vendor: dragino
+dragino_nbsn95:
+  archs:
+  - arm
+  doc_page: boards/dragino/nbsn95/doc/index.rst
+  full_name: NBSN95 NB-IoT Sensor Node
+  image: ../_images/dragino_nbsn95.jpg
+  socs:
+  - stm32l072xx
+  supported_features: {}
+  vendor: dragino
+ebyte_e73_tbb:
+  archs:
+  - arm
+  doc_page: boards/ebyte/e73_tbb/doc/index.rst
+  full_name: E73-TBB
+  image: ../_images/ebyte_e73_tbb_nrf52832.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: ebyte
+efm32wg_stk3800:
+  archs:
+  - arm
+  doc_page: boards/silabs/starter_kits/efm32wg_stk3800/doc/index.rst
+  full_name: EFM32 Wonder Gecko (EFM32WG-STK3800)
+  image: ../_images/efm32wg_stk3800.jpg
+  socs:
+  - efm32wg990f256
+  supported_features: {}
+  vendor: silabs
+ek_ra2a1:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra2a1/doc/index.rst
+  full_name: RA2A1 Evaluation Kit
+  image: ''
+  socs:
+  - r7fa2a1ab3cfm
+  supported_features: {}
+  vendor: renesas
+ek_ra4e2:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra4e2/doc/index.rst
+  full_name: RA4E2 Evaluation Kit
+  image: ../_images/ek-ra4e2-board.webp
+  socs:
+  - r7fa4e2b93cfm
+  supported_features: {}
+  vendor: renesas
+ek_ra4m2:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra4m2/doc/index.rst
+  full_name: RA4M2 Evaluation Kit
+  image: ../_images/ek_ra4m2.webp
+  socs:
+  - r7fa4m2ad3cfp
+  supported_features: {}
+  vendor: renesas
+ek_ra4m3:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra4m3/doc/index.rst
+  full_name: RA4M3 Evaluation Kit
+  image: ../_images/ek-ra4m3-board.webp
+  socs:
+  - r7fa4m3af3cfb
+  supported_features: {}
+  vendor: renesas
+ek_ra4w1:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra4w1/doc/index.rst
+  full_name: RA4W1 Evaluation Kit
+  image: ../_images/ek-ra4w1-board.webp
+  socs:
+  - r7fa4w1ad2cng
+  supported_features: {}
+  vendor: renesas
+ek_ra6e2:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6e2/doc/index.rst
+  full_name: RA6E2 Evaluation Kit
+  image: ../_images/ek-ra6e2-board.webp
+  socs:
+  - r7fa6e2bb3cfm
+  supported_features: {}
+  vendor: renesas
+ek_ra6m1:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6m1/doc/index.rst
+  full_name: RA6M1 Evaluation Kit
+  image: ../_images/ek-ra6m1-board.webp
+  socs:
+  - r7fa6m1ad3cfp
+  supported_features: {}
+  vendor: renesas
+ek_ra6m2:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6m2/doc/index.rst
+  full_name: RA6M2 Evaluation Kit
+  image: ../_images/ek-ra6m2-board.webp
+  socs:
+  - r7fa6m2af3cfb
+  supported_features: {}
+  vendor: renesas
+ek_ra6m3:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6m3/doc/index.rst
+  full_name: RA6M3 Evaluation Kit
+  image: ../_images/ek_ra6m3.webp
+  socs:
+  - r7fa6m3ah3cfc
+  supported_features: {}
+  vendor: renesas
+ek_ra6m4:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6m4/doc/index.rst
+  full_name: RA6M4 Evaluation Kit
+  image: ../_images/ek-ra6m4-board.webp
+  socs:
+  - r7fa6m4af3cfb
+  supported_features: {}
+  vendor: renesas
+ek_ra6m5:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra6m5/doc/index.rst
+  full_name: RA6M5 Evaluation Kit
+  image: ../_images/ek-ra6m5-board.webp
+  socs:
+  - r7fa6m5bh3cfc
+  supported_features: {}
+  vendor: renesas
+ek_ra8d1:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra8d1/doc/index.rst
+  full_name: RA8D1 Evaluation Kit
+  image: ../_images/ek-ra8d1-board.jpg
+  socs:
+  - r7fa8d1bhecbd
+  supported_features: {}
+  vendor: renesas
+ek_ra8m1:
+  archs:
+  - arm
+  doc_page: boards/renesas/ek_ra8m1/doc/index.rst
+  full_name: RA8M1 Evaluation Kit
+  image: ../_images/ek_ra8m1.jpg
+  socs:
+  - r7fa8m1ahecbd
+  supported_features: {}
+  vendor: renesas
+em_starterkit:
+  archs:
+  - arc
+  doc_page: boards/snps/em_starterkit/doc/index.rst
+  full_name: ARC EM Starter Kit
+  image: ../_images/em_starterkit.jpg
+  socs:
+  - emsk_em11d
+  - emsk_em9d
+  - emsk_em7d
+  supported_features: {}
+  vendor: snps
+emsdp:
+  archs:
+  - arc
+  doc_page: boards/snps/emsdp/doc/index.rst
+  full_name: ARC EM Software Development Platform
+  image: ../_images/emsdp.jpg
+  socs:
+  - emsdp_em7d
+  - emsdp_em6
+  - emsdp_em7d_esp
+  - emsdp_em9d
+  - emsdp_em4
+  - emsdp_em5d
+  - emsdp_em11d
+  supported_features: {}
+  vendor: snps
+esp32_devkitc_wroom:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32_devkitc_wroom/doc/index.rst
+  full_name: ESP32-DevKitC-WROOM
+  image: ../_images/esp32_devkitc_wroom.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: espressif
+esp32_devkitc_wrover:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32_devkitc_wrover/doc/index.rst
+  full_name: ESP32-DevKitC-WROVER
+  image: ../_images/esp32_devkitc_wrover.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: espressif
+esp32_ethernet_kit:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32_ethernet_kit/doc/index.rst
+  full_name: ESP32-Ethernet-Kit
+  image: ../_images/esp32_ethernet_kit.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: espressif
+esp32c3_042_oled:
+  archs:
+  - riscv
+  doc_page: boards/01space/esp32c3_042_oled/doc/index.rst
+  full_name: ESP32C3 0.42 OLED
+  image: ../_images/esp32c3_042_oled.webp
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: 01space
+esp32c3_devkitc:
+  archs:
+  - riscv
+  doc_page: boards/espressif/esp32c3_devkitc/doc/index.rst
+  full_name: ESP32-C3-DevKitC
+  image: ''
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: espressif
+esp32c3_devkitm:
+  archs:
+  - riscv
+  doc_page: boards/espressif/esp32c3_devkitm/doc/index.rst
+  full_name: ESP32-C3-DevKitM
+  image: ''
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: espressif
+esp32c3_luatos_core:
+  archs:
+  - riscv
+  doc_page: boards/luatos/esp32c3_luatos_core/doc/index.rst
+  full_name: ESP32C3_LUATOS_CORE
+  image: ../_images/esp32c3_luatos_core.jpg
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: luatos
+esp32c3_rust:
+  archs:
+  - riscv
+  doc_page: boards/espressif/esp32c3_rust/doc/index.rst
+  full_name: ESP32-C3-DevKit-RUST
+  image: ''
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: espressif
+esp32c6_devkitc:
+  archs:
+  - riscv
+  doc_page: boards/espressif/esp32c6_devkitc/doc/index.rst
+  full_name: ESP32-C6-DevKitC
+  image: ''
+  socs:
+  - esp32c6
+  supported_features: {}
+  vendor: espressif
+esp32s2_devkitc:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32s2_devkitc/doc/index.rst
+  full_name: ESP32-S2-DevKitC
+  image: ''
+  socs:
+  - esp32s2
+  supported_features: {}
+  vendor: espressif
+esp32s2_franzininho:
+  archs:
+  - xtensa
+  doc_page: boards/franzininho/esp32s2_franzininho/doc/index.rst
+  full_name: ESP32-S2 Franzininho
+  image: ../_images/esp32_s2_franzininho.jpg
+  socs:
+  - esp32s2
+  supported_features: {}
+  vendor: franzininho
+esp32s2_lolin_mini:
+  archs:
+  - xtensa
+  doc_page: boards/wemos/esp32s2_lolin_mini/doc/index.rst
+  full_name: ESP32-S2 Lolin Mini
+  image: ../_images/esp32_s2_lolin_mini.jpg
+  socs:
+  - esp32s2
+  supported_features: {}
+  vendor: wemos
+esp32s2_saola:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32s2_saola/doc/index.rst
+  full_name: ESP32-S2-Saola
+  image: ''
+  socs:
+  - esp32s2
+  supported_features: {}
+  vendor: espressif
+esp32s3_devkitc:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32s3_devkitc/doc/index.rst
+  full_name: ESP32-S3-DevKitC
+  image: ''
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: espressif
+esp32s3_devkitm:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32s3_devkitm/doc/index.rst
+  full_name: ESP32-S3-DevKitM
+  image: ''
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: espressif
+esp32s3_eye:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp32s3_eye/doc/index.rst
+  full_name: ESP32-S3-EYE
+  image: ../_images/ESP32-S3-EYE-isometric.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: espressif
+esp32s3_luatos_core:
+  archs:
+  - xtensa
+  doc_page: boards/luatos/esp32s3_luatos_core/doc/index.rst
+  full_name: ESP32S3-Luatos-Core
+  image: ../_images/esp32s3_luatos_core.jpg
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: luatos
+esp32s3_touch_lcd_1_28:
+  archs:
+  - xtensa
+  doc_page: boards/waveshare/esp32s3_touch_lcd_1_28/doc/index.rst
+  full_name: ESP32-S3-Touch-LCD-1.28
+  image: ''
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: waveshare
+esp8684_devkitm:
+  archs:
+  - riscv
+  doc_page: boards/espressif/esp8684_devkitm/doc/index.rst
+  full_name: ESP8684-DevKitM
+  image: ''
+  socs:
+  - esp32c2
+  supported_features: {}
+  vendor: espressif
+esp_wrover_kit:
+  archs:
+  - xtensa
+  doc_page: boards/espressif/esp_wrover_kit/doc/index.rst
+  full_name: ESP-WROVER-KIT
+  image: ../_images/esp_wrover_kit.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: espressif
+ev11l78a:
+  archs:
+  - arm
+  doc_page: boards/microchip/ev11l78a/doc/index.rst
+  full_name: UPD301C Basic Sink Application Example
+  image: ../_images/ev11l78a.jpg
+  socs:
+  - samd20e16
+  supported_features: {}
+  vendor: microchip
+faze:
+  archs:
+  - arm
+  doc_page: boards/seagate/faze/doc/index.rst
+  full_name: FireCuda Gaming SSD (FaZe) board
+  image: ../_images/firecuda-gaming-ssd.jpg
+  socs:
+  - lpc11u67
+  supported_features: {}
+  vendor: seagate
+fk7b0m1_vbt6:
+  archs:
+  - arm
+  doc_page: boards/fanke/fk7b0m1_vbt6/doc/index.rst
+  full_name: FK7B0M1-VBT6
+  image: ../_images/fk7b0m1_vbt6.webp
+  socs:
+  - stm32h7b0xx
+  supported_features: {}
+  vendor: fanke
+fpb_ra6e1:
+  archs:
+  - arm
+  doc_page: boards/renesas/fpb_ra6e1/doc/index.rst
+  full_name: RA6E1 Fast Prototyping Board
+  image: ../_images/fpb_ra6e1.webp
+  socs:
+  - r7fa6e10f2cfp
+  supported_features: {}
+  vendor: renesas
+fpb_ra6e2:
+  archs:
+  - arm
+  doc_page: boards/renesas/fpb_ra6e2/doc/index.rst
+  full_name: RA6E2 Fast Prototyping Board
+  image: ../_images/fpb-ra6e2-board.webp
+  socs:
+  - r7fa6e2bb3cfm
+  supported_features: {}
+  vendor: renesas
+frdm_k22f:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_k22f/doc/index.rst
+  full_name: FRDM-K22F
+  image: ../_images/frdm_k22f.jpg
+  socs:
+  - mk22f51212
+  supported_features: {}
+  vendor: nxp
+frdm_k64f:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_k64f/doc/index.rst
+  full_name: FRDM-K64F
+  image: ../_images/frdm_k64f.jpg
+  socs:
+  - mk64f12
+  supported_features: {}
+  vendor: nxp
+frdm_k82f:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_k82f/doc/index.rst
+  full_name: FRDM-K82F
+  image: ../_images/frdm_k82f.jpg
+  socs:
+  - mk82f25615
+  supported_features: {}
+  vendor: nxp
+frdm_ke15z:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_ke15z/doc/index.rst
+  full_name: FRDM-KE15Z
+  image: ../_images/frdm_ke15z.webp
+  socs:
+  - mke15z7
+  supported_features: {}
+  vendor: nxp
+frdm_ke17z:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_ke17z/doc/index.rst
+  full_name: FRDM-KE17Z
+  image: ../_images/frdmke17z.webp
+  socs:
+  - mke17z7
+  supported_features: {}
+  vendor: nxp
+frdm_ke17z512:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_ke17z512/doc/index.rst
+  full_name: FRDM-KE17Z512
+  image: ../_images/frdm_ke17z512.webp
+  socs:
+  - mke17z9
+  supported_features: {}
+  vendor: nxp
+frdm_kl25z:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_kl25z/doc/index.rst
+  full_name: FRDM-KL25Z
+  image: ../_images/frdm_kl25z.jpg
+  socs:
+  - mkl25z4
+  supported_features: {}
+  vendor: nxp
+frdm_kw41z:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_kw41z/doc/index.rst
+  full_name: FRDM-KW41Z
+  image: ../_images/frdm_kw41z.jpg
+  socs:
+  - mkw41z4
+  supported_features: {}
+  vendor: nxp
+frdm_mcxa156:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxa156/doc/index.rst
+  full_name: FRDM-MCXA156
+  image: ../_images/frdm_mcxa156.webp
+  socs:
+  - mcxa156
+  supported_features: {}
+  vendor: nxp
+frdm_mcxc242:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxc242/doc/index.rst
+  full_name: FRDM-MCXC242
+  image: ../_images/frdm_mcxc242.webp
+  socs:
+  - mcxc242
+  supported_features: {}
+  vendor: nxp
+frdm_mcxc444:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxc444/doc/index.rst
+  full_name: FRDM-MCXC444
+  image: ../_images/frdm_mcxc444.webp
+  socs:
+  - mcxc444
+  supported_features: {}
+  vendor: nxp
+frdm_mcxn236:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxn236/doc/index.rst
+  full_name: FRDM-MCXN236
+  image: ../_images/frdm_mcxn236.webp
+  socs:
+  - mcxn236
+  supported_features: {}
+  vendor: nxp
+frdm_mcxn947:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxn947/doc/index.rst
+  full_name: FRDM-MCXN947
+  image: ../_images/frdm_mcxn947.webp
+  socs:
+  - mcxn947
+  supported_features: {}
+  vendor: nxp
+frdm_mcxw71:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_mcxw71/doc/index.rst
+  full_name: FRDM-MCXW71
+  image: ../_images/frdm_mcxw71.webp
+  socs:
+  - mcxw716c
+  supported_features: {}
+  vendor: nxp
+frdm_rw612:
+  archs:
+  - arm
+  doc_page: boards/nxp/frdm_rw612/doc/index.rst
+  full_name: FRDM_RW612
+  image: ''
+  socs:
+  - rw612
+  supported_features: {}
+  vendor: nxp
+fvp_base_revc_2xaemv8a:
+  archs:
+  - arm64
+  doc_page: boards/arm/fvp_base_revc_2xaemv8a/doc/index.rst
+  full_name: BASE RevC AEMv8A Fixed Virtual Platforms
+  image: ''
+  socs:
+  - fvp_base_revc_2xaemv8a
+  supported_features: {}
+  vendor: arm
+fvp_baser_aemv8r:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/arm/fvp_baser_aemv8r/doc/debug-with-arm-ds.rst
+  full_name: Debug with Arm DS
+  image: ../_images/version-info.jpg
+  socs:
+  - fvp_aemv8r_aarch64
+  - fvp_aemv8r_aarch32
+  supported_features: {}
+  vendor: arm
+ganymed_bob:
+  archs:
+  - riscv
+  doc_page: boards/sensry/ganymed_bob/doc/index.rst
+  full_name: Ganymed Break-Out-Board (BOB)
+  image: ../_images/ganymed_bob_sy120_gen1.webp
+  socs:
+  - sy120_gbm
+  - sy120_gen1
+  supported_features: {}
+  vendor: sensry
+gd32a503v_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32a503v_eval/doc/index.rst
+  full_name: GD32A503V-EVAL
+  image: ../_images/gd32a503v_eval.jpg
+  socs:
+  - gd32a503
+  supported_features: {}
+  vendor: gd
+gd32e103v_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32e103v_eval/doc/index.rst
+  full_name: GD32E103V-EVAL
+  image: ../_images/gd32e103v_eval.jpg
+  socs:
+  - gd32e103
+  supported_features: {}
+  vendor: gd
+gd32e507v_start:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32e507v_start/doc/index.rst
+  full_name: GD32E507V-START
+  image: ../_images/gd32e507v_start.jpg
+  socs:
+  - gd32e507
+  supported_features: {}
+  vendor: gd
+gd32e507z_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32e507z_eval/doc/index.rst
+  full_name: GD32E507Z-EVAL
+  image: ../_images/gd32e507z_eval.webp
+  socs:
+  - gd32e507
+  supported_features: {}
+  vendor: gd
+gd32f350r_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f350r_eval/doc/index.rst
+  full_name: GD32F350R-EVAL
+  image: ../_images/gd32f350r_eval.webp
+  socs:
+  - gd32f350
+  supported_features: {}
+  vendor: gd
+gd32f403z_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f403z_eval/doc/index.rst
+  full_name: GD32F403Z-EVAL
+  image: ../_images/gd32f403z_eval.jpg
+  socs:
+  - gd32f403
+  supported_features: {}
+  vendor: gd
+gd32f407v_start:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f407v_start/doc/index.rst
+  full_name: GD32F407V-START
+  image: ../_images/gd32f407v_start.webp
+  socs:
+  - gd32f407
+  supported_features: {}
+  vendor: gd
+gd32f450i_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f450i_eval/doc/index.rst
+  full_name: GD32F450I-EVAL
+  image: ../_images/gd32f450i_eval.webp
+  socs:
+  - gd32f450
+  supported_features: {}
+  vendor: gd
+gd32f450v_start:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f450v_start/doc/index.rst
+  full_name: GD32F450V-START
+  image: ../_images/gd32f450v_start.webp
+  socs:
+  - gd32f450
+  supported_features: {}
+  vendor: gd
+gd32f450z_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f450z_eval/doc/index.rst
+  full_name: GD32F450Z-EVAL
+  image: ../_images/gd32f450z_eval.webp
+  socs:
+  - gd32f450
+  supported_features: {}
+  vendor: gd
+gd32f470i_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32f470i_eval/doc/index.rst
+  full_name: GD32F470I-EVAL
+  image: ../_images/gd32f470i_eval.jpg
+  socs:
+  - gd32f470
+  supported_features: {}
+  vendor: gd
+gd32l233r_eval:
+  archs:
+  - arm
+  doc_page: boards/gd/gd32l233r_eval/doc/index.rst
+  full_name: GD32L233R-EVA
+  image: ../_images/gd32l233r_eval.jpg
+  socs:
+  - gd32l233
+  supported_features: {}
+  vendor: gd
+gd32vf103c_starter:
+  archs:
+  - riscv
+  doc_page: boards/gd/gd32vf103c_starter/doc/index.rst
+  full_name: GD32VF103C-STARTER
+  image: ../_images/gd32vf103c_starter.jpg
+  socs:
+  - gd32vf103
+  supported_features: {}
+  vendor: gd
+gd32vf103v_eval:
+  archs:
+  - riscv
+  doc_page: boards/gd/gd32vf103v_eval/doc/index.rst
+  full_name: GD32VF103V-EVAL
+  image: ../_images/gd32vf103v_eval.jpg
+  socs:
+  - gd32vf103
+  supported_features: {}
+  vendor: gd
+generic_leon3:
+  archs:
+  - sparc
+  doc_page: boards/gaisler/generic_leon3/doc/index.rst
+  full_name: Generic LEON3
+  image: ''
+  socs:
+  - leon3
+  supported_features: {}
+  vendor: gaisler
+google_dragonclaw:
+  archs:
+  - arm
+  doc_page: boards/google/dragonclaw/doc/index.rst
+  full_name: Dragonclaw Development Board
+  image: ''
+  socs:
+  - stm32f412cx
+  supported_features: {}
+  vendor: google
+google_twinkie_v2:
+  archs:
+  - arm
+  doc_page: boards/google/twinkie_v2/doc/index.rst
+  full_name: Twinkie V2
+  image: ''
+  socs:
+  - stm32g0b1xx
+  supported_features: {}
+  vendor: google
+gr716a_mini:
+  archs:
+  - sparc
+  doc_page: boards/gaisler/gr716a_mini/doc/index.rst
+  full_name: GR716-MINI Development Board
+  image: ../_images/gr716a_mini.jpg
+  socs:
+  - gr716a
+  supported_features: {}
+  vendor: gaisler
+heltec_wifi_lora32_v2:
+  archs:
+  - xtensa
+  doc_page: boards/heltec/heltec_wifi_lora32_v2/doc/index.rst
+  full_name: WiFi LoRa 32 (V2)
+  image: ''
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: heltec
+heltec_wireless_stick_lite_v3:
+  archs:
+  - xtensa
+  doc_page: boards/heltec/heltec_wireless_stick_lite_v3/doc/index.rst
+  full_name: Wireless Stick Lite (V3)
+  image: ../_images/heltec_wireless_stick_lite_v3.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: heltec
+hexiwear:
+  archs:
+  - arm
+  doc_page: boards/nxp/hexiwear/doc/index.rst
+  full_name: Hexiwear
+  image: ../_images/hexiwear_k64.jpg
+  socs:
+  - mk64f12
+  - mkw40z4
+  supported_features: {}
+  vendor: nxp
+hifive1:
+  archs:
+  - riscv
+  doc_page: boards/sifive/hifive1/doc/index.rst
+  full_name: HiFive1
+  image: ../_images/hifive1.jpg
+  socs:
+  - fe310
+  supported_features: {}
+  vendor: sifive
+hifive_unleashed:
+  archs:
+  - riscv
+  doc_page: boards/sifive/hifive_unleashed/doc/index.rst
+  full_name: HiFive Unleashed
+  image: ../_images/hifive_unleashed.jpg
+  socs:
+  - fu540
+  supported_features: {}
+  vendor: sifive
+hifive_unmatched:
+  archs:
+  - riscv
+  doc_page: boards/sifive/hifive_unmatched/doc/index.rst
+  full_name: HiFive Unmatched
+  image: ../_images/hifive_unmatched.jpg
+  socs:
+  - fu740
+  supported_features: {}
+  vendor: sifive
+holyiot_yj16019:
+  archs:
+  - arm
+  doc_page: boards/holyiot/yj16019/doc/index.rst
+  full_name: YJ-16019
+  image: ../_images/holyiot_yj16019_front.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: holyiot
+hsdk:
+  archs:
+  - arc
+  doc_page: boards/snps/hsdk/doc/index.rst
+  full_name: ARC HS Development Kit
+  image: ../_images/hsdk.jpg
+  socs:
+  - arc_hsdk
+  supported_features: {}
+  vendor: snps
+hsdk4xd:
+  archs:
+  - arc
+  doc_page: boards/snps/hsdk4xd/doc/index.rst
+  full_name: ARC HS4x/HS4xD Development Kit
+  image: ../_images/hsdk4xd.jpg
+  socs:
+  - arc_hsdk4xd
+  supported_features: {}
+  vendor: snps
+icev_wireless:
+  archs:
+  - riscv
+  doc_page: boards/others/icev_wireless/doc/index.rst
+  full_name: ICE-V Wireless
+  image: ../_images/icev_wireless.jpg
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: zephyr
+imx8mm_evk:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/nxp/imx8mm_evk/doc/index.rst
+  full_name: i.MX8MM EVK
+  image: ''
+  socs:
+  - mimx8mm6
+  supported_features: {}
+  vendor: nxp
+imx8mn_evk:
+  archs:
+  - arm64
+  doc_page: boards/nxp/imx8mn_evk/doc/index.rst
+  full_name: i.MX8MN EVK (Cortex-A53)
+  image: ''
+  socs:
+  - mimx8mn6
+  supported_features: {}
+  vendor: nxp
+imx8mp_evk:
+  archs:
+  - arm64
+  - arm
+  - xtensa
+  doc_page: boards/nxp/imx8mp_evk/doc/index.rst
+  full_name: i.MX8MP EVK
+  image: ''
+  socs:
+  - mimx8ml8
+  supported_features: {}
+  vendor: nxp
+imx8mq_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/imx8mq_evk/doc/index.rst
+  full_name: MIMX8MQ EVK
+  image: ../_images/mimx8mq_evk.jpg
+  socs:
+  - mimx8mq6
+  supported_features: {}
+  vendor: nxp
+imx8qm_mek:
+  archs:
+  - xtensa
+  doc_page: null
+  full_name: i.MX 8QuadMax Multisensory Enablement Kit (MEK)
+  image: ''
+  socs:
+  - mimx8qm6
+  supported_features: {}
+  vendor: nxp
+imx8qxp_mek:
+  archs:
+  - xtensa
+  doc_page: null
+  full_name: i.MX 8QuadXPlus Multisensory Enablement Kit (MEK)
+  image: ''
+  socs:
+  - mimx8qx6
+  supported_features: {}
+  vendor: nxp
+imx8ulp_evk:
+  archs:
+  - xtensa
+  doc_page: null
+  full_name: i.MX 8ULP Evaluation Kit
+  image: ''
+  socs:
+  - mimx8ud7
+  supported_features: {}
+  vendor: nxp
+imx93_evk:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/nxp/imx93_evk/doc/index.rst
+  full_name: i.MX93 EVK
+  image: ''
+  socs:
+  - mimx9352
+  supported_features: {}
+  vendor: nxp
+imx95_evk:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/nxp/imx95_evk/doc/index.rst
+  full_name: i.MX95 EVK
+  image: ''
+  socs:
+  - mimx9596
+  supported_features: {}
+  vendor: nxp
+innblue21:
+  archs:
+  - arm
+  doc_page: boards/innblue/innblue21/doc/index.rst
+  full_name: nRF9160 INNBLUE21
+  image: ../_images/nrf9160_innblue21.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: innblue
+innblue22:
+  archs:
+  - arm
+  doc_page: boards/innblue/innblue22/doc/index.rst
+  full_name: nRF9160 INNBLUE22
+  image: ../_images/nrf9160_innblue22.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: innblue
+intel_adl_crb:
+  archs:
+  - x86
+  doc_page: boards/intel/adl/doc/index.rst
+  full_name: Alder Lake CRB
+  image: ''
+  socs:
+  - alder_lake
+  supported_features: {}
+  vendor: intel
+intel_adl_rvp:
+  archs:
+  - x86
+  doc_page: boards/intel/adl/doc/index.rst
+  full_name: Alder Lake RVP
+  image: ''
+  socs:
+  - alder_lake
+  supported_features: {}
+  vendor: intel
+intel_adsp:
+  archs:
+  - xtensa
+  doc_page: boards/intel/adsp/doc/index.rst
+  full_name: Intel ADSP
+  image: ''
+  socs:
+  - cavs25
+  - ace15_mtpm
+  - ace30
+  - ace20_lnl
+  supported_features: {}
+  vendor: intel
+intel_ehl_crb:
+  archs:
+  - x86
+  doc_page: boards/intel/ehl/doc/index.rst
+  full_name: Elkhart Lake CRB
+  image: ''
+  socs:
+  - elkhart_lake
+  supported_features: {}
+  vendor: intel
+intel_ish_5_4_1:
+  archs:
+  - x86
+  doc_page: boards/intel/ish/doc/index.rst
+  full_name: Integrated Sensor Hub (ISH) 5.4.1
+  image: ''
+  socs:
+  - intel_ish_5_4_1
+  supported_features: {}
+  vendor: intel
+intel_ish_5_6_0:
+  archs:
+  - x86
+  doc_page: boards/intel/ish/doc/index.rst
+  full_name: Integrated Sensor Hub (ISH) 5.6.0
+  image: ''
+  socs:
+  - intel_ish_5_6_0
+  supported_features: {}
+  vendor: intel
+intel_ish_5_8_0:
+  archs:
+  - x86
+  doc_page: boards/intel/ish/doc/index.rst
+  full_name: Integrated Sensor Hub (ISH) 5.8.0
+  image: ''
+  socs:
+  - intel_ish_5_8_0
+  supported_features: {}
+  vendor: intel
+intel_rpl_p_crb:
+  archs:
+  - x86
+  doc_page: boards/intel/rpl/doc/index.rst
+  full_name: Raptor Lake P CRB
+  image: ''
+  socs:
+  - raptor_lake
+  supported_features: {}
+  vendor: intel
+intel_rpl_s_crb:
+  archs:
+  - x86
+  doc_page: boards/intel/rpl/doc/index.rst
+  full_name: Raptor Lake S CRB
+  image: ''
+  socs:
+  - raptor_lake
+  supported_features: {}
+  vendor: intel
+intel_socfpga_agilex5_socdk:
+  archs:
+  - arm64
+  doc_page: boards/intel/socfpga/agilex5_socdk/doc/index.rst
+  full_name: "Agilex\u2122 5 SoC FPGA Development Kit"
+  image: ''
+  socs:
+  - agilex5
+  supported_features: {}
+  vendor: intel
+intel_socfpga_agilex_socdk:
+  archs:
+  - arm64
+  doc_page: boards/intel/socfpga/agilex_socdk/doc/index.rst
+  full_name: Agilex SoC Development Kit
+  image: ''
+  socs:
+  - agilex
+  supported_features: {}
+  vendor: intel
+iotdk:
+  archs:
+  - arc
+  doc_page: boards/snps/iotdk/doc/index.rst
+  full_name: ARC IoT Development Kit
+  image: ../_images/iotdk.jpg
+  socs:
+  - arc_iot
+  supported_features: {}
+  vendor: snps
+ip_k66f:
+  archs:
+  - arm
+  doc_page: boards/segger/ip_k66f/doc/index.rst
+  full_name: IP Switch Board
+  image: ../_images/ip_k66f.jpg
+  socs:
+  - mk66f18
+  supported_features: {}
+  vendor: segger
+it82xx2_evb:
+  archs:
+  - riscv
+  doc_page: boards/ite/it82xx2_evb/doc/index.rst
+  full_name: IT82XX2 series
+  image: ../_images/it82xx2_evb_wiring.jpg
+  socs:
+  - it82202ax
+  supported_features: {}
+  vendor: ite
+it8xxx2_evb:
+  archs:
+  - riscv
+  doc_page: boards/ite/it8xxx2_evb/doc/index.rst
+  full_name: IT8XXX2 series
+  image: ../_images/it8xxx2_evb_wiring.jpg
+  socs:
+  - it81302bx
+  supported_features: {}
+  vendor: ite
+kb1200_evb:
+  archs:
+  - arm
+  doc_page: boards/ene/kb1200_evb/doc/index.rst
+  full_name: ENE KB1200_EVB
+  image: ''
+  socs:
+  - kb1200
+  supported_features: {}
+  vendor: ene
+khadas_edgev:
+  archs:
+  - arm64
+  doc_page: boards/khadas/edgev/doc/index.rst
+  full_name: Edge-V
+  image: ''
+  socs:
+  - rk3399
+  supported_features: {}
+  vendor: khadas
+kincony_kc868_a32:
+  archs:
+  - xtensa
+  doc_page: boards/kincony/kincony_kc868_a32/doc/index.rst
+  full_name: KC868-A32
+  image: ../_images/kincony_kc868_a32.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: kincony
+kv260_r5:
+  archs:
+  - arm
+  doc_page: boards/amd/kv260_r5/doc/index.rst
+  full_name: KV260 Development Board RPU Cortex-R5
+  image: ../_images/kv260-starter-kit.jpg
+  socs:
+  - zynqmp_rpu
+  supported_features: {}
+  vendor: amd
+legend:
+  archs:
+  - arm
+  doc_page: boards/seagate/legend/doc/index.rst
+  full_name: Legend
+  image: ../_images/firecuda_gaming_hub.jpg
+  socs:
+  - stm32f070xb
+  supported_features: {}
+  vendor: seagate
+linum:
+  archs:
+  - arm
+  doc_page: boards/witte/linum/doc/index.rst
+  full_name: Linum Board
+  image: ../_images/linum-stm32h753bi-top.jpg
+  socs:
+  - stm32h753xx
+  supported_features: {}
+  vendor: witte
+litex_vexriscv:
+  archs:
+  - riscv
+  doc_page: boards/enjoydigital/litex_vexriscv/doc/index.rst
+  full_name: LiteX VexRiscv
+  image: ../_images/litex_vexriscv.jpg
+  socs:
+  - litex_vexriscv
+  supported_features: {}
+  vendor: enjoydigital
+longan_nano:
+  archs:
+  - riscv
+  doc_page: boards/sipeed/longan_nano/doc/index.rst
+  full_name: Longan Nano
+  image: ../_images/longan_nano.jpg
+  socs:
+  - gd32vf103
+  supported_features: {}
+  vendor: sipeed
+lora_e5_dev_board:
+  archs:
+  - arm
+  doc_page: boards/seeed/lora_e5_dev_board/doc/lora_e5_dev_board.rst
+  full_name: LoRa-E5 Dev Board
+  image: ../_images/lora_e5_dev_board.jpg
+  socs:
+  - stm32wle5xx
+  supported_features: {}
+  vendor: seeed
+lora_e5_mini:
+  archs:
+  - arm
+  doc_page: boards/seeed/lora_e5_mini/doc/index.rst
+  full_name: LoRa-E5 mini
+  image: ../_images/lora_e5_mini.jpg
+  socs:
+  - stm32wle5xx
+  supported_features: {}
+  vendor: seeed
+lpcxpresso11u68:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso11u68/doc/index.rst
+  full_name: LPCXpresso11U68
+  image: ../_images/lpcxpresso11u68.jpg
+  socs:
+  - lpc11u68
+  supported_features: {}
+  vendor: nxp
+lpcxpresso51u68:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso51u68/doc/index.rst
+  full_name: LPCXPRESSO51U68
+  image: ../_images/lpcxpresso51u68.jpg
+  socs:
+  - lpc51u68
+  supported_features: {}
+  vendor: nxp
+lpcxpresso54114:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso54114/doc/index.rst
+  full_name: LPCXPRESSO54114
+  image: ../_images/lpcxpresso54114_m4.jpg
+  socs:
+  - lpc54114
+  supported_features: {}
+  vendor: nxp
+lpcxpresso55s06:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso55s06/doc/index.rst
+  full_name: LPCXpresso55S06
+  image: ../_images/lpcxpress55s06.jpg
+  socs:
+  - lpc55s06
+  supported_features: {}
+  vendor: nxp
+lpcxpresso55s16:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso55s16/doc/index.rst
+  full_name: LPCXpresso55S16
+  image: ../_images/lpcxpresso55S16.jpg
+  socs:
+  - lpc55s16
+  supported_features: {}
+  vendor: nxp
+lpcxpresso55s28:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso55s28/doc/index.rst
+  full_name: LPCXpresso55S28
+  image: ../_images/LPC55S28-EVK.jpg
+  socs:
+  - lpc55s28
+  supported_features: {}
+  vendor: nxp
+lpcxpresso55s36:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso55s36/doc/index.rst
+  full_name: LPCXpresso55S36
+  image: ../_images/lpcxpresso55S36.jpg
+  socs:
+  - lpc55s36
+  supported_features: {}
+  vendor: nxp
+lpcxpresso55s69:
+  archs:
+  - arm
+  doc_page: boards/nxp/lpcxpresso55s69/doc/index.rst
+  full_name: LPCXPRESSO55S69
+  image: ../_images/lpcxpresso55s69.jpg
+  socs:
+  - lpc55s69
+  supported_features: {}
+  vendor: nxp
+ls1046ardb:
+  archs:
+  - arm64
+  doc_page: boards/nxp/ls1046ardb/doc/index.rst
+  full_name: LS1046A RDB
+  image: ''
+  socs:
+  - ls1046a
+  supported_features: {}
+  vendor: nxp
+m2gl025_miv:
+  archs:
+  - riscv
+  doc_page: boards/microchip/m2gl025_miv/doc/index.rst
+  full_name: M2GL025 Mi-V
+  image: ''
+  socs:
+  - miv
+  supported_features: {}
+  vendor: microchip
+m5stack_atom_lite:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stack_atom_lite/doc/index.rst
+  full_name: ATOM Lite
+  image: ../_images/m5stack_atom_lite.webp
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: m5stack
+m5stack_atoms3:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stack_atoms3/doc/index.rst
+  full_name: AtomS3
+  image: ../_images/m5stack_atoms3.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: m5stack
+m5stack_atoms3_lite:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stack_atoms3_lite/doc/index.rst
+  full_name: AtomS3 Lite
+  image: ../_images/m5stack_atoms3_lite.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: m5stack
+m5stack_core2:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stack_core2/doc/index.rst
+  full_name: Core2
+  image: ../_images/m5stack_core2.webp
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: m5stack
+m5stack_stamps3:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stack_stamps3/doc/index.rst
+  full_name: StampS3
+  image: ../_images/m5stack_stamps3.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: m5stack
+m5stickc_plus:
+  archs:
+  - xtensa
+  doc_page: boards/m5stack/m5stickc_plus/doc/index.rst
+  full_name: M5StickC PLUS
+  image: ''
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: m5stack
+max32655evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32655evkit/doc/index.rst
+  full_name: MAX32655EVKIT
+  image: ../_images/max32655evkit_img1.jpg
+  socs:
+  - max32655
+  supported_features: {}
+  vendor: adi
+max32655fthr:
+  archs:
+  - arm
+  doc_page: boards/adi/max32655fthr/doc/index.rst
+  full_name: MAX32655FTHR
+  image: ../_images/max32655fthr_img1.jpg
+  socs:
+  - max32655
+  supported_features: {}
+  vendor: adi
+max32662evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32662evkit/doc/index.rst
+  full_name: MAX32662EVKIT
+  image: ../_images/max32662evkit.webp
+  socs:
+  - max32662
+  supported_features: {}
+  vendor: adi
+max32666evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32666evkit/doc/index.rst
+  full_name: MAX32666EVKIT
+  image: ../_images/max32666evkit.webp
+  socs:
+  - max32666
+  supported_features: {}
+  vendor: adi
+max32666fthr:
+  archs:
+  - arm
+  doc_page: boards/adi/max32666fthr/doc/index.rst
+  full_name: MAX32666FTHR
+  image: ../_images/max32666fthr_img2.jpg
+  socs:
+  - max32666
+  supported_features: {}
+  vendor: adi
+max32670evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32670evkit/doc/index.rst
+  full_name: MAX32670EVKIT
+  image: ../_images/max32670evkit.webp
+  socs:
+  - max32670
+  supported_features: {}
+  vendor: adi
+max32672evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32672evkit/doc/index.rst
+  full_name: MAX32672EVKIT
+  image: ../_images/max32672evkit.webp
+  socs:
+  - max32672
+  supported_features: {}
+  vendor: adi
+max32672fthr:
+  archs:
+  - arm
+  doc_page: boards/adi/max32672fthr/doc/index.rst
+  full_name: MAX32672FTHR
+  image: ../_images/max32672fthr_img1.webp
+  socs:
+  - max32672
+  supported_features: {}
+  vendor: adi
+max32675evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32675evkit/doc/index.rst
+  full_name: MAX32675EVKIT
+  image: ../_images/max32675evkit.webp
+  socs:
+  - max32675
+  supported_features: {}
+  vendor: adi
+max32680evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32680evkit/doc/index.rst
+  full_name: MAX32680EVKIT
+  image: ../_images/max32680evkit_img1.jpg
+  socs:
+  - max32680
+  supported_features: {}
+  vendor: adi
+max32690evkit:
+  archs:
+  - arm
+  doc_page: boards/adi/max32690evkit/doc/index.rst
+  full_name: MAX32690EVKIT
+  image: ../_images/max32690evkit_img2.jpg
+  socs:
+  - max32690
+  supported_features: {}
+  vendor: adi
+max32690fthr:
+  archs:
+  - arm
+  doc_page: boards/adi/max32690fthr/doc/index.rst
+  full_name: MAX32690FTHR
+  image: ''
+  socs:
+  - max32690
+  supported_features: {}
+  vendor: adi
+mck_ra8t1:
+  archs:
+  - arm
+  doc_page: boards/renesas/mck_ra8t1/doc/index.rst
+  full_name: RA8T1 Evaluation Kit
+  image: ../_images/ra8t1-cpu-board-block-diagram.jpg
+  socs:
+  - r7fa8t1ahecbd
+  supported_features: {}
+  vendor: renesas
+mec1501modular_assy6885:
+  archs:
+  - arm
+  doc_page: boards/microchip/mec1501modular_assy6885/doc/index.rst
+  full_name: MEC1501 Modular card ASSY6885
+  image: ../_images/mec1501modular_assy6885.jpg
+  socs:
+  - mec1501_hsz
+  supported_features: {}
+  vendor: microchip
+mec15xxevb_assy6853:
+  archs:
+  - arm
+  doc_page: boards/microchip/mec15xxevb_assy6853/doc/index.rst
+  full_name: MEC15xxEVB ASSY6853
+  image: ../_images/mec15xxevb_assy6853.jpg
+  socs:
+  - mec1501_hsz
+  supported_features: {}
+  vendor: microchip
+mec172xevb_assy6906:
+  archs:
+  - arm
+  doc_page: boards/microchip/mec172xevb_assy6906/doc/index.rst
+  full_name: MEC172xEVB ASSY6906
+  image: ../_images/mec172xevb_assy6906.jpg
+  socs:
+  - mec172x_nsz
+  supported_features: {}
+  vendor: microchip
+mec172xmodular_assy6930:
+  archs:
+  - arm
+  doc_page: boards/microchip/mec172xmodular_assy6930/doc/mec172xmodular_assy6930.rst
+  full_name: MEC172x Modular Card ASSY6930 (Rev. B)
+  image: ../_images/mec172xmodular_assy6930.jpg
+  socs:
+  - mec172x_nsz
+  supported_features: {}
+  vendor: microchip
+mercury_xu:
+  archs:
+  - arm
+  doc_page: null
+  full_name: MERCURY-XU
+  image: ''
+  socs:
+  - zynqmp_rpu
+  supported_features: {}
+  vendor: enclustra
+mg100:
+  archs:
+  - arm
+  doc_page: boards/ezurio/mg100/doc/index.rst
+  full_name: "Sentrius\u2122 MG100 Gateway"
+  image: ../_images/mg100.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+micromod:
+  archs:
+  - arm
+  doc_page: boards/sparkfun/micromod/doc/index.rst
+  full_name: MicroMod board Processor
+  image: ../_images/sparkfun_micromod.webp
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: sparkfun
+mikroe_clicker_2:
+  archs:
+  - arm
+  doc_page: boards/mikroe/clicker_2/doc/mikroe_clicker_2.rst
+  full_name: Clicker 2 for STM32
+  image: ../_images/clicker-2-stm32f4-thickbox_default-2.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: mikroe
+mikroe_clicker_ra4m1:
+  archs:
+  - arm
+  doc_page: boards/mikroe/clicker_ra4m1/doc/index.rst
+  full_name: Clicker RA4M1
+  image: ../_images/mikroe_clicker_ra4m1.jpg
+  socs:
+  - r7fa4m1ab3cfm
+  supported_features: {}
+  vendor: mikroe
+mikroe_mini_m4_for_stm32:
+  archs:
+  - arm
+  doc_page: boards/mikroe/mini_m4_for_stm32/doc/mikroe_mini_m4_for_stm32.rst
+  full_name: MINI-M4 for STM32
+  image: ../_images/mikroe_mini_m4_for_stm32.jpg
+  socs:
+  - stm32f415xx
+  supported_features: {}
+  vendor: mikroe
+mikroe_stm32_m4_clicker:
+  archs:
+  - arm
+  doc_page: boards/mikroe/stm32_m4_clicker/doc/index.rst
+  full_name: STM32 M4 Clicker
+  image: ../_images/stm32_m4_clicker.webp
+  socs:
+  - stm32f415xx
+  supported_features: {}
+  vendor: mikroe
+mimx8mm_phyboard_polis:
+  archs:
+  - arm
+  doc_page: boards/phytec/mimx8mm_phyboard_polis/doc/index.rst
+  full_name: PhyBOARD Polis (NXP i.MX8M Mini)
+  image: ../_images/PEB-EVAL-01.jpg
+  socs:
+  - mimx8mm6
+  supported_features: {}
+  vendor: phytec
+mimx8mp_phyboard_pollux:
+  archs:
+  - arm
+  doc_page: boards/phytec/mimx8mp_phyboard_pollux/doc/index.rst
+  full_name: PhyBOARD Pollux (NXP i.MX8M Plus)
+  image: ../_images/PEB-EVAL-01.jpg
+  socs:
+  - mimx8ml8
+  supported_features: {}
+  vendor: phytec
+mimxrt1010_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1010_evk/doc/index.rst
+  full_name: MIMXRT1010-EVK
+  image: ../_images/mimxrt1010_evk.jpg
+  socs:
+  - mimxrt1011
+  supported_features: {}
+  vendor: nxp
+mimxrt1015_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1015_evk/doc/index.rst
+  full_name: MIMXRT1015-EVK
+  image: ../_images/mimxrt1015_evk.jpg
+  socs:
+  - mimxrt1015
+  supported_features: {}
+  vendor: nxp
+mimxrt1020_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1020_evk/doc/index.rst
+  full_name: MIMXRT1020-EVK
+  image: ../_images/mimxrt1020_evk.jpg
+  socs:
+  - mimxrt1021
+  supported_features: {}
+  vendor: nxp
+mimxrt1024_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1024_evk/doc/index.rst
+  full_name: MIMXRT1024-EVK
+  image: ../_images/mimxrt1024_evk.jpg
+  socs:
+  - mimxrt1024
+  supported_features: {}
+  vendor: nxp
+mimxrt1040_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1040_evk/doc/index.rst
+  full_name: MIMXRT1040-EVK
+  image: ../_images/mimxrt1040_evk.jpg
+  socs:
+  - mimxrt1042
+  supported_features: {}
+  vendor: nxp
+mimxrt1050_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1050_evk/doc/index.rst
+  full_name: MIMXRT1050-EVK
+  image: ../_images/mimxrt1050_evk.jpg
+  socs:
+  - mimxrt1052
+  supported_features: {}
+  vendor: nxp
+mimxrt1060_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1060_evk/doc/index.rst
+  full_name: MIMXRT1060-EVK
+  image: ../_images/mimxrt1060_evk.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: nxp
+mimxrt1060_evkb:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1060_evk/doc/index.rst
+  full_name: MIMXRT1060-EVKB
+  image: ../_images/mimxrt1060_evk.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: nxp
+mimxrt1062_fmurt6:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1062_fmurt6/doc/index.rst
+  full_name: FMURT6
+  image: ../_images/mimxrt1062_fmurt6.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: nxp
+mimxrt1064_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1064_evk/doc/index.rst
+  full_name: MIMXRT1064-EVK
+  image: ../_images/mimxrt1064_evk.jpg
+  socs:
+  - mimxrt1064
+  supported_features: {}
+  vendor: nxp
+mimxrt1160_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1160_evk/doc/index.rst
+  full_name: MIMXRT1160-EVK
+  image: ../_images/mimxrt1160_evk.jpg
+  socs:
+  - mimxrt1166
+  supported_features: {}
+  vendor: nxp
+mimxrt1170_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1170_evk/doc/index.rst
+  full_name: MIMXRT1170-EVK/EVKB
+  image: ../_images/mimxrt1170_evk.jpg
+  socs:
+  - mimxrt1176
+  supported_features: {}
+  vendor: nxp
+mimxrt1180_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt1180_evk/doc/index.rst
+  full_name: MIMXRT1180-EVK
+  image: ../_images/mimxrt1180_evk.webp
+  socs:
+  - mimxrt1189
+  supported_features: {}
+  vendor: nxp
+mimxrt595_evk:
+  archs:
+  - arm
+  - xtensa
+  doc_page: boards/nxp/mimxrt595_evk/doc/index.rst
+  full_name: MIMXRT595-EVK
+  image: ../_images/mimxrt595_evk.jpg
+  socs:
+  - mimxrt595s
+  supported_features: {}
+  vendor: nxp
+mimxrt685_evk:
+  archs:
+  - arm
+  doc_page: boards/nxp/mimxrt685_evk/doc/index.rst
+  full_name: MIMXRT685-EVK
+  image: ../_images/mimxrt685_evk.jpg
+  socs:
+  - mimxrt685s
+  supported_features: {}
+  vendor: nxp
+mini_stm32h743:
+  archs:
+  - arm
+  doc_page: boards/weact/mini_stm32h743/doc/index.rst
+  full_name: MiniSTM32H743 Core Board
+  image: ../_images/stm32h7xx.webp
+  socs:
+  - stm32h743xx
+  supported_features: {}
+  vendor: weact
+mm_feather:
+  archs:
+  - arm
+  doc_page: boards/madmachine/mm_feather/doc/index.rst
+  full_name: SwiftIO Feather
+  image: ../_images/mm_feather.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: madmachine
+mm_swiftio:
+  archs:
+  - arm
+  doc_page: boards/madmachine/mm_swiftio/doc/index.rst
+  full_name: SwiftIO
+  image: ../_images/mm_swiftio.jpg
+  socs:
+  - mimxrt1052
+  supported_features: {}
+  vendor: madmachine
+mpfs_icicle:
+  archs:
+  - riscv
+  doc_page: boards/microchip/mpfs_icicle/doc/index.rst
+  full_name: mpfs_icicle
+  image: ''
+  socs:
+  - polarfire
+  supported_features: {}
+  vendor: microchip
+mps2:
+  archs:
+  - arm
+  doc_page: boards/arm/mps2/doc/mps2_an385.rst
+  full_name: V2M MPS2
+  image: ../_images/mps2_an385.jpg
+  socs:
+  - an521
+  - an385
+  supported_features: {}
+  vendor: arm
+mps3:
+  archs:
+  - arm
+  doc_page: boards/arm/mps3/doc/index.rst
+  full_name: MPS3 AN547
+  image: ../_images/mps3_an547.jpg
+  socs:
+  - an547
+  supported_features: {}
+  vendor: arm
+mr_canhubk3:
+  archs:
+  - arm
+  doc_page: boards/nxp/mr_canhubk3/doc/index.rst
+  full_name: MR-CANHUBK3
+  image: ../_images/mr_canhubk3_top.jpg
+  socs:
+  - s32k344
+  supported_features: {}
+  vendor: nxp
+msp_exp432p401r_launchxl:
+  archs:
+  - arm
+  doc_page: boards/ti/msp_exp432p401r_launchxl/doc/index.rst
+  full_name: MSP-EXP432P401R LaunchXL
+  image: ../_images/msp_exp432p401r_launchxl.jpg
+  socs:
+  - msp432p401r
+  supported_features: {}
+  vendor: ti
+mt8195_adsp:
+  archs: []
+  doc_page: null
+  full_name: MT8195 ADSP
+  image: ''
+  socs:
+  - mt8195_adsp
+  supported_features: {}
+  vendor: mediatek
+native_posix:
+  archs:
+  - posix
+  doc_page: boards/native/native_posix/doc/index.rst
+  full_name: Native POSIX execution (native_posix)
+  image: ''
+  socs:
+  - native
+  supported_features: {}
+  vendor: zephyr
+native_sim:
+  archs:
+  - posix
+  doc_page: boards/native/native_sim/doc/index.rst
+  full_name: Native simulator - native_sim
+  image: ''
+  socs:
+  - native
+  supported_features: {}
+  vendor: zephyr
+neorv32:
+  archs:
+  - riscv
+  doc_page: boards/others/neorv32/doc/index.rst
+  full_name: NEORV32
+  image: ''
+  socs:
+  - neorv32
+  supported_features: {}
+  vendor: zephyr
+niosv_g:
+  archs:
+  - riscv
+  doc_page: boards/intel/niosv_g/doc/index.rst
+  full_name: INTEL FPGA niosv_g
+  image: ''
+  socs:
+  - niosv_g
+  supported_features: {}
+  vendor: intel
+niosv_m:
+  archs:
+  - riscv
+  doc_page: boards/intel/niosv_m/doc/index.rst
+  full_name: INTEL FPGA niosv_m
+  image: ''
+  socs:
+  - niosv_m
+  supported_features: {}
+  vendor: intel
+npcm400_evb:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/npcm400_evb/doc/index.rst
+  full_name: NPCM400_EVB
+  image: ../_images/npcm400_evb.webp
+  socs:
+  - npcm400
+  supported_features: {}
+  vendor: nuvoton
+npcx4m8f_evb:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/npcx4m8f_evb/doc/index.rst
+  full_name: NPCX4M8F_EVB
+  image: ../_images/npcx4m8f_evb.jpg
+  socs:
+  - npcx4m8f
+  supported_features: {}
+  vendor: nuvoton
+npcx7m6fb_evb:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/npcx7m6fb_evb/doc/index.rst
+  full_name: NPCX7M6FB_EVB
+  image: ../_images/npcx7m6fb_evb.jpg
+  socs:
+  - npcx7m6fb
+  supported_features: {}
+  vendor: nuvoton
+npcx9m6f_evb:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/npcx9m6f_evb/doc/index.rst
+  full_name: NPCX9M6F_EVB
+  image: ../_images/npcx9m6f_evb.jpg
+  socs:
+  - npcx9m6f
+  supported_features: {}
+  vendor: nuvoton
+nrf21540dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf21540dk/doc/index.rst
+  full_name: nRF21540 DK
+  image: ../_images/nrf21540dk_nrf52840.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: nordic
+nrf51_ble400:
+  archs:
+  - arm
+  doc_page: boards/waveshare/nrf51_ble400/doc/index.rst
+  full_name: BLE400
+  image: ../_images/nrf51_ble400.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: waveshare
+nrf51_blenano:
+  archs:
+  - arm
+  doc_page: boards/particle/nrf51_blenano/doc/index.rst
+  full_name: Redbear Labs Nano
+  image: ../_images/nrf51_blenano.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: particle
+nrf51_vbluno51:
+  archs:
+  - arm
+  doc_page: boards/vngiotlab/nrf51_vbluno51/doc/index.rst
+  full_name: nRF51-VBLUno51
+  image: ../_images/nrf51_vbluno51.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: vngiotlab
+nrf51dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf51dk/doc/index.rst
+  full_name: nRF51 DK
+  image: ../_images/nrf51dk_nrf51822.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: nordic
+nrf51dongle:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf51dongle/doc/index.rst
+  full_name: nRF51 Dongle
+  image: ../_images/nrf51dongle_nrf51822.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: nordic
+nrf52832_mdk:
+  archs:
+  - arm
+  doc_page: boards/makerdiary/nrf52832_mdk/doc/index.rst
+  full_name: nRF52832-mdk
+  image: ''
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: makerdiary
+nrf52833dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf52833dk/doc/index.rst
+  full_name: nRF52833 DK
+  image: ''
+  socs:
+  - nrf52833
+  - nrf52820
+  supported_features: {}
+  vendor: nordic
+nrf52840_blip:
+  archs:
+  - arm
+  doc_page: boards/electronut/nrf52840_blip/doc/index.rst
+  full_name: Labs Blip
+  image: ../_images/nrf52840_blip.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: electronut
+nrf52840_mdk:
+  archs:
+  - arm
+  doc_page: boards/makerdiary/nrf52840_mdk/doc/index.rst
+  full_name: nRF52840-mdk
+  image: ''
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: makerdiary
+nrf52840_mdk_usb_dongle:
+  archs:
+  - arm
+  doc_page: boards/makerdiary/nrf52840_mdk_usb_dongle/doc/index.rst
+  full_name: nRF52840 MDK USB Dongle
+  image: ../_images/nrf52840-mdk-usb-dongle-pinout.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: makerdiary
+nrf52840_papyr:
+  archs:
+  - arm
+  doc_page: boards/electronut/nrf52840_papyr/doc/nrf52840_papyr.rst
+  full_name: Labs Papyr
+  image: ../_images/nrf52840_papyr.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: electronut
+nrf52840dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf52840dk/doc/index.rst
+  full_name: nRF52840 DK
+  image: ../_images/nrf52840dk_nrf52840.jpg
+  socs:
+  - nrf52811
+  - nrf52840
+  supported_features: {}
+  vendor: nordic
+nrf52840dongle:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf52840dongle/doc/index.rst
+  full_name: nRF52840 Dongle
+  image: ../_images/nrf52840dongle_nrf52840.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: nordic
+nrf52_adafruit_feather:
+  archs:
+  - arm
+  doc_page: boards/adafruit/nrf52_adafruit_feather/doc/index.rst
+  full_name: nRF52 Adafruit Feather
+  image: ../_images/nrf52_adafruit_feather.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: adafruit
+nrf52_blenano2:
+  archs:
+  - arm
+  doc_page: boards/particle/nrf52_blenano2/doc/index.rst
+  full_name: Redbear Labs Nano v2
+  image: ../_images/nrf52_blenano2.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: particle
+nrf52_bsim:
+  archs:
+  - posix
+  doc_page: boards/native/nrf_bsim/doc/nrf52_bsim.rst
+  full_name: nRF52 simulated board (BabbleSim)
+  image: ''
+  socs:
+  - native
+  supported_features: {}
+  vendor: zephyr
+nrf52_sparkfun:
+  archs:
+  - arm
+  doc_page: null
+  full_name: nRF52832 breakout
+  image: ''
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: sparkfun
+nrf52_vbluno52:
+  archs:
+  - arm
+  doc_page: boards/vngiotlab/nrf52_vbluno52/doc/index.rst
+  full_name: nRF52-VBLUno52
+  image: ../_images/nrf52_vbluno52.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: vngiotlab
+nrf52dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf52dk/doc/index.rst
+  full_name: nRF52 DK
+  image: ../_images/nrf52dk_nrf52832.jpg
+  socs:
+  - nrf52810
+  - nrf52805
+  - nrf52832
+  supported_features: {}
+  vendor: nordic
+nrf5340_audio_dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf5340_audio_dk/doc/index.rst
+  full_name: nRF5340 Audio DK
+  image: ../_images/nrf5340_audio_dk.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: nordic
+nrf5340bsim:
+  archs:
+  - posix
+  doc_page: boards/native/nrf_bsim/doc/nrf5340bsim.rst
+  full_name: nRF5340 simulated boards (BabbleSim)
+  image: ''
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: zephyr
+nrf5340dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf5340dk/doc/index.rst
+  full_name: nRF5340 DK
+  image: ../_images/nrf5340dk.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: nordic
+nrf54h20dk:
+  archs:
+  - arm
+  - riscv
+  doc_page: boards/nordic/nrf54h20dk/doc/index.rst
+  full_name: nRF54H20 DK
+  image: ''
+  socs:
+  - nrf54h20
+  supported_features: {}
+  vendor: nordic
+nrf54l15bsim:
+  archs:
+  - posix
+  doc_page: boards/native/nrf_bsim/doc/nrf54l15bsim.rst
+  full_name: nRF54L15 simulated boards (BabbleSim)
+  image: ''
+  socs:
+  - nrf54l15
+  supported_features: {}
+  vendor: zephyr
+nrf54l15dk:
+  archs:
+  - arm
+  - riscv
+  doc_page: boards/nordic/nrf54l15dk/doc/index.rst
+  full_name: nRF54L15 DK
+  image: ../_images/nrf54l15dk_nrf54l15.webp
+  socs:
+  - nrf54l15
+  supported_features: {}
+  vendor: nordic
+nrf54l15pdk:
+  archs:
+  - arm
+  - riscv
+  doc_page: boards/nordic/nrf54l15pdk/doc/index.rst
+  full_name: nRF54L15 PDK
+  image: ../_images/nrf54l15pdk_nrf54l15.webp
+  socs:
+  - nrf54l15
+  supported_features: {}
+  vendor: nordic
+nrf54l20pdk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf54l20pdk/doc/index.rst
+  full_name: nRF54L20 PDK
+  image: ''
+  socs:
+  - nrf54l20
+  supported_features: {}
+  vendor: nordic
+nrf7002dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf7002dk/doc/index.rst
+  full_name: nRF7002 DK
+  image: ../_images/nrf7002dk.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: nordic
+nrf9131ek:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf9131ek/doc/index.rst
+  full_name: nRF9131 EK
+  image: ../_images/nrf9131ek_nrf9131.webp
+  socs:
+  - nrf9131
+  supported_features: {}
+  vendor: nordic
+nrf9151dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf9151dk/doc/index.rst
+  full_name: nRF9151 DK
+  image: ''
+  socs:
+  - nrf9151
+  supported_features: {}
+  vendor: nordic
+nrf9160dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf9160dk/doc/index.rst
+  full_name: nRF9160 DK
+  image: ../_images/nrf9160dk_nrf9160.jpg
+  socs:
+  - nrf9160
+  - nrf52840
+  supported_features: {}
+  vendor: nordic
+nrf9161dk:
+  archs:
+  - arm
+  doc_page: boards/nordic/nrf9161dk/doc/index.rst
+  full_name: nRF9161 DK
+  image: ''
+  socs:
+  - nrf9161
+  supported_features: {}
+  vendor: nordic
+nrf9280pdk:
+  archs:
+  - arm
+  - riscv
+  doc_page: null
+  full_name: nRF9280 PDK
+  image: ''
+  socs:
+  - nrf9280
+  supported_features: {}
+  vendor: nordic
+nsim:
+  archs:
+  - arc
+  doc_page: boards/snps/nsim/arc_classic/doc/index.rst
+  full_name: ARC nSIM and HAPS FPGA boards
+  image: ''
+  socs:
+  - nsim_em7d_v22
+  - nsim_hs
+  - nsim_em11d
+  - nsim_sem
+  - nsim_em
+  - nsim_hs5x
+  - nsim_vpx5
+  - nsim_hs6x
+  supported_features: {}
+  vendor: snps
+nsim_arc_v:
+  archs:
+  - riscv
+  doc_page: boards/snps/nsim/arc_v/doc/index.rst
+  full_name: RISC-V nSIM and HAPS FPGA boards
+  image: ''
+  socs:
+  - rmx100
+  supported_features: {}
+  vendor: snps
+nucleo_c031c6:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_c031c6/doc/index.rst
+  full_name: Nucleo C031C6
+  image: ../_images/nucleo_c031c6.jpg
+  socs:
+  - stm32c031xx
+  supported_features: {}
+  vendor: st
+nucleo_f030r8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f030r8/doc/index.rst
+  full_name: Nucleo F030R8
+  image: ../_images/nucleo_f030r8.jpg
+  socs:
+  - stm32f030x8
+  supported_features: {}
+  vendor: st
+nucleo_f031k6:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f031k6/doc/index.rst
+  full_name: Nucleo F031K6
+  image: ../_images/nucleo_f031k6.jpg
+  socs:
+  - stm32f031x6
+  supported_features: {}
+  vendor: st
+nucleo_f042k6:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f042k6/doc/index.rst
+  full_name: Nucleo F042K6
+  image: ../_images/nucleo_f042k6.jpg
+  socs:
+  - stm32f042x6
+  supported_features: {}
+  vendor: st
+nucleo_f070rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f070rb/doc/index.rst
+  full_name: Nucleo F070RB
+  image: ../_images/nucleo_f070rb.jpg
+  socs:
+  - stm32f070xb
+  supported_features: {}
+  vendor: st
+nucleo_f091rc:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f091rc/doc/index.rst
+  full_name: Nucleo F091RC
+  image: ../_images/nucleo_f091rc.jpg
+  socs:
+  - stm32f091xc
+  supported_features: {}
+  vendor: st
+nucleo_f103rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f103rb/doc/index.rst
+  full_name: Nucleo F103RB
+  image: ../_images/nucleo_f103rb.jpg
+  socs:
+  - stm32f103xb
+  supported_features: {}
+  vendor: st
+nucleo_f207zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f207zg/doc/index.rst
+  full_name: Nucleo F207ZG
+  image: ../_images/nucleo_f207zg.jpg
+  socs:
+  - stm32f207xx
+  supported_features: {}
+  vendor: st
+nucleo_f302r8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f302r8/doc/index.rst
+  full_name: Nucleo F302R8
+  image: ../_images/nucleo_f302r8.jpg
+  socs:
+  - stm32f302x8
+  supported_features: {}
+  vendor: st
+nucleo_f303k8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f303k8/doc/index.rst
+  full_name: Nucleo F303K8
+  image: ../_images/nucleo_f303k8.jpg
+  socs:
+  - stm32f303x8
+  supported_features: {}
+  vendor: st
+nucleo_f303re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f303re/doc/index.rst
+  full_name: Nucleo F303RE
+  image: ../_images/nucleo_f303re.jpg
+  socs:
+  - stm32f303xe
+  supported_features: {}
+  vendor: st
+nucleo_f334r8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f334r8/doc/index.rst
+  full_name: Nucleo F334R8
+  image: ../_images/nucleo_f334r8.jpg
+  socs:
+  - stm32f334x8
+  supported_features: {}
+  vendor: st
+nucleo_f401re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f401re/doc/index.rst
+  full_name: Nucleo F401RE
+  image: ../_images/nucleo_f401re.jpg
+  socs:
+  - stm32f401xe
+  supported_features: {}
+  vendor: st
+nucleo_f410rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f410rb/doc/index.rst
+  full_name: Nucleo F410RB
+  image: ../_images/nucleo_f410rb.jpg
+  socs:
+  - stm32f410rx
+  supported_features: {}
+  vendor: st
+nucleo_f411re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f411re/doc/index.rst
+  full_name: Nucleo F411RE
+  image: ../_images/nucleo_f411re.jpg
+  socs:
+  - stm32f411xe
+  supported_features: {}
+  vendor: st
+nucleo_f412zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f412zg/doc/index.rst
+  full_name: Nucleo F412ZG
+  image: ../_images/nucleo_f412zg.jpg
+  socs:
+  - stm32f412zx
+  supported_features: {}
+  vendor: st
+nucleo_f413zh:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f413zh/doc/index.rst
+  full_name: Nucleo F413ZH
+  image: ../_images/nucleo_f413zh.jpg
+  socs:
+  - stm32f413xx
+  supported_features: {}
+  vendor: st
+nucleo_f429zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f429zi/doc/index.rst
+  full_name: Nucleo F429ZI
+  image: ../_images/nucleo_f429zi.jpg
+  socs:
+  - stm32f429xx
+  supported_features: {}
+  vendor: st
+nucleo_f446re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f446re/doc/index.rst
+  full_name: Nucleo F446RE
+  image: ../_images/nucleo_f446re.jpg
+  socs:
+  - stm32f446xx
+  supported_features: {}
+  vendor: st
+nucleo_f446ze:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f446ze/doc/index.rst
+  full_name: Nucleo F446ZE
+  image: ../_images/nucleo_f446ze.jpg
+  socs:
+  - stm32f446xx
+  supported_features: {}
+  vendor: st
+nucleo_f722ze:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f722ze/doc/index.rst
+  full_name: Nucleo F722ZE
+  image: ../_images/nucleo_f722ze.jpg
+  socs:
+  - stm32f722xx
+  supported_features: {}
+  vendor: st
+nucleo_f746zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f746zg/doc/index.rst
+  full_name: Nucleo F746ZG
+  image: ../_images/nucleo_f746zg.jpg
+  socs:
+  - stm32f746xx
+  supported_features: {}
+  vendor: st
+nucleo_f756zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f756zg/doc/index.rst
+  full_name: Nucleo F756ZG
+  image: ../_images/nucleo_f756zg.jpg
+  socs:
+  - stm32f756xx
+  supported_features: {}
+  vendor: st
+nucleo_f767zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_f767zi/doc/index.rst
+  full_name: Nucleo F767ZI
+  image: ../_images/nucleo_f767zi.jpg
+  socs:
+  - stm32f767xx
+  supported_features: {}
+  vendor: st
+nucleo_g031k8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g031k8/doc/index.rst
+  full_name: Nucleo G031K8
+  image: ../_images/nucleo_g031k8.jpg
+  socs:
+  - stm32g031xx
+  supported_features: {}
+  vendor: st
+nucleo_g070rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g070rb/doc/index.rst
+  full_name: Nucleo G070RB
+  image: ../_images/nucleo_g070rb.jpg
+  socs:
+  - stm32g070xx
+  supported_features: {}
+  vendor: st
+nucleo_g071rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g071rb/doc/index.rst
+  full_name: Nucleo G071RB
+  image: ../_images/nucleo_g071rb.jpg
+  socs:
+  - stm32g071xx
+  supported_features: {}
+  vendor: st
+nucleo_g0b1re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g0b1re/doc/index.rst
+  full_name: Nucleo G0B1RE
+  image: ../_images/nucleo_g0b1re.jpg
+  socs:
+  - stm32g0b1xx
+  supported_features: {}
+  vendor: st
+nucleo_g431kb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g431kb/doc/index.rst
+  full_name: Nucleo G431KB
+  image: ../_images/nucleo_g431kb.webp
+  socs:
+  - stm32g431xx
+  supported_features: {}
+  vendor: st
+nucleo_g431rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g431rb/doc/index.rst
+  full_name: Nucleo G431RB
+  image: ../_images/nucleo_g431rb.jpg
+  socs:
+  - stm32g431xx
+  supported_features: {}
+  vendor: st
+nucleo_g474re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_g474re/doc/index.rst
+  full_name: Nucleo G474RE
+  image: ../_images/nucleo_g474re.jpg
+  socs:
+  - stm32g474xx
+  supported_features: {}
+  vendor: st
+nucleo_h503rb:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h503rb/doc/index.rst
+  full_name: Nucleo H503RB
+  image: ../_images/nucleo_h503rb.png
+  socs:
+  - stm32h503xx
+  supported_features: {}
+  vendor: st
+nucleo_h533re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h533re/doc/index.rst
+  full_name: Nucleo H533RE
+  image: ../_images/nucleo_h533re.jpg
+  socs:
+  - stm32h533xx
+  supported_features: {}
+  vendor: st
+nucleo_h563zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h563zi/doc/index.rst
+  full_name: Nucleo H563ZI
+  image: ../_images/nucleo_h563zi.jpg
+  socs:
+  - stm32h563xx
+  supported_features: {}
+  vendor: st
+nucleo_h723zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h723zg/doc/index.rst
+  full_name: Nucleo H723ZG
+  image: ../_images/nucleo_h723zg.jpg
+  socs:
+  - stm32h723xx
+  supported_features: {}
+  vendor: st
+nucleo_h743zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h743zi/doc/index.rst
+  full_name: Nucleo H743ZI
+  image: ../_images/nucleo_h743zi.jpg
+  socs:
+  - stm32h743xx
+  supported_features: {}
+  vendor: st
+nucleo_h745zi_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h745zi_q/doc/index.rst
+  full_name: Nucleo H745ZI-Q
+  image: ../_images/nucleo_h745zi_q.jpg
+  socs:
+  - stm32h745xx
+  supported_features: {}
+  vendor: st
+nucleo_h753zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h753zi/doc/index.rst
+  full_name: Nucleo H753ZI
+  image: ../_images/nucleo_h753zi.jpg
+  socs:
+  - stm32h753xx
+  supported_features: {}
+  vendor: st
+nucleo_h755zi_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h755zi_q/doc/index.rst
+  full_name: Nucleo H755ZI-Q
+  image: ../_images/nucleo_h755zi_q.webp
+  socs:
+  - stm32h755xx
+  supported_features: {}
+  vendor: st
+nucleo_h7a3zi_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_h7a3zi_q/doc/index.rst
+  full_name: Nucleo H7A3ZI-Q
+  image: ../_images/nucleo_h7a3zi_q.jpg
+  socs:
+  - stm32h7a3xx
+  supported_features: {}
+  vendor: st
+nucleo_l011k4:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l011k4/doc/index.rst
+  full_name: Nucleo L011K4
+  image: ../_images/nucleo_l011k4.jpg
+  socs:
+  - stm32l011xx
+  supported_features: {}
+  vendor: st
+nucleo_l031k6:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l031k6/doc/index.rst
+  full_name: Nucleo L031K6
+  image: ../_images/nucleo_l031k6.jpg
+  socs:
+  - stm32l031xx
+  supported_features: {}
+  vendor: st
+nucleo_l053r8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l053r8/doc/index.rst
+  full_name: Nucleo L053R8
+  image: ../_images/nucleo_l053r8.jpg
+  socs:
+  - stm32l053xx
+  supported_features: {}
+  vendor: st
+nucleo_l073rz:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l073rz/doc/index.rst
+  full_name: Nucleo L073RZ
+  image: ../_images/nucleo_l073rz.jpg
+  socs:
+  - stm32l073xx
+  supported_features: {}
+  vendor: st
+nucleo_l152re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l152re/doc/index.rst
+  full_name: Nucleo L152RE
+  image: ../_images/nucleo_l152re.jpg
+  socs:
+  - stm32l152xe
+  supported_features: {}
+  vendor: st
+nucleo_l412rb_p:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l412rb_p/doc/index.rst
+  full_name: Nucleo L412RB-P
+  image: ../_images/nucleo_l412rb_p.jpg
+  socs:
+  - stm32l412xx
+  supported_features: {}
+  vendor: st
+nucleo_l432kc:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l432kc/doc/index.rst
+  full_name: Nucleo L432KC
+  image: ../_images/nucleo_l432kc.jpg
+  socs:
+  - stm32l432xx
+  supported_features: {}
+  vendor: st
+nucleo_l433rc_p:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l433rc_p/doc/index.rst
+  full_name: Nucleo L433RC
+  image: ../_images/nucleo_l433rc_p.jpg
+  socs:
+  - stm32l433xx
+  supported_features: {}
+  vendor: st
+nucleo_l452re:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l452re/doc/index.rst
+  full_name: Nucleo L452RE
+  image: ../_images/nucleo_l452re_p_pinout.jpg
+  socs:
+  - stm32l452xx
+  supported_features: {}
+  vendor: st
+nucleo_l476rg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l476rg/doc/index.rst
+  full_name: Nucleo L476RG
+  image: ../_images/nucleo_l476rg.jpg
+  socs:
+  - stm32l476xx
+  supported_features: {}
+  vendor: st
+nucleo_l496zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l496zg/doc/index.rst
+  full_name: Nucleo L496ZG
+  image: ../_images/nucleo_l496zg.jpg
+  socs:
+  - stm32l496xx
+  supported_features: {}
+  vendor: st
+nucleo_l4a6zg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l4a6zg/doc/index.rst
+  full_name: Nucleo L4A6ZG
+  image: ''
+  socs:
+  - stm32l4a6xx
+  supported_features: {}
+  vendor: st
+nucleo_l4r5zi:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l4r5zi/doc/index.rst
+  full_name: Nucleo L4R5ZI
+  image: ../_images/nucleo_l4r5zi.jpg
+  socs:
+  - stm32l4r5xx
+  supported_features: {}
+  vendor: st
+nucleo_l552ze_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_l552ze_q/doc/nucleol552ze_q.rst
+  full_name: Nucleo L552ZE Q
+  image: ../_images/nucleo_l552ze_q.jpg
+  socs:
+  - stm32l552xx
+  supported_features: {}
+  vendor: st
+nucleo_u031r8:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_u031r8/doc/index.rst
+  full_name: Nucleo U031R8
+  image: ../_images/nucleo_u031r8.jpg
+  socs:
+  - stm32u031xx
+  supported_features: {}
+  vendor: st
+nucleo_u083rc:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_u083rc/doc/index.rst
+  full_name: Nucleo U083RC
+  image: ../_images/nucleo_u083rc.jpg
+  socs:
+  - stm32u083xx
+  supported_features: {}
+  vendor: st
+nucleo_u575zi_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_u575zi_q/doc/index.rst
+  full_name: Nucleo U575ZI Q
+  image: ''
+  socs:
+  - stm32u575xx
+  supported_features: {}
+  vendor: st
+nucleo_u5a5zj_q:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_u5a5zj_q/doc/index.rst
+  full_name: Nucleo U5A5ZJ Q
+  image: ''
+  socs:
+  - stm32u5a5xx
+  supported_features: {}
+  vendor: st
+nucleo_wb05kz:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wb05kz/doc/index.rst
+  full_name: Nucleo WB05KZ
+  image: ../_images/nucleo_wb05kz.webp
+  socs:
+  - stm32wb05
+  supported_features: {}
+  vendor: st
+nucleo_wb09ke:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wb09ke/doc/index.rst
+  full_name: Nucleo WB09KE
+  image: ../_images/nucleo_wb09ke.webp
+  socs:
+  - stm32wb09
+  supported_features: {}
+  vendor: st
+nucleo_wb55rg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wb55rg/doc/nucleo_wb55rg.rst
+  full_name: Nucleo WB55RG
+  image: ../_images/nucleowb55rg.jpg
+  socs:
+  - stm32wb55xx
+  supported_features: {}
+  vendor: st
+nucleo_wba52cg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wba52cg/doc/nucleo_wba52cg.rst
+  full_name: Nucleo WBA52CG
+  image: ../_images/nucleowba52cg.jpg
+  socs:
+  - stm32wba52xx
+  supported_features: {}
+  vendor: st
+nucleo_wba55cg:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wba55cg/doc/nucleo_wba55cg.rst
+  full_name: Nucleo WBA55CG
+  image: ../_images/nucleowba55cg.jpg
+  socs:
+  - stm32wba55xx
+  supported_features: {}
+  vendor: st
+nucleo_wl55jc:
+  archs:
+  - arm
+  doc_page: boards/st/nucleo_wl55jc/doc/nucleo_wl55jc.rst
+  full_name: Nucleo WL55JC
+  image: ../_images/nucleo_wl55jc.jpg
+  socs:
+  - stm32wl55xx
+  supported_features: {}
+  vendor: st
+numaker_m2l31ki:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/numaker_m2l31ki/doc/index.rst
+  full_name: NUMAKER M2L31KI
+  image: ../_images/m2l31ki.webp
+  socs:
+  - m2l31xxx
+  supported_features: {}
+  vendor: nuvoton
+numaker_pfm_m467:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/numaker_pfm_m467/doc/index.rst
+  full_name: NUMAKER PFM M467
+  image: ../_images/pfm_m467.jpeg
+  socs:
+  - m467
+  supported_features: {}
+  vendor: nuvoton
+numaker_pfm_m487:
+  archs:
+  - arm
+  doc_page: boards/nuvoton/numaker_pfm_m487/doc/index.rst
+  full_name: NUMAKER PFM M487
+  image: ../_images/pfm_m487.jpg
+  socs:
+  - m487
+  supported_features: {}
+  vendor: nuvoton
+odroid_go:
+  archs:
+  - xtensa
+  doc_page: boards/hardkernel/odroid_go/doc/index.rst
+  full_name: ODROID-GO
+  image: ../_images/odroid_go.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: hardkernel
+olimex_esp32_evb:
+  archs:
+  - xtensa
+  doc_page: boards/olimex/olimex_esp32_evb/doc/index.rst
+  full_name: ESP32-EVB
+  image: ../_images/ESP32-EVB.jpg
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: olimex
+olimex_lora_stm32wl_devkit:
+  archs:
+  - arm
+  doc_page: boards/olimex/lora_stm32wl_devkit/doc/olimex_lora_stm32wl_devkit.rst
+  full_name: LoRa STM32WL DevKit
+  image: ../_images/olimex-stm32wl-devkit.jpg
+  socs:
+  - stm32wle5xx
+  supported_features: {}
+  vendor: olimex
+olimex_stm32_e407:
+  archs:
+  - arm
+  doc_page: boards/olimex/stm32_e407/doc/index.rst
+  full_name: OLIMEX-STM32-E407
+  image: ../_images/olimex_stm32_e407.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: olimex
+olimex_stm32_h103:
+  archs:
+  - arm
+  doc_page: boards/olimex/stm32_h103/doc/index.rst
+  full_name: OLIMEX-STM32-H103
+  image: ../_images/olimex_stm32_h103_bottom.jpg
+  socs:
+  - stm32f103xb
+  supported_features: {}
+  vendor: olimex
+olimex_stm32_h405:
+  archs:
+  - arm
+  doc_page: boards/olimex/stm32_h405/doc/index.rst
+  full_name: OLIMEX-STM32-H405
+  image: ../_images/olimex_stm32_h405_bottom.jpg
+  socs:
+  - stm32f405xx
+  supported_features: {}
+  vendor: olimex
+olimex_stm32_h407:
+  archs:
+  - arm
+  doc_page: boards/olimex/stm32_h407/doc/index.rst
+  full_name: OLIMEX-STM32-H407
+  image: ../_images/olimex_stm32_h407.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: olimex
+olimex_stm32_p405:
+  archs:
+  - arm
+  doc_page: boards/olimex/stm32_p405/doc/index.rst
+  full_name: OLIMEX-STM32-P405
+  image: ../_images/olimex_stm32_p405.jpg
+  socs:
+  - stm32f405xx
+  supported_features: {}
+  vendor: olimex
+olimexino_stm32:
+  archs:
+  - arm
+  doc_page: boards/olimex/olimexino_stm32/doc/index.rst
+  full_name: OLIMEXINO-STM32
+  image: ../_images/olimexino_stm32.jpg
+  socs:
+  - stm32f103xb
+  supported_features: {}
+  vendor: olimex
+opentitan_earlgrey:
+  archs:
+  - riscv
+  doc_page: boards/lowrisc/opentitan_earlgrey/doc/index.rst
+  full_name: OpenTitan Earl Grey
+  image: ''
+  socs:
+  - opentitan
+  supported_features: {}
+  vendor: lowrisc
+pan1770_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1770_evb/doc/index.rst
+  full_name: PAN1770 Evaluation Board
+  image: ../_images/pan1770_evaluation_board.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: panasonic
+pan1780_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1780_evb/doc/index.rst
+  full_name: PAN1780 Evaluation Board
+  image: ../_images/pan1780_evaluation_board.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: panasonic
+pan1781_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1781_evb/doc/index.rst
+  full_name: PAN1781 Evaluation Board
+  image: ../_images/pan1781_evaluation_board.jpg
+  socs:
+  - nrf52820
+  supported_features: {}
+  vendor: panasonic
+pan1782_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1782_evb/doc/index.rst
+  full_name: PAN1782 Evaluation Board
+  image: ../_images/pan1782_evaluation_board.jpg
+  socs:
+  - nrf52833
+  supported_features: {}
+  vendor: panasonic
+pan1783_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1783/doc/index.rst
+  full_name: PAN1783 Evaluation Board
+  image: ../_images/pan1783_evb.webp
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: panasonic
+pan1783a_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1783/doc/index.rst
+  full_name: PAN1783A Evaluation Board
+  image: ../_images/pan1783_evb.webp
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: panasonic
+pan1783a_pa_evb:
+  archs:
+  - arm
+  doc_page: boards/panasonic/pan1783/doc/index.rst
+  full_name: PAN1783A-PA Evaluation Board
+  image: ../_images/pan1783_evb.webp
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: panasonic
+pandora_stm32l475:
+  archs:
+  - arm
+  doc_page: boards/alientek/pandora_stm32l475/doc/index.rst
+  full_name: STM32L475 Pandora
+  image: ../_images/pandora_stm32l475.jpg
+  socs:
+  - stm32l475xx
+  supported_features: {}
+  vendor: alientek
+particle_argon:
+  archs:
+  - arm
+  doc_page: boards/particle/argon/doc/index.rst
+  full_name: Argon
+  image: ../_images/particle_argon.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: particle
+particle_boron:
+  archs:
+  - arm
+  doc_page: boards/particle/boron/doc/index.rst
+  full_name: Boron
+  image: ../_images/particle_boron.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: particle
+particle_xenon:
+  archs:
+  - arm
+  doc_page: boards/particle/xenon/doc/index.rst
+  full_name: Xenon
+  image: ../_images/particle_xenon.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: particle
+phyboard_electra:
+  archs:
+  - arm
+  doc_page: boards/phytec/phyboard_electra/doc/index.rst
+  full_name: phyBOARD-Electra AM64x M4F Core
+  image: ../_images/phyCORE-AM64x_Electra_frontside.webp
+  socs:
+  - am6442
+  supported_features: {}
+  vendor: phytec
+phyboard_lyra:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/phytec/phyboard_lyra/doc/phyboard_lyra_am62xx_a53.rst
+  full_name: phyBOARD-Lyra AM62x A53 Core
+  image: ../_images/phyCORE-AM62x_Lyra_frontside.webp
+  socs:
+  - am6234
+  supported_features: {}
+  vendor: phytec
+phyboard_nash:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/phytec/phyboard_nash/doc/index.rst
+  full_name: phyBOARD-Nash i.MX93
+  image: ../_images/phyboard_nash.webp
+  socs:
+  - mimx9352
+  supported_features: {}
+  vendor: phytec
+pico_pi:
+  archs:
+  - arm
+  doc_page: boards/technexion/pico_pi/doc/index.rst
+  full_name: Pico-Pi i.MX7D - Android Things IoT Development Platform
+  image: ../_images/pico_pi.jpg
+  socs:
+  - mcimx7d
+  supported_features: {}
+  vendor: technexion
+pinetime_devkit0:
+  archs:
+  - arm
+  doc_page: boards/pine64/pinetime_devkit0/doc/index.rst
+  full_name: PineTime DevKit0
+  image: ../_images/PineTime_SWD_location.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: pine64
+pinnacle_100_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/pinnacle_100_dvk/doc/index.rst
+  full_name: Pinnacle 100 DVK
+  image: ../_images/pinnacle_100_dvk.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: ezurio
+qemu_arc:
+  archs:
+  - arc
+  doc_page: boards/qemu/arc/doc/index.rst
+  full_name: QEMU Emulation for ARCv2 & ARCv3
+  image: ''
+  socs:
+  - qemu_arc_hs6x
+  - qemu_arc_em
+  - qemu_arc_hs5x
+  - qemu_arc_hs
+  supported_features: {}
+  vendor: qemu
+qemu_cortex_a53:
+  archs:
+  - arm64
+  doc_page: boards/qemu/cortex_a53/doc/index.rst
+  full_name: QEMU Emulation for ARM Cortex-A53
+  image: ''
+  socs:
+  - qemu_cortex_a53
+  supported_features: {}
+  vendor: qemu
+qemu_cortex_a9:
+  archs:
+  - arm
+  doc_page: null
+  full_name: QEMU Emulation for Cortex-A9
+  image: ''
+  socs:
+  - xc7z007s
+  supported_features: {}
+  vendor: qemu
+qemu_cortex_m0:
+  archs:
+  - arm
+  doc_page: boards/qemu/cortex_m0/doc/index.rst
+  full_name: QEMU Emulation for ARM Cortex-M0
+  image: ''
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: qemu
+qemu_cortex_m3:
+  archs:
+  - arm
+  doc_page: boards/qemu/cortex_m3/doc/index.rst
+  full_name: QEMU Emulation for ARM Cortex-M3
+  image: ''
+  socs:
+  - ti_lm3s6965
+  supported_features: {}
+  vendor: qemu
+qemu_cortex_r5:
+  archs:
+  - arm
+  doc_page: boards/qemu/cortex_r5/doc/index.rst
+  full_name: QEMU Emulation for ARM Cortex-R5
+  image: ''
+  socs:
+  - zynqmp_rpu
+  supported_features: {}
+  vendor: qemu
+qemu_kvm_arm64:
+  archs:
+  - arm64
+  doc_page: boards/qemu/kvm_arm64/doc/index.rst
+  full_name: QEMU Emulation for ARM AArch64 Virt KVM
+  image: ''
+  socs:
+  - qemu_virt_arm64
+  supported_features: {}
+  vendor: qemu
+qemu_leon3:
+  archs:
+  - sparc
+  doc_page: boards/qemu/leon3/doc/index.rst
+  full_name: QEMU Emulation for LEON3
+  image: ''
+  socs:
+  - leon3
+  supported_features: {}
+  vendor: qemu
+qemu_malta:
+  archs:
+  - mips
+  doc_page: boards/qemu/malta/doc/index.rst
+  full_name: QEMU Emulation for MIPS Malta
+  image: ''
+  socs:
+  - qemu_malta
+  supported_features: {}
+  vendor: qemu
+qemu_nios2:
+  archs:
+  - nios2
+  doc_page: boards/qemu/nios2/doc/index.rst
+  full_name: QEMU Emulation for Altera Nios-II
+  image: ''
+  socs:
+  - qemu_nios2
+  supported_features: {}
+  vendor: qemu
+qemu_riscv32:
+  archs:
+  - riscv
+  doc_page: boards/qemu/riscv32/doc/index.rst
+  full_name: QEMU Emulation for RISCV32
+  image: ''
+  socs:
+  - qemu_virt_riscv32
+  supported_features: {}
+  vendor: qemu
+qemu_riscv32_xip:
+  archs:
+  - riscv
+  doc_page: boards/qemu/riscv32_xip/doc/index.rst
+  full_name: QEMU Emulation for RISCV32 XIP
+  image: ''
+  socs:
+  - fe310
+  supported_features: {}
+  vendor: qemu
+qemu_riscv32e:
+  archs:
+  - riscv
+  doc_page: boards/qemu/riscv32e/doc/index.rst
+  full_name: QEMU Emulation for RISCV32E Emulation
+  image: ''
+  socs:
+  - qemu_virt_riscv32e
+  supported_features: {}
+  vendor: qemu
+qemu_riscv64:
+  archs:
+  - riscv
+  doc_page: boards/qemu/riscv64/doc/index.rst
+  full_name: QEMU Emulation for RISCV64
+  image: ''
+  socs:
+  - qemu_virt_riscv64
+  supported_features: {}
+  vendor: qemu
+qemu_x86:
+  archs:
+  - x86
+  doc_page: boards/qemu/x86/doc/index.rst
+  full_name: QEMU Emulation for X86
+  image: ''
+  socs:
+  - atom
+  supported_features: {}
+  vendor: qemu
+qemu_x86_64:
+  archs:
+  - x86
+  doc_page: boards/qemu/x86/doc/index.rst
+  full_name: QEMU Emulation for X86 64bit
+  image: ''
+  socs:
+  - atom
+  supported_features: {}
+  vendor: qemu
+qemu_x86_lakemont:
+  archs:
+  - x86
+  doc_page: boards/qemu/x86/doc/index.rst
+  full_name: QEMU Emulation for X86 / Lakemont CPU
+  image: ''
+  socs:
+  - lakemont
+  supported_features: {}
+  vendor: qemu
+qemu_x86_tiny:
+  archs:
+  - x86
+  doc_page: boards/qemu/x86/doc/index.rst
+  full_name: QEMU Emulation for X86 Minimal Configuration
+  image: ''
+  socs:
+  - atom
+  supported_features: {}
+  vendor: qemu
+qemu_xtensa:
+  archs:
+  - xtensa
+  doc_page: boards/qemu/xtensa/doc/index.rst
+  full_name: QEMU Emulation for Xtensa
+  image: ''
+  socs:
+  - dc233c
+  - sample_controller32
+  supported_features: {}
+  vendor: qemu
+qomu:
+  archs:
+  - arm
+  doc_page: boards/quicklogic/qomu/doc/index.rst
+  full_name: Qomu
+  image: ../_images/qomu-board.png
+  socs:
+  - quicklogic_eos_s3
+  supported_features: {}
+  vendor: quicklogic
+quick_feather:
+  archs:
+  - arm
+  doc_page: boards/quicklogic/quick_feather/doc/index.rst
+  full_name: QuickFeather
+  image: ../_images/feather-board.jpg
+  socs:
+  - quicklogic_eos_s3
+  supported_features: {}
+  vendor: quicklogic
+rak11720:
+  archs:
+  - arm
+  doc_page: boards/rak/rak11720/doc/index.rst
+  full_name: RAK11720
+  image: ../_images/rak11720.webp
+  socs:
+  - apollo3_blue
+  supported_features: {}
+  vendor: zephyr
+rak4631:
+  archs:
+  - arm
+  doc_page: boards/rak/rak4631/doc/index.rst
+  full_name: RAK4631
+  image: ../_images/rak4631-front-parts.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: zephyr
+rak5010:
+  archs:
+  - arm
+  doc_page: boards/rak/rak5010/doc/index.rst
+  full_name: RAK5010
+  image: ../_images/rak5010-front-parts.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: zephyr
+raytac_mdbt50q_db_33:
+  archs:
+  - arm
+  doc_page: boards/raytac/mdbt50q_db_33/doc/index.rst
+  full_name: MDBT50Q-DB-33
+  image: ../_images/mdbt50q_db_33.jpg
+  socs:
+  - nrf52833
+  supported_features: {}
+  vendor: raytac
+raytac_mdbt50q_db_40:
+  archs:
+  - arm
+  doc_page: boards/raytac/mdbt50q_db_40/doc/index.rst
+  full_name: MDBT50Q-DB-40
+  image: ../_images/mdbt50q_db_40.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: raytac
+raytac_mdbt53_db_40:
+  archs:
+  - arm
+  doc_page: boards/raytac/mdbt53_db_40/doc/index.rst
+  full_name: MDBT53-DB-40
+  image: ../_images/MDBT53-DB-40.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: raytac
+raytac_mdbt53v_db_40:
+  archs:
+  - arm
+  doc_page: boards/raytac/mdbt53v_db_40/doc/index.rst
+  full_name: MDBT53V-DB-40
+  image: ../_images/MDBT53V-DB-40.jpg
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: raytac
+rcar_h3ulcb:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/renesas/rcar_h3ulcb/doc/rcar_h3ulcb_a57.rst
+  full_name: R-CAR H3 ARM CA57 (ARMv8)
+  image: ../_images/rcar_h3ulcb_features.jpg
+  socs:
+  - r8a77951
+  supported_features: {}
+  vendor: renesas
+rcar_salvator_x:
+  archs:
+  - arm
+  doc_page: boards/renesas/rcar_salvator_x/doc/rcar_salvator_x.rst
+  full_name: R-Car H3 Salvator-X
+  image: ../_images/r-car-h3-salvator-x-connections.jpg
+  socs:
+  - r8a77951
+  supported_features: {}
+  vendor: renesas
+rcar_salvator_xs:
+  archs:
+  - arm64
+  doc_page: boards/renesas/rcar_salvator_xs/doc/index.rst
+  full_name: R-CAR Salvator XS M3 ARM CA57 (ARMv8)
+  image: ''
+  socs:
+  - r8a77961
+  supported_features: {}
+  vendor: renesas
+rcar_spider_s4:
+  archs:
+  - arm64
+  - arm
+  doc_page: boards/renesas/rcar_spider_s4/doc/rcar_spider_a55.rst
+  full_name: R-CAR Spider S4 (ARM64)
+  image: ../_images/rcar_s4_block_diagram.jpg
+  socs:
+  - r8a779f0
+  supported_features: {}
+  vendor: renesas
+rd_rw612_bga:
+  archs:
+  - arm
+  doc_page: boards/nxp/rd_rw612_bga/doc/index.rst
+  full_name: RD-RW612-BGA
+  image: ''
+  socs:
+  - rw612
+  supported_features: {}
+  vendor: nxp
+rddrone_fmuk66:
+  archs:
+  - arm
+  doc_page: boards/nxp/rddrone_fmuk66/doc/index.rst
+  full_name: RDDRONE-FMUK66
+  image: ../_images/rddrone_fmuk66.jpg
+  socs:
+  - mk66f18
+  supported_features: {}
+  vendor: nxp
+reel_board:
+  archs:
+  - arm
+  doc_page: boards/phytec/reel_board/doc/index.rst
+  full_name: reel board
+  image: ../_images/reel_board.jpg
+  socs:
+  - nrf52840
+  supported_features:
+    arm:
+      nordic,nrf-acl: Nordic nRF family ACL (Access Control List)
+      nordic,nrf-egu: Nordic EGU (Event Generator Unit)
+      nordic,nrf-mwu: Nordic nRF family MWU (Memory Watch Unit)
+      nordic,nrf-uicr: Nordic UICR (User Information Configuration Registers)
+    bluetooth:
+      zephyr,bt-hci-entropy: Bluetooth module that uses Zephyr's Bluetooth Host Controller
+        Interface as an entropy source
+      zephyr,bt-hci-ll-sw-split: Bluetooth HCI provided by the native Zephyr Bluetooth
+        Controller
+    clock:
+      nordic,nrf-clock: Nordic nRF clock control node
+    cpu:
+      arm,cortex-m4f: ARM Cortex-M4F CPU
+    crypto:
+      nordic,nrf-ccm: Nordic nRF family CCM (AES CCM mode encryption)
+      nordic,nrf-ecb: Nordic ECB (AES electronic codebook mode encryption)
+    debug:
+      arm,armv7m-itm: ARMv7 instrumentation trace macrocell.
+    display:
+      solomon,ssd1673: Solomon Systech SSD1673 250x150 EPD display controller
+    flash_controller:
+      nordic,nrf52-flash-controller: Nordic NVMC (Non-Volatile Memory Controller)
+    gpio:
+      arduino-header-r3: GPIO pins exposed on Arduino Uno (R3) headers.
+      nordic,nrf-gpio: NRF5 GPIO node
+      nordic,nrf-gpiote: NRF5 GPIOTE node
+    i2c:
+      nordic,nrf-twim: Nordic nRF family TWIM (TWI master with EasyDMA).
+    ieee802154:
+      nordic,nrf-ieee802154: Nordic nRF IEEE 802.
+    input:
+      gpio-keys: Zephyr Input GPIO KEYS parent node
+    interrupt-controller:
+      arm,v7m-nvic: ARMv7-M NVIC (Nested Vectored Interrupt Controller)
+    led:
+      gpio-leds: This allows you to define a group of LEDs.
+      pwm-leds: PWM LEDs parent node
+    mipi-dbi:
+      zephyr,mipi-dbi-spi: MIPI-DBI Mode C compatible SPI controller.
+    misc:
+      nordic,nrf-ficr: Nordic FICR (Factory Information Configuration Registers)
+      nordic,nrf-ppi: Nordic nRF family PPI (Programmable Peripheral Interconnect)
+    mtd:
+      fixed-partitions: This binding is used to describe fixed partitions of a flash
+        (or other nonvolatile storage) memory.
+      soc-nv-flash: Flash node
+    net:
+      nordic,nrf-radio: Nordic nRF family RADIO peripheral.
+    pinctrl:
+      nordic,nrf-pinctrl: The nRF pin controller is a singleton node responsible for
+        controlling pin function selection and pin properties.
+    power:
+      nordic,nrf-power: Nordic nRF power control node
+    pwm:
+      nordic,nrf-pwm: nRF PWM
+    regulator:
+      nordic,nrf5x-regulator: Nordic nRF5X regulator (fixed stage of the core supply)
+    retained_mem:
+      nordic,nrf-gpregret: Nordic GPREGRET (General Purpose Register Retention) device.
+    rng:
+      nordic,nrf-rng: Nordic nRF family RNG (Random Number Generator)
+    sensor:
+      avago,apds9960: APDS9960 digital proximity, ambient light, RGB, and gesture
+        sensor
+      nordic,nrf-temp: Nordic nRF family TEMP node
+      nxp,fxos8700: FXOS8700 6-axis accelerometer/magnetometer sensor
+      ti,hdc: Texas Instruments temperature and humidity sensor (e.
+    serial:
+      nordic,nrf-uart: Nordic nRF family UART.
+      nordic,nrf-uarte: Nordic nRF family UARTE (UART with EasyDMA)
+    spi:
+      nordic,nrf-spi: Nordic nRF family SPI (SPI master)
+      nordic,nrf-spim: Nordic nRF family SPIM (SPI master with EasyDMA)
+    sram:
+      mmio-sram: Generic on-chip SRAM description
+    usb:
+      nordic,nrf-usbd: Nordic nRF52 USB device controller
+    watchdog:
+      nordic,nrf-wdt: Nordic nRF family WDT (Watchdog Timer)
+  vendor: phytec
+riscv32_virtual:
+  archs:
+  - riscv
+  doc_page: boards/renode/riscv32_virtual/doc/index.rst
+  full_name: RISCV32 Virtual
+  image: ''
+  socs:
+  - riscv_virtual_renode
+  supported_features: {}
+  vendor: renode
+rm1xx_dvk:
+  archs:
+  - arm
+  doc_page: boards/ezurio/rm1xx_dvk/doc/index.rst
+  full_name: RM1xx DVK
+  image: ../_images/RM186-SM.jpg
+  socs:
+  - nrf51822
+  supported_features: {}
+  vendor: ezurio
+robokit1:
+  archs:
+  - arm
+  doc_page: boards/tdk/robokit1/doc/index.rst
+  full_name: RoboKit 1
+  image: ../_images/tdk_robokit1.jpg
+  socs:
+  - same70q21b
+  supported_features: {}
+  vendor: tdk
+roc_rk3568_pc:
+  archs:
+  - arm64
+  doc_page: boards/firefly/roc_rk3568_pc/doc/index.rst
+  full_name: ROC-RK3568-PC (Quad-core Cortex-A55)
+  image: ''
+  socs:
+  - rk3568
+  supported_features: {}
+  vendor: firefly
+ronoth_lodev:
+  archs:
+  - arm
+  doc_page: boards/ronoth/lodev/doc/index.rst
+  full_name: LoDev
+  image: ../_images/acsip_s76s.jpg
+  socs:
+  - stm32l073xx
+  supported_features: {}
+  vendor: ronoth
+rpi_4b:
+  archs:
+  - arm64
+  doc_page: boards/raspberrypi/rpi_4b/doc/index.rst
+  full_name: Raspberry Pi 4 Model B (Cortex-A72)
+  image: ''
+  socs:
+  - bcm2711
+  supported_features: {}
+  vendor: raspberrypi
+rpi_5:
+  archs:
+  - arm64
+  doc_page: boards/raspberrypi/rpi_5/doc/index.rst
+  full_name: Raspberry Pi 5 (Cortex-A76)
+  image: ''
+  socs:
+  - bcm2712
+  supported_features: {}
+  vendor: raspberrypi
+rpi_pico:
+  archs:
+  - arm
+  doc_page: boards/raspberrypi/rpi_pico/doc/index.rst
+  full_name: Raspberry Pi Pico
+  image: ../_images/rpi_pico.jpg
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: raspberrypi
+ruuvi_ruuvitag:
+  archs:
+  - arm
+  doc_page: boards/ruuvi/ruuvitag/doc/index.rst
+  full_name: RuuviTag
+  image: ../_images/ruuvitag.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: ruuvi
+rv32m1_vega:
+  archs:
+  - riscv
+  doc_page: boards/openisa/rv32m1_vega/doc/index.rst
+  full_name: OpenISA VEGAboard
+  image: ../_images/rv32m1_vega.jpg
+  socs:
+  - openisa_rv32m1
+  supported_features: {}
+  vendor: openisa
+rzt2m_starter_kit:
+  archs:
+  - arm
+  doc_page: boards/renesas/rzt2m_starterkit/doc/index.rst
+  full_name: Starter Kit+ for RZ/T2M
+  image: ../_images/rzt2m_starterkit.png
+  socs:
+  - renesas_rzt2m
+  supported_features: {}
+  vendor: renesas
+s32z2xxdc2:
+  archs:
+  - arm
+  doc_page: boards/nxp/s32z2xxdc2/doc/index.rst
+  full_name: X-S32Z27X-DC (DC2)
+  image: ''
+  socs:
+  - s32z270
+  supported_features: {}
+  vendor: nxp
+sam4e_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam/sam4e_xpro/doc/index.rst
+  full_name: SAM4E Xplained Pro
+  image: ../_images/sam4e_xpro.jpg
+  socs:
+  - sam4e16e
+  supported_features: {}
+  vendor: atmel
+sam4l_ek:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam/sam4l_ek/doc/index.rst
+  full_name: SAM4L-EK
+  image: ../_images/atmel-sam4l-ek-callouts.jpg
+  socs:
+  - sam4lc4c
+  supported_features: {}
+  vendor: atmel
+sam4s_xplained:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam/sam4s_xplained/doc/index.rst
+  full_name: SAM4S Xplained
+  image: ../_images/sam4s_xplained.jpg
+  socs:
+  - sam4s16c
+  supported_features: {}
+  vendor: atmel
+sam_e70_xplained:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam/sam_e70_xplained/doc/index.rst
+  full_name: SAM E70(B) Xplained
+  image: ../_images/sam_e70_xplained.jpg
+  socs:
+  - same70q21
+  - same70q21b
+  supported_features: {}
+  vendor: atmel
+sam_v71_xult:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam/sam_v71_xult/doc/index.rst
+  full_name: SAM V71(B) Xplained Ultra
+  image: ../_images/sam_v71_xult.jpg
+  socs:
+  - samv71q21b
+  - samv71q21
+  supported_features: {}
+  vendor: atmel
+samc21n_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/samc21n_xpro/doc/index.rst
+  full_name: SAM C21N Xplained Pro Evaluation Kit
+  image: ../_images/atsamc21n_xpro.jpg
+  socs:
+  - samc21n18a
+  supported_features: {}
+  vendor: atmel
+samd20_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/samd20_xpro/doc/index.rst
+  full_name: SAM D20 Xplained Pro Evaluation Kit
+  image: ../_images/atsamd20_xpro.jpg
+  socs:
+  - samd20j18
+  supported_features: {}
+  vendor: atmel
+samd21_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/samd21_xpro/doc/index.rst
+  full_name: SAM D21 Xplained Pro Evaluation Kit
+  image: ../_images/atsamd21_xpro.jpg
+  socs:
+  - samd21j18a
+  supported_features: {}
+  vendor: atmel
+same54_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/same54_xpro/doc/index.rst
+  full_name: SAM E54 Xplained Pro Evaluation Kit
+  image: ../_images/atsame54_xpro.jpg
+  socs:
+  - same54p20a
+  supported_features: {}
+  vendor: atmel
+saml21_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/saml21_xpro/doc/index.rst
+  full_name: SAM L21 Xplained Pro Evaluation Kit
+  image: ../_images/atsaml21-xpro-pinout.jpg
+  socs:
+  - saml21j18b
+  supported_features: {}
+  vendor: atmel
+samr21_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/samr21_xpro/doc/index.rst
+  full_name: SAM R21 Xplained Pro Evaluation Kit
+  image: ../_images/atsamr21_xpro.jpg
+  socs:
+  - samr21g18a
+  supported_features: {}
+  vendor: atmel
+samr34_xpro:
+  archs:
+  - arm
+  doc_page: boards/atmel/sam0/samr34_xpro/doc/index.rst
+  full_name: SAM R34 Xplained Pro Evaluation Kit
+  image: ../_images/atsamr34-xpro-pinout.jpg
+  socs:
+  - samr34j18b
+  supported_features: {}
+  vendor: atmel
+scobc_module1:
+  archs:
+  - arm
+  doc_page: boards/sc/scobc_module1/doc/index.rst
+  full_name: OBC module 1
+  image: ../_images/scobc.jpg
+  socs:
+  - designstart_fpga_cortex_m3
+  supported_features: {}
+  vendor: sc
+seeeduino_xiao:
+  archs:
+  - arm
+  doc_page: boards/seeed/seeeduino_xiao/doc/index.rst
+  full_name: Seeeduino XIAO
+  image: ../_images/seeeduino_xiao.jpg
+  socs:
+  - samd21g18a
+  supported_features: {}
+  vendor: seeed
+segger_trb_stm32f407:
+  archs:
+  - arm
+  doc_page: boards/segger/trb_stm32f407/doc/index.rst
+  full_name: Cortex-M Trace Reference Board V1.2
+  image: ../_images/segger_trb_stm32f407.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: segger
+sensortile_box:
+  archs:
+  - arm
+  doc_page: boards/st/sensortile_box/doc/index.rst
+  full_name: SensorTile.box
+  image: ../_images/sensortile_box.jpg
+  socs:
+  - stm32l4r9xx
+  supported_features: {}
+  vendor: st
+sensortile_box_pro:
+  archs:
+  - arm
+  doc_page: boards/st/sensortile_box_pro/doc/index.rst
+  full_name: SensorTile.box PRO
+  image: ../_images/sensortile_box_pro.jpg
+  socs:
+  - stm32u585xx
+  supported_features: {}
+  vendor: st
+serpente:
+  archs:
+  - arm
+  doc_page: boards/others/serpente/doc/index.rst
+  full_name: Arturo182 Serpente
+  image: ../_images/serpente.jpg
+  socs:
+  - samd21e18a
+  supported_features: {}
+  vendor: zephyr
+sim3u1xx_dk:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/sim3u1xx_dk/doc/index.rst
+  full_name: SiM3U1xx 32-bit MCU USB Development Kit
+  image: ../_images/sim3u1xx_dk.webp
+  socs:
+  - sim3u167
+  supported_features: {}
+  vendor: silabs
+sk_am62:
+  archs:
+  - arm
+  doc_page: boards/ti/sk_am62/doc/index.rst
+  full_name: SK-AM62 M4F Core
+  image: ../_images/sk_am62_angled.webp
+  socs:
+  - am6234
+  supported_features: {}
+  vendor: ti
+slstk3400a:
+  archs:
+  - arm
+  doc_page: boards/silabs/starter_kits/slstk3400a/doc/index.rst
+  full_name: EFM32 Happy Gecko (SLSTK3400A)
+  image: ../_images/slstk3400a.jpg
+  socs:
+  - efm32hg322f64
+  supported_features: {}
+  vendor: silabs
+slstk3401a:
+  archs:
+  - arm
+  doc_page: boards/silabs/starter_kits/slstk3401a/doc/index.rst
+  full_name: EFM32 Pearl Gecko (SLSTK3401A)
+  image: ../_images/slstk3401a.jpg
+  socs:
+  - efm32pg1b200f256gm48
+  supported_features: {}
+  vendor: silabs
+slstk3402a:
+  archs:
+  - arm
+  doc_page: boards/silabs/starter_kits/slstk3402a/doc/index.rst
+  full_name: EFM32 Pearl Gecko 12 (SLSTK3402A)
+  image: ../_images/slstk3402a.jpg
+  socs:
+  - efm32jg12b500f1024gl125
+  - efm32pg12b500f1024gl125
+  supported_features: {}
+  vendor: silabs
+slstk3701a:
+  archs:
+  - arm
+  doc_page: boards/silabs/starter_kits/slstk3701a/doc/index.rst
+  full_name: EFM32 Giant Gecko 11 (SLSTK3701A)
+  image: ../_images/slstk3701a.jpg
+  socs:
+  - efm32gg11b820f2048gl192
+  supported_features: {}
+  vendor: silabs
+sltb004a:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/sltb004a/doc/index.rst
+  full_name: EFR32MG12 Thunderboard (SLTB004A)
+  image: ../_images/sltb004a.jpg
+  socs:
+  - efr32mg12p332f1024gl125
+  supported_features: {}
+  vendor: silabs
+sltb009a:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/sltb009a/doc/index.rst
+  full_name: EFM32GG12 Thunderboard (SLTB009A)
+  image: ../_images/sltb009a.jpg
+  socs:
+  - efm32gg12b810f1024gm64
+  supported_features: {}
+  vendor: silabs
+sltb010a:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/sltb010a/doc/index.rst
+  full_name: EFR32BG22 Thunderboard (SLTB010A)
+  image: ../_images/sltb010a.jpg
+  socs:
+  - efr32bg22c224f512im40
+  supported_features: {}
+  vendor: silabs
+slwrb4104a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4104a/doc/index.rst
+  full_name: EFR32BG13 2.4 GHz 10 dBm (SLWRB4104A)
+  image: ../_images/efr32bg13-slwrb4104a.jpg
+  socs:
+  - efr32bg13p632f512gm48
+  supported_features: {}
+  vendor: silabs
+slwrb4161a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4161a/doc/index.rst
+  full_name: EFR32MG12 2.4 GHz 19 dBm (SLWRB4161A)
+  image: ../_images/efr32mg12-slwrb4161a.jpeg
+  socs:
+  - efr32mg12p432f1024gl125
+  supported_features: {}
+  vendor: silabs
+slwrb4170a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4170a/doc/index.rst
+  full_name: EFR32MG12 2400/868-915 MHz 19 dBm Dual Band (SLWRB4170A)
+  image: ../_images/efr32mg12-slwrb4170a.jpg
+  socs:
+  - efr32mg12p433f1024gm68
+  supported_features: {}
+  vendor: silabs
+slwrb4180a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4180a/doc/index.rst
+  full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
+  image: ../_images/efr32mg21-slwrb4180a.jpg
+  socs:
+  - efr32mg21a020f1024im32
+  supported_features: {}
+  vendor: silabs
+slwrb4250b:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4250b/doc/index.rst
+  full_name: EFR32FG1 2400/868 MHz 13 dBm Dual Band (SLWRB4250B)
+  image: ../_images/efr32fg1-slwrb4250b.jpg
+  socs:
+  - efr32fg1p133f256gm48
+  supported_features: {}
+  vendor: silabs
+slwrb4255a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4255a/doc/index.rst
+  full_name: EFR32FG13 2400/915 MHz 19 dBm Dual Band (SLWRB4255A)
+  image: ../_images/efr32fg13-slwrb4255a.jpg
+  socs:
+  - efr32fg13p233f512gm48
+  supported_features: {}
+  vendor: silabs
+slwrb4321a:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/slwrb4321a/doc/index.rst
+  full_name: WGM160P Wi-Fi Module (SLWRB4321A)
+  image: ../_images/wgm160p-starter-kit.jpg
+  socs:
+  - efm32gg11b820f2048gm64
+  supported_features: {}
+  vendor: silabs
+sparkfun_pro_micro_rp2040:
+  archs:
+  - arm
+  doc_page: boards/sparkfun/pro_micro_rp2040/doc/index.rst
+  full_name: Pro Micro RP2040
+  image: ../_images/sparkfun_pro_micro_rp2040.jpg
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: sparkfun
+sparkfun_red_v_things_plus:
+  archs:
+  - riscv
+  doc_page: boards/sparkfun/red_v_things_plus/doc/index.rst
+  full_name: RED-V Things Plus
+  image: ../_images/sparkfun_red_v_things_plus.jpg
+  socs:
+  - fe310
+  supported_features: {}
+  vendor: sparkfun
+sparkfun_thing_plus:
+  archs:
+  - arm
+  doc_page: boards/sparkfun/thing_plus/doc/index.rst
+  full_name: nRF9160 Thing Plus
+  image: ../_images/sparkfun_thing_plus_nrf9160.jpg
+  socs:
+  - nrf9160
+  supported_features: {}
+  vendor: sparkfun
+sparkfun_thing_plus_matter_mgm240p:
+  archs:
+  - arm
+  doc_page: boards/sparkfun/thing_plus_matter_mgm240p/doc/index.rst
+  full_name: THING PLUS MATTER
+  image: ../_images/MGM240P_Thing_Plus.jpg
+  socs:
+  - efr32mg24b020f1536im40
+  supported_features: {}
+  vendor: sparkfun
+st25dv_mb1283_disco:
+  archs:
+  - arm
+  doc_page: boards/st/st25dv_mb1283_disco/docs/index.rst
+  full_name: ST25DV Discovery, MB1283 version
+  image: ../_images/st25dv_mb1283_disco.jpg
+  socs:
+  - stm32f405xx
+  supported_features: {}
+  vendor: st
+stamp_c3:
+  archs:
+  - riscv
+  doc_page: boards/m5stack/stamp_c3/doc/index.rst
+  full_name: STAMP-C3
+  image: ''
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: m5stack
+steval_fcu001v1:
+  archs:
+  - arm
+  doc_page: boards/st/steval_fcu001v1/doc/index.rst
+  full_name: STM32 Flight Controller Unit
+  image: ../_images/steval_fcu001v1.jpg
+  socs:
+  - stm32f401xc
+  supported_features: {}
+  vendor: st
+steval_stwinbx1:
+  archs:
+  - arm
+  doc_page: boards/st/steval_stwinbx1/doc/index.rst
+  full_name: STEVAL STWINBX1 Development kit
+  image: ../_images/steval_stwinbx1.jpg
+  socs:
+  - stm32u585xx
+  supported_features: {}
+  vendor: st
+stm3210c_eval:
+  archs:
+  - arm
+  doc_page: boards/st/stm3210c_eval/doc/index.rst
+  full_name: STM3210C Evaluation
+  image: ../_images/stm3210c_eval.jpg
+  socs:
+  - stm32f107xc
+  supported_features: {}
+  vendor: st
+stm32373c_eval:
+  archs:
+  - arm
+  doc_page: boards/st/stm32373c_eval/doc/index.rst
+  full_name: STM32373C Evaluation
+  image: ../_images/stm32373c_eval.jpg
+  socs:
+  - stm32f373xc
+  supported_features: {}
+  vendor: st
+stm32_min_dev:
+  archs:
+  - arm
+  doc_page: boards/others/stm32_min_dev/doc/index.rst
+  full_name: STM32 Minimum Development Board
+  image: ../_images/stm32_min_dev.jpg
+  socs:
+  - stm32f103xb
+  supported_features: {}
+  vendor: zephyr
+stm32c0116_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32c0116_dk/doc/index.rst
+  full_name: STM32C0116-DK Discovery Kit
+  image: ../_images/stm32c0116_dk.jpg
+  socs:
+  - stm32c011xx
+  supported_features: {}
+  vendor: st
+stm32f030_demo:
+  archs:
+  - arm
+  doc_page: boards/others/stm32f030_demo/doc/index.rst
+  full_name: STM32F030 DEMO BOARD
+  image: ../_images/stm32f030_demo.jpg
+  socs:
+  - stm32f030x6
+  supported_features: {}
+  vendor: zephyr
+stm32f072_eval:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f072_eval/doc/index.rst
+  full_name: STM32F072 Evaluation
+  image: ../_images/stm32f072_eval.jpg
+  socs:
+  - stm32f072xb
+  supported_features: {}
+  vendor: st
+stm32f072b_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f072b_disco/doc/index.rst
+  full_name: STM32F072B Discovery
+  image: ../_images/stm32f072b_disco.jpg
+  socs:
+  - stm32f072xb
+  supported_features: {}
+  vendor: st
+stm32f0_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f0_disco/doc/index.rst
+  full_name: STM32F0 Discovery
+  image: ../_images/stm32f0_disco.jpg
+  socs:
+  - stm32f051x8
+  supported_features: {}
+  vendor: st
+stm32f103_mini:
+  archs:
+  - arm
+  doc_page: boards/others/stm32f103_mini/doc/index.rst
+  full_name: STM32F103 Mini
+  image: ../_images/stm32f103_mini_pin.jpg
+  socs:
+  - stm32f103xe
+  supported_features: {}
+  vendor: zephyr
+stm32f3_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f3_disco/doc/index.rst
+  full_name: STM32F3 Discovery
+  image: ../_images/stm32f3_disco.jpg
+  socs:
+  - stm32f303xc
+  supported_features: {}
+  vendor: st
+stm32f3_seco_d23:
+  archs:
+  - arm
+  doc_page: boards/seco/stm32f3_seco_d23/doc/index.rst
+  full_name: SECO SBC-3.5-PX30 (JUNO - D23) (STM32F302)
+  image: ../_images/stm32f3_seco_d23.jpg
+  socs:
+  - stm32f302xc
+  supported_features: {}
+  vendor: seco
+stm32f401_mini:
+  archs:
+  - arm
+  doc_page: boards/others/stm32f401_mini/doc/index.rst
+  full_name: STM32 Mini F401
+  image: ../_images/STM32_Mini_F401-1.jpg
+  socs:
+  - stm32f401xc
+  supported_features: {}
+  vendor: zephyr
+stm32f411e_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f411e_disco/doc/index.rst
+  full_name: STM32F411E Discovery
+  image: ../_images/stm32f411e_disco.jpg
+  socs:
+  - stm32f411xe
+  supported_features: {}
+  vendor: st
+stm32f412g_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f412g_disco/doc/index.rst
+  full_name: STM32F412G Discovery
+  image: ../_images/stm32f412g_disco.jpg
+  socs:
+  - stm32f412zx
+  supported_features: {}
+  vendor: st
+stm32f429i_disc1:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f429i_disc1/doc/index.rst
+  full_name: STM32F429I Discovery
+  image: ../_images/stm32f429i_disc1.jpg
+  socs:
+  - stm32f429xx
+  supported_features: {}
+  vendor: st
+stm32f469i_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f469i_disco/doc/index.rst
+  full_name: STM32F469I Discovery
+  image: ../_images/stm32f469i_disco.jpg
+  socs:
+  - stm32f469xx
+  supported_features: {}
+  vendor: st
+stm32f4_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f4_disco/doc/index.rst
+  full_name: STM32F4 Discovery
+  image: ../_images/stm32f4_disco.jpg
+  socs:
+  - stm32f407xx
+  supported_features: {}
+  vendor: st
+stm32f723e_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f723e_disco/doc/index.rst
+  full_name: STM32F723E Discovery
+  image: ../_images/stm32f723e_disco.jpg
+  socs:
+  - stm32f723xx
+  supported_features: {}
+  vendor: st
+stm32f746g_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f746g_disco/doc/index.rst
+  full_name: STM32F746G Discovery
+  image: ../_images/stm32f746g_disco.jpg
+  socs:
+  - stm32f746xx
+  supported_features: {}
+  vendor: st
+stm32f7508_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f7508_dk/doc/index.rst
+  full_name: STM32F7508-DK Discovery Kit
+  image: ../_images/stm32f7508_dk.jpg
+  socs:
+  - stm32f750xx
+  supported_features: {}
+  vendor: st
+stm32f769i_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32f769i_disco/doc/index.rst
+  full_name: STM32F769I Discovery
+  image: ../_images/stm32f769i_disco.jpg
+  socs:
+  - stm32f769xx
+  supported_features: {}
+  vendor: st
+stm32g0316_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32g0316_disco/doc/index.rst
+  full_name: STM32G0316 Discovery
+  image: ../_images/stm32g0316_disco.jpg
+  socs:
+  - stm32g031xx
+  supported_features: {}
+  vendor: st
+stm32g071b_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32g071b_disco/doc/index.rst
+  full_name: STM32G071B Discovery
+  image: ../_images/stm32g071b_disco.jpg
+  socs:
+  - stm32g071xx
+  supported_features: {}
+  vendor: st
+stm32g081b_eval:
+  archs:
+  - arm
+  doc_page: boards/st/stm32g081b_eval/doc/index.rst
+  full_name: STM32G081B Evaluation
+  image: ../_images/stm32g081b_eval.jpg
+  socs:
+  - stm32g081xx
+  supported_features: {}
+  vendor: st
+stm32h573i_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h573i_dk/doc/index.rst
+  full_name: STM32H573I-DK Discovery
+  image: ../_images/stm32h573i_dk.jpg
+  socs:
+  - stm32h573xx
+  supported_features: {}
+  vendor: st
+stm32h735g_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h735g_disco/doc/index.rst
+  full_name: STM32H735G Discovery
+  image: ../_images/stm32h735g_disco.jpg
+  socs:
+  - stm32h735xx
+  supported_features: {}
+  vendor: st
+stm32h745i_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h745i_disco/doc/index.rst
+  full_name: STM32H745I Discovery
+  image: ../_images/stm32h745i-disco.jpg
+  socs:
+  - stm32h745xx
+  supported_features: {}
+  vendor: st
+stm32h747i_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h747i_disco/doc/index.rst
+  full_name: STM32H747I Discovery
+  image: ../_images/stm32h747i_disco.jpg
+  socs:
+  - stm32h747xx
+  supported_features: {}
+  vendor: st
+stm32h750b_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h750b_dk/doc/index.rst
+  full_name: STM32H750B Discovery Kit
+  image: ../_images/stm32h750b_dk.png
+  socs:
+  - stm32h750xx
+  supported_features: {}
+  vendor: st
+stm32h7b3i_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h7b3i_dk/doc/index.rst
+  full_name: STM32H7B3I Discovery kit
+  image: ../_images/stm32h7b3i_dk.jpg
+  socs:
+  - stm32h7b3xx
+  supported_features: {}
+  vendor: st
+stm32h7s78_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32h7s78_dk/doc/index.rst
+  full_name: STM32H7S78-DK Discovery
+  image: ../_images/stm32h7s78_dk.jpg
+  socs:
+  - stm32h7s7xx
+  supported_features: {}
+  vendor: st
+stm32l152c_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l1_disco/doc/index.rst
+  full_name: STM32L152C Discovery
+  image: ../_images/stm32l1_disco.jpg
+  socs:
+  - stm32l152xc
+  supported_features: {}
+  vendor: st
+stm32l1_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l1_disco/doc/index.rst
+  full_name: STM32L1 Discovery
+  image: ../_images/stm32l1_disco.jpg
+  socs:
+  - stm32l151xb
+  supported_features: {}
+  vendor: st
+stm32l476g_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l476g_disco/doc/index.rst
+  full_name: STM32L476G Discovery
+  image: ../_images/stm32l476g_disco.jpg
+  socs:
+  - stm32l476xx
+  supported_features: {}
+  vendor: st
+stm32l496g_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l496g_disco/doc/index.rst
+  full_name: STM32L496G Discovery
+  image: ../_images/stm32l496g_disco.jpg
+  socs:
+  - stm32l496xx
+  supported_features: {}
+  vendor: st
+stm32l4r9i_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l4r9i_disco/doc/index.rst
+  full_name: STM32L4R9I Discovery
+  image: ../_images/stm32l4r9i_disco.jpg
+  socs:
+  - stm32l4r9xx
+  supported_features: {}
+  vendor: st
+stm32l562e_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32l562e_dk/doc/index.rst
+  full_name: STM32L562E-DK Discovery
+  image: ../_images/stm32l562e_dk.jpg
+  socs:
+  - stm32l562xx
+  supported_features: {}
+  vendor: st
+stm32mp157c_dk2:
+  archs:
+  - arm
+  doc_page: boards/st/stm32mp157c_dk2/doc/stm32mp157_dk2.rst
+  full_name: STM32MP157C-DK2 Discovery
+  image: ../_images/en.stm32mp157c-dk2.jpg
+  socs:
+  - stm32mp157cxx
+  supported_features: {}
+  vendor: st
+stm32u083c_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32u083c_dk/doc/index.rst
+  full_name: STM32U083C-DK
+  image: ../_images/stm32u083c_dk.jpg
+  socs:
+  - stm32u083xx
+  supported_features: {}
+  vendor: st
+stm32u5a9j_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32u5a9j_dk/doc/index.rst
+  full_name: STM32U5A9J Discovery Kit
+  image: ../_images/top_view.jpg
+  socs:
+  - stm32u5a9xx
+  supported_features: {}
+  vendor: st
+stm32vl_disco:
+  archs:
+  - arm
+  doc_page: boards/st/stm32vl_disco/doc/index.rst
+  full_name: STM32VL Discovery
+  image: ../_images/stm32vl_disco.jpg
+  socs:
+  - stm32f100xb
+  supported_features: {}
+  vendor: st
+stm32wb5mm_dk:
+  archs:
+  - arm
+  doc_page: boards/st/stm32wb5mm_dk/doc/stm32wb5mm_dk.rst
+  full_name: STM32WB5MM-DK
+  image: ../_images/STM32WB5MM_DK.jpg
+  socs:
+  - stm32wb55xx
+  supported_features: {}
+  vendor: st
+stm32wb5mmg:
+  archs:
+  - arm
+  doc_page: boards/st/stm32wb5mmg/doc/stm32wb5mmg.rst
+  full_name: STM32WB5MMG
+  image: ../_images/STM32WB5MMG.jpg
+  socs:
+  - stm32wb55xx
+  supported_features: {}
+  vendor: st
+swan_r5:
+  archs:
+  - arm
+  doc_page: boards/blues/swan_r5/doc/index.rst
+  full_name: Swan
+  image: ../_images/swan.jpg
+  socs:
+  - stm32l4r5xx
+  supported_features: {}
+  vendor: blues
+teensy40:
+  archs:
+  - arm
+  doc_page: boards/pjrc/teensy4/doc/index.rst
+  full_name: Teensy 4.0
+  image: ../_images/teensy40.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: pjrc
+teensy41:
+  archs:
+  - arm
+  doc_page: boards/pjrc/teensy4/doc/index.rst
+  full_name: Teensy 4.1
+  image: ../_images/teensy41.jpg
+  socs:
+  - mimxrt1062
+  supported_features: {}
+  vendor: pjrc
+thingy52:
+  archs:
+  - arm
+  doc_page: boards/nordic/thingy52/doc/index.rst
+  full_name: Thingy:52
+  image: ../_images/thingy52_nrf52832.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: nordic
+thingy53:
+  archs:
+  - arm
+  doc_page: boards/nordic/thingy53/doc/index.rst
+  full_name: Thingy:53
+  image: ''
+  socs:
+  - nrf5340
+  supported_features: {}
+  vendor: nordic
+titanium_ti60_f225:
+  archs:
+  - riscv
+  doc_page: boards/efinix/titanium_ti60_f225/doc/index.rst
+  full_name: Titanium Ti60 F225
+  image: ../_images/titanium_ti60_f225.jpg
+  socs:
+  - efinix_sapphire
+  supported_features: {}
+  vendor: efinix
+tlsr9518adk80d:
+  archs:
+  - riscv
+  doc_page: boards/telink/tlsr9518adk80d/doc/index.rst
+  full_name: TLSR9518ADK80D
+  image: ../_images/tlsr9518adk80d.jpg
+  socs:
+  - tlsr9518
+  supported_features: {}
+  vendor: telink
+ttgo_lora32:
+  archs:
+  - xtensa
+  doc_page: boards/lilygo/ttgo_lora32/doc/index.rst
+  full_name: TTGO LoRa32
+  image: ../_images/ttgo_lora32.webp
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: lilygo
+ttgo_t8c3:
+  archs:
+  - riscv
+  doc_page: boards/lilygo/ttgo_t8c3/doc/index.rst
+  full_name: TTGO T8-C3
+  image: ../_images/ttgo_t8c3.webp
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: lilygo
+twr_ke18f:
+  archs:
+  - arm
+  doc_page: boards/nxp/twr_ke18f/doc/index.rst
+  full_name: TWR-KE18F
+  image: ../_images/TWR-KE18F-DEVICE.jpg
+  socs:
+  - mke18f16
+  supported_features: {}
+  vendor: nxp
+twr_kv58f220m:
+  archs:
+  - arm
+  doc_page: boards/nxp/twr_kv58f220m/doc/index.rst
+  full_name: TWR-KV58F220M
+  image: ../_images/twr_kv58f220m.jpg
+  socs:
+  - mkv58f24
+  supported_features: {}
+  vendor: nxp
+ubx_bmd300eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd300eval/doc/index.rst
+  full_name: 'EVK-BMD-30/35: BMD-300-EVAL, BMD-301-EVAL, and BMD-350-EVAL'
+  image: ../_images/bmd-300-eval_pin_out.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: u-blox
+ubx_bmd330eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd330eval/doc/index.rst
+  full_name: 'EVK-BMD-330: BMD-330-EVAL'
+  image: ../_images/bmd-300-eval_pin_out.jpg
+  socs:
+  - nrf52810
+  supported_features: {}
+  vendor: u-blox
+ubx_bmd340eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd340eval/doc/index.rst
+  full_name: 'EVK-BMD-34/38: BMD-340-EVAL and BMD-341-EVAL'
+  image: ../_images/BMD-34-38-EVAL.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: u-blox
+ubx_bmd345eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd345eval/doc/index.rst
+  full_name: 'EVK-BMD-34/38: BMD-345-EVAL'
+  image: ../_images/bmd-345-eval_features.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: u-blox
+ubx_bmd360eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd360eval/doc/index.rst
+  full_name: 'EVK-BMD-360: BMD-360-EVAL'
+  image: ../_images/bmd-300-eval_pin_out.jpg
+  socs:
+  - nrf52811
+  supported_features: {}
+  vendor: u-blox
+ubx_bmd380eval:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_bmd380eval/doc/index.rst
+  full_name: 'EVK-BMD-34/48: BMD-380-EVAL'
+  image: ../_images/BMD-34-38-EVAL.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: u-blox
+ubx_evkannab1:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_evkannab1/doc/index.rst
+  full_name: EVK-ANNA-B11x
+  image: ../_images/EVK-ANNA-B112.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: u-blox
+ubx_evkninab1:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_evkninab1/doc/index.rst
+  full_name: EVK NINA-B11x
+  image: ../_images/EVK-NINA-B1.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: u-blox
+ubx_evkninab3:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_evkninab3/doc/index.rst
+  full_name: EVK-NINA-B3
+  image: ../_images/EVK-NINA-B3.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: u-blox
+ubx_evkninab4:
+  archs:
+  - arm
+  doc_page: boards/u-blox/ubx_evkninab4/doc/index.rst
+  full_name: EVK NINA-B40x
+  image: ../_images/EVK-NINA-B406_Top_web.jpg
+  socs:
+  - nrf52833
+  supported_features: {}
+  vendor: u-blox
+ucans32k1sic:
+  archs:
+  - arm
+  doc_page: boards/nxp/ucans32k1sic/doc/index.rst
+  full_name: UCANS32K1SIC
+  image: ../_images/ucans32k1sic_top.webp
+  socs:
+  - s32k146
+  supported_features: {}
+  vendor: nxp
+udoo_neo_full:
+  archs:
+  - arm
+  doc_page: boards/udoo/udoo_neo_full/doc/index.rst
+  full_name: Neo Full
+  image: ../_images/udoo_neo_full_mcimx6x_m4.jpg
+  socs:
+  - mcimx6x
+  supported_features: {}
+  vendor: udoo
+up_squared:
+  archs:
+  - x86
+  doc_page: boards/up-bridge-the-gap/up_squared/doc/index.rst
+  full_name: UP Squared
+  image: ../_images/up_squared.jpg
+  socs:
+  - apollo_lake
+  supported_features: {}
+  vendor: zephyr
+up_squared_pro_7000:
+  archs:
+  - x86
+  doc_page: boards/up-bridge-the-gap/up_squared_pro_7000/doc/up_squared_pro_7000.rst
+  full_name: UP Squared Pro 7000
+  image: ''
+  socs:
+  - alder_lake
+  supported_features: {}
+  vendor: zephyr
+usb_kw24d512:
+  archs:
+  - arm
+  doc_page: boards/nxp/usb_kw24d512/doc/index.rst
+  full_name: USB-KW24D512
+  image: ''
+  socs:
+  - mkw24d5
+  supported_features: {}
+  vendor: nxp
+v2m_beetle:
+  archs:
+  - arm
+  doc_page: boards/arm/v2m_beetle/doc/index.rst
+  full_name: V2M Beetle
+  image: ../_images/v2m_beetle.jpg
+  socs:
+  - beetle_r0
+  supported_features: {}
+  vendor: arm
+v2m_musca_b1:
+  archs:
+  - arm
+  doc_page: boards/arm/v2m_musca_b1/doc/index.rst
+  full_name: V2M Musca B1
+  image: ../_images/v2m_musca_b1.jpg
+  socs:
+  - musca_b1
+  supported_features: {}
+  vendor: arm
+v2m_musca_s1:
+  archs:
+  - arm
+  doc_page: boards/arm/v2m_musca_s1/doc/index.rst
+  full_name: V2M Musca-S1
+  image: ../_images/v2m_musca_s1.jpg
+  socs:
+  - musca_s1
+  supported_features: {}
+  vendor: arm
+verdin_imx8mp:
+  archs:
+  - arm
+  doc_page: boards/toradex/verdin_imx8mp/doc/index.rst
+  full_name: Verdin iMX8M Plus SoM
+  image: ../_images/verdin_imx8mp_front.jpg
+  socs:
+  - mimx8ml8
+  supported_features: {}
+  vendor: toradex
+visionfive2:
+  archs:
+  - riscv
+  doc_page: boards/starfive/visionfive2/doc/index.rst
+  full_name: VisionFive 2 JH7110
+  image: ../_images/visionfive2.webp
+  socs:
+  - jh7110
+  supported_features: {}
+  vendor: starfive
+vmu_rt1170:
+  archs:
+  - arm
+  doc_page: boards/nxp/vmu_rt1170/doc/index.rst
+  full_name: VMU RT1170
+  image: ../_images/vmu_rt1170.jpg
+  socs:
+  - mimxrt1176
+  supported_features: {}
+  vendor: nxp
+w5500_evb_pico:
+  archs:
+  - arm
+  doc_page: boards/wiznet/w5500_evb_pico/doc/index.rst
+  full_name: W5500 Evaluation Pico
+  image: ../_images/w5500_evb_pico_side.png
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: wiznet
+walter:
+  archs:
+  - xtensa
+  doc_page: boards/dptechnics/walter/doc/index.rst
+  full_name: Walter
+  image: ../_images/walter.webp
+  socs:
+  - esp32s3
+  supported_features: {}
+  vendor: dptechnics
+warp7:
+  archs:
+  - arm
+  doc_page: boards/element14/warp7/doc/index.rst
+  full_name: WaRP7 - Next Generation IoT and Wearable Development Platform
+  image: ../_images/warp7.jpg
+  socs:
+  - mcimx7d
+  supported_features: {}
+  vendor: element14
+waveshare_open103z:
+  archs:
+  - arm
+  doc_page: boards/waveshare/open103z/doc/index.rst
+  full_name: Open103Z
+  image: ../_images/waveshare_open103z.jpg
+  socs:
+  - stm32f103xe
+  supported_features: {}
+  vendor: waveshare
+we_ophelia1ev:
+  archs:
+  - arm
+  doc_page: boards/we/ophelia1ev/doc/index.rst
+  full_name: Ophelia-I EV NRF52805
+  image: ../_images/we_ophelia1ev_nrf52805.jpg
+  socs:
+  - nrf52805
+  supported_features: {}
+  vendor: we
+we_proteus2ev:
+  archs:
+  - arm
+  doc_page: boards/we/proteus2ev/doc/index.rst
+  full_name: Proteus-II-EV
+  image: ../_images/we_proteus2ev_nrf52832.jpg
+  socs:
+  - nrf52832
+  supported_features: {}
+  vendor: we
+we_proteus3ev:
+  archs:
+  - arm
+  doc_page: boards/we/proteus3ev/doc/index.rst
+  full_name: Proteus-III-EV
+  image: ../_images/we_proteus3ev_nrf52840.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: we
+weact_stm32f405_core:
+  archs:
+  - arm
+  doc_page: boards/weact/stm32f405_core/doc/index.rst
+  full_name: STM32F405 Core Board V1.0
+  image: ../_images/stm32f405_core.jpg
+  socs:
+  - stm32f405xx
+  supported_features: {}
+  vendor: weact
+weact_stm32g431_core:
+  archs:
+  - arm
+  doc_page: boards/weact/stm32g431_core/doc/index.rst
+  full_name: STM32G431 Core Board
+  image: ''
+  socs:
+  - stm32g431xx
+  supported_features: {}
+  vendor: weact
+wio_terminal:
+  archs:
+  - arm
+  doc_page: boards/seeed/wio_terminal/doc/index.rst
+  full_name: Wio Terminal
+  image: ../_images/wio_terminal.png
+  socs:
+  - samd51p19a
+  supported_features:
+    adc:
+      atmel,sam0-adc: Atmel SAM0 family ADC
+    arm:
+      atmel,sam0-id: For locating the Device ID (serial number) on Atmel SAM0 devices
+    clock:
+      atmel,samd5x-gclk: Atmel SAMD5x Generic Clock Controller (GCLK)
+      atmel,samd5x-mclk: Atmel SAMD5x Generic Clock Controller (MCLK)
+    cpu:
+      arm,cortex-m4f: ARM Cortex-M4F CPU
+    display:
+      ilitek,ili9341: ILI9341 320x240 display controller
+    dma:
+      atmel,sam0-dmac: Atmel SAM0 DMA controller
+    flash_controller:
+      atmel,sam0-nvmctrl: Atmel SAM0 NVMC (Non-Volatile Memory Controller)
+    gpio:
+      atmel,sam0-gpio: SAM0 GPIO PORT node
+      grove-header: GPIO pins exposing on Grove 4 pins headers.
+      raspberrypi-40pins-header: GPIO pins exposed on Raspberry Pi 40-pin header.
+    i2c:
+      atmel,sam0-i2c: Atmel SAM0 series SERCOM I2C node
+    input:
+      gpio-keys: Zephyr Input GPIO KEYS parent node
+    interrupt-controller:
+      arm,v7m-nvic: ARMv7-M NVIC (Nested Vectored Interrupt Controller)
+      atmel,sam0-eic: Atmel SAM0 series External Interrupt Controller
+    led:
+      gpio-leds: This allows you to define a group of LEDs.
+    mipi-dbi:
+      zephyr,mipi-dbi-spi: MIPI-DBI Mode C compatible SPI controller.
+    mmu_mpu:
+      arm,armv7m-mpu: ARMv7-M Memory Protection Unit (MPU)
+    mtd:
+      fixed-partitions: This binding is used to describe fixed partitions of a flash
+        (or other nonvolatile storage) memory.
+      soc-nv-flash: Flash node
+    pinctrl:
+      atmel,sam0-pinctrl: Atmel SAM0 Pinctrl container node
+      atmel,sam0-pinmux: Atmel SAM0 PINMUX
+    regulator:
+      regulator-fixed: Fixed voltage regulators
+    rng:
+      atmel,sam-trng: Atmel SAM RNG
+    sd:
+      zephyr,sdmmc-disk: Zephyr MMC disk node.
+    sdhc:
+      zephyr,sdhc-spi-slot: Generic Zephyr SPI based SDHC controller
+    sensor:
+      st,lis3dh: STMicroelectronics LIS3DH 3-axis accelerometer
+    serial:
+      atmel,sam0-uart: Atmel SAM0 SERCOM UART driver
+      zephyr,cdc-acm-uart: USB CDC ACM UART
+    spi:
+      atmel,sam0-spi: Atmel SAM0 SERCOM SPI controller
+    sram:
+      mmio-sram: Generic on-chip SRAM description
+    timer:
+      arm,armv7m-systick: ARMv7-M System Tick
+      atmel,sam0-tc32: Atmel SAM0 basic timer counter (TC) operating in 32-bit wide
+        mode
+    usb:
+      atmel,sam0-usb: Atmel SAM0 USB in device mode
+    watchdog:
+      atmel,sam0-watchdog: Atmel SAM0 watchdog
+  vendor: seeed
+xenvm:
+  archs:
+  - arm64
+  doc_page: boards/xen/xenvm/doc/index.rst
+  full_name: ARMv8 Xen Virtual Machine Example
+  image: ''
+  socs:
+  - xenvm
+  supported_features: {}
+  vendor: xen
+xg24_dk2601b:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/xg24_dk2601b/doc/index.rst
+  full_name: EFR32xG24 Dev Kit (xG24-DK2601B)
+  image: ../_images/xg24_dk2601b.jpg
+  socs:
+  - efr32mg24b310f1536im48
+  supported_features: {}
+  vendor: silabs
+xg24_rb4187c:
+  archs:
+  - arm
+  doc_page: boards/silabs/radio_boards/xg24_rb4187c/doc/index.rst
+  full_name: EFR32xG24 2.4 GHz 20 dBm (xG24-RB4187C)
+  image: ../_images/efr32mg24-xg24-rb4187c.jpg
+  socs:
+  - efr32mg24b220f1536im48
+  supported_features: {}
+  vendor: silabs
+xg27_dk2602a:
+  archs:
+  - arm
+  doc_page: boards/silabs/dev_kits/xg27_dk2602a/doc/index.rst
+  full_name: EFR32xG27 Dev Kit (xG27-DK2602A)
+  image: ../_images/xg27_dk2602a.png
+  socs:
+  - efr32bg27c140f768im40
+  supported_features: {}
+  vendor: silabs
+xiao_ble:
+  archs:
+  - arm
+  doc_page: boards/seeed/xiao_ble/doc/index.rst
+  full_name: XIAO BLE (Sense)
+  image: ../_images/xiao_ble.jpg
+  socs:
+  - nrf52840
+  supported_features: {}
+  vendor: seeed
+xiao_esp32c3:
+  archs:
+  - riscv
+  doc_page: boards/seeed/xiao_esp32c3/doc/index.rst
+  full_name: XIAO ESP32C3
+  image: ../_images/xiao_esp32c3_pinout.jpg
+  socs:
+  - esp32c3
+  supported_features: {}
+  vendor: seeed
+xiao_esp32s3:
+  archs:
+  - xtensa
+  doc_page: boards/seeed/xiao_esp32s3/doc/index.rst
+  full_name: XIAO ESP32S3
+  image: ../_images/xiao_esp32s3.jpg
+  socs:
+  - esp32s3
+  supported_features:
+    bluetooth:
+      espressif,esp32-bt-hci: Bluetooth HCI for Espressif ESP32
+    clock:
+      espressif,esp32-rtc: ESP32 RTC (Power & Clock Controller Module) Module
+    counter:
+      espressif,esp32-timer: Espressif's general-purpose Timers.
+    cpu:
+      espressif,xtensa-lx7: Espressif Xtensa CPU
+    flash_controller:
+      espressif,esp32-flash-controller: ESP32 Family flash controller
+    gpio:
+      espressif,esp32-gpio: ESP32 GPIO controller
+      seeed,xiao-gpio: GPIO pins exposed on Seeeduino Xiao (and compatible devices)
+        headers.
+    i2c:
+      espressif,esp32-i2c: ESP32 I2C
+    interrupt-controller:
+      espressif,esp32-intc: ESP32 Interrupt controller
+    ipm:
+      espressif,esp32-ipm: ESP32 soft inter processor message
+    led:
+      gpio-leds: This allows you to define a group of LEDs.
+    mtd:
+      fixed-partitions: This binding is used to describe fixed partitions of a flash
+        (or other nonvolatile storage) memory.
+      soc-nv-flash: Flash node
+    pinctrl:
+      espressif,esp32-pinctrl: Espressif's pin controller is in charge of controlling
+        pin configurations, pin functionalities and pin properties as defined by pin
+        states.
+    power:
+      zephyr,power-state: Properties for power management state
+    rng:
+      espressif,esp32-trng: Espressif ESP32 TRNG (True Random Number Generator).
+    sdhc:
+      espressif,esp32-sdhc: Espressif ESP32 SDHC controller
+    serial:
+      espressif,esp32-uart: ESP32 UART
+      espressif,esp32-usb-serial: ESP32 UART
+    spi:
+      espressif,esp32-spi: ESP32 SPI
+    sram:
+      mmio-sram: Generic on-chip SRAM description
+    watchdog:
+      espressif,esp32-watchdog: ESP32 watchdog.
+  vendor: seeed
+xiao_rp2040:
+  archs:
+  - arm
+  doc_page: boards/seeed/xiao_rp2040/doc/index.rst
+  full_name: XIAO RP2040
+  image: ../_images/xiao_rp2040.webp
+  socs:
+  - rp2040
+  supported_features: {}
+  vendor: seeed
+xmc45_relax_kit:
+  archs:
+  - arm
+  doc_page: boards/infineon/xmc45_relax_kit/doc/index.rst
+  full_name: XMC45-RELAX-KIT
+  image: ../_images/xmc45_relax_kit.jpg
+  socs:
+  - xmc4500
+  supported_features: {}
+  vendor: infineon
+xmc47_relax_kit:
+  archs:
+  - arm
+  doc_page: boards/infineon/xmc47_relax_kit/doc/index.rst
+  full_name: XMC47-RELAX-KIT
+  image: ../_images/xmc47_relax_kit.jpg
+  socs:
+  - xmc4700
+  supported_features: {}
+  vendor: infineon
+xt-sim:
+  archs:
+  - xtensa
+  doc_page: boards/cdns/xt-sim/doc/index.rst
+  full_name: Xtensa simulator
+  image: ../_images/xt-sim.jpg
+  socs:
+  - xtensa_sample_controller
+  supported_features: {}
+  vendor: cdns
+yd_esp32:
+  archs:
+  - xtensa
+  doc_page: boards/vcc-gnd/yd_esp32/doc/index.rst
+  full_name: YD-ESP32
+  image: ../_images/yd_esp32.png
+  socs:
+  - esp32
+  supported_features: {}
+  vendor: vcc-gnd
+yd_stm32h750vb:
+  archs:
+  - arm
+  doc_page: boards/vcc-gnd/yd_stm32h750vb/doc/index.rst
+  full_name: YD-STM32H750VB
+  image: ../_images/yd_stm32h750vb.png
+  socs:
+  - stm32h750xx
+  supported_features: {}
+  vendor: vcc-gnd
+zybo:
+  archs:
+  - arm
+  doc_page: boards/digilent/zybo/doc/index.rst
+  full_name: Zybo
+  image: ../_images/zybo-0.jpg
+  socs:
+  - xc7z010
+  supported_features: {}
+  vendor: digilent
