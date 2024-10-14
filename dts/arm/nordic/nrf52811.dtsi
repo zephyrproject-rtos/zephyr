@@ -146,7 +146,6 @@
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <14>;
 			status = "disabled";
-			zephyr,pm-device-runtime-auto;
 		};
 
 		spi1: spi@40003000 {

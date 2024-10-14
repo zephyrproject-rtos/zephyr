@@ -322,6 +322,7 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 {
 	const struct i2c_nrfx_twim_config *dev_config = dev->config;
 	struct i2c_nrfx_twim_data *dev_data = dev->data;
+	int ret;
 
 	dev_config->irq_connect();
 
@@ -336,7 +337,12 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return pm_device_driver_init(dev, twim_nrfx_pm_action);
+	ret = pm_device_driver_init(dev, twim_nrfx_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_runtime_enable(dev);
 }
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
