@@ -234,6 +234,7 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx)
 {
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 	client_ctx->buffer_client_messages = false;
+	lwm2m_client_lock(client_ctx);
 	while (!sys_slist_is_empty(&client_ctx->queued_messages)) {
 		sys_snode_t *msg_node = sys_slist_get(&client_ctx->queued_messages);
 		struct lwm2m_message *msg;
@@ -245,6 +246,7 @@ int lwm2m_push_queued_buffers(struct lwm2m_ctx *client_ctx)
 		msg->pending->t0 = k_uptime_get();
 		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
 	}
+	lwm2m_client_unlock(client_ctx);
 #endif
 	return 0;
 }
@@ -643,17 +645,22 @@ cleanup:
  */
 static void hint_socket_state(struct lwm2m_ctx *ctx, struct lwm2m_message *ongoing_tx)
 {
+	bool empty;
+	size_t pendings;
+
 	if (!ctx || !ctx->set_socket_state) {
 		return;
 	}
 
+	lwm2m_client_lock(ctx);
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
-	bool empty = sys_slist_is_empty(&ctx->pending_sends) &&
-		     sys_slist_is_empty(&ctx->queued_messages);
+	empty = sys_slist_is_empty(&ctx->pending_sends) &&
+		sys_slist_is_empty(&ctx->queued_messages);
 #else
-	bool empty = sys_slist_is_empty(&ctx->pending_sends);
+	empty = sys_slist_is_empty(&ctx->pending_sends);
 #endif
-	size_t pendings = coap_pendings_count(ctx->pendings, ARRAY_SIZE(ctx->pendings));
+	pendings = coap_pendings_count(ctx->pendings, ARRAY_SIZE(ctx->pendings));
+	lwm2m_client_unlock(ctx);
 
 	if (ongoing_tx) {
 		/* Check if more than current TX is in pendings list*/
@@ -712,8 +719,12 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 static int socket_send_message(struct lwm2m_ctx *ctx)
 {
 	int rc;
-	sys_snode_t *msg_node = sys_slist_get(&ctx->pending_sends);
+	sys_snode_t *msg_node;
 	struct lwm2m_message *msg;
+
+	lwm2m_client_lock(ctx);
+	msg_node = sys_slist_get(&ctx->pending_sends);
+	lwm2m_client_unlock(ctx);
 
 	if (!msg_node) {
 		return 0;
@@ -752,11 +763,17 @@ static int socket_send_message(struct lwm2m_ctx *ctx)
 static void socket_reset_pollfd_events(void)
 {
 	for (int i = 0; i < MAX_POLL_FD; ++i) {
+		bool set_pollout = false;
+
+		if (sock_ctx[i] != NULL) {
+			lwm2m_client_lock(sock_ctx[i]);
+			set_pollout = !sys_slist_is_empty(&sock_ctx[i]->pending_sends);
+			lwm2m_client_unlock(sock_ctx[i]);
+		}
+
 		sock_fds[i].events =
 			ZSOCK_POLLIN |
-			(!sock_ctx[i] || sys_slist_is_empty(&sock_ctx[i]->pending_sends)
-				 ? 0
-				 : ZSOCK_POLLOUT);
+			(set_pollout ? ZSOCK_POLLOUT : 0);
 		sock_fds[i].revents = 0;
 	}
 }
@@ -802,13 +819,20 @@ static void socket_loop(void *p1, void *p2, void *p3)
 
 		for (i = 0; i < sock_nfds; ++i) {
 			struct lwm2m_ctx *ctx = sock_ctx[i];
+			bool is_empty;
 
 			if (ctx == NULL) {
 				continue;
 			}
-			if (!sys_slist_is_empty(&ctx->pending_sends)) {
+
+			lwm2m_client_lock(ctx);
+			is_empty = sys_slist_is_empty(&ctx->pending_sends);
+			lwm2m_client_unlock(ctx);
+
+			if (!is_empty) {
 				continue;
 			}
+
 			next_tx = retransmit_request(ctx, now);
 			if (next_tx < next) {
 				next = next_tx;
@@ -1295,6 +1319,16 @@ void lwm2m_engine_lock(void)
 void lwm2m_engine_unlock(void)
 {
 	k_mutex_unlock(&engine_lock);
+}
+
+void lwm2m_client_lock(struct lwm2m_ctx *ctx)
+{
+	(void)k_mutex_lock(&ctx->lock, K_FOREVER);
+}
+
+void lwm2m_client_unlock(struct lwm2m_ctx *ctx)
+{
+	k_mutex_unlock(&ctx->lock);
 }
 
 static int lwm2m_engine_init(void)
