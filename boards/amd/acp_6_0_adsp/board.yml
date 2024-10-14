@@ -1,0 +1,6 @@
+board:
+  name: acp_6_0_adsp
+  full_name: ACP 6.0 Xtensa Audio DSP
+  vendor: amd
+  socs:
+    - name: acp_6_0
