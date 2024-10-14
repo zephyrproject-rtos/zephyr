@@ -147,6 +147,7 @@ extern "C" {
 #if !defined(_LINKER) || defined(__DOXYGEN__)
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/device.h>
 
 /**
  * @cond INTERNAL_HIDDEN
