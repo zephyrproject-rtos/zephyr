@@ -415,7 +415,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_SUBSCRIBER_TYPE,                        \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
@@ -457,7 +457,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                                      \
 		))                                                                                 \
 	};                                                                                         \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                                    \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {                   \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */                                    \
 		.type = ZBUS_OBSERVER_LISTENER_TYPE,                                               \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                                          \
@@ -497,7 +497,7 @@ struct zbus_channel_observation {
 			.priority = ZBUS_MIN_THREAD_PRIORITY,                 \
 		))                                                            \
 	};                                                                    \
-	const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {               \
+	_ZBUS_CPP_EXTERN const STRUCT_SECTION_ITERABLE(zbus_observer, _name) = {  \
 		ZBUS_OBSERVER_NAME_INIT(_name) /* Name field */               \
 		.type = ZBUS_OBSERVER_MSG_SUBSCRIBER_TYPE,                    \
 		.data = &_CONCAT(_zbus_obs_data_, _name),                     \
