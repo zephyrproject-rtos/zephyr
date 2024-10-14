@@ -343,16 +343,16 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 				const struct spi_buf_set *rx_bufs)
 {
 	struct spi_ambiq_data *data = dev->data;
-	int ret;
+	int pm_ret, ret = 0;
 
 	if (!tx_bufs && !rx_bufs) {
 		return 0;
 	}
 
-	ret = pm_device_runtime_get(dev);
+	pm_ret = pm_device_runtime_get(dev);
 
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+	if (pm_ret < 0) {
+		LOG_ERR("pm_device_runtime_get failed: %d", pm_ret);
 	}
 
 	/* context setup */
@@ -361,23 +361,26 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_config(dev, config);
 
 	if (ret) {
-		spi_context_release(&data->ctx, ret);
-		return ret;
+		LOG_ERR("spi_config failed: %d", ret);
+		goto xfer_end;
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	ret = spi_ambiq_xfer(dev, config);
 
+xfer_end:
 	spi_context_release(&data->ctx, ret);
 
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
-	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+	if (!pm_ret) {
+		pm_ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		if (pm_ret < 0) {
+			LOG_ERR("pm_device_runtime_put failed: %d", pm_ret);
+		}
 	}
 
 	return ret;
