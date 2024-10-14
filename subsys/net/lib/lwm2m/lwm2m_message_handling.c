@@ -482,6 +482,7 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 	client_ctx->buffer_client_messages = true;
 	sys_slist_init(&client_ctx->queued_messages);
 #endif
+	k_mutex_init(&client_ctx->lock);
 }
 /* utility functions */
 
@@ -580,10 +581,12 @@ void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 	lm2m_message_clear_allocations(msg);
 
 	if (msg->ctx) {
+		lwm2m_client_lock(msg->ctx);
 		sys_slist_find_and_remove(&msg->ctx->pending_sends, &msg->node);
 #if defined(CONFIG_LWM2M_QUEUE_MODE_ENABLED)
 		sys_slist_find_and_remove(&msg->ctx->queued_messages, &msg->node);
 #endif
+		lwm2m_client_unlock(msg->ctx);
 	}
 
 	if (release) {
@@ -720,7 +723,10 @@ int lwm2m_send_message_async(struct lwm2m_message *msg)
 			return ret;
 		}
 	}
+
+	lwm2m_client_lock(msg->ctx);
 	sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+	lwm2m_client_unlock(msg->ctx);
 
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED)) {
 		engine_update_tx_time();
@@ -741,14 +747,18 @@ int lwm2m_information_interface_send(struct lwm2m_message *msg)
 	}
 
 	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_NO_MSG_BUFFERING)) {
+		lwm2m_client_lock(msg->ctx);
 		sys_slist_append(&msg->ctx->pending_sends, &msg->node);
+		lwm2m_client_unlock(msg->ctx);
 		lwm2m_engine_wake_up();
 		lwm2m_engine_connection_resume(msg->ctx);
 		return 0;
 	}
 
 	if (msg->ctx->buffer_client_messages) {
+		lwm2m_client_lock(msg->ctx);
 		sys_slist_append(&msg->ctx->queued_messages, &msg->node);
+		lwm2m_client_unlock(msg->ctx);
 		lwm2m_engine_wake_up();
 		return 0;
 	}

@@ -385,4 +385,18 @@ void lwm2m_engine_lock(void);
  */
 void lwm2m_engine_unlock(void);
 
+/**
+ * @brief Locks the client.
+ *
+ * @param[in] client_ctx LwM2M context
+ */
+void lwm2m_client_lock(struct lwm2m_ctx *ctx);
+
+/**
+ * @brief Unlocks the client previously locked by lwm2m_client_lock().
+ *
+ * @param[in] client_ctx LwM2M context
+ */
+void lwm2m_client_unlock(struct lwm2m_ctx *ctx);
+
 #endif /* LWM2M_ENGINE_H */
