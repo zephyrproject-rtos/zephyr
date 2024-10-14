@@ -30,7 +30,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
 			interrupts = <36 5>;
 			status = "disabled";
 		};
@@ -43,7 +43,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <512>;
 			status = "disabled";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23U)>;
 			phys = <&usb_fs_phy>;
 		};
 
@@ -52,7 +52,7 @@
 			reg = <0x40006400 0x400>;
 			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
 			status = "disabled";
 		};
 	};

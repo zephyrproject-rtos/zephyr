@@ -14,7 +14,7 @@
 			compatible = "st,stm32-bxcan";
 			reg = <0x40006400 0x400>;
 			interrupts = <30 0>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x02000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 25U)>;
 			status = "disabled";
 		};
 
@@ -26,7 +26,7 @@
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
 			phys = <&usb_fs_phy>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>,
+			clocks = <&rcc STM32_CLOCK(APB1, 23U)>,
 				 <&rcc STM32_SRC_PLLCLK USB_SEL(1)>;
 			status = "disabled";
 		};

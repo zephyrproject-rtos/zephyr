@@ -13,7 +13,7 @@
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17U)>;
 			resets = <&rctl STM32_RESET(APB1, 17U)>;
 			interrupts = <28 0>;
 			status = "disabled";
@@ -25,7 +25,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40005800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 22U)>;
 			interrupts = <24 0>;
 			interrupt-names = "combined";
 			status = "disabled";
@@ -36,7 +36,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14U)>;
 			interrupts = <26 3>;
 			status = "disabled";
 		};
@@ -44,7 +44,7 @@
 		timers6: timers@40001000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4U)>;
 			resets = <&rctl STM32_RESET(APB1, 4U)>;
 			interrupts = <17 0>;
 			interrupt-names = "global";
@@ -55,7 +55,7 @@
 		timers15: timers@40014000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40014000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			clocks = <&rcc STM32_CLOCK(APB2, 16U)>;
 			resets = <&rctl STM32_RESET(APB2, 16U)>;
 			interrupts = <20 0>;
 			interrupt-names = "global";
@@ -72,7 +72,7 @@
 		dac1: dac@40007400 {
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x20000000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29U)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
