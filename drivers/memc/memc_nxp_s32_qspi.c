@@ -138,7 +138,7 @@ uint8_t memc_nxp_s32_qspi_get_instance(const struct device *dev)
 	))
 
 #define QSPI_PORT_SIZE_FN(node_id, side_upper, port)					\
-	COND_CODE_1(IS_EQ(DT_REG_ADDR(node_id), QSPI_PCSF##side_upper##port),		\
+	COND_CODE_1(IS_EQ(DT_REG_ADDR_RAW(node_id), QSPI_PCSF##side_upper##port),	\
 		(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id),				\
 			(.memSize##side_upper##port = DT_PROP(node_id, size) / 8,),	\
 			(.memSize##side_upper##port = 0,))),				\
