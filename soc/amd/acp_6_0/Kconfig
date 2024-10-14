@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 config SOC_ACP_6_0
 	select XTENSA
+	select XTENSA_GEN_HANDLERS
 	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
 	select XTENSA_RESET_VECTOR
 	select ATOMIC_OPERATIONS_BUILTIN
