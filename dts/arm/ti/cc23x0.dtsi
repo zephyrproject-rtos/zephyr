@@ -121,6 +121,7 @@
 			reg = <0x40026000 0x524>;
 			interrupts = <8 0>;
 			#dma-cells = <2>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -132,6 +133,7 @@
 			interrupts = <10 0>;
 			dmas = <&dma 0 0>, <&dma 1 1>;
 			dma-names = "tx", "rx";
+			zephyr,disabling-power-states = <&state0 &state1>;
 			status = "disabled";
 		};
 
