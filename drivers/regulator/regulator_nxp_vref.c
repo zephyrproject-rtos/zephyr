@@ -199,6 +199,9 @@ static int regulator_nxp_vref_init(const struct device *dev)
 		base->CSR |= VREF_CSR_ICOMPEN_MASK;
 	}
 
+	/* Workaround some chips not resetting the value correctly on reset */
+	base->UTRIM = 0;
+
 	return regulator_common_init(dev, false);
 }
 
