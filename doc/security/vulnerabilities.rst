@@ -465,7 +465,7 @@ Improper Input Frame Validation in ieee802154 Processing
 - `CVE-2020-10064 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10064>`_
 
 - `Zephyr project bug tracker ZEPSEC-65
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-65>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-65>`_
 
 - `PR24971 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/24971>`_
@@ -483,7 +483,7 @@ bluetooth HCI over SPI driver.
 - `CVE-2020-10065 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10065>`_
 
 - `Zephyr project bug tracker ZEPSEC-66
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-66>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-66>`_
 
 - This issue has not been fixed.
 
@@ -498,7 +498,7 @@ nullpointer dereference.
 - `CVE-2020-10066 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10066>`_
 
 - `Zephyr project bug tracker ZEPSEC-67
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-67>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-67>`_
 
 - `PR24902 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/24902>`_
@@ -650,7 +650,7 @@ descriptor.
 - `CVE-2020-10072 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10072>`_
 
 - `Zephyr project bug tracker ZEPSEC-87
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-87>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-87>`_
 
 - `PR25804 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/25804>`_
@@ -679,7 +679,7 @@ characters long will cause a buffer overflow.
 - `CVE-2020-13598 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13598>`_
 
 - `Zephyr project bug tracker ZEPSEC-88
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-88>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-88>`_
 
 - `PR25852 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/25852>`_
@@ -703,7 +703,7 @@ app keys from the device.
 - `CVE-2020-13599 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13599>`_
 
 - `Zephyr project bug tracker ZEPSEC-57
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-57>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-57>`_
 
 - `PR26083 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/26083>`_
@@ -749,7 +749,7 @@ infinite loop, resulting in a denial of service attack.
 - `CVE-2020-13602 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-13602>`_
 
 - `Zephyr project bug tracker ZEPSEC-56
-  <https://zephyrprojectsec.atlasssian.net/browse/ZEPSEC-56>`_
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-56>`_
 
 - `PR26571 fix for v2.4
   <https://github.com/zephyrproject-rtos/zephyr/pull/26571>`_
