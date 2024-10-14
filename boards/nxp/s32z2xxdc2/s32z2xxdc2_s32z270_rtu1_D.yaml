@@ -21,4 +21,5 @@ supported:
   - dma
   - pwm
   - sent
+  - psi5
 vendor: nxp
