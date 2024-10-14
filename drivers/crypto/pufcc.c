@@ -550,6 +550,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
   if (status != PUFCC_SUCCESS) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return status;
   }
 
@@ -1197,6 +1198,7 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
                       0,    0x05, 0x00, 0x04, 0};
 
   if ((dec_msg[0] != 0x00) || (dec_msg[1] != 0x01)) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1207,6 +1209,7 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
   }
 
   if (dec_msg[i++] != 0x00) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1216,21 +1219,25 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
     pret[14] = 0x01;
     pret[18] = 0x20;
   } else {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_INVALID;
   }
 
   if ((memcmp(dec_msg + i, pret, 19) != 0) ||
       ((i + 19 + pret[18]) != PUFCC_RSA_2048_LEN)) {
+        printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
   // Calculate hash of the message
   if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
       PUFCC_SUCCESS) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_ERROR;
   }
 
   if (memcmp(dec_msg + i + 19, hash.val, hash.len) != 0) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1324,8 +1331,10 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
   } while ((status & PUFCC_BUSY_BIT_MASK) && (busy_count > 0));
 
   if (status & PUFCC_BUSY_BIT_MASK) {
+    printf("%s(%d)\n", __func__,__LINE__);
     return PUFCC_E_TIMEOUT;
   } else if (status & error_mask) {
+    printf("%s(%d) status 0x%08x\n", __func__,__LINE__, status);
     return PUFCC_E_ERROR;
   }
 

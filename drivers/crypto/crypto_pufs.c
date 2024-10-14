@@ -503,7 +503,7 @@ static int pufs_sign_begin_session(const struct device *dev, struct sign_ctx *ct
 
   uint16_t lvHashFlagsMask = (CAP_INPLACE_OPS | CAP_SYNC_OPS);
   
-  if((algo != CRYPTO_SIGN_ALGO_ECDSA256) || (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
+  if((algo != CRYPTO_SIGN_ALGO_ECDSA256) && (algo != CRYPTO_SIGN_ALGO_RSA2048)) {
     LOG_ERR("%s(%d) Unupported Algo:%d. Supported Algo <ECDSA256, RSA2048>\n", __func__, __LINE__, algo);
     return -ENOTSUP;
   } else {
