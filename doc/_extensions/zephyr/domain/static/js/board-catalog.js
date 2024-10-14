@@ -76,7 +76,7 @@ function fillSocSocSelect(families, series = undefined, selectOnFill = false) {
 
   families = families?.length ? families : Object.keys(socs_data);
   series = series?.length ? series : families.flatMap(f => Object.keys(socs_data[f]));
-  matchingSocs = families.flatMap(f => series.flatMap(s => socs_data[f][s] || []));
+  matchingSocs = [...new Set(families.flatMap(f => series.flatMap(s => socs_data[f][s] || [])))];
 
   socSocSelect.innerHTML = "";
   matchingSocs.sort().forEach((soc) => {
