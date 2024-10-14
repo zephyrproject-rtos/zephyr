@@ -14,6 +14,18 @@ menuconfig ADE9153A
 
 if ADE9153A
 
+config ADE9153A_RESET_ACTIVE_TIME
+	int
+	default 100
+	help
+	  The time the reset pin will be holding down during reset.
+
+config ADE9153A_POST_RESET_DELAY
+	int
+	default 1000
+	help
+	  The delay to wait after resetting the ADE9153A
+
 config ADE9153A_AUTO_CALIBRATE
 	bool
 	default y

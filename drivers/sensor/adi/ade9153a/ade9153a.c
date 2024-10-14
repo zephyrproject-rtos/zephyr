@@ -456,11 +456,11 @@ static void ade9153a_reset(const struct device *dev)
 
 	gpio_pin_set_dt(&cfg->reset_gpio_dt_spec, 1);
 
-	k_msleep(100);
+	k_msleep(CONFIG_ADE9153A_RESET_ACTIVE_TIME);
 
 	gpio_pin_set_dt(&cfg->reset_gpio_dt_spec, 0);
 
-	k_msleep(1000);
+	k_msleep(CONFIG_ADE9153A_POST_RESET_DELAY);
 
 	LOG_DBG("Reset Done");
 }
