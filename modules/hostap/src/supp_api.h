@@ -309,6 +309,15 @@ int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_pa
 int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status);
 
 /**
+ * @brief Set/Get Wi-Fi AP Bandwidth
+ *
+ * @param dev Wi-Fi device
+ * @param params AP parameters
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_params *params);
+
+/**
  * @brief Set Wi-Fi AP configuration
  *
  * @param dev Wi-Fi interface name to use
