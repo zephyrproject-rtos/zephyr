@@ -510,6 +510,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
 
   // Configure signature scheme
   temp32 = 0;
+
   struct pufcc_pkc_ecp_ec_reg *ecp_ec_reg =
       (struct pufcc_pkc_ecp_ec_reg *)&temp32;
   ecp_ec_reg->field = PUFCC_RSA_2048;
@@ -524,6 +525,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
 
   // Write public key exponent to ecp_e_short register
   REG_WRITE_32(&pkc_regs->ecp_e_short, &pub_key->e);
+  printf("%s(%d) pubKey_expo:0x%08x\n", __func__,__LINE__, pub_key->e);
 
   // Reverse signature
   reverse(pufcc_buffer, sig, PUFCC_RSA_2048_LEN);

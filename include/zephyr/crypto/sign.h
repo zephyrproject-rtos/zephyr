@@ -142,7 +142,7 @@ struct sign_ctx {
 struct sign_pkt {
 
 	/** Start address of input buffer */
-	uint8_t *in_buf;
+	const uint8_t *in_buf;
 
 	/** Bytes to be operated upon */
 	int  in_len;
