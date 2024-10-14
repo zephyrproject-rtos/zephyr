@@ -20,3 +20,4 @@ supported:
   - i2c
   - can
   - regulator
+  - adc

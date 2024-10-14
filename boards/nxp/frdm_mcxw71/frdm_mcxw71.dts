@@ -131,3 +131,9 @@
 		max-bitrate = <5000000>;
 	};
 };
+
+&adc0 {
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
