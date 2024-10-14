@@ -32,6 +32,7 @@
 #include "settings.h"
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
 #include "common/bt_str.h"
@@ -1750,9 +1751,14 @@ int bt_id_set_create_conn_own_addr(bool use_filter, uint8_t *own_addr_type)
 			if (err) {
 				return err;
 			}
-		}
 
-		*own_addr_type = addr->type;
+			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+		} else {
+			/* If address type is not random, it's public. If it's public then we assume
+			 * it's the Controller's public address.
+			 */
+			*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
+		}
 	}
 
 	return 0;
@@ -1805,8 +1811,6 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			return err;
 		}
 	} else {
-		*own_addr_type = bt_dev.id_addr[0].type;
-
 		/* Use NRPA unless identity has been explicitly requested
 		 * (through Kconfig).
 		 * Use same RPA as legacy advertiser if advertising.
@@ -1824,19 +1828,22 @@ int bt_id_set_scan_own_addr(bool active_scan, uint8_t *own_addr_type)
 			}
 
 			*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
-		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-			   *own_addr_type == BT_HCI_OWN_ADDR_RANDOM) {
-			/* If scanning with Identity Address we must set the
-			 * random identity address for both active and passive
-			 * scanner in order to receive adv reports that are
-			 * directed towards this identity.
-			 */
-			err = set_random_address(&bt_dev.id_addr[0].a);
-			if (err) {
-				return err;
+		} else if (IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
+			if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_RANDOM) {
+				/* If scanning with Identity Address we must set the
+				 * random identity address for both active and passive
+				 * scanner in order to receive adv reports that are
+				 * directed towards this identity.
+				 */
+				err = set_random_address(&bt_dev.id_addr[BT_ID_DEFAULT].a);
+				if (err) {
+					return err;
+				}
+
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+			} else if (bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_PUBLIC) {
+				*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
 			}
-		} else {
-			LOG_DBG("Not changing the address");
 		}
 	}
 
@@ -1904,9 +1911,11 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 				if (err) {
 					return err;
 				}
-			}
 
-			*own_addr_type = id_addr->type;
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+			} else if (id_addr->type == BT_ADDR_LE_PUBLIC) {
+				*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
+			}
 
 			if (dir_adv && (options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
 				*own_addr_type |= BT_HCI_OWN_ADDR_RPA_MASK;
@@ -1916,9 +1925,18 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 		if (options & BT_LE_ADV_OPT_USE_IDENTITY) {
 			if (id_addr->type == BT_ADDR_LE_RANDOM) {
 				err = bt_id_set_adv_random_addr(adv, &id_addr->a);
+				if (err) {
+					return err;
+				}
+
+				*own_addr_type = BT_HCI_OWN_ADDR_RANDOM;
+			} else if (id_addr->type == BT_ADDR_LE_PUBLIC) {
+				*own_addr_type = BT_HCI_OWN_ADDR_PUBLIC;
 			}
 
-			*own_addr_type = id_addr->type;
+			if (options & BT_LE_ADV_OPT_DIR_ADDR_RPA) {
+				*own_addr_type |= BT_HCI_OWN_ADDR_RPA_MASK;
+			}
 		} else if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 			     BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
 			/* In case advertising set random address is not
