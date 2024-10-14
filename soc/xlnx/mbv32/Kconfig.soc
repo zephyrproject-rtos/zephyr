@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2024 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_MBV32
+	bool
+
+config SOC
+	default "mbv32"
