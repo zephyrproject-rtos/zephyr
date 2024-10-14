@@ -521,5 +521,10 @@ JWT (JSON Web Token)
   The conversion to the PSA Crypto API is being done in preparation for the
   deprecation of TinyCrypt. (:github:`78243` and :github:`43712`)
 
+ZBus
+====
+
+ * :kconfig:option:`CONFIG_ZBUS_RUNTIME_OBSERVERS` no longer requires the system heap to exist.
+
 Architectures
 *************
