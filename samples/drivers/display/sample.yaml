@@ -14,7 +14,6 @@ tests:
       - native_sim
     extra_args: DTC_OVERLAY_FILE="dummy_dc.overlay"
     extra_configs:
-      - CONFIG_DUMMY_DISPLAY=y
       - CONFIG_SDL_DISPLAY=n
       - CONFIG_TEST=y
     tags: display
