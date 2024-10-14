@@ -318,6 +318,22 @@
 		status = "disabled";
 	};
 
+	adc0: adc@47000 {
+		compatible = "nxp,lpc-lpadc";
+		reg = <0x47000 0x1000>;
+		interrupts = <71 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0x11c>;
+		voltage-ref= <1>;
+		calibration-average = <128>;
+		/* pwrlvl 0 is slow speed low power, 1 is opposite */
+		power-level = <0>;
+		offset-value-a = <0>;
+		offset-value-b = <0>;
+		#io-channel-cells = <1>;
+		nxp,references = <&vref 1800>;
+		status = "disabled";
+	};
+
 	vref: regulator@4a000 {
 		compatible = "nxp,vref";
 		regulator-name = "mcxw71-vref";
