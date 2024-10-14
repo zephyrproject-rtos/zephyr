@@ -31,6 +31,7 @@
 		watchdog0 = &wdt0;
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
+		led0 = &axp2101_led;
 	};
 
 	lvgl_pointer {
@@ -157,6 +158,12 @@
 			constant-charge-current-max-microamp = <200000>;
 			constant-charge-voltage-max-microvolt = <4200000>;
 			charge-term-current-microamp = <125000>;
+		};
+
+		axp2101_led: led {
+			compatible = "x-powers,axp2101-led";
+			status = "okay";
+			x-powers,mode = "by-reg";
 		};
 	};
 
