@@ -1347,7 +1347,6 @@
 			pwm {
 				compatible = "nxp,s32-emios-pwm";
 				#pwm-cells = <3>;
-				status = "disabled";
 			};
 		};
 
@@ -1451,6 +1450,78 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		psi5_0: psi5@401e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x401e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_0_ch0: ch@0 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_0_ch1: ch@1 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_0_ch2: ch@2 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_0_ch3: ch@3 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 365 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		psi5_1: psi5@421e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x421e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_1_ch0: ch@0 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <0>;
+				interrupts = <GIC_SPI 371 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_1_ch1: ch@1 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <1>;
+				interrupts = <GIC_SPI 377 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_1_ch2: ch@2 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <2>;
+				interrupts = <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			psi5_1_ch3: ch@3 {
+				compatible = "nxp,s32-psi5-channel";
+				reg = <3>;
+				interrupts = <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
 		};
 	};
 };
