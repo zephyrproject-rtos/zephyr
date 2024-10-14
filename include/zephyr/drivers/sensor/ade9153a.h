@@ -10,207 +10,207 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 
-#define MASK_ADE9153A                 0xFFFF
+#define MASK_ADE9153A                  0xFFFF
 /* Phase A current gain adjust. */
-#define ADE9153A_REG_AIGAIN           0x0000
+#define ADE9153A_REG_AIGAIN            0x0000
 /* Phase A phase correction factor. */
-#define ADE9153A_REG_APHASECAL        0x0001
+#define ADE9153A_REG_APHASECAL         0x0001
 /* Phase A voltage gain adjust. */
-#define ADE9153A_REG_AVGAIN           0x0002
+#define ADE9153A_REG_AVGAIN            0x0002
 /* Phase A current rms offset for filter-based AIRMS calculation. */
-#define ADE9153A_REG_AIRMS_OS         0x0003
+#define ADE9153A_REG_AIRMS_OS          0x0003
 /* Phase A voltage rms offset for filter-based AVRMS calculation. */
-#define ADE9153A_REG_AVRMS_OS         0x0004
+#define ADE9153A_REG_AVRMS_OS          0x0004
 /* Phase A power gain adjust for AWATT, AVA, and AFVAR calculations. */
-#define ADE9153A_REG_APGAIN           0x0005
+#define ADE9153A_REG_APGAIN            0x0005
 /* Phase A total active power offset correction for AWATT calculation. */
-#define ADE9153A_REG_AWATT_OS         0x0006
+#define ADE9153A_REG_AWATT_OS          0x0006
 /* Phase A fundamental reactive power offset correction for AFVAR calculation. */
-#define ADE9153A_REG_AFVAR_OS         0x0007
+#define ADE9153A_REG_AFVAR_OS          0x0007
 /* Phase A voltage rms offset for fast rms, AVRMS_OC calculation. */
-#define ADE9153A_REG_AVRMS_OC_OS      0x0008
+#define ADE9153A_REG_AVRMS_OC_OS       0x0008
 /* Phase A current rms offset for fast rms, AIRMS_OC calculation. */
-#define ADE9153A_REG_AIRMS_OC_OS      0x0009
+#define ADE9153A_REG_AIRMS_OC_OS       0x0009
 /* Phase B current gain adjust. */
-#define ADE9153A_REG_BIGAIN           0x0010
+#define ADE9153A_REG_BIGAIN            0x0010
 /* Phase B current rms offset for filter-based BIRMS calculation. */
-#define ADE9153A_REG_BIRMS_OS         0x0013
+#define ADE9153A_REG_BIRMS_OS          0x0013
 /* Phase B current rms offset for fast rms, BIRMS_OC calculation. */
-#define ADE9153A_REG_BIRMS_OC_OS      0x0019
+#define ADE9153A_REG_BIRMS_OC_OS       0x0019
 /* DSP configuration register. */
-#define ADE9153A_REG_CONFIG0          0x0020
+#define ADE9153A_REG_CONFIG0           0x0020
 /* Nominal phase voltage rms used in the calculation of apparent power, AVA, when the VNOMA_EN */
 /* bit is set in the CONFIG0 register. */
-#define ADE9153A_REG_VNOM             0x0021
+#define ADE9153A_REG_VNOM              0x0021
 /* Value used in the digital integrator algorithm. If the integrator is turned on, with INTEN_BI
  * equal to 1 in the CONFIG0 register, it is recommended to leave this register at the default
  * value.
  */
-#define ADE9153A_REG_DICOEFF          0x0022
+#define ADE9153A_REG_DICOEFF           0x0022
 /* PGA gain for Current Channel B ADC. */
-#define ADE9153A_REG_BI_PGAGAIN       0x0023
+#define ADE9153A_REG_BI_PGAGAIN        0x0023
 /* MSure autocalibration configuration register. */
-#define ADE9153A_REG_MS_ACAL_CFG      0x0030
+#define ADE9153A_REG_MS_ACAL_CFG       0x0030
 /* Phase delay of the CT used on Current Channel B. This register is in 5.27 format and expressed in
  * degrees.
  */
-#define ADE9153A_REG_CT_PHASE_DELAY   0x0049
+#define ADE9153A_REG_CT_PHASE_DELAY    0x0049
 /* Corner frequency of the CT. This value is calculated from the CT_PHASE_DELAY value. */
-#define ADE9153A_REG_CT_CORNER        0x004A
+#define ADE9153A_REG_CT_CORNER         0x004A
 /* This register holds the resistance value, in Ω, of the small resistor in the resistor divider.*/
-#define ADE9153A_REG_VDIV_RSMALL      0x004C
+#define ADE9153A_REG_VDIV_RSMALL       0x004C
 /* Instantaneous Current Channel A waveform processed by the DSP, at 4kSPS. */
-#define ADE9153A_REG_AI_WAV           0x0200
+#define ADE9153A_REG_AI_WAV            0x0200
 /* Instantaneous Voltage Channel waveform processed by the DSP, at 4kSPS. */
-#define ADE9153A_REG_AV_WAV           0x0201
+#define ADE9153A_REG_AV_WAV            0x0201
 /* Phase A filter-based current rms value updated at 4kSPS. */
-#define ADE9153A_REG_AIRMS            0x0202
+#define ADE9153A_REG_AIRMS             0x0202
 /* Phase A filter-based voltage rms value updated at 4kSPS. */
-#define ADE9153A_REG_AVRMS            0x0203
+#define ADE9153A_REG_AVRMS             0x0203
 /* Phase A low-pass filtered total active power updated at 4kSPS. */
-#define ADE9153A_REG_AWATT            0x0204
+#define ADE9153A_REG_AWATT             0x0204
 /* Phase A total apparent power updated at 4kSPS. */
-#define ADE9153A_REG_AVA              0x0206
+#define ADE9153A_REG_AVA               0x0206
 /* Phase A fundamental reactive power updated at 4kSPS. */
-#define ADE9153A_REG_AFVAR            0x0207
+#define ADE9153A_REG_AFVAR             0x0207
 /* Phase A power factor updated at 1.024 sec. */
-#define ADE9153A_REG_APF              0x0208
+#define ADE9153A_REG_APF               0x0208
 /* Phase A current fast rms calculation; one cycle rms updated every half cycle. */
-#define ADE9153A_REG_AIRMS_OC         0x0209
+#define ADE9153A_REG_AIRMS_OC          0x0209
 /* Phase A voltage fast rms calculation; one cycle rms updated every half cycle. */
-#define ADE9153A_REG_AVRMS_OC         0x020A
+#define ADE9153A_REG_AVRMS_OC          0x020A
 /* Instantaneous Phase B Current Channel waveform processed by the DSP at 4kSPS. */
-#define ADE9153A_REG_BI_WAV           0x0210
+#define ADE9153A_REG_BI_WAV            0x0210
 /* Phase B filter-based current rms value updated at 4kSPS. */
-#define ADE9153A_REG_BIRMS            0x0212
+#define ADE9153A_REG_BIRMS             0x0212
 /* Phase B Current fast rms calculation; one cycle rms updated every half cycle. */
-#define ADE9153A_REG_BIRMS_OC         0x0219
+#define ADE9153A_REG_BIRMS_OC          0x0219
 /* Current Channel A mSure CC estimation from autocalibration. */
-#define ADE9153A_REG_MS_ACAL_AICC     0x0220
+#define ADE9153A_REG_MS_ACAL_AICC      0x0220
 /* Current Channel A mSure certainty of autocalibration. */
-#define ADE9153A_REG_MS_ACAL_AICERT   0x0221
+#define ADE9153A_REG_MS_ACAL_AICERT    0x0221
 /* Current Channel B mSure CC estimation from autocalibration. */
-#define ADE9153A_REG_MS_ACAL_BICC     0x0222
+#define ADE9153A_REG_MS_ACAL_BICC      0x0222
 /* Current Channel B mSure certainty of autocalibration. */
-#define ADE9153A_REG_MS_ACAL_BICERT   0x0223
+#define ADE9153A_REG_MS_ACAL_BICERT    0x0223
 /* Voltage Channel mSure CC estimation from autocalibration. */
-#define ADE9153A_REG_MS_ACAL_AVCC     0x0224
+#define ADE9153A_REG_MS_ACAL_AVCC      0x0224
 /* Voltage Channel mSure certainty of autocalibration. */
-#define ADE9153A_REG_MS_ACAL_AVCERT   0x0225
+#define ADE9153A_REG_MS_ACAL_AVCERT    0x0225
 /* The MS_STATUS_CURRENT register contains bits that reflect the present state of the mSure system.
  */
-#define ADE9153A_REG_MS_STATUS_CURREN 0x0240
+#define ADE9153A_REG_MS_STATUS_CURRENT 0x0240
 /* This register indicates the version of the ADE9153A DSP after the user writes RUN=1 to start
  * measurements.
  */
-#define ADE9153A_REG_VERSION_DSP      0x0241
+#define ADE9153A_REG_VERSION_DSP       0x0241
 /* This register indicates the version of the product being used. */
-#define ADE9153A_REG_VERSION_PRODUCT  0x0242
+#define ADE9153A_REG_VERSION_PRODUCT   0x0242
 /* Phase A accumulated total active power; updated after PWR_TIME 4kSPS samples. */
-#define ADE9153A_REG_AWATT_ACC        0x039D
+#define ADE9153A_REG_AWATT_ACC         0x039D
 /* Phase A accumulated total active energy, least significant bits (LSBs). Updated according to the
  * settings in the EP_CFG and EGY_TIME registers.
  */
-#define ADE9153A_REG_AWATTHR_LO       0x039E
+#define ADE9153A_REG_AWATTHR_LO        0x039E
 /* Phase A accumulated total active energy, most significant bits (MSBs). Updated according to the
  * settings in the EP_CFG and EGY_TIME registers.
  */
-#define ADE9153A_REG_AWATTHR_HI       0x039F
+#define ADE9153A_REG_AWATTHR_HI        0x039F
 /* Phase A accumulated total apparent power; updated after PWR_TIME 4kSPS samples. */
-#define ADE9153A_REG_AVA_ACC          0x03B1
+#define ADE9153A_REG_AVA_ACC           0x03B1
 /* Phase A accumulated total apparent energy, LSBs. Updated according to the settings in the EP_CFG
  * and EGY_TIME registers.
  */
-#define ADE9153A_REG_AVAHR_LO         0x03B2
+#define ADE9153A_REG_AVAHR_LO          0x03B2
 /* Phase A accumulated total apparent energy, MSBs. Updated according to the settings in the EP_CFG
  * and EGY_TIME registers.
  */
-#define ADE9153A_REG_AVAHR_HI         0x03B3
+#define ADE9153A_REG_AVAHR_HI          0x03B3
 /* Phase A accumulated fundamental reactive power; updated after PWR_TIME 4kSPS samples. */
-#define ADE9153A_REG_AFVAR_ACC        0x03BB
+#define ADE9153A_REG_AFVAR_ACC         0x03BB
 /* Phase A accumulated fundamental reactive energy, LSBs. Updated according to the settings in the
  * EP_CFG and EGY_TIME registers.
  */
-#define ADE9153A_REG_AFVARHR_LO       0x03BC
+#define ADE9153A_REG_AFVARHR_LO        0x03BC
 /* Phase A accumulated fundamental reactive energy, MSBs. Updated according to the settings in the
  * EP_CFG and EGY_TIME registers.
  */
-#define ADE9153A_REG_AFVARHR_HI       0x03BD
+#define ADE9153A_REG_AFVARHR_HI        0x03BD
 /* Accumulated positive total active power from the AWATT register; updated after PWR_TIME 4 kSPS
  * samples.
  */
-#define ADE9153A_REG_PWATT_ACC        0x03EB
+#define ADE9153A_REG_PWATT_ACC         0x03EB
 /* Accumulated negative total active power from the AWATT register; updated after PWR_TIME 4 kSPS
  * samples.
  */
-#define ADE9153A_REG_NWATT_ACC        0x03EF
+#define ADE9153A_REG_NWATT_ACC         0x03EF
 /* Accumulated positive fundamental reactive power from the AFVAR register; updated after PWR_TIME 4
  * kSPS samples.
  */
-#define ADE9153A_REG_PFVAR_ACC        0x03F3
+#define ADE9153A_REG_PFVAR_ACC         0x03F3
 /* Accumulated negative fundamental reactive power from the AFVAR register, updated after PWR_TIME 4
  * kSPS samples.
  */
-#define ADE9153A_REG_NFVAR_ACC        0x03F7
+#define ADE9153A_REG_NFVAR_ACC         0x03F7
 /* Current peak register. */
-#define ADE9153A_REG_IPEAK            0x0400
+#define ADE9153A_REG_IPEAK             0x0400
 /* Voltage peak register. */
-#define ADE9153A_REG_VPEAK            0x0401
+#define ADE9153A_REG_VPEAK             0x0401
 /* Tier 1 interrupt status register. */
-#define ADE9153A_REG_STATUS           0x0402
+#define ADE9153A_REG_STATUS            0x0402
 /* Tier 1 interrupt enable register. */
-#define ADE9153A_REG_MASK             0x0405
+#define ADE9153A_REG_MASK              0x0405
 /* Overcurrent RMS_OC detection threshold level. */
-#define ADE9153A_REG_OI_LVL           0x0409
+#define ADE9153A_REG_OI_LVL            0x0409
 /* Phase A overcurrent RMS_OC value. If overcurrent detection on this channel is enabled with OIA_EN
  * in the CONFIG3 register and AIRMS_OC is greater than the OILVL threshold, this value is updated.
  */
-#define ADE9153A_REG_OIA              0x040A
+#define ADE9153A_REG_OIA               0x040A
 /* Phase B overcurrent RMS_OC value. See the OIA description. */
-#define ADE9153A_REG_OIB              0x040B
+#define ADE9153A_REG_OIB               0x040B
 /* User configured line period value used for RMS_OC when the UPERIOD_SEL bit in the CONFIG2
  * register is set.
  */
-#define ADE9153A_REG_USER_PERIOD      0x040E
+#define ADE9153A_REG_USER_PERIOD       0x040E
 /* Register used in the algorithm that computes the fundamental reactive power. */
-#define ADE9153A_REG_VLEVEL           0x040F
+#define ADE9153A_REG_VLEVEL            0x040F
 /* Voltage RMS_OC dip detection threshold level. */
-#define ADE9153A_REG_DIP_LVL          0x0410
+#define ADE9153A_REG_DIP_LVL           0x0410
 /* Phase A voltage RMS_OC value during a dip condition. */
-#define ADE9153A_REG_DIPA             0x0411
+#define ADE9153A_REG_DIPA              0x0411
 /* Voltage RMS_OC swell detection threshold level. */
-#define ADE9153A_REG_SWELL_LVL        0x0414
+#define ADE9153A_REG_SWELL_LVL         0x0414
 /* Phase A voltage RMS_OC value during a swell condition. */
-#define ADE9153A_REG_SWELLA           0x0415
+#define ADE9153A_REG_SWELLA            0x0415
 /* Line period on the Phase A voltage. */
-#define ADE9153A_REG_APERIOD          0x0418
+#define ADE9153A_REG_APERIOD           0x0418
 /* No load threshold in the total active power datapath. */
-#define ADE9153A_REG_ACT_NL_LVL       0x041C
+#define ADE9153A_REG_ACT_NL_LVL        0x041C
 /* No load threshold in the fundamental reactive power datapath. */
-#define ADE9153A_REG_REACT_NL_LVL     0x041D
+#define ADE9153A_REG_REACT_NL_LVL      0x041D
 /* No load threshold in the total apparent power datapath. */
-#define ADE9153A_REG_APP_NL_LVL       0x041E
+#define ADE9153A_REG_APP_NL_LVL        0x041E
 /* Phase no load register. */
-#define ADE9153A_REG_PHNOLOAD         0x041F
+#define ADE9153A_REG_PHNOLOAD          0x041F
 /* Sets the maximum output rate from the digital to frequency converter of the total active power
  * for the CF calibration pulse output. It is recommended to leave this at WTHR = 0x00100000.
  */
-#define ADE9153A_REG_WTHR             0x0420
+#define ADE9153A_REG_WTHR              0x0420
 /* See WTHR. It is recommended to leave this value at VARTHR = 0x00100000. */
-#define ADE9153A_REG_VARTHR           0x0421
+#define ADE9153A_REG_VARTHR            0x0421
 /* See WTHR. It is recommended to leave this value at VATHR = 0x00100000. */
-#define ADE9153A_REG_VATHR            0x0422
+#define ADE9153A_REG_VATHR             0x0422
 /* This register holds the data read or written during the last 32-bit transaction on the SPI port.
  */
-#define ADE9153A_REG_LAST_DATA_32     0x0423
+#define ADE9153A_REG_LAST_DATA_32      0x0423
 /* CF calibration pulse width configuration register. */
-#define ADE9153A_REG_CF_LCFG          0x0425
+#define ADE9153A_REG_CF_LCFG           0x0425
 /* Temperature sensor gain and offset, calculated during the manufacturing process. */
-#define ADE9153A_REG_TEMP_TRIM        0x0471
+#define ADE9153A_REG_TEMP_TRIM         0x0471
 /* Chip identification, 32 MSBs. */
-#define ADE9153A_REG_CHIP_ID_HI       0x0472
+#define ADE9153A_REG_CHIP_ID_HI        0x0472
 /* Chip identification, 32 LSBs. */
-#define ADE9153A_REG_CHIP_ID_LO       0x0473
+#define ADE9153A_REG_CHIP_ID_LO        0x0473
 
 /* 16-bit below */
 /* Write this register to 1 to start the measurements. */

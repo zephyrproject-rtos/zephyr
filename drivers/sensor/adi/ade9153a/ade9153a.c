@@ -108,10 +108,10 @@ int start_acal(const struct device *dev, uint32_t reg_ms_acal_cfg)
 	int attempts = 0;
 	uint32_t ms_status_current_reg;
 
-	ade9153a_get_reg32(dev, ADE9153A_REG_MS_STATUS_CURREN, &ms_status_current_reg);
+	ade9153a_get_reg32(dev, ADE9153A_REG_MS_STATUS_CURRENT, &ms_status_current_reg);
 
 	while ((ms_status_current_reg & 0x00000001) == 0) {
-		ade9153a_get_reg32(dev, ADE9153A_REG_MS_STATUS_CURREN, &ms_status_current_reg);
+		ade9153a_get_reg32(dev, ADE9153A_REG_MS_STATUS_CURRENT, &ms_status_current_reg);
 		if (attempts > 15) {
 			return -EBUSY;
 		}
