@@ -60,6 +60,8 @@ The boards support the following hardware features:
 +-----------+------------+-------------------------------------+
 | DSPI      | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| PSI5      | on-chip    | psi5                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 
