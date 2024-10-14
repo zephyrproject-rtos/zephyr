@@ -22,6 +22,10 @@ LOG_MODULE_REGISTER(ade9153a, CONFIG_SENSOR_LOG_LEVEL);
  */
 #define ADE9153A_READ_REG  BIT(3)
 #define ADE9153A_WRITE_REG (0)
+#define RETURN_ON_ERR(_err)                                                                        \
+	if (_err != 0) {                                                                           \
+		return _err;                                                                       \
+	}
 
 static int ade9153a_reg_access(const struct device *dev, uint8_t cmd, uint16_t reg_addr, void *data,
 			       size_t length)
@@ -351,19 +355,22 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	struct ade9153a_data *data = dev->data;
 
-	ade9153a_get_reg32(dev, ADE9153A_REG_STATUS, (void *)&data->status_reg);
+	RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_STATUS, (void *)&data->status_reg));
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
 	case SENSOR_CHAN_DIE_TEMP: {
-		ade9153a_get_reg32(dev, ADE9153A_REG_TEMP_TRIM, &data->temperature_trim);
+		RETURN_ON_ERR(
+			ade9153a_get_reg32(dev, ADE9153A_REG_TEMP_TRIM, &data->temperature_trim));
 
 		/* Starting temperature reading */
-		ade9153a_set_reg16(dev, ADE9153A_REG_TEMP_CFG, CONFIG_ADE9153A_TEMP_CFG);
+		RETURN_ON_ERR(
+			ade9153a_set_reg16(dev, ADE9153A_REG_TEMP_CFG, CONFIG_ADE9153A_TEMP_CFG));
 
 		k_msleep(10);
 		/* SENSOR_CHAN_DIE_TEMP */
-		ade9153a_get_reg16(dev, ADE9153A_REG_TEMP_RSLT, &data->temperature_reg);
+		RETURN_ON_ERR(
+			ade9153a_get_reg16(dev, ADE9153A_REG_TEMP_RSLT, &data->temperature_reg));
 
 		if (chan != SENSOR_CHAN_ALL) {
 			break;
@@ -373,13 +380,16 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_ENERGY:
 	case SENSOR_CHAN_AC_APPARENT_ENERGY:
 		/* SENSOR_CHAN_AC_ACTIVE_ENERGY */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AWATTHR_HI, &data->active_energy_reg);
+		RETURN_ON_ERR(
+			ade9153a_get_reg32(dev, ADE9153A_REG_AWATTHR_HI, &data->active_energy_reg));
 
 		/* SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_ENERGY */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AFVARHR_HI, &data->fund_reactive_energy_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AFVARHR_HI,
+						 &data->fund_reactive_energy_reg));
 
 		/* SENSOR_CHAN_AC_APPARENT_ENERGY */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AVAHR_HI, &data->apparent_energy_reg);
+		RETURN_ON_ERR(
+			ade9153a_get_reg32(dev, ADE9153A_REG_AVAHR_HI, &data->apparent_energy_reg));
 
 		if (chan != SENSOR_CHAN_ALL) {
 			break;
@@ -388,13 +398,14 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_POWER:
 	case SENSOR_CHAN_AC_APPARENT_POWER:
 		/* SENSOR_CHAN_AC_ACTIVE_POWER */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AWATT, &data->active_power_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AWATT, &data->active_power_reg));
 
 		/* SENSOR_CHAN_AC_FUNDAMENTAL_REACTIVE_POWER */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AFVAR, &data->fund_reactive_power_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AFVAR,
+						 &data->fund_reactive_power_reg));
 
 		/* SENSOR_CHAN_AC_APPARENT_POWER */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AVA, &data->apparent_power_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AVA, &data->apparent_power_reg));
 
 		if (chan != SENSOR_CHAN_ALL) {
 			break;
@@ -402,10 +413,10 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_AC_CURRENT_RMS:
 	case SENSOR_CHAN_AC_VOLTAGE_RMS:
 		/* SENSOR_CHAN_AC_CURRENT_RMS */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AIRMS, &data->current_rms_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AIRMS, &data->current_rms_reg));
 
 		/* SENSOR_CHAN_AC_VOLTAGE_RMS */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AVRMS, &data->voltage_rms_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AVRMS, &data->voltage_rms_reg));
 
 		if (chan != SENSOR_CHAN_ALL) {
 			break;
@@ -413,9 +424,11 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_AC_HALF_VOLTAGE_RMS:
 	case SENSOR_CHAN_AC_HALF_CURRENT_RMS:
 		/* SENSOR_CHAN_AC_HALF_CURRENT_RMS */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AIRMS_OC, &data->half_current_rms_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AIRMS_OC,
+						 &data->half_current_rms_reg));
 		/* SENSOR_CHAN_AC_HALF_VOLTAGE_RMS */
-		ade9153a_get_reg32(dev, ADE9153A_REG_AVRMS_OC, &data->half_voltage_rms_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_AVRMS_OC,
+						 &data->half_voltage_rms_reg));
 
 		if (chan != SENSOR_CHAN_ALL) {
 			break;
@@ -425,15 +438,16 @@ static int ade9153a_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_AC_FREQUENCY:
 	case SENSOR_CHAN_AC_ANGLE:
 		/* SENSOR_CHAN_AC_POWER_FACTOR */
-		ade9153a_get_reg32(dev, ADE9153A_REG_APF, &data->power_factor_reg);
-		ade9153a_get_reg16(dev, ADE9153A_REG_ACCMODE, &data->acc_mode_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_APF, &data->power_factor_reg));
+		RETURN_ON_ERR(ade9153a_get_reg16(dev, ADE9153A_REG_ACCMODE, &data->acc_mode_reg));
 
 		/* SENSOR_CHAN_AC_PERIOD */
 		/* SENSOR_CHAN_AC_FREQUENCY */
-		ade9153a_get_reg32(dev, ADE9153A_REG_APERIOD, &data->period_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_APERIOD, &data->period_reg));
 
 		/* SENSOR_CHAN_AC_ANGLE */
-		ade9153a_get_reg32(dev, ADE9153A_REG_ANGL_AV_AI, &data->angle_reg_av_ai_reg);
+		RETURN_ON_ERR(ade9153a_get_reg32(dev, ADE9153A_REG_ANGL_AV_AI,
+						 &data->angle_reg_av_ai_reg));
 
 		break;
 
