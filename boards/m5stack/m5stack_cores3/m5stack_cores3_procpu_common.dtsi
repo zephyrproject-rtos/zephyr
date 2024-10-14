@@ -31,6 +31,7 @@
 		watchdog0 = &wdt0;
 		rtc = &bm8563_rtc;
 		sdhc0 = &sd0;
+		led0 = &axp2101_led;
 	};
 
 	lvgl_pointer {
@@ -77,6 +78,18 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	axp2101@34 {
+		compatible = "x-powers,axp2101";
+		reg = <0x34>;
+		status = "okay";
+
+		axp2101_led: axp2101_led {
+			compatible = "x-powers,axp2101-led";
+			status = "okay";
+			x-powers,mode = "by-reg";
+		};
+	};
 
 	bm8563_rtc: bm8563@51 {
 		compatible = "nxp,pcf8563";
