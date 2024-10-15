@@ -201,7 +201,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x41013000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <16>;
 			status = "disabled";
