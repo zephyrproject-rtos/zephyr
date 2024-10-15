@@ -1338,7 +1338,9 @@ static int lwm2m_engine_init(void)
 
 	lwm2m_clear_block_contexts();
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
+	lwm2m_engine_lock();
 	(void)memset(output_block_contexts, 0, sizeof(output_block_contexts));
+	lwm2m_engine_unlock();
 #endif
 
 	STRUCT_SECTION_FOREACH(lwm2m_init_func, init) {
