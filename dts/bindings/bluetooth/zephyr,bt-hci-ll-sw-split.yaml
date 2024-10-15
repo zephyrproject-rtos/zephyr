@@ -8,6 +8,6 @@ properties:
   bt-hci-name:
     default: "Controller"
   bt-hci-bus:
-    default: "BT_HCI_BUS_VIRTUAL"
+    default: "virtual"
   bt-hci-quirks:
-    default: ["BT_HCI_QUIRK_NO_AUTO_DLE"]
+    default: ["no-auto-dle"]
