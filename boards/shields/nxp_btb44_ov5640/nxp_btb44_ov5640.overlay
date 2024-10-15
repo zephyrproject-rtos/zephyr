@@ -37,7 +37,7 @@
 			reg = <1>;
 
 			mipi_csi2rx_ep_in: endpoint {
-				remote-endpoint = <&ov5640_ep_out>;
+				remote-endpoint-label = "ov5640_ep_out";
 			};
 		};
 	};
