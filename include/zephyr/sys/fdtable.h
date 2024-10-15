@@ -7,7 +7,12 @@
 #define ZEPHYR_INCLUDE_SYS_FDTABLE_H_
 
 #include <stdarg.h>
+#ifdef CONFIG_NEWLIB_LIBC
+/* Do not include <time.h> directly, clock_t may not be defined at this point */
+#include <sys/timespec.h>
+#else
 #include <time.h>
+#endif
 
 /* FIXME: For native_posix ssize_t, off_t. */
 #include <sys/types.h>
