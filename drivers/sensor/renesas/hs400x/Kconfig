@@ -1,0 +1,9 @@
+# HS400X temperature and humidity sensor
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HS400X
+	bool "HS400x sensor"
+	default y
+	depends on DT_HAS_RENESAS_HS400X_ENABLED
+	help
+	  Enable driver for HS400x temperature and humidity sensors.

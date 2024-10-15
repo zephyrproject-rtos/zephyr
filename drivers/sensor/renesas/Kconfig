@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/renesas/hs400x/Kconfig"
+# zephyr-keep-sorted-stop
