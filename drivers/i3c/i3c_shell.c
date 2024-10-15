@@ -866,13 +866,13 @@ static int cmd_i3c_ccc_setmrl(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	/* IBI length is required if the ibi payload bit is set */
-	if ((desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) && (argc < 4)) {
+	if ((desc->bcr & I3C_BCR_IBI_PAYLOAD_HAS_DATA_BYTE) && (argc < 5)) {
 		shell_error(sh, "I3C: Missing IBI length.");
 		return -EINVAL;
 	}
 
 	mrl.len = strtol(argv[3], NULL, 16);
-	if (argc > 3) {
+	if (argc > 4) {
 		mrl.ibi_len = strtol(argv[4], NULL, 16);
 	}
 
@@ -883,7 +883,7 @@ static int cmd_i3c_ccc_setmrl(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	desc->data_length.mrl = mrl.len;
-	if (argc > 3) {
+	if (argc > 4) {
 		desc->data_length.max_ibi = mrl.ibi_len;
 	}
 
