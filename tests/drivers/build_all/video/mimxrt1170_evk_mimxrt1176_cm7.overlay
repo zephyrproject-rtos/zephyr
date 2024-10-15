@@ -8,6 +8,8 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
 / {
 	test {
 		#address-cells = <1>;
@@ -34,6 +36,14 @@
 				reg = <0x1>;
 				reset-gpios = <&test_gpio 0 0>;
 				powerdown-gpios = <&test_gpio 1 0>;
+
+				port {
+					ov5640_ep_out: endpoint {
+						remote-endpoint-label = "mipi_csi2rx_ep_in";
+						bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+						data-lanes = <1 2>;
+					};
+				};
 			};
 		};
 

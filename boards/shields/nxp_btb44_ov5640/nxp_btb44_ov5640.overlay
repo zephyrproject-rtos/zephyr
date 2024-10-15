@@ -21,7 +21,7 @@
 
 		port {
 			ov5640_ep_out: endpoint {
-				remote-endpoint = <&mipi_csi2rx_ep_in>;
+				remote-endpoint-label = "mipi_csi2rx_ep_in";
 			};
 		};
 	};
