@@ -1,0 +1,38 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/sent/sent.h>
+
+/ {
+	aliases {
+		sent0 = &sent1;
+	};
+};
+
+&pinctrl {
+	sent1_default: sent1_default {
+		group1 {
+			pinmux = <PK2_SENT_1_CH1_I>;
+			input-enable;
+		};
+	};
+};
+
+&sent1 {
+	pinctrl-0 = <&sent1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sent1_ch1 {
+	num-data-nibbles = <6>;
+	clock-tick-length-us = <3>;
+	successive-calib-pulse-method = <2>;
+	calib-pulse-tolerance-percent = <20>;
+	fast-crc = <FAST_CRC_RECOMMENDED_IMPLEMENTATION>;
+	short-serial-crc = <SHORT_CRC_RECOMMENDED_IMPLEMENTATION>;
+	status = "okay";
+};
