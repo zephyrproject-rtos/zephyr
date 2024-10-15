@@ -391,6 +391,12 @@ test_i2c_lsm6dsl: lsm6dsl@38 {
 	irq-gpios = <&test_gpio 0 0>;
 };
 
+test_i2c_rrh46410: rrh46410@38 {
+	compatible = "renesas,rrh46410";
+	reg = <0x38>;
+	reset-gpios = <&test_gpio 0 0>;
+};
+
 test_i2c_lsm6dso: lsm6dso@39 {
 	compatible = "st,lsm6dso";
 	reg = <0x39>;

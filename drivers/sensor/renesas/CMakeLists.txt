@@ -4,4 +4,5 @@
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_HS300X hs300x)
 add_subdirectory_ifdef(CONFIG_ISL29035 isl29035)
+add_subdirectory_ifdef(CONFIG_RRH46410 rrh46410)
 # zephyr-keep-sorted-stop
