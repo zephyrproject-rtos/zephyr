@@ -1148,3 +1148,8 @@ test_i2c_npm2100: npm2100@9f {
 		compatible = "nordic,npm2100-vbat";
 	};
 };
+
+test_i2c_hs400x: hs400x@a0 {
+	compatible = "renesas,hs400x";
+	reg = <0xa0>;
+};
