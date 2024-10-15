@@ -543,6 +543,7 @@ void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *bu
 void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf);
 void bt_hci_le_cs_config_complete_event(struct net_buf *buf);
 void bt_hci_le_cs_subevent_result(struct net_buf *buf);
+void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf);
 void bt_hci_le_cs_test_end_complete(struct net_buf *buf);
 
 /* Adv HCI event handlers */

@@ -203,6 +203,26 @@ config BT_CHANNEL_SOUNDING_TEST
 	help
 	  Enable support for Channel Sounding test mode.
 
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_SIZE
+	int "Subevent result reassembly buffer size"
+	depends on BT_CHANNEL_SOUNDING
+	range 239 5600
+	default 5600
+	help
+	  When the results for a CS subevent cannot fit into a single HCI event,
+	  it will be split up into multiple events and consequently, reassembled into a
+	  full CS subevent. This config sets the size of the reassembly buffer.
+
+config BT_CHANNEL_SOUNDING_REASSEMBLY_BUFFER_CNT
+	int "Subevent result reassembly buffer count"
+	depends on BT_CHANNEL_SOUNDING
+	range 1 BT_MAX_CONN
+	default 1
+	help
+	  Controls the number of the reassembly buffers for CS subevent
+	  results. Each running CS procedure is allocated one buffer and the
+	  number of concurrent CS procedures is limited by this value.
+
 endif # BT_CONN
 
 rsource "Kconfig.iso"
