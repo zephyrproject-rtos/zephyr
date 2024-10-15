@@ -871,10 +871,6 @@ config BT_DEVICE_APPEARANCE_DYNAMIC
 	  Enables use of bt_set_appearance.
 	  If CONFIG_BT_SETTINGS is set, the appearance is persistently stored.
 
-config BT_DEVICE_APPEARANCE_GATT_WRITABLE
-	bool "Allow authenticated peers to set GAP Appearance"
-	depends on BT_DEVICE_APPEARANCE_DYNAMIC
-
 config BT_DEVICE_APPEARANCE
 	int "Bluetooth device appearance"
 	range 0 $(UINT16_MAX)
