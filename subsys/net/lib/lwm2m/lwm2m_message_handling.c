@@ -117,7 +117,9 @@ enum coap_block_size lwm2m_default_block_size(void)
 
 void lwm2m_clear_block_contexts(void)
 {
+	lwm2m_engine_lock();
 	(void)memset(block1_contexts, 0, sizeof(block1_contexts));
+	lwm2m_engine_unlock();
 }
 
 static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_context **ctx)
@@ -129,6 +131,8 @@ static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_
 		LOG_ERR("Null block ctx path");
 		return -EFAULT;
 	}
+
+	lwm2m_engine_lock();
 
 	*ctx = NULL;
 	timestamp = k_uptime_get();
@@ -149,6 +153,7 @@ static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_
 	}
 
 	if (*ctx == NULL) {
+		lwm2m_engine_unlock();
 		LOG_ERR("Cannot find free block context");
 		return -ENOMEM;
 	}
@@ -159,6 +164,8 @@ static int init_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_
 	(*ctx)->expected = 0;
 	(*ctx)->last_block = false;
 	memset(&(*ctx)->opaque, 0, sizeof((*ctx)->opaque));
+
+	lwm2m_engine_unlock();
 
 	return 0;
 }
@@ -174,6 +181,8 @@ static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_c
 
 	*ctx = NULL;
 
+	lwm2m_engine_lock();
+
 	for (i = 0; i < NUM_BLOCK1_CONTEXT; i++) {
 		if (lwm2m_obj_path_equal(path, &block1_contexts[i].path)) {
 			*ctx = &block1_contexts[i];
@@ -182,6 +191,8 @@ static int get_block_ctx(const struct lwm2m_obj_path *path, struct lwm2m_block_c
 			break;
 		}
 	}
+
+	lwm2m_engine_unlock();
 
 	if (*ctx == NULL) {
 		return -ENOENT;
@@ -196,24 +207,31 @@ static void free_block_ctx(struct lwm2m_block_context *ctx)
 		return;
 	}
 
+	lwm2m_engine_lock();
 	memset(&ctx->path, 0, sizeof(struct lwm2m_obj_path));
+	lwm2m_engine_unlock();
 }
 
 #if defined(CONFIG_LWM2M_COAP_BLOCK_TRANSFER)
 STATIC int request_output_block_ctx(struct coap_block_context **ctx)
 {
-	*ctx = NULL;
+	int ret = -ENOMEM;
 	int i;
 
+	*ctx = NULL;
+
+	lwm2m_engine_lock();
 	for (i = 0; i < NUM_OUTPUT_BLOCK_CONTEXT; i++) {
 		if (lwm2m_output_block_context()[i].block_size == 0) {
 			*ctx = &lwm2m_output_block_context()[i];
 			(*ctx)->block_size = OUTPUT_CONTEXT_IN_USE_MARK;
-			return 0;
+			ret = 0;
+			break;
 		}
 	}
+	lwm2m_engine_unlock();
 
-	return -ENOMEM;
+	return ret;
 }
 
 STATIC void release_output_block_ctx(struct coap_block_context **ctx)
@@ -224,12 +242,14 @@ STATIC void release_output_block_ctx(struct coap_block_context **ctx)
 		return;
 	}
 
+	lwm2m_engine_lock();
 	for (i = 0; i < NUM_OUTPUT_BLOCK_CONTEXT; i++) {
 		if (&lwm2m_output_block_context()[i] == *ctx) {
 			lwm2m_output_block_context()[i].block_size = 0;
 			*ctx = NULL;
 		}
 	}
+	lwm2m_engine_unlock();
 }
 
 
