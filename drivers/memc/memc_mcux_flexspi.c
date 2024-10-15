@@ -265,14 +265,6 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 		offset += data->size[i];
 	}
 
-#if defined(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT) && \
-	(FSL_FEATURE_FLEXSPI_SUPPORT_ADDRESS_SHIFT)
-	if (data->base->FLSHCR0[port] & FLEXSPI_FLSHCR0_ADDRSHIFT_MASK) {
-		/* Address shift is set, add 0x1000_0000 to AHB address */
-		offset += 0x10000000;
-	}
-#endif
-
 	return data->ahb_base + offset;
 }
 
