@@ -1,0 +1,14 @@
+sample:
+  description: Sample for using SENT driver
+  name: NXP S32 SENT sample
+
+tests:
+  sample.boards.nxp_s32.sent:
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+      - s32z2xxdc2/s32z270/rtu1
+      - s32z2xxdc2@D/s32z270/rtu0
+      - s32z2xxdc2@D/s32z270/rtu1
+    depends_on: sent
+    tags: sent
+    harness: console

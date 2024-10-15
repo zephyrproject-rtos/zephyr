@@ -1,0 +1,28 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sent_1_default: sent_1_default {
+		group1 {
+			pinmux = <PK2_SENT_1_CH1_I>;
+			input-enable;
+		};
+	};
+};
+
+&sent_1 {
+	pinctrl-0 = <&sent_1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sent_1_ch1 {
+	num-data-nibbles = <8>;
+	tick-time-prescaler-us = <3>;
+	bus-timeout-cycles = <256>;
+	calib-method-low-latency;
+	status = "okay";
+};
