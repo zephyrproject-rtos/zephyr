@@ -474,6 +474,12 @@ void reg_change_callbk_fn(void *vif_ctx,
 		return;
 	}
 
+	if (!fmac_dev_ctx->waiting_for_reg_event) {
+		LOG_DBG("%s: Unsolicited regulatory change event", __func__);
+		/* TODO: Handle unsolicited regulatory change event */
+		return;
+	}
+
 	fmac_dev_ctx->reg_change = k_malloc(sizeof(struct nrf_wifi_event_regulatory_change));
 	if (!fmac_dev_ctx->reg_change) {
 		LOG_ERR("%s: Failed to allocate memory for reg_change", __func__);
