@@ -338,15 +338,64 @@ struct bt_le_cs_test_param {
 	 *      it should use as low a transmit power as possible
 	 */
 	uint8_t transmit_power_level;
-	/** Interlude time in microseconds between the RTT packets. */
+	/** Interlude time in microseconds between the RTT packets.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip1_time;
-	/** Interlude time in microseconds between the CS tones. */
+	/** Interlude time in microseconds between the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip2_time;
-	/** Time in microseconds for frequency changes. */
+	/** Time in microseconds for frequency changes.
+	 *
+	 *  Valid options are:
+	 *    - 15 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 100 us
+	 *    - 120 us
+	 *    - 150 us
+	 */
 	uint8_t t_fcs_time;
-	/** Time in microseconds for the phase measurement period of the CS tones. */
+	/** Time in microseconds for the phase measurement period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 40 us
+	 */
 	uint8_t t_pm_time;
-	/** Time in microseconds for the antenna switch period of the CS tones. */
+	/** Time in microseconds for the antenna switch period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 0 us
+	 *    - 1 us
+	 *    - 2 us
+	 *    - 4 us
+	 *    - 10 us
+	 */
 	uint8_t t_sw_time;
 	/** Antenna Configuration Index used during antenna switching during
 	 *  the tone phases of CS steps.
