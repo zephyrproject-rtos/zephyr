@@ -92,6 +92,18 @@ static K_WORK_DELAYABLE_DEFINE(wpa_supp_status_work,
 	status;								\
 })
 
+#define wpa_cli_cmd(cmd, ...)				\
+	st = wpa_cli_cmd_v(cmd, ##__VA_ARGS__);		\
+	if (!st) {					\
+		break;					\
+	}
+
+/* Mark a block where we can break out of wpa_cli_cmd macro. Note that you
+ * cannot have any loops or switch statements inside the checked block.
+ */
+#define BEGIN_EXEC_CMDS do { bool st
+#define END_EXEC_CMDS } while (0)
+
 static struct wpa_supplicant *get_wpa_s_handle(const struct device *dev)
 {
 	struct net_if *iface = net_if_lookup_by_dev(dev);
@@ -134,6 +146,12 @@ static struct wpa_supplicant *get_wpa_s_handle(const struct device *dev)
 									\
 	status;								\
 })
+
+#define hostapd_cli_cmd(cmd, ...)			\
+	st = hostapd_cli_cmd_v(cmd, ##__VA_ARGS__);	\
+	if (!st) {					\
+		break;					\
+	}
 
 static inline struct hostapd_iface *get_hostapd_handle(const struct device *dev)
 {
@@ -211,12 +229,12 @@ static void supp_shell_connect_status(struct k_work *work)
 		goto out;
 	}
 
+	BEGIN_EXEC_CMDS;
+
 	if (ctrl->requested_op == CONNECT && wpa_s->wpa_state != WPA_COMPLETED) {
 		if (ctrl->connection_timeout > 0 &&
 		    seconds_counter++ > ctrl->connection_timeout) {
-			if (!wpa_cli_cmd_v("disconnect")) {
-				goto out;
-			}
+			wpa_cli_cmd("disconnect");
 
 			conn_result = -ETIMEDOUT;
 			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
@@ -232,6 +250,9 @@ static void supp_shell_connect_status(struct k_work *work)
 		k_mutex_unlock(&wpa_supplicant_mutex);
 		return;
 	}
+
+	END_EXEC_CMDS;
+
 out:
 	seconds_counter = 0;
 
@@ -450,9 +471,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
 	uint8_t sae_null_terminated[WIFI_SAE_PSWD_MAX_LEN + 1];
 
-	if (!wpa_cli_cmd_v("remove_network all")) {
-		goto out;
-	}
+	BEGIN_EXEC_CMDS;
+
+	wpa_cli_cmd("remove_network all");
 
 	ret = z_wpa_ctrl_add_network(&resp);
 	if (ret) {
@@ -463,9 +484,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	wpa_printf(MSG_DEBUG, "NET added: %d", resp.network_id);
 
 	if (mode_ap) {
-		if (!wpa_cli_cmd_v("set_network %d mode 2", resp.network_id)) {
-			goto out;
-		}
+		wpa_cli_cmd("set_network %d mode 2", resp.network_id);
 	}
 
 	if (params->ssid_length > WIFI_SSID_MAX_LEN) {
@@ -476,22 +495,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	strncpy(ssid_null_terminated, params->ssid, WIFI_SSID_MAX_LEN);
 	ssid_null_terminated[params->ssid_length] = '\0';
 
-	if (!wpa_cli_cmd_v("set_network %d ssid \"%s\"",
-			   resp.network_id, ssid_null_terminated)) {
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("set_network %d scan_ssid 1", resp.network_id)) {
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("set_network %d key_mgmt NONE", resp.network_id)) {
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("set_network %d ieee80211w 0", resp.network_id)) {
-		goto out;
-	}
+	wpa_cli_cmd("set_network %d ssid \"%s\"", resp.network_id, ssid_null_terminated);
+	wpa_cli_cmd("set_network %d scan_ssid 1", resp.network_id);
+	wpa_cli_cmd("set_network %d key_mgmt NONE", resp.network_id);
+	wpa_cli_cmd("set_network %d ieee80211w 0", resp.network_id);
 
 	if (params->band != WIFI_FREQ_BAND_UNKNOWN) {
 		ret = wpa_supp_supported_channels(wpa_s, params->band, &chan_list);
@@ -543,115 +550,67 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 		/* Except for WPA-PSK, rest all are under WPA2 */
 		if (params->security != WIFI_SECURITY_TYPE_WPA_PSK) {
-			if (!wpa_cli_cmd_v("set_network %d proto RSN",
-					   resp.network_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d proto RSN", resp.network_id);
 		}
 
 		if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
 		    params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 		    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
 			if (params->sae_password) {
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, sae_null_terminated)) {
-					goto out;
-				}
+				wpa_cli_cmd("set_network %d sae_password \"%s\"",
+					    resp.network_id, sae_null_terminated);
 			} else {
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, psk_null_terminated)) {
-					goto out;
-				}
+				wpa_cli_cmd("set_network %d sae_password \"%s\"",
+					    resp.network_id, psk_null_terminated);
 			}
 
 			if (params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
 			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
-				if (!wpa_cli_cmd_v("set sae_pwe %d",
-						   (params->security == WIFI_SECURITY_TYPE_SAE_H2E)
-							   ? 1
-							   : 2)) {
-					goto out;
-				}
+				wpa_cli_cmd("set sae_pwe %d",
+					    (params->security == WIFI_SECURITY_TYPE_SAE_H2E) ?
+					    1 : 2);
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt SAE", resp.network_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d key_mgmt SAE", resp.network_id);
+
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, psk_null_terminated)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d psk \"%s\"",
+				    resp.network_id, psk_null_terminated);
+			wpa_cli_cmd("set_network %d key_mgmt WPA-PSK-SHA256",
+				    resp.network_id);
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK-SHA256",
-					   resp.network_id)) {
-				goto out;
-			}
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK ||
 			   params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"",
-					   resp.network_id, psk_null_terminated)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK",
-					   resp.network_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d psk \"%s\"", resp.network_id,
+				    psk_null_terminated);
+			wpa_cli_cmd("set_network %d key_mgmt WPA-PSK", resp.network_id);
 
 			if (params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
-				if (!wpa_cli_cmd_v("set_network %d proto WPA",
-						   resp.network_id)) {
-					goto out;
-				}
+				wpa_cli_cmd("set_network %d proto WPA", resp.network_id);
 			}
+
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
-					   psk_null_terminated)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d psk \"%s\"", resp.network_id,
+				    psk_null_terminated);
 
 			if (params->sae_password) {
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, sae_null_terminated)) {
-					goto out;
-				}
+				wpa_cli_cmd("set_network %d sae_password \"%s\"",
+					    resp.network_id, sae_null_terminated);
 			} else {
-				if (!wpa_cli_cmd_v("set_network %d sae_password \"%s\"",
-						   resp.network_id, psk_null_terminated)) {
-					goto out;
-				}
+				wpa_cli_cmd("set_network %d sae_password \"%s\"",
+					    resp.network_id, psk_null_terminated);
 			}
 
-			if (!wpa_cli_cmd_v("set sae_pwe 2")) {
-				goto out;
-			}
+			wpa_cli_cmd("set sae_pwe 2");
+			wpa_cli_cmd("set_network %d key_mgmt WPA-PSK SAE", resp.network_id);
 
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-PSK SAE",
-					   resp.network_id)) {
-				goto out;
-			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-EAP",
-					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d proto RSN",
-					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d eap TLS",
-					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d anonymous_identity \"%s\"",
-					   resp.network_id, params->anon_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d key_mgmt WPA-EAP", resp.network_id);
+			wpa_cli_cmd("set_network %d proto RSN", resp.network_id);
+			wpa_cli_cmd("set_network %d eap TLS", resp.network_id);
+			wpa_cli_cmd("set_network %d anonymous_identity \"%s\"",
+				    resp.network_id, params->anon_id);
 
 			if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
 					   enterprise_creds.ca_cert,
@@ -659,10 +618,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
-					   resp.network_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d ca_cert \"blob://ca_cert\"",
+				    resp.network_id);
 
 			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
 					   enterprise_creds.client_cert,
@@ -670,10 +627,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
-					   resp.network_id)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d client_cert \"blob://client_cert\"",
+				    resp.network_id);
 
 			if (wpas_config_process_blob(wpa_s->conf, "private_key",
 					   enterprise_creds.client_key,
@@ -681,28 +636,19 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
-					   resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
-					   resp.network_id, params->key_passwd)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d private_key \"blob://private_key\"",
+				    resp.network_id);
+			wpa_cli_cmd("set_network %d private_key_passwd \"%s\"",
+				    resp.network_id, params->key_passwd);
 #endif
 		} else {
 			ret = -1;
-			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
-				params->security);
+			wpa_printf(MSG_ERROR, "Unsupported security type: %d", params->security);
 			goto rem_net;
 		}
 
 		if (params->mfp) {
-			if (!wpa_cli_cmd_v("set_network %d ieee80211w %d",
-					   resp.network_id, params->mfp)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d ieee80211w %d", resp.network_id, params->mfp);
 		}
 	}
 
@@ -725,15 +671,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 
 		if (mode_ap) {
-			if (!wpa_cli_cmd_v("set_network %d frequency %d",
-					   resp.network_id, freq)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d frequency %d", resp.network_id, freq);
 		} else {
-			if (!wpa_cli_cmd_v("set_network %d scan_freq %d",
-					   resp.network_id, freq)) {
-				goto out;
-			}
+			wpa_cli_cmd("set_network %d scan_freq %d", resp.network_id, freq);
 		}
 	}
 
@@ -753,31 +693,25 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			params->bssid[0], params->bssid[1], params->bssid[2],
 			params->bssid[3], params->bssid[4], params->bssid[5]);
 
-		if (!wpa_cli_cmd_v("set_network %d bssid %s",
-				   resp.network_id, bssid_str)) {
-			goto out;
-		}
+		wpa_cli_cmd("set_network %d bssid %s", resp.network_id, bssid_str);
 	}
 
 	/* enable and select network */
-	if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
-		goto out;
-	}
-
-	if (!wpa_cli_cmd_v("select_network %d", resp.network_id)) {
-		goto out;
-	}
+	wpa_cli_cmd("enable_network %d", resp.network_id);
+	wpa_cli_cmd("select_network %d", resp.network_id);
 
 	memset(&last_wifi_conn_params, 0, sizeof(struct wifi_connect_req_params));
 	memcpy((void *)&last_wifi_conn_params, params, sizeof(struct wifi_connect_req_params));
 	return 0;
 
-rem_net:
-	if (!wpa_cli_cmd_v("remove_network %d", resp.network_id)) {
-		goto out;
-	}
+	END_EXEC_CMDS;
 
 out:
+	return ret;
+
+rem_net:
+	(void)wpa_cli_cmd_v("remove_network %d", resp.network_id);
+
 	return ret;
 }
 
@@ -815,9 +749,11 @@ static int wpas_disconnect_network(const struct device *dev, int cur_mode)
 	wpas_api_ctrl.dev = dev;
 	wpas_api_ctrl.requested_op = DISCONNECT;
 
-	if (!wpa_cli_cmd_v("disconnect")) {
-		goto out;
-	}
+	BEGIN_EXEC_CMDS;
+
+	wpa_cli_cmd("disconnect");
+
+	END_EXEC_CMDS;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
@@ -1190,18 +1126,17 @@ int supplicant_reg_domain(const struct device *dev,
 			goto out;
 		}
 
-		if (!wpa_cli_cmd_v("set country %s", reg_domain->country_code)) {
-			goto out;
-		}
+		BEGIN_EXEC_CMDS;
+
+		wpa_cli_cmd("set country %s", reg_domain->country_code);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-		if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code)) {
-			goto out;
-		}
+		hostapd_cli_cmd("set country_code %s", reg_domain->country_code);
 #endif
 
 		ret = 0;
 
+		END_EXEC_CMDS;
 out:
 		k_mutex_unlock(&wpa_supplicant_mutex);
 	}
@@ -1284,12 +1219,13 @@ int supplicant_btm_query(const struct device *dev, uint8_t reason)
 		goto out;
 	}
 
-	if (!wpa_cli_cmd_v("wnm_bss_query %d", reason)) {
-		goto out;
-	}
+	BEGIN_EXEC_CMDS;
+
+	wpa_cli_cmd("wnm_bss_query %d", reason);
 
 	ret = 0;
 
+	END_EXEC_CMDS;
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
 
@@ -1332,14 +1268,16 @@ static int supplicant_wps_pbc(const struct device *dev)
 		goto out;
 	}
 
-	if (!wpa_cli_cmd_v("wps_pbc")) {
-		goto out;
-	}
+	BEGIN_EXEC_CMDS;
+
+	wpa_cli_cmd("wps_pbc");
 
 	wpas_api_ctrl.dev = dev;
 	wpas_api_ctrl.requested_op = WPS_PBC;
 
 	ret = 0;
+
+	END_EXEC_CMDS;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
@@ -1362,18 +1300,15 @@ static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_p
 		goto out;
 	}
 
+	BEGIN_EXEC_CMDS;
+
 	if (params->oper == WIFI_WPS_PIN_GET) {
 		if (zephyr_wpa_cli_cmd_resp(get_pin_cmd, params->pin)) {
 			goto out;
 		}
 	} else if (params->oper == WIFI_WPS_PIN_SET) {
-		if (!wpa_cli_cmd_v("wps_check_pin %s", params->pin)) {
-			goto out;
-		}
-
-		if (!wpa_cli_cmd_v("wps_pin any %s", params->pin)) {
-			goto out;
-		}
+		wpa_cli_cmd("wps_check_pin %s", params->pin);
+		wpa_cli_cmd("wps_pin any %s", params->pin);
 
 		wpas_api_ctrl.dev = dev;
 		wpas_api_ctrl.requested_op = WPS_PIN;
@@ -1383,6 +1318,8 @@ static int supplicant_wps_pin(const struct device *dev, struct wifi_wps_config_p
 	}
 
 	ret = 0;
+
+	END_EXEC_CMDS;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
@@ -1431,151 +1368,81 @@ int hapd_config_network(struct hostapd_iface *iface,
 {
 	int ret = 0;
 
-	if (!hostapd_cli_cmd_v("set ssid %s", params->ssid)) {
-		goto out;
-	}
+	BEGIN_EXEC_CMDS;
+
+	hostapd_cli_cmd("set ssid %s", params->ssid);
 
 	if (params->channel == 0) {
 		if (params->band == 0) {
-			if (!hostapd_cli_cmd_v("set hw_mode g")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set hw_mode g");
+
 		} else if (params->band == 1) {
-			if (!hostapd_cli_cmd_v("set hw_mode a")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set hw_mode a");
 		} else {
 			wpa_printf(MSG_ERROR, "Invalid band %d", params->band);
 			goto out;
 		}
 	} else if (params->channel > 14) {
-		if (!hostapd_cli_cmd_v("set hw_mode a")) {
-			goto out;
-		}
+		hostapd_cli_cmd("set hw_mode a");
 	} else {
-		if (!hostapd_cli_cmd_v("set hw_mode g")) {
-			goto out;
-		}
+		hostapd_cli_cmd("set hw_mode g");
 	}
 
-	if (!hostapd_cli_cmd_v("set channel %d", params->channel)) {
-		goto out;
-	}
+	hostapd_cli_cmd("set channel %d", params->channel);
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->security == WIFI_SECURITY_TYPE_WPA_PSK) {
-			if (!hostapd_cli_cmd_v("set wpa 1")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_pairwise CCMP")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 1");
+			hostapd_cli_cmd("set wpa_key_mgmt WPA-PSK");
+			hostapd_cli_cmd("set wpa_passphrase %s", params->psk);
+			hostapd_cli_cmd("set wpa_pairwise CCMP");
+
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK) {
-			if (!hostapd_cli_cmd_v("set wpa 2")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 2");
+			hostapd_cli_cmd("set wpa_key_mgmt WPA-PSK");
+			hostapd_cli_cmd("set wpa_passphrase %s", params->psk);
+			hostapd_cli_cmd("set rsn_pairwise CCMP");
+
 		} else if (params->security == WIFI_SECURITY_TYPE_PSK_SHA256) {
-			if (!hostapd_cli_cmd_v("set wpa 2")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK-SHA256")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 2");
+			hostapd_cli_cmd("set wpa_key_mgmt WPA-PSK-SHA256");
+			hostapd_cli_cmd("set wpa_passphrase %s", params->psk);
+			hostapd_cli_cmd("set rsn_pairwise CCMP");
+
 		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
-			if (!hostapd_cli_cmd_v("set wpa 2")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt SAE")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set sae_password %s",
-					       params->sae_password ? params->sae_password :
-					       params->psk)) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set sae_pwe 2")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 2");
+			hostapd_cli_cmd("set wpa_key_mgmt SAE");
+			hostapd_cli_cmd("set sae_password %s",
+					params->sae_password ? params->sae_password : params->psk);
+			hostapd_cli_cmd("set rsn_pairwise CCMP");
+			hostapd_cli_cmd("set sae_pwe 2");
+
 		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
-			if (!hostapd_cli_cmd_v("set wpa 2")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 2");
+			hostapd_cli_cmd("set wpa_key_mgmt WPA-PSK SAE");
+			hostapd_cli_cmd("set wpa_passphrase \"%s\"", params->psk);
+			hostapd_cli_cmd("set sae_password \"%s\"",
+					params->sae_password ? params->sae_password : params->psk);
+			hostapd_cli_cmd("set rsn_pairwise CCMP");
+			hostapd_cli_cmd("set sae_pwe 2");
 
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK SAE")) {
-				goto out;
-			}
-
-			if (!hostapd_cli_cmd_v("set wpa_passphrase \"%s\"", params->psk)) {
-				goto out;
-			}
-
-			if (!hostapd_cli_cmd_v("set sae_password \"%s\"",
-					       params->sae_password ? params->sae_password
-								    : params->psk)) {
-				goto out;
-			}
-
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
-				goto out;
-			}
-
-			if (!hostapd_cli_cmd_v("set sae_pwe 2")) {
-				goto out;
-			}
 		} else if (params->security == WIFI_SECURITY_TYPE_DPP) {
-			if (!hostapd_cli_cmd_v("set wpa 2")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK DPP")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_passphrase %s", params->psk)) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set wpa_pairwise CCMP")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
-				goto out;
-			}
-			if (!hostapd_cli_cmd_v("set dpp_configurator_connectivity 1")) {
-				goto out;
-			}
+			hostapd_cli_cmd("set wpa 2");
+			hostapd_cli_cmd("set wpa_key_mgmt WPA-PSK DPP");
+			hostapd_cli_cmd("set wpa_passphrase %s", params->psk);
+			hostapd_cli_cmd("set wpa_pairwise CCMP");
+			hostapd_cli_cmd("set rsn_pairwise CCMP");
+			hostapd_cli_cmd("set dpp_configurator_connectivity 1");
 		}
 	} else {
-		if (!hostapd_cli_cmd_v("set wpa 0")) {
-			goto out;
-		}
+		hostapd_cli_cmd("set wpa 0");
+
 		iface->bss[0]->conf->wpa_key_mgmt = 0;
 	}
 
-	if (!hostapd_cli_cmd_v("set ieee80211w %d", params->mfp)) {
-		goto out;
-	}
+	hostapd_cli_cmd("set ieee80211w %d", params->mfp);
+
+	END_EXEC_CMDS;
 out:
 	return ret;
 }
@@ -1796,6 +1663,8 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 
+	BEGIN_EXEC_CMDS;
+
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 	iface = get_hostapd_handle(dev);
 	if (!iface) {
@@ -1816,11 +1685,9 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 		goto out;
 	}
 
-	if (!hostapd_cli_cmd_v("deauthenticate %02x:%02x:%02x:%02x:%02x:%02x",
-				mac_addr[0], mac_addr[1], mac_addr[2],
-				mac_addr[3], mac_addr[4], mac_addr[5])) {
-		goto out;
-	}
+	hostapd_cli_cmd("deauthenticate %02x:%02x:%02x:%02x:%02x:%02x",
+			mac_addr[0], mac_addr[1], mac_addr[2],
+			mac_addr[3], mac_addr[4], mac_addr[5]);
 
 #else
 	wpa_s = get_wpa_s_handle(dev);
@@ -1836,14 +1703,14 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
 		goto out;
 	}
 
-	if (!wpa_cli_cmd_v("disassociate %02x:%02x:%02x:%02x:%02x:%02x",
-			   mac_addr[0], mac_addr[1], mac_addr[2],
-			   mac_addr[3], mac_addr[4], mac_addr[5])) {
-		goto out;
-	}
+	wpa_cli_cmd("disassociate %02x:%02x:%02x:%02x:%02x:%02x",
+		    mac_addr[0], mac_addr[1], mac_addr[2],
+		    mac_addr[3], mac_addr[4], mac_addr[5]);
 
 	ret = 0;
 #endif
+
+	END_EXEC_CMDS;
 
 out:
 	k_mutex_unlock(&wpa_supplicant_mutex);
