@@ -14,8 +14,8 @@ properties:
   bt-hci-name:
     default: "PSoC 6 BLESS"
   bt-hci-bus:
-    default: "BT_HCI_BUS_VIRTUAL"
+    default: "virtual"
   bt-hci-quirks:
-    default: ["BT_HCI_QUIRK_NO_RESET"]
+    default: ["no-reset"]
   interrupts:
     required: true
