@@ -155,10 +155,16 @@ macro(toolchain_linker_finalize)
 
   set(cpp_link "${common_link}")
   if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
-    if(CONFIG_CPP_EXCEPTIONS AND LIBGCC_DIR)
-      # When building with C++ Exceptions, it is important that crtbegin and crtend
-      # are linked at specific locations.
-      set(cpp_link "<LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o ${link_libraries} ${LIBGCC_DIR}/crtend.o")
+    if(CONFIG_CPP_EXCEPTIONS)
+      if(LIBGCC_DIR)
+        # When building with C++ Exceptions, it is important that crtbegin and crtend
+        # are linked at specific locations.
+        set(cpp_link "<LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o ${link_libraries} ${LIBGCC_DIR}/crtend.o")
+      elseif(COMMAND compiler_file_name)
+        compiler_file_name("crtbegin.o" CRTBEGIN)
+        compiler_file_name("crtend.o" CRTEND)
+        set(cpp_link "<LINK_FLAGS> ${CRTBEGIN} ${link_libraries} ${CRTEND}")
+      endif()
     endif()
   endif()
   set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> ${cpp_link}")
