@@ -70,6 +70,9 @@ struct settings_handler {
 	const char *name;
 	/**< Name of subtree. */
 
+	int cprio;
+	/**< Priority of commit, lower value is higher priority */
+
 	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
@@ -136,6 +139,9 @@ struct settings_handler_static {
 	const char *name;
 	/**< Name of subtree. */
 
+	int cprio;
+	/**< Priority of commit, lower value is higher priority */
+
 	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
@@ -196,21 +202,29 @@ struct settings_handler_static {
  * @param _set set routine (can be NULL)
  * @param _commit commit routine (can be NULL)
  * @param _export export routine (can be NULL)
+ * @param _cprio commit priority (lower value is higher priority)
  *
  * This creates a variable _hname prepended by settings_handler_.
  *
  */
 
-#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
-				       _export)				     \
+#define SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
+						  _commit, _export, _cprio)  \
 	const STRUCT_SECTION_ITERABLE(settings_handler_static,		     \
 				      settings_handler_ ## _hname) = {       \
 		.name = _tree,						     \
+		.cprio = _cprio,					     \
 		.h_get = _get,						     \
 		.h_set = _set,						     \
 		.h_commit = _commit,					     \
 		.h_export = _export,					     \
 	}
+
+/* Handlers without commit priority are set to priority O */
+#define SETTINGS_STATIC_HANDLER_DEFINE(_hname, _tree, _get, _set, _commit,   \
+				       _export)				     \
+	SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(_hname, _tree, _get, _set, \
+		_commit, _export, 0)
 
 /**
  * Initialization of settings and backend
@@ -224,7 +238,20 @@ struct settings_handler_static {
 int settings_subsys_init(void);
 
 /**
- * Register a handler for settings items stored in RAM.
+ * Register a handler for settings items stored in RAM with
+ * commit priority.
+ *
+ * @param cf   Structure containing registration info.
+ * @param cprio Commit priority (lower value is higher priority).
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_register_with_cprio(struct settings_handler *cf,
+				 int cprio);
+
+/**
+ * Register a handler for settings items stored in RAM with
+ * commit priority set to default.
  *
  * @param cf Structure containing registration info.
  *
