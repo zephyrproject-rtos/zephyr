@@ -30,3 +30,8 @@ tests:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu0/qspi
+  drivers.pwm.native_sim:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
