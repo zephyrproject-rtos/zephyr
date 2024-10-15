@@ -28,4 +28,13 @@ config FLASH_MSPI_ATXP032
 	select FLASH_JESD216
 	select MSPI_AMBIQ_AP3 if SOC_SERIES_APOLLO3X
 
+config FLASH_MSPI_NOR_MX
+	bool "MSPI NOR MX driver"
+	default y
+	depends on DT_HAS_MSPI_NOR_MX25_ENABLED
+	select FLASH_MSPI
+	select FLASH_JESD216
+	select FLASH_PAGE_LAYOUT
+	select FLASH_HAS_PAGE_LAYOUT
+
 endmenu
