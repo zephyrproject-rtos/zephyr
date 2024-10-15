@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(adc_cc23x0, CONFIG_ADC_LOG_LEVEL);
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #include <driverlib/adc.h>
@@ -72,7 +75,26 @@ struct adc_cc23x0_data {
 	uint8_t ch_count;
 	uint8_t mem_index;
 	uint16_t *buffer;
+#ifdef CONFIG_PM_DEVICE
+	bool configured;
+#endif
 };
+
+static inline void adc_cc23x0_pm_policy_state_lock_get(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_get(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+#endif
+}
+
+static inline void adc_cc23x0_pm_policy_state_lock_put(void)
+{
+#ifdef CONFIG_PM_DEVICE
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_RUNTIME_IDLE, PM_ALL_SUBSTATES);
+#endif
+}
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
@@ -102,6 +124,12 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	int ret;
 
+	ret = pm_device_runtime_get(cfg->dma_dev);
+	if (ret) {
+		LOG_ERR("Failed to resume DMA (%d)", ret);
+		return;
+	}
+
 	ret = dma_config(cfg->dma_dev, cfg->dma_channel, &dma_cfg);
 	if (ret) {
 		LOG_ERR("Failed to configure DMA (%d)", ret);
@@ -114,6 +142,8 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 #else
 	data->mem_index = 0;
 #endif
+
+	adc_cc23x0_pm_policy_state_lock_get();
 
 	ADCManualTrigger();
 }
@@ -136,6 +166,9 @@ static void adc_cc23x0_isr(const struct device *dev)
 #endif
 
 #ifdef CONFIG_ADC_CC23X0_DMA_DRIVEN
+	const struct adc_cc23x0_config *cfg = dev->config;
+	int ret;
+
 	/*
 	 * In DMA mode, do not compensate for the ADC internal gain with
 	 * ADCAdjustValueForGain() function. To perform this compensation,
@@ -144,6 +177,14 @@ static void adc_cc23x0_isr(const struct device *dev)
 	 */
 	ADCClearInterrupt(ADC_INT_DMADONE);
 	LOG_DBG("DMA done");
+
+	ret = pm_device_runtime_put(cfg->dma_dev);
+	if (ret) {
+		LOG_ERR("Failed to suspend DMA (%d)", ret);
+		return;
+	}
+
+	adc_cc23x0_pm_policy_state_lock_put();
 	adc_context_on_sampling_done(&data->ctx, dev);
 #else
 	/*
@@ -174,6 +215,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 		/* Trigger next conversion */
 		ADCManualTrigger();
 	} else {
+		adc_cc23x0_pm_policy_state_lock_put();
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 #endif
@@ -462,6 +504,10 @@ static int adc_cc23x0_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	data->configured = true;
+#endif
+
 	return 0;
 }
 
@@ -490,12 +536,46 @@ static int adc_cc23x0_init(const struct device *dev)
 	if (!device_is_ready(cfg->dma_dev)) {
 		return -ENODEV;
 	}
+
+	ret = pm_device_runtime_enable(cfg->dma_dev);
+	if (ret) {
+		LOG_ERR("Failed to enable DMA runtime PM");
+		return ret;
+	}
 #endif
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+
+static int adc_cc23x0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct adc_cc23x0_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		CLKCTLDisable(CLKCTL_BASE, CLKCTL_ADC0);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		CLKCTLEnable(CLKCTL_BASE, CLKCTL_ADC0);
+		ADCEnableInterrupt(ADC_CC23X0_INT_MASK);
+
+		/* Restore context if needed */
+		if (data->configured) {
+			ADCSetSampleDuration(adc_cc23x0_clkdiv_to_field(data->clk_div),
+					     data->clk_cycles);
+		}
+
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 	.channel_setup = adc_cc23x0_channel_setup,
@@ -517,6 +597,7 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 
 #define CC23X0_ADC_INIT(n)							\
 	PINCTRL_DT_INST_DEFINE(n);						\
+	PM_DEVICE_DT_INST_DEFINE(n, adc_cc23x0_pm_action);			\
 										\
 	static void adc_cc23x0_cfg_func_##n(void)				\
 	{									\
@@ -542,7 +623,7 @@ static DEVICE_API(adc, adc_cc23x0_driver_api) = {
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			      &adc_cc23x0_init,					\
-			      NULL,						\
+			      PM_DEVICE_DT_INST_GET(n),				\
 			      &adc_cc23x0_data_##n,				\
 			      &adc_cc23x0_config_##n,				\
 			      POST_KERNEL,					\
