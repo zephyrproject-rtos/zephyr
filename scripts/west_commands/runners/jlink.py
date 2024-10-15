@@ -37,7 +37,7 @@ def is_ip(ip):
     return True
 
 def is_tunnel(tunnel):
-    return tunnel.startswith("tunnel:")
+    return tunnel.startswith("tunnel:") if tunnel else False
 
 class ToggleAction(argparse.Action):
 
