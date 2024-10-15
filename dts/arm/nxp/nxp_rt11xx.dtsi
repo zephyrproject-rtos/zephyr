@@ -892,7 +892,7 @@
 
 			port {
 				csi_ep_in: endpoint {
-					remote-endpoint = <&mipi_csi2rx_ep_out>;
+					remote-endpoint-label = "mipi_csi2rx_ep_out";
 				};
 			};
 		};
