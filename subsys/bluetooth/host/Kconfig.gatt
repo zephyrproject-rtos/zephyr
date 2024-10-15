@@ -287,6 +287,34 @@ config DEVICE_NAME_GATT_WRITABLE_AUTHEN
 endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 endif #BT_DEVICE_NAME_GATT_WRITABLE
 
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	bool "Allow to write GAP Appearance by remote GATT clients"
+	depends on BT_DEVICE_APPEARANCE_DYNAMIC
+	default y
+	help
+	  Enabling this option allows remote GATT clients to write to device
+	  appearance GAP characteristic.
+
+if BT_DEVICE_APPEARANCE_GATT_WRITABLE
+choice BT_DEVICE_APPEARANCE_GATT_WRITABLE
+	prompt "Security requirements"
+	default DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	help
+	  Select security requirementsf for writing device name by remote GATT
+	  clients.
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_NONE
+	bool "No requirements"
+
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_ENCRYPT
+	bool "Encryption required"
+
+config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	bool "Encryption and authentication required"
+
+endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+
 config BT_GATT_AUTHORIZATION_CUSTOM
 	bool "Custom authorization of GATT operations"
 	help
