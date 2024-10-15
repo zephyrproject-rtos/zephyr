@@ -3524,8 +3524,13 @@ struct bt_hci_evt_le_cs_config_complete {
 #define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT 0x31
 /** Subevent result step data format: Mode 0 Initiator  */
 struct bt_hci_le_cs_step_data_mode_0_initiator {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_rssi;
 	uint8_t packet_antenna;
 	uint16_t measured_freq_offset;
@@ -3533,16 +3538,26 @@ struct bt_hci_le_cs_step_data_mode_0_initiator {
 
 /** Subevent result step data format: Mode 0 Reflector  */
 struct bt_hci_le_cs_step_data_mode_0_reflector {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_rssi;
 	uint8_t packet_antenna;
 } __packed;
 
 /** Subevent result step data format: Mode 1  */
 struct bt_hci_le_cs_step_data_mode_1 {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
@@ -3554,8 +3569,13 @@ struct bt_hci_le_cs_step_data_mode_1 {
 
 /** Subevent result step data format: Mode 1 with sounding sequence RTT support */
 struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
@@ -3571,8 +3591,13 @@ struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
 /** Format for per-antenna path step data in modes 2 and 3 */
 struct bt_hci_le_cs_step_data_tone_info {
 	uint8_t phase_correction_term[3];
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t quality_indicator: 4;
 	uint8_t extension_indicator: 4;
+#else
+	uint8_t extension_indicator: 4;
+	uint8_t quality_indicator: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 } __packed;
 
 /** Subevent result step data format: Mode 2 */
@@ -3583,8 +3608,13 @@ struct bt_hci_le_cs_step_data_mode_2 {
 
 /** Subevent result step data format: Mode 3 */
 struct bt_hci_le_cs_step_data_mode_3 {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
@@ -3598,8 +3628,13 @@ struct bt_hci_le_cs_step_data_mode_3 {
 
 /** Subevent result step data format: Mode 3 with sounding sequence RTT support */
 struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t packet_quality_aa_check: 4;
 	uint8_t packet_quality_bit_errors: 4;
+#else
+	uint8_t packet_quality_bit_errors: 4;
+	uint8_t packet_quality_aa_check: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
@@ -3629,8 +3664,13 @@ struct bt_hci_evt_le_cs_subevent_result {
 	uint8_t reference_power_level;
 	uint8_t procedure_done_status;
 	uint8_t subevent_done_status;
+#ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t procedure_abort_reason: 4;
 	uint8_t subevent_abort_reason: 4;
+#else
+	uint8_t subevent_abort_reason: 4;
+	uint8_t procedure_abort_reason: 4;
+#endif /* CONFIG_LITTLE_ENDIAN */
 	uint8_t num_antenna_paths;
 	uint8_t num_steps_reported;
 	uint8_t steps[];
