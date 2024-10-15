@@ -79,6 +79,11 @@
 #define DEFAULT_PULSE_NSEC 1000000
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_fake_pwm)
+#include <zephyr/fff.h>
+DEFINE_FFF_GLOBALS;
+#endif
+
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
 #elif defined CONFIG_PWM_NRFX
