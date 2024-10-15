@@ -56,12 +56,43 @@ struct bt_avrcp_req {
 };
 
 struct bt_avrcp_header {
-	uint8_t ctype: 4;        /* Command type codes */
-	uint8_t rfa: 4;          /* Zero according to AV/C command frame */
-	uint8_t subunit_id: 3;   /* Zero (0x0) or Ignore (0x7) according to AVRCP */
-	uint8_t subunit_type: 5; /* Unit (0x1F) or Panel (0x9) according to AVRCP */
-	uint8_t opcode;          /* Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
+	uint8_t byte0;  /** [7:4]: RFA, [3:0]: Ctype */
+	uint8_t byte1;  /** [7:3]: Subunit_type, [2:0]: Subunit_ID */
+	uint8_t opcode; /** Unit Info, Subunit Info, Vendor Dependent, or Pass Through */
 } __packed;
+
+/** The 4-bit command type or the 4-bit response code. */
+#define BT_AVRCP_HDR_GET_CTYPE(hdr)        FIELD_GET(GENMASK(3, 0), ((hdr)->byte0))
+/** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
+ *  within the target. These fields enable the target to determine  whether the command is
+ *  addressed to the target  unit, or to a specific subunit within the target. The values in these
+ *  fields remain unchanged in the response frame.
+ */
+#define BT_AVRCP_HDR_GET_SUBUNIT_ID(hdr)   FIELD_GET(GENMASK(2, 0), ((hdr)->byte1))
+/** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
+ *  within the target. These fields enable the target to determine  whether the command is
+ *  addressed to the target  unit, or to a specific subunit within the target. The values in these
+ *  fields remain unchanged in the response frame.
+ */
+#define BT_AVRCP_HDR_GET_SUBUNIT_TYPE(hdr) FIELD_GET(GENMASK(7, 3), ((hdr)->byte1))
+
+/** The 4-bit command type or the 4-bit response code. */
+#define BT_AVRCP_HDR_SET_CTYPE(hdr, ctype)                                                         \
+	(hdr)->byte0 = (((hdr)->byte0) & ~GENMASK(3, 0)) | FIELD_PREP(GENMASK(3, 0), (ctype))
+/** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
+ *  within the target. These fields enable the target to determine  whether the command is
+ *  addressed to the target  unit, or to a specific subunit within the target. The values in these
+ *  fields remain unchanged in the response frame.
+ */
+#define BT_AVRCP_HDR_SET_SUBUNIT_ID(hdr, subunit_id)                                               \
+	(hdr)->byte1 = (((hdr)->byte1) & ~GENMASK(2, 0)) | FIELD_PREP(GENMASK(2, 0), (subunit_id))
+/** Taken together, the subunit_type and subunit_ID fields define the command recipient’s  address
+ *  within the target. These fields enable the target to determine  whether the command is
+ *  addressed to the target  unit, or to a specific subunit within the target. The values in these
+ *  fields remain unchanged in the response frame.
+ */
+#define BT_AVRCP_HDR_SET_SUBUNIT_TYPE(hdr, subunit_type)                                           \
+	(hdr)->byte1 = (((hdr)->byte1) & ~GENMASK(7, 3)) | FIELD_PREP(GENMASK(7, 3), (subunit_type))
 
 struct bt_avrcp_unit_info_cmd {
 	struct bt_avrcp_header hdr;

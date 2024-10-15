@@ -79,6 +79,8 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct net_buf *rsp;
 	struct bt_avctp *session = AVCTP_CHAN(chan);
 	struct bt_avctp_header *hdr = (void *)buf->data;
+	uint8_t tid = BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr);
+	bt_avctp_cr_t cr = BT_AVCTP_HDR_GET_CR(hdr);
 
 	if (buf->len < sizeof(*hdr)) {
 		LOG_ERR("invalid AVCTP header received");
@@ -92,9 +94,10 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 #endif
 	default:
 		LOG_ERR("unsupported AVCTP PID received: 0x%04x", sys_be16_to_cpu(hdr->pid));
-		if (hdr->cr == BT_AVCTP_CMD) {
-			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE, BT_AVCTP_IPID_INVALID,
-						  &hdr->tid, hdr->pid);
+		if (cr == BT_AVCTP_CMD) {
+			rsp = bt_avctp_create_pdu(session, BT_AVCTP_RESPONSE,
+						  BT_AVCTP_PKT_TYPE_SINGLE, BT_AVCTP_IPID_INVALID,
+						  &tid, hdr->pid);
 			if (!rsp) {
 				return -ENOMEM;
 			}
@@ -138,7 +141,8 @@ int bt_avctp_disconnect(struct bt_avctp *session)
 }
 
 struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
-				    bt_avctp_ipid_t ipid, uint8_t *tid, uint16_t pid)
+				    bt_avctp_pkt_type_t pkt_type, bt_avctp_ipid_t ipid,
+				    uint8_t *tid, uint16_t pid)
 {
 	struct net_buf *buf;
 	struct bt_avctp_header *hdr;
@@ -152,17 +156,18 @@ struct net_buf *bt_avctp_create_pdu(struct bt_avctp *session, bt_avctp_cr_t cr,
 	}
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
-	hdr->cr = cr;
-	hdr->ipid = ipid;
-	hdr->pkt_type = BT_AVCTP_PKT_TYPE_SINGLE;
-	hdr->tid = *tid;
+	BT_AVCTP_HDR_SET_TRANSACTION_LABLE(hdr, *tid);
+	BT_AVCTP_HDR_SET_PACKET_TYPE(hdr, pkt_type);
+	BT_AVCTP_HDR_SET_CR(hdr, cr);
+	BT_AVCTP_HDR_SET_IPID(hdr, ipid);
 	hdr->pid = pid;
 
 	if (cr == BT_AVCTP_CMD) {
 		*tid = (*tid + 1) & 0x0F; /* Incremented by one */
 	}
 
-	LOG_DBG("cr:0x%X, tid:0x%02X", hdr->cr, hdr->tid);
+	LOG_DBG("cr:0x%lX, tid:0x%02lX", BT_AVCTP_HDR_GET_CR(hdr),
+		BT_AVCTP_HDR_GET_TRANSACTION_LABLE(hdr));
 	return buf;
 }
 
