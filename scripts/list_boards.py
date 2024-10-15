@@ -183,7 +183,7 @@ def find_arch2board_set_in(root, arches, board_dir):
 def load_v2_boards(board_name, board_yml, systems):
     boards = []
     if board_yml.is_file():
-        with board_yml.open('r') as f:
+        with board_yml.open('r', encoding='utf-8') as f:
             b = yaml.load(f.read(), Loader=SafeLoader)
 
         try:

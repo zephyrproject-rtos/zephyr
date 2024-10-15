@@ -193,7 +193,7 @@ def process_module(module):
     for module_yml in [module_path / MODULE_YML_PATH,
                        module_path / MODULE_YML_PATH.with_suffix('.yaml')]:
         if Path(module_yml).is_file():
-            with Path(module_yml).open('r') as f:
+            with Path(module_yml).open('r', encoding='utf-8') as f:
                 meta = yaml.load(f.read(), Loader=SafeLoader)
 
             try:
