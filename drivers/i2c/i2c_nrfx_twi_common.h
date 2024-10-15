@@ -22,7 +22,8 @@ extern "C" {
 					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
 #define I2C(idx) DT_NODELABEL(i2c##idx)
 #define I2C_FREQUENCY(idx)						       \
-	I2C_NRFX_TWI_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
+	I2C_NRFX_TWI_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,	       \
+					  I2C_BITRATE_STANDARD))
 
 struct i2c_nrfx_twi_common_data {
 	uint32_t dev_config;

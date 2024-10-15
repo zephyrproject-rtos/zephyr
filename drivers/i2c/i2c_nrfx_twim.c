@@ -351,7 +351,8 @@ static int i2c_nrfx_twim_init(const struct device *dev)
 #define I2C(idx) DT_NODELABEL(i2c##idx)
 #define I2C_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(I2C(idx), prop)
 #define I2C_FREQUENCY(idx)						       \
-	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
+	I2C_NRFX_TWIM_FREQUENCY(DT_PROP_OR(I2C(idx), clock_frequency,	       \
+					   I2C_BITRATE_STANDARD))
 
 #define CONCAT_BUF_SIZE(idx)						       \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(idx), zephyr_concat_buf_size),	       \
