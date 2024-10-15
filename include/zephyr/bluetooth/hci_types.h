@@ -3561,8 +3561,8 @@ struct bt_hci_le_cs_step_data_mode_1 {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 } __packed;
@@ -3579,8 +3579,8 @@ struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
@@ -3618,8 +3618,8 @@ struct bt_hci_le_cs_step_data_mode_3 {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t antenna_permutation_index;
@@ -3638,8 +3638,8 @@ struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
