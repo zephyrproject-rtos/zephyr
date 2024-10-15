@@ -60,27 +60,6 @@ static int i2c_iodev_submit_tiny_tx(struct rtio_iodev_sqe *iodev_sqe, struct i2c
 	return 0;
 }
 
-static int i2c_iodev_submit_txrx(struct rtio_iodev_sqe *iodev_sqe, struct i2c_msg msgs[2],
-				 uint8_t *num_msgs)
-{
-	__ASSERT_NO_MSG(iodev_sqe->sqe.op == RTIO_OP_TXRX);
-
-	msgs[0].buf = (uint8_t *)iodev_sqe->sqe.txrx.tx_buf;
-	msgs[0].len = iodev_sqe->sqe.txrx.buf_len;
-	msgs[0].flags =
-		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I2C_10_BITS) ? I2C_MSG_ADDR_10_BITS : 0) |
-		I2C_MSG_WRITE;
-	msgs[1].buf = iodev_sqe->sqe.txrx.rx_buf;
-	msgs[1].len = iodev_sqe->sqe.txrx.buf_len;
-	msgs[1].flags =
-		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I2C_STOP) ? I2C_MSG_STOP : 0) |
-		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I2C_RESTART) ? I2C_MSG_RESTART : 0) |
-		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I2C_10_BITS) ? I2C_MSG_ADDR_10_BITS : 0) |
-		I2C_MSG_READ;
-	*num_msgs = 2;
-	return 0;
-}
-
 void i2c_iodev_submit_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct i2c_dt_spec *dt_spec = (const struct i2c_dt_spec *)iodev_sqe->sqe.iodev->data;
@@ -104,9 +83,6 @@ void i2c_iodev_submit_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 			break;
 		case RTIO_OP_TINY_TX:
 			rc = i2c_iodev_submit_tiny_tx(transaction_current, msgs, &num_msgs);
-			break;
-		case RTIO_OP_TXRX:
-			rc = i2c_iodev_submit_txrx(transaction_current, msgs, &num_msgs);
 			break;
 		default:
 			LOG_ERR("Invalid op code %d for submission %p", transaction_current->sqe.op,
