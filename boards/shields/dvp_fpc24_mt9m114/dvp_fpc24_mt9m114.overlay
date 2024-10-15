@@ -28,7 +28,7 @@
 
 	port {
 		dfi_ep_in: endpoint {
-			remote-endpoint = <&mt9m114_ep_out>;
+			remote-endpoint-label = "mt9m114_ep_out";
 		};
 	};
 };

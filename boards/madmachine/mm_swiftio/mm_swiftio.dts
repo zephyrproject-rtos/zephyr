@@ -198,7 +198,7 @@
 
 	port {
 		csi_ep_in: endpoint {
-			remote-endpoint = <&ov7725_ep_out>;
+			remote-endpoint-label = "ov7725_ep_out";
 		};
 	};
 };
