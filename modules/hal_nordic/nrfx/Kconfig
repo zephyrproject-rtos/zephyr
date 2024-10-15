@@ -26,8 +26,77 @@ config NRFX_COMP
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_COMP))
 
 config NRFX_DPPI
-	bool "DPPI allocator"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	bool
+
+config NRFX_DPPI0
+	bool "DPPI0 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI00
+	bool "DPPI00 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic00,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI10
+	bool "DPPI10 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic10,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI20
+	bool "DPPI20 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic20,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI30
+	bool "DPPI30 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic30,$(DT_COMPAT_NORDIC_NRF_DPPIC))
+	select NRFX_DPPI
+
+config NRFX_DPPI020
+	bool "DPPI020 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic020,$(DT_COMPAT_NORDIC_NRF_DPPIC_LOCAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI120
+	bool "DPPI120 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic120,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI130
+	bool "DPPI130 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic130,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI131
+	bool "DPPI131 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic131,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI132
+	bool "DPPI132 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic132,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI133
+	bool "DPPI133 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic133,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI134
+	bool "DPPI134 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic134,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI135
+	bool "DPPI135 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic135,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
+
+config NRFX_DPPI136
+	bool "DPPI136 driver instance"
+	depends on $(dt_nodelabel_has_compat,dppic136,$(DT_COMPAT_NORDIC_NRF_DPPIC_GLOBAL))
+	select NRFX_DPPI
 
 config NRFX_EGU
 	bool
