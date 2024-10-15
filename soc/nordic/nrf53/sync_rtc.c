@@ -107,13 +107,14 @@ static void ppi_rtc_to_ipc(union rtc_sync_channels channels, bool setup)
 /* Free DPPI and RTC channels */
 static void free_resources(union rtc_sync_channels channels)
 {
+	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
 	nrfx_err_t err;
 
 	nrfx_gppi_channels_disable(BIT(channels.ch.ppi));
 
 	z_nrf_rtc_timer_chan_free(channels.ch.rtc);
 
-	err = nrfx_dppi_channel_free(channels.ch.ppi);
+	err = nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
 	__ASSERT_NO_MSG(err == NRFX_SUCCESS);
 }
 
@@ -224,12 +225,13 @@ static int mbox_rx_init(void *user_data)
 /* Setup RTC synchronization. */
 static int sync_rtc_setup(void)
 {
+	nrfx_dppi_t dppi = NRFX_DPPI_INSTANCE(0);
 	nrfx_err_t err;
 	union rtc_sync_channels channels;
 	int32_t sync_rtc_ch;
 	int rv;
 
-	err = nrfx_dppi_channel_alloc(&channels.ch.ppi);
+	err = nrfx_dppi_channel_alloc(&dppi, &channels.ch.ppi);
 	if (err != NRFX_SUCCESS) {
 		rv = -ENODEV;
 		goto bail;
@@ -237,7 +239,7 @@ static int sync_rtc_setup(void)
 
 	sync_rtc_ch = z_nrf_rtc_timer_chan_alloc();
 	if (sync_rtc_ch < 0) {
-		nrfx_dppi_channel_free(channels.ch.ppi);
+		nrfx_dppi_channel_free(&dppi, channels.ch.ppi);
 		rv = sync_rtc_ch;
 		goto bail;
 	}
