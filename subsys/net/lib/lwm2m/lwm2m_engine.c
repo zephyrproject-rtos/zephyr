@@ -369,6 +369,8 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 	int64_t remaining, next = INT64_MAX;
 	int i;
 
+	lwm2m_client_lock(client_ctx);
+
 	for (i = 0, p = client_ctx->pendings; i < ARRAY_SIZE(client_ctx->pendings); i++, p++) {
 		if (!p->timeout) {
 			continue;
@@ -405,6 +407,8 @@ static int64_t retransmit_request(struct lwm2m_ctx *client_ctx, const int64_t ti
 			next = remaining;
 		}
 	}
+
+	lwm2m_client_unlock(client_ctx);
 
 	return next;
 }
