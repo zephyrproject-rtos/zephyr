@@ -42,6 +42,7 @@ struct spi_ambiq_data {
 	void *iom_handler;
 	int inst_idx;
 	bool cont;
+	bool pm_policy_state_on;
 };
 
 typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uint32_t len);
@@ -49,6 +50,32 @@ typedef void (*spi_context_update_trx)(struct spi_context *ctx, uint8_t dfs, uin
 #define SPI_WORD_SIZE 8
 
 #define SPI_CS_INDEX 3
+
+static void spi_ambiq_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct spi_ambiq_data *data = dev->data;
+
+		if (!data->pm_policy_state_on) {
+			data->pm_policy_state_on = true;
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			pm_device_runtime_get(dev);
+		}
+	}
+}
+
+static void spi_ambiq_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM)) {
+		struct spi_ambiq_data *data = dev->data;
+
+		if (data->pm_policy_state_on) {
+			data->pm_policy_state_on = false;
+			pm_device_runtime_put(dev);
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
+	}
+}
 
 #ifdef CONFIG_SPI_AMBIQ_DMA
 static __aligned(32) struct {
@@ -349,14 +376,10 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 		return 0;
 	}
 
-	pm_ret = pm_device_runtime_get(dev);
-
-	if (pm_ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", pm_ret);
-	}
-
 	/* context setup */
 	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+
+	spi_ambiq_pm_policy_state_lock_get(dev);
 
 	ret = spi_config(dev, config);
 
@@ -370,18 +393,9 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	ret = spi_ambiq_xfer(dev, config);
 
 xfer_end:
+	spi_ambiq_pm_policy_state_lock_put(dev);
+
 	spi_context_release(&data->ctx, ret);
-
-	/* Use async put to avoid useless device suspension/resumption
-	 * when doing consecutive transmission.
-	 */
-	if (!pm_ret) {
-		pm_ret = pm_device_runtime_put_async(dev, K_MSEC(2));
-
-		if (pm_ret < 0) {
-			LOG_ERR("pm_device_runtime_put failed: %d", pm_ret);
-		}
-	}
 
 	return ret;
 }
