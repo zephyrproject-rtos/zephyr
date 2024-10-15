@@ -72,6 +72,28 @@ power_down:
 	/* load address of DIPCTDR register */
 	movi p_ipc_regs, IPC_HOST_BASE
 	movi u32_ipc_response_mask, 0x20000000
+#if CONFIG_XTENSA_MMU
+	/**
+	 * Preload the IPC register to ensure the TLB entry is present.
+	 * This addresses an issue on platforms with an MMU where a
+	 * LoadStoreTLBMissCause exception occurs when accessing hardware
+	 * registers during the power-down process. By preloading the IPC
+	 * register, we ensure that the necessary TLB entry is available,
+	 * preventing a double exception (LoadStoreTLBMissCause followed by
+	 * InstrPIFDataErrorCause) when accessing the IPC register after
+	 * HPSRAM is powered down.
+	 *
+	 * Two solutions were considered:
+	 * 1. Use TLB way9 to lock IPC MMIO registers (Zephyr PR80333)
+	 * 2. Manually force TLB entry to be fetched in power_down (this solution)
+	 *
+	 * The decision was made to proceed with this solution due to its
+	 * simplicity and directness, despite the potential performance benefits
+	 * of the TLB way9 approach. The TLB way9 approach would also reserve
+	 * way9, potentially limiting its use for other purposes in the future.
+	 */
+	l32i pfl_reg, p_ipc_regs, 0
+#endif
 
 	beqz pu32_hpsram_mask, _PD_DISABLE_LPSRAM
 	movi pu32_hpsram_mask, hpsram_mask
