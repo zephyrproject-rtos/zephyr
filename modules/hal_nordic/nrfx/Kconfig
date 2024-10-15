@@ -259,6 +259,49 @@ config NRFX_PPI
 	bool "PPI allocator"
 	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_PPI))
 
+config NRFX_PPIB
+	bool
+
+config NRFX_PPIB00
+	bool "PPIB00 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib00,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB01
+	bool "PPIB01 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib01,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB10
+	bool "PPIB10 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib10,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB11
+	bool "PPIB11 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib11,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB20
+	bool "PPIB20 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib20,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB21
+	bool "PPIB21 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib21,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB22
+	bool "PPIB22 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib22,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
+config NRFX_PPIB30
+	bool "PPIB30 driver instance"
+	depends on $(dt_nodelabel_has_compat,ppib30,$(DT_COMPAT_NORDIC_NRF_PPIB))
+	select NRFX_PPIB
+
 config NRFX_PWM
 	bool
 
