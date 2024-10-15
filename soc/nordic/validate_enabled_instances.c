@@ -7,10 +7,16 @@
 #include <zephyr/kernel.h>
 
 #define I2C_ENABLED(idx)  (IS_ENABLED(CONFIG_I2C) && \
-			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c##idx)))
+			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i2c##idx)) && \
+			   (DT_NODE_HAS_COMPAT(DT_NODELABEL(i2c##idx), nordic_nrf_twi) || \
+			    DT_NODE_HAS_COMPAT(DT_NODELABEL(i2c##idx), nordic_nrf_twim) || \
+			    DT_NODE_HAS_COMPAT(DT_NODELABEL(i2c##idx), nordic_nrf_twis)))
 
 #define SPI_ENABLED(idx)  (IS_ENABLED(CONFIG_SPI) && \
-			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi##idx)))
+			   DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi##idx)) && \
+			   (DT_NODE_HAS_COMPAT(DT_NODELABEL(spi##idx), nordic_nrf_spi) || \
+			    DT_NODE_HAS_COMPAT(DT_NODELABEL(spi##idx), nordic_nrf_spim) || \
+			    DT_NODE_HAS_COMPAT(DT_NODELABEL(spi##idx), nordic_nrf_spis)))
 
 #define UART_ENABLED(idx) (IS_ENABLED(CONFIG_SERIAL) && \
 			   (IS_ENABLED(CONFIG_SOC_SERIES_NRF53X) || \
