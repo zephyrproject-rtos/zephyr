@@ -19,3 +19,7 @@ properties:
     type: phandle
     description: the connected source device,
       e.g., a mipi csi or a camera sensor
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
