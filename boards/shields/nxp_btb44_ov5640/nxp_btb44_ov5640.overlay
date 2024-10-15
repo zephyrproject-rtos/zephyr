@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
 /{
 	chosen {
 		zephyr,camera = &nxp_csi;
@@ -22,6 +24,8 @@
 		port {
 			ov5640_ep_out: endpoint {
 				remote-endpoint-label = "mipi_csi2rx_ep_in";
+				bus-type = <VIDEO_BUS_TYPE_CSI2_DPHY>;
+				data-lanes = <1 2>;
 			};
 		};
 	};
@@ -38,6 +42,7 @@
 
 			mipi_csi2rx_ep_in: endpoint {
 				remote-endpoint-label = "ov5640_ep_out";
+				data-lanes = <1 2>;
 			};
 		};
 	};
