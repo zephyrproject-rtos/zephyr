@@ -1873,7 +1873,11 @@ static int wifi_ap_config_args_to_params(const struct shell *sh, size_t argc, ch
 static int cmd_wifi_ap_config_params(const struct shell *sh, size_t argc,
 				     char *argv[])
 {
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	struct net_if *iface = net_if_get_wifi_sap();
+#else
 	struct net_if *iface = net_if_get_first_wifi();
+#endif
 	struct wifi_ap_config_params ap_config_params = { 0 };
 	int ret = -1;
 
