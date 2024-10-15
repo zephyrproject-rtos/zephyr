@@ -443,6 +443,7 @@
 
 		edma: dma-controller@40008000 {
 			compatible = "nxp,mcux-edma";
+			nxp,version = <2>;
 			dma-channels = <8>;
 			dma-requests = <64>;
 			nxp,mem2mem;
