@@ -1,0 +1,15 @@
+sample:
+  name: swap flash banks, valid if flash has 2 banks
+tests:
+  sample.board.stm32.crc:
+    tags: board
+    filter: dt_compat_enabled("st,stm32-flash-controller")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Running on bank(.*)"
+    platform_allow:
+      - b_u585i_iot02a
+      - stm32h7b3i_dk
+      - stm32h573i_dk
