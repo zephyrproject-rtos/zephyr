@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Kickmaker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/{
+	pwm0: pwm0 {
+		compatible = "zephyr,fake-pwm";
+		status = "okay";
+		#pwm-cells = <2>;
+		frequency = <10000000>;
+	};
+
+	aliases {
+		pwm-0 = &pwm0;
+	};
+};
