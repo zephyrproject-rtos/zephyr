@@ -1606,6 +1606,33 @@ class KeepSorted(ComplianceTest):
             with open(file, "r") as fp:
                 self.check_file(file, fp)
 
+
+class TextEncoding(ComplianceTest):
+    """
+    Check that any text file is encoded in ascii or utf-8.
+    """
+    name = "TextEncoding"
+    doc = "Check the encoding of text files."
+    path_hint = "<git-top>"
+
+    ALLOWED_CHARSETS = ["us-ascii", "utf-8"]
+
+    def run(self):
+        m = magic.Magic(mime=True, mime_encoding=True)
+
+        for file in get_files(filter="d"):
+            full_path = os.path.join(GIT_TOP, file)
+            mime_type = m.from_file(full_path)
+
+            if not mime_type.startswith("text/"):
+                continue
+
+            # format is "text/<type>; charset=<charset>"
+            if mime_type.rsplit('=')[-1] not in self.ALLOWED_CHARSETS:
+                desc = f"Text file with unsupported encoding: {file} has mime type {mime_type}"
+                self.fmtd_failure("error", "TextEncoding", file, desc=desc)
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
