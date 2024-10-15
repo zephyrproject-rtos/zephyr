@@ -548,7 +548,6 @@ enum bt_conn_le_cs_procedure_done_status {
 /** Subevent done status */
 enum bt_conn_le_cs_subevent_done_status {
 	BT_CONN_LE_CS_SUBEVENT_COMPLETE = BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_COMPLETE,
-	BT_CONN_LE_CS_SUBEVENT_INCOMPLETE = BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_PARTIAL,
 	BT_CONN_LE_CS_SUBEVENT_ABORTED = BT_HCI_LE_CS_SUBEVENT_DONE_STATUS_ABORTED,
 };
 
@@ -618,7 +617,19 @@ struct bt_conn_le_cs_subevent_result {
 		int8_t reference_power_level;
 		/** Procedure status. */
 		enum bt_conn_le_cs_procedure_done_status procedure_done_status;
-		/** Subevent status. */
+		/** Subevent status
+		 *
+		 *  For aborted subevents, this will be set to @ref BT_CONN_LE_CS_SUBEVENT_ABORTED
+		 *  and abort_step will contain the step number on which the subevent was aborted.
+		 *  Consider the following example:
+		 *
+		 *  subevent_done_status = @ref BT_CONN_LE_CS_SUBEVENT_ABORTED
+		 *  num_steps_reported = 160
+		 *  abort_step = 100
+		 *
+		 *  this would mean that steps from 0 to 99 are complete and steps from 100 to 159
+		 *  are aborted.
+		 */
 		enum bt_conn_le_cs_subevent_done_status subevent_done_status;
 		/** Abort reason.
 		 *
@@ -640,6 +651,11 @@ struct bt_conn_le_cs_subevent_result {
 		/** Number of CS steps in the subevent.
 		 */
 		uint8_t num_steps_reported;
+		/** Step number, on which the subevent was aborted
+		 *  if subevent_done_status is @ref BT_CONN_LE_CS_SUBEVENT_COMPLETE
+		 *  then abort_step will be unused and set to 255
+		 */
+		uint8_t abort_step;
 	} header;
 	struct net_buf_simple *step_data_buf;
 };
