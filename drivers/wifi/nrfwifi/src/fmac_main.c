@@ -453,6 +453,8 @@ void reg_change_callbk_fn(void *vif_ctx,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
+	LOG_DBG("%s: Regulatory change event received", __func__);
+
 	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
