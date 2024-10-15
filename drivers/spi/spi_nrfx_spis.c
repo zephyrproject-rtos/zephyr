@@ -388,7 +388,8 @@ static int spi_nrfx_init(const struct device *dev)
 		},							       \
 		.irq_connect = irq_connect##idx,			       \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(SPIS(idx)),		       \
-		.max_buf_len = BIT_MASK(SPIS_PROP(idx, easydma_maxcnt_bits)),  \
+		.max_buf_len = BIT_MASK(SPIS_PROP(idx,			       \
+						nordic_easydma_maxcnt_bits)),  \
 		.wake_gpio = GPIO_DT_SPEC_GET_OR(SPIS(idx), wake_gpios, {0}),  \
 	};								       \
 	BUILD_ASSERT(!DT_NODE_HAS_PROP(SPIS(idx), wake_gpios) ||	       \

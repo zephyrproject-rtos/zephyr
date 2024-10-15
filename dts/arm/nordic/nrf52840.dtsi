@@ -133,7 +133,7 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <16>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 			zephyr,pm-device-runtime-auto;
 		};
@@ -151,8 +151,8 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -169,7 +169,7 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <16>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 			zephyr,pm-device-runtime-auto;
 		};
@@ -187,8 +187,8 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -459,8 +459,8 @@
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
 			interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -526,8 +526,8 @@
 			#size-cells = <0>;
 			reg = <0x4002f000 0x1000>;
 			interrupts = <47 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(32)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(32)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			rx-delay-supported;
 			rx-delay = <2>;
 			status = "disabled";

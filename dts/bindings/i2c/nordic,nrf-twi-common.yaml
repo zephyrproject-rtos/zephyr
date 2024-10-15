@@ -4,7 +4,7 @@
 
 # Common fields for Nordic nRF family TWI peripherals
 
-include: [i2c-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
+include: [i2c-controller.yaml, pinctrl-device.yaml, nordic-nrf-seriobox.yaml, nordic-clockpin.yaml]
 
 properties:
   reg:
@@ -18,10 +18,3 @@ properties:
 
   pinctrl-names:
     required: true
-
-  easydma-maxcnt-bits:
-    type: int
-    required: true
-    description: |
-      Maximum number of bits available in the EasyDMA MAXCNT register. This
-      property must be set at SoC level DTS files.
