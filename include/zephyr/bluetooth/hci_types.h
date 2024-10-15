@@ -3521,6 +3521,12 @@ struct bt_hci_evt_le_cs_config_complete {
 #define BT_HCI_LE_CS_PACKET_NADM_ATTACK_EXT_LIKELY    0x06
 #define BT_HCI_LE_CS_PACKET_NADM_UNKNOWN              0xFF
 
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_SUCCESSFUL	      0x0
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_BIT_ERRORS_FOUND 0x1
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_AA_NOT_FOUND     0x2
+
+#define BT_HCI_LE_CS_PACKET_RSSI_NOT_AVAILABLE 0x7F
+
 #define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT 0x31
 /** Subevent result step data format: Mode 0 Initiator  */
 struct bt_hci_le_cs_step_data_mode_0_initiator {
