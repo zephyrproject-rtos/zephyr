@@ -141,7 +141,8 @@ int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off);
  * @param settings_key key to use with the settings module for loading
  *                     the stream write progress
  *
- * @return non-negative on success, negative errno code on fail
+ * @return non-negative on success, -ERANGE in case when @p off is out
+ * of area designated for stream or negative errno code on fail
  */
 int stream_flash_progress_load(struct stream_flash_ctx *ctx,
 			       const char *settings_key);
