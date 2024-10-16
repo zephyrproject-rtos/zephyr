@@ -11,7 +11,6 @@
 #error "This file should not be included directly. Include nrfx_config.h instead."
 #endif
 
-
 /**
  * @brief NRFX_DEFAULT_IRQ_PRIORITY
  *
