@@ -167,7 +167,7 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len,
 	ret = btp_bap_audio_stream_send_data(cp->data, cp->data_len);
 
 	rp->data_len = ret;
-	*rsp_len = sizeof(*rp) + 1;
+	*rsp_len = sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
