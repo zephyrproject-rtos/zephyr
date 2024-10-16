@@ -268,7 +268,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: baa56aa3e119b5aae43d16f9b2d2c8112e052871
+      revision: b38620c7cc61e349e192ed86a54940a5cd0636b7
       path: modules/hal/xtensa
       groups:
         - hal
