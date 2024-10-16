@@ -684,7 +684,8 @@ static int dispatcher_cb(void *my_ctx, int sock,
 
 static int register_dispatcher(struct mdns_responder_context *ctx,
 			       const struct net_socket_service_desc *svc,
-			       struct sockaddr *local)
+			       struct sockaddr *local,
+			       int ifindex)
 {
 	ctx->dispatcher.type = DNS_SOCKET_RESPONDER;
 	ctx->dispatcher.cb = dispatcher_cb;
@@ -694,6 +695,7 @@ static int register_dispatcher(struct mdns_responder_context *ctx,
 	ctx->dispatcher.svc = svc;
 	ctx->dispatcher.mdns_ctx = ctx;
 	ctx->dispatcher.pair = NULL;
+	ctx->dispatcher.ifindex = ifindex;
 
 	/* Mark the fd so that "net sockets" can show it. This is needed if there
 	 * is already a socket bound to same port and the dispatcher will mux
@@ -799,7 +801,8 @@ static int init_listener(void)
 			continue;
 		}
 
-		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6);
+		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct sockaddr *)&local_addr6,
+					  ifindex);
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
@@ -882,7 +885,8 @@ static int init_listener(void)
 			continue;
 		}
 
-		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4);
+		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct sockaddr *)&local_addr4,
+					  ifindex);
 		if (ret < 0) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
