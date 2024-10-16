@@ -47,6 +47,9 @@ hardware features:
    * - Counter
      - :kconfig:option:`CONFIG_COUNTER`
      - :dtcompatible:`raspberrypi,pico-timer`
+   * - DMA
+     - :kconfig:option:`CONFIG_DMA`
+     - :dtcompatible:`raspberrypi,pico-dma`
    * - GPIO
      - :kconfig:option:`CONFIG_GPIO`
      - :dtcompatible:`raspberrypi,pico-gpio`
