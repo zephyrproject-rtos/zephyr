@@ -273,6 +273,7 @@ Build and flash applications as usual (see :ref:`build_an_application` and
 Configuring a Debug Probe
 =========================
 
+LinkServer is the default runner for this board.
 A debug probe is used for both flashing and debugging the board. This board is
 configured by default to use the LPC-Link2 CMSIS-DAP Onboard Debug Probe,
 however the :ref:`pyocd-debug-host-tools` does not yet support this probe so you
@@ -316,7 +317,7 @@ Flashing
 ========
 
 Here is an example for the :zephyr:code-sample:`hello_world` application. This example uses the
-:ref:`jlink-debug-host-tools` as default.
+:ref:`linkserver-debug-host-tools` as default.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -328,8 +329,8 @@ see the following message in the terminal:
 
 .. code-block:: console
 
-   ***** Booting Zephyr OS v1.14.0 *****
-   Hello World! lpcxpresso55s69
+   ***** Booting Zephyr OS v3.7.0 *****
+   Hello World! lpcxpresso55s69/lpc55s69/cpu0
 
 Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
 ----------------------------------------------------------------------
