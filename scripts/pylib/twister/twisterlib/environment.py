@@ -20,6 +20,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import Generator, List
 
+from twisterlib.constants import SUPPORTED_SIMS
 from twisterlib.coverage import supported_coverage_formats
 
 logger = logging.getLogger('twister')
@@ -71,7 +72,7 @@ def norm_path(astring):
     return newstring
 
 
-def add_parse_arguments(parser = None):
+def add_parse_arguments(parser = None) -> argparse.ArgumentParser:
     if parser is None:
         parser = argparse.ArgumentParser(
             description=__doc__,
@@ -178,6 +179,13 @@ Artificially long but functional example:
                         and create a hardware map file to be used with
                         --device-testing
                         """)
+
+    run_group_option.add_argument(
+        "--simulation", dest="sim_name", choices=SUPPORTED_SIMS,
+        help="Selects which simulation to use. Must match one of the names defined in the board's "
+             "manifest. If multiple simulator are specified in the selected board and this "
+             "argument is not passed, then the first simulator is selected.")
+
 
     device.add_argument("--device-serial",
                         help="""Serial device for accessing the board
@@ -805,7 +813,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     return parser
 
 
-def parse_arguments(parser, args, options = None, on_init=True):
+def parse_arguments(parser: argparse.ArgumentParser, args, options = None, on_init=True) -> argparse.Namespace:
     if options is None:
         options = parser.parse_args(args)
 
@@ -952,7 +960,7 @@ def strip_ansi_sequences(s: str) -> str:
 
 class TwisterEnv:
 
-    def __init__(self, options, default_options=None) -> None:
+    def __init__(self, options : argparse.Namespace, default_options=None) -> None:
         self.version = "Unknown"
         self.toolchain = None
         self.commit_date = "Unknown"

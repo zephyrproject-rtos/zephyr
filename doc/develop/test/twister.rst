@@ -151,7 +151,23 @@ name:
 type:
   Type of the board or configuration, currently we support 2 types: mcu, qemu
 simulation:
-  Simulator used to simulate the platform, e.g. qemu.
+  Simulator(s) used to simulate the platform, e.g. qemu.
+
+  .. code-block:: yaml
+
+      simulation:
+        - name: qemu
+        - name: armfvp
+          exec: FVP_Some_Platform
+        - name: custom
+          exec: AnotherBinary
+
+  By default, tests will be executed using the first entry in the simulation array. Another
+  simulation can be selected with ``--simulation <simulation_name>``.
+  The ``exec`` attribute is optional. If it is set but the required simulator is not available, the
+  tests will be built only.
+  If it is not set and the required simulator is not available the tests will fail to run.
+  The simulation name must match one of the element of ``SUPPORTED_EMU_PLATFORMS``.
 arch:
   Architecture of the board
 toolchain:
@@ -918,8 +934,9 @@ To use this type of simulation, add the following properties to
 
 .. code-block:: yaml
 
-   simulation: custom
-   simulation_exec: <name_of_emu_binary>
+   simulation:
+     - name: custom
+       exec: <name_of_emu_binary>
 
 This tells Twister that the board is using a custom emulator called ``<name_of_emu_binary>``,
 make sure this binary exists in the PATH.

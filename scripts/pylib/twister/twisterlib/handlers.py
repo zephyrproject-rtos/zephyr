@@ -48,9 +48,6 @@ except ImportError as capture_error:
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
 
-SUPPORTED_SIMS = ["mdb-nsim", "nsim", "renode", "qemu", "tsim", "armfvp", "xt-sim", "native", "custom", "simics"]
-SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
-
 
 def terminate_process(proc):
     """
@@ -241,6 +238,7 @@ class BinaryHandler(Handler):
                 self.terminate(proc)
 
     def _create_command(self, robot_test):
+
         if robot_test:
             keywords = os.path.join(self.options.coverage_basedir, 'tests/robot/common.robot')
             elf = os.path.join(self.build_dir, "zephyr/zephyr.elf")
@@ -262,8 +260,14 @@ class BinaryHandler(Handler):
                             "--variable", "RESC:@" + resc,
                             "--variable", "UART:" + uart]
         elif self.call_make_run:
-            command = [self.generator_cmd, "-C", self.get_default_domain_build_dir(), "run"]
+            if self.options.sim_name:
+                target = f"run_{self.options.sim_name}"
+            else:
+                target = "run"
+
+            command = [self.generator_cmd, "-C", self.get_default_domain_build_dir(), target]
         elif self.instance.testsuite.type == "unit":
+            assert self.binary, "Missing binary in unit testsuite."
             command = [self.binary]
         else:
             binary = os.path.join(self.get_default_domain_build_dir(), "zephyr", "zephyr.exe")

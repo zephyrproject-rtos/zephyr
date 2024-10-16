@@ -443,6 +443,7 @@ def test_binaryhandler_create_command(
     options = SimpleNamespace()
     options.enable_valgrind = enable_valgrind
     options.coverage_basedir = "coverage_basedir"
+    options.sim_name = None
     handler = BinaryHandler(mocked_instance, 'build', options, 'generator', False)
     handler.binary = 'bin'
     handler.call_make_run = call_make_run

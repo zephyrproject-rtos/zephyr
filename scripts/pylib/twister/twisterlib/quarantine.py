@@ -1,4 +1,6 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
 from __future__ import annotations
@@ -31,8 +33,8 @@ class Quarantine:
         for quarantine_file in quarantine_list:
             self.quarantine.extend(QuarantineData.load_data_from_yaml(quarantine_file))
 
-    def get_matched_quarantine(self, testname, platform, architecture, simulation):
-        qelem = self.quarantine.get_matched_quarantine(testname, platform, architecture, simulation)
+    def get_matched_quarantine(self, testname, platform, architecture, simulator):
+        qelem = self.quarantine.get_matched_quarantine(testname, platform, architecture, simulator)
         if qelem:
             logger.debug('%s quarantined with reason: %s' % (testname, qelem.comment))
             return qelem.comment
@@ -111,7 +113,7 @@ class QuarantineData:
                                scenario: str,
                                platform: str,
                                architecture: str,
-                               simulation: str) -> QuarantineElement | None:
+                               simulator_name: str) -> QuarantineElement | None:
         """Return quarantine element if test is matched to quarantine rules"""
         for qelem in self.qlist:
             matched: bool = False
@@ -125,7 +127,7 @@ class QuarantineData:
                     and (matched := _is_element_matched(architecture, qelem.re_architectures)) is False):
                 continue
             if (qelem.simulations
-                    and (matched := _is_element_matched(simulation, qelem.re_simulations)) is False):
+                    and (matched := _is_element_matched(simulator_name, qelem.re_simulations)) is False):
                 continue
 
             if matched:
