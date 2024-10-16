@@ -1,0 +1,58 @@
+# Copyright (c) 2024 tinyVision.ai
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_VIDEO_CLASS
+	bool "USB Video Class implementation [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_UVC_DEVICE_ENABLED
+	help
+	  USB Device Video Class (UVC) implementation.
+
+if USBD_VIDEO_CLASS
+
+config USBD_VIDEO_HEADER_SIZE
+	int "USB Video payload header size"
+	range 2 255
+	default 8
+	help
+	  Sets the size of the video payload header,
+	  to allow custom data to be added at the end of the mandatory fields.
+	  The default value is arbitrary, made to fit situations where a 64-bit
+	  alignment of the payload data is required.
+
+config USBD_VIDEO_MAX_STREAMS
+	int "Max number of video output stream per USB Video interface"
+	range 1 254
+	default 8
+	help
+	  Each video stream is mapped to a video endpoint on the devicetree.
+	  This limits the number of endpoints that can be declared for each
+	  UVC instance. The default value is made to be large enough to fit
+	  most situations.
+
+config USBD_VIDEO_MAX_FRMIVAL
+	int "Max number of video output stream per USB Video interface"
+	range 1 255
+	default 8
+	help
+	  Max number of Frame Interval listed on a frame descriptor. The
+	  default value is selected arbitrarily to fit most situations without
+	  requiring too much RAM.
+
+config USBD_VIDEO_MAX_VS_DESC
+	int "Max number of descriptors generated per VideoStreaming interface"
+	default 8
+	help
+	  Sets the maximum number of Format and Frame descriptors that can be
+	  generated at runtime per VideoStreaming interface; an array size.
+	  This may only need to be increased if you encounter a warning
+	  at init time saying there are not enough descriptors available.
+	  The default value is selected arbitrarily to fit most situations
+	  without requiring too much RAM.
+
+module = USBD_VIDEO
+module-str = usbd uvc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif
