@@ -92,6 +92,10 @@ Drivers and Sensors
 
 * Display
 
+  * Added API function :c:func:`display_show` and display capability
+    :c:enum:`SCREEN_INFO_REQUIRES_SHOW` for displays that allow tearing prevention of segmented
+    updates. (:github:`79936`)
+
 * Ethernet
 
 * Flash

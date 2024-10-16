@@ -71,24 +71,28 @@ enum display_screen_info {
 	 * If selected, one octet represents 8 pixels ordered vertically,
 	 * otherwise ordered horizontally.
 	 */
-	SCREEN_INFO_MONO_VTILED		= BIT(0),
+	SCREEN_INFO_MONO_VTILED = BIT(0),
 	/**
 	 * If selected, the MSB represents the first pixel,
 	 * otherwise MSB represents the last pixel.
 	 */
-	SCREEN_INFO_MONO_MSB_FIRST	= BIT(1),
+	SCREEN_INFO_MONO_MSB_FIRST = BIT(1),
 	/**
 	 * Electrophoretic Display.
 	 */
-	SCREEN_INFO_EPD			= BIT(2),
+	SCREEN_INFO_EPD = BIT(2),
 	/**
 	 * Screen has two alternating ram buffers
 	 */
-	SCREEN_INFO_DOUBLE_BUFFER	= BIT(3),
+	SCREEN_INFO_DOUBLE_BUFFER = BIT(3),
 	/**
 	 * Screen has x alignment constrained to width.
 	 */
-	SCREEN_INFO_X_ALIGNMENT_WIDTH	= BIT(4),
+	SCREEN_INFO_X_ALIGNMENT_WIDTH = BIT(4),
+	/**
+	 * Screen will not show updated framebuffer to user until @ref display_show is called.
+	 */
+	SCREEN_INFO_REQUIRES_SHOW = BIT(5),
 };
 
 /**
@@ -164,6 +168,13 @@ typedef int (*display_read_api)(const struct device *dev, const uint16_t x,
 				void *buf);
 
 /**
+ * @typedef display_show_api
+ * @brief Callback API to indicate that all previous writes should be presented on the display
+ * See display_show() for argument description
+ */
+typedef int (*display_show_api)(const struct device *dev);
+
+/**
  * @typedef display_get_framebuffer_api
  * @brief Callback API to get framebuffer pointer
  * See display_get_framebuffer() for argument description
@@ -222,6 +233,7 @@ __subsystem struct display_driver_api {
 	display_blanking_off_api blanking_off;
 	display_write_api write;
 	display_read_api read;
+	display_show_api show;
 	display_get_framebuffer_api get_framebuffer;
 	display_set_brightness_api set_brightness;
 	display_set_contrast_api set_contrast;
@@ -277,6 +289,31 @@ static inline int display_read(const struct device *dev, const uint16_t x,
 	}
 
 	return api->read(dev, x, y, desc, buf);
+}
+
+/**
+ * @brief Indicates that all previous writes should be presented on the display
+ *
+ * Displays with the flag `SCREEN_INFO_REQUIRES_SHOW` need this to be called at
+ * the end of every frame. This tells the display that it should now show the
+ * updated pixels.
+ *
+ * This can be used to prevent screen tearing for frames that require multiple writes,
+ * for example when rendering to a partial framebuffer in low memory situations.
+ *
+ * @param dev Pointer to device structure
+ *
+ * @retval 0 on success else negative errno code.
+ */
+static inline int display_show(const struct device *dev)
+{
+	struct display_driver_api *api = (struct display_driver_api *)dev->api;
+
+	if (api->show == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->show(dev);
 }
 
 /**
