@@ -22,18 +22,12 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "connection.h"
 #include "ipv4.h"
 #include "net_stats.h"
+#include "igmp.h"
 
 /* Timeout for various buffer allocations in this file. */
 #define PKT_WAIT_TIME K_MSEC(50)
 
 #define IPV4_OPT_HDR_ROUTER_ALERT_LEN 4
-
-#define IGMPV3_MODE_IS_INCLUDE        0x01
-#define IGMPV3_MODE_IS_EXCLUDE        0x02
-#define IGMPV3_CHANGE_TO_INCLUDE_MODE 0x03
-#define IGMPV3_CHANGE_TO_EXCLUDE_MODE 0x04
-#define IGMPV3_ALLOW_NEW_SOURCES      0x05
-#define IGMPV3_BLOCK_OLD_SOURCES      0x06
 
 #define IGMPV2_PAYLOAD_MIN_LEN 8
 #define IGMPV3_PAYLOAD_MIN_LEN 12
