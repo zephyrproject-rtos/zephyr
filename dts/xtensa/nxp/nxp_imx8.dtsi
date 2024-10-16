@@ -35,7 +35,7 @@
 	irqsteer: interrupt-controller@510a0000 {
 		compatible = "nxp,irqsteer-intc";
 		reg = <0x510a0000 DT_SIZE_K(64)>;
-		power-domain = <&irqstr_pd>;
+		power-domains = <&irqstr_pd>;
 
 		#size-cells = <0>;
 		#address-cells = <1>;
@@ -180,6 +180,7 @@
 				compatible = "nxp,imx8qm-scu-pd", "nxp,scu-pd";
 				reg = <0>;
 				nxp,resource-id = <IMX_SC_R_IRQSTR_DSP>;
+				#power-domain-cells = <0>;
 			};
 		};
 	};
