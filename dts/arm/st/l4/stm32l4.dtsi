@@ -263,7 +263,7 @@
 			status = "disabled";
 		};
 
-		quadspi: quadspi@a0001000 {
+		quadspi: spi@a0001000 {
 			compatible = "st,stm32-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
