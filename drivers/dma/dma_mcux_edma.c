@@ -50,17 +50,11 @@ struct dma_mcux_edma_config {
 	uint8_t dmamux_reg_offset;
 };
 
-
-#ifdef CONFIG_HAS_MCUX_CACHE
-
-#ifdef CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#ifndef CONFIG_HAS_MCUX_CACHE
+/* if no cache on part, no need to worry about noncache for TCD */
+#define EDMA_TCDPOOL_CACHE_ATTR
+#elif defined(CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS)
 #define EDMA_TCDPOOL_CACHE_ATTR __dtcm_noinit_section
-#else /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-#error Selected DTCM for MCUX DMA descriptors but no DTCM section.
-#endif /* DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) */
-
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define EDMA_TCDPOOL_CACHE_ATTR __nocache
 #else
@@ -71,15 +65,8 @@ struct dma_mcux_edma_config {
  * TCD pools would be moved to cacheable memory, resulting in DMA cache
  * coherency issues.
  */
-
+#warning EDMA TCD pool might not be in noncacheable memory
 #define EDMA_TCDPOOL_CACHE_ATTR
-
-#endif /* CONFIG_DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS */
-
-#else /* CONFIG_HAS_MCUX_CACHE */
-
-#define EDMA_TCDPOOL_CACHE_ATTR
-
 #endif /* CONFIG_HAS_MCUX_CACHE */
 
 struct dma_mcux_channel_transfer_edma_settings {
