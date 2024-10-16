@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Test consequences of inclusion order on inherited
+# compatible strings and descriptions.
+
+description: Binding description (multi).
+
+compatible: vnd,compat-desc-multi
+
+# Descriptions at the child-binding level and bellow
+# will depend on inclusion order: the first wins.
+include:
+  - compat_desc_base.yaml
+  - compat_desc.yaml

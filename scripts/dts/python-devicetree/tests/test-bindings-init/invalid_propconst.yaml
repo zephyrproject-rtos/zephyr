@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding should not try to override the "const:" value
+# in a property specification inherited from an included file.
+#
+# Bindings, child-bindings and grandchild-bindings have
+# to be tested separately, see also:
+# - invalid_child_propconst.yaml
+# - invalid_grandchild_propconst.yaml
+
+include: base.yaml
+
+properties:
+  prop-const:
+    const: 999
