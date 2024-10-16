@@ -3661,7 +3661,7 @@ endfunction()
 #   build_info(<tag>... VALUE <value>... )
 #   build_info(<tag>... PATH  <path>... )
 #
-# This function populates updates the build_info.yml info file with exchangable build information
+# This function populates the build_info.yml info file with exchangable build information
 # related to the current build.
 #
 # Example:
@@ -3679,6 +3679,7 @@ endfunction()
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
 #                   guaranteed to be CMake style, then VALUE can also be used.
+#                   Note that paths expanded by generator expressions are not converted.
 function(build_info)
   set(convert_path FALSE)
   set(arg_list ${ARGV})
@@ -3696,9 +3697,9 @@ function(build_info)
   if(NOT result)
     yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
     if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
-      yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+      yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info GENEX)
     else()
-      yaml_create(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
+      yaml_create(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info GENEX)
     endif()
     yaml_set(NAME build_info KEY version VALUE "0.1.0")
   endif()
