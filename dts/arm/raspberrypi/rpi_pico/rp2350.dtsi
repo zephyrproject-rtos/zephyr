@@ -373,6 +373,21 @@
 			status = "disabled";
 		};
 
+		dma: dma@50000000 {
+			compatible = "raspberrypi,pico-dma";
+			reg = <0x50000000 DT_SIZE_K(64)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_DMA>;
+			clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
+			interrupts = <10 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <11 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <12 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
+				     <13 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "dma0", "dma1", "dma2", "dma3";
+			dma-channels = <16>;
+			status = "disabled";
+			#dma-cells = <3>;
+		};
+
 		usbd: usbd@50100000 {
 			compatible = "raspberrypi,pico-usbd";
 			reg = <0x50100000 0x10000>;
