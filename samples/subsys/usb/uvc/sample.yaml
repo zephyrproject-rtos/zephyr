@@ -1,0 +1,10 @@
+sample:
+  name: USB Video sample
+tests:
+  sample.subsys.usb.uvc.camera:
+    depends_on:
+      - usbd
+    tags: usb video
+    filter: dt_chosen_enabled("zephyr,camera")
+    integration_platforms:
+      - arduino_nicla_vision/stm32h747xx/m7
