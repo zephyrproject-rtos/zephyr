@@ -10,20 +10,24 @@
 
 #define DT_DRV_COMPAT nxp_mcux_edma
 
-#include <errno.h>
-#include <soc.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/drivers/dma.h>
-#include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/barrier.h>
-
-#include "dma_mcux_edma.h"
-
-#include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/logging/log.h>
+#include <errno.h>
+#include <soc.h>
+
+#include <fsl_edma.h>
+
+#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
+#include <fsl_dmamux.h>
+#endif
 
 LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
