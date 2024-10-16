@@ -52,6 +52,7 @@ properties:
     type: int
     required: true
     enum:
+      - 0
       - 10000
       - 47000
       - 100000
