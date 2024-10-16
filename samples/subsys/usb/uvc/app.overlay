@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	imager0: emul_imager_0 {
+		compatible = "zephyr,video-emul-imager";
+
+		port {
+			imager0_ep_out: endpoint {
+				remote-endpoint-label = "mipi0_ep_in";
+			};
+		};
+	};
+
+	mipi0: video_emul_rx_0 {
+		compatible = "zephyr,video-emul-rx";
+
+		port {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mipi0_ep_in: endpoint@0 {
+				reg = <0x0>;
+				remote-endpoint-label = "imager0_ep_out";
+			};
+
+			mipi0_ep_out: endpoint@1 {
+				reg = <0x1>;
+				remote-endpoint-label = "uvc_ep_in";
+			};
+		};
+	};
+};
+
+&zephyr_udc0 {
+	uvc: uvc {
+		compatible = "zephyr,uvc-device";
+
+		port {
+			uvc_ep_in: endpoint {
+				remote-endpoint-label = "mipi0_ep_out";
+			};
+		};
+	};
+};

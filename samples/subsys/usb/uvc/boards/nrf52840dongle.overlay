@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../app.overlay"
+
+/* Do not use the CDC-ACM based logger to avoid interfering in the logs */
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&cdc_acm_uart {
+	status = "disabled";
+};
+
+&uart0 {
+	status = "okay";
+};
