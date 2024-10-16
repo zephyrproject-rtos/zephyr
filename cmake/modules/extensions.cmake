@@ -3703,10 +3703,10 @@ function(topological_sort)
 endfunction()
 
 # Usage:
-#   build_info(<tag>... VALUE <value>... )
-#   build_info(<tag>... PATH  <path>... )
+#   build_info(<tag>... VALUE <value>... [GENEX])
+#   build_info(<tag>... PATH  <path>...)
 #
-# This function populates updates the build_info.yml info file with exchangable build information
+# This function populates the build_info.yml info file with exchangable build information
 # related to the current build.
 #
 # Example:
@@ -3724,8 +3724,9 @@ endfunction()
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
 #                   guaranteed to be CMake style, then VALUE can also be used.
+# GENEX : the value(s) contain a generator expression. Cannot be used with PATH.
 function(build_info)
-  cmake_parse_arguments(ARG_BUILD_INFO "" "" "VALUE;PATH" ${ARGN})
+  cmake_parse_arguments(ARG_BUILD_INFO "GENEX" "" "VALUE;PATH" ${ARGN})
 
   zephyr_check_arguments_required_allow_empty(${CMAKE_CURRENT_FUNCTION} ARG_BUILD_INFO VALUE PATH)
   zephyr_check_arguments_exclusive(${CMAKE_CURRENT_FUNCTION} ARG_BUILD_INFO VALUE PATH)
@@ -3737,6 +3738,12 @@ function(build_info)
   else()
     set(convert_path FALSE)
     set(values ${ARG_BUILD_INFO_VALUE})
+  endif()
+  if (ARG_BUILD_INFO_GENEX)
+    if (convert_path)
+      message(FATAL_ERROR "build_info: GENEX is unsupported on PATH entries")
+    endif()
+    set(genex_flag "GENEX")
   endif()
 
   yaml_context(EXISTS NAME build_info result)
@@ -3777,7 +3784,7 @@ function(build_info)
     endif()
   endif()
 
-  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}")
+  yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
 endfunction()
 
 ########################################################
