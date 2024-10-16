@@ -140,9 +140,12 @@ static int recv_data(struct net_socket_service_event *pev)
 	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		(void)zsock_getsockopt(pev->event.fd, SOL_SOCKET,
 				       SO_ERROR, &sock_error, &optlen);
-		NET_ERR("Receiver IPv%d socket error (%d)",
-			family == AF_INET ? 4 : 6, sock_error);
-		ret = DNS_EAI_SYSTEM;
+		if (sock_error > 0) {
+			NET_ERR("Receiver IPv%d socket error (%d)",
+				family == AF_INET ? 4 : 6, sock_error);
+			ret = DNS_EAI_SYSTEM;
+		}
+
 		goto unlock;
 	}
 
