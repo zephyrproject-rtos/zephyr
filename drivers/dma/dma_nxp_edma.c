@@ -604,6 +604,19 @@ static const struct dma_driver_api edma_api = {
 	.chan_filter = edma_channel_filter,
 };
 
+static edma_config_t *edma_hal_cfg_get(const struct edma_config *cfg)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(s_edmaConfigs); i++) {
+		if (cfg->regmap_phys == s_edmaConfigs[i].regmap) {
+			return s_edmaConfigs + i;
+		}
+	}
+
+	return NULL;
+}
+
 static int edma_init(const struct device *dev)
 {
 	const struct edma_config *cfg;
@@ -612,6 +625,11 @@ static int edma_init(const struct device *dev)
 
 	data = dev->data;
 	cfg = dev->config;
+
+	data->hal_cfg = edma_hal_cfg_get(cfg);
+	if (!data->hal_cfg) {
+		return -ENODEV;
+	}
 
 	/* map instance MMIO */
 	device_map(&regmap, cfg->regmap_phys, cfg->regmap_size, K_MEM_CACHE_NONE);
@@ -678,7 +696,6 @@ static struct edma_config edma_config_##inst = {				\
 static struct edma_data edma_data_##inst = {					\
 	.channels = channels_##inst,						\
 	.ctx.magic = DMA_MAGIC,							\
-	.hal_cfg = &EDMA_HAL_CFG_GET(inst),					\
 };										\
 										\
 DEVICE_DT_INST_DEFINE(inst, &edma_init, NULL,					\
