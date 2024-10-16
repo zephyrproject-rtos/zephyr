@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2024 tinyVision.ai Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../video-emul.overlay"
+#include "../app.overlay"
+
+/* Switch the log back-end from CDC-ACM to UART */
+
+/ {
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+	};
+};
+
+&usb_cdc_acm_uart {
+	status = "disabled";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+};
