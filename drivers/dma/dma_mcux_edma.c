@@ -528,13 +528,6 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 
 	LOG_DBG("START TRANSFER");
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
-
 #if !defined(CONFIG_DMA_MCUX_EDMA_V3) && !defined(CONFIG_DMA_MCUX_EDMA_V4)
 	LOG_DBG("DMA CR 0x%x", DEV_BASE(dev)->CR);
 #endif
@@ -750,13 +743,6 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 	}
 	status->dir = DEV_CHANNEL_DATA(dev, channel)->transfer_settings.direction;
 
-#if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t dmamux_idx = DEV_DMAMUX_IDX(dev, channel);
-	uint8_t dmamux_channel = DEV_DMAMUX_CHANNEL(dev, channel);
-
-	LOG_DBG("DMAMUX CHCFG 0x%x", DEV_DMAMUX_BASE(dev, dmamux_idx)->CHCFG[dmamux_channel]);
-#endif
-
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)
 	LOG_DBG("DMA MP_CSR 0x%x",  DEV_BASE(dev)->MP_CSR);
 	LOG_DBG("DMA MP_ES 0x%x",   DEV_BASE(dev)->MP_ES);
@@ -808,9 +794,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 	LOG_DBG("INIT NXP EDMA");
 
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
-	uint8_t i;
-
-	for (i = 0; i < config->dma_channels / config->channels_per_mux; i++) {
+	for (uint8_t i = 0; i < config->dma_channels / config->channels_per_mux; i++) {
 		DMAMUX_Init(DEV_DMAMUX_BASE(dev, i));
 	}
 #endif
