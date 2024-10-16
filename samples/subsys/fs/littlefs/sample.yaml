@@ -24,7 +24,6 @@ tests:
       - stm32h747i_disco/stm32h747xx/m7
       - stm32h750b_dk
       - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15pdk/nrf54l15/cpuapp
       - frdm_ke17z
       - frdm_ke17z512
     integration_platforms:
