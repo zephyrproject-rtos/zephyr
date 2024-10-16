@@ -12,6 +12,10 @@
 	};
 };
 
+&dma_fast_region {
+	status = "okay";
+};
+
 &pwm120 {
 	status = "okay";
 	pinctrl-0 = <&pwm_default>;
