@@ -1,0 +1,104 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Base include file for testing bindings initialization.
+#
+# Involves base property definitions ("type:", "description:", "const:",
+# "required:", "enum:" and "default:") up to the grandchild-binding level.
+#
+# Binding:
+#   + prop-1
+#   + prop-2
+#   + prop-enum
+#   + prop-req
+#   + prop-const
+#   + prop-default
+#
+#   Child-binding:
+#     + child-prop-1
+#     + child-prop-2
+#     + child-prop-enum
+#     + child-prop-req
+#     + child-prop-const
+#     + child-prop-default
+#
+#     Grandchild-binding:
+#       + grandchild-prop-1
+#       + grandchild-prop-2
+#       + grandchild-prop-enum
+#       + grandchild-prop-req
+#       + grandchild-prop-const
+#       + grandchild-prop-default
+
+description: Base property specifications.
+
+properties:
+  prop-1:
+    description: Base property 1.
+    type: int
+  prop-2:
+    type: string
+  prop-enum:
+    type: string
+    required: false
+    enum:
+      - FOO
+      - BAR
+  prop-const:
+    type: int
+    const: 8
+  prop-req:
+    type: int
+    required: true
+  prop-default:
+    type: int
+    default: 1
+
+child-binding:
+  description: Base child-binding description.
+
+  properties:
+    child-prop-1:
+      description: Base child-prop 1.
+      type: int
+    child-prop-2:
+      type: string
+    child-prop-enum:
+      type: string
+      required: false
+      enum:
+        - CHILD_FOO
+        - CHILD_BAR
+    child-prop-const:
+      type: int
+      const: 16
+    child-prop-req:
+      type: int
+      required: true
+    child-prop-default:
+      type: int
+      default: 2
+
+  child-binding:
+    description: Base grandchild-binding description.
+
+    properties:
+      grandchild-prop-1:
+        description: Base grandchild-prop 1.
+        type: int
+      grandchild-prop-2:
+        type: string
+      grandchild-prop-enum:
+        type: string
+        required: false
+        enum:
+          - GRANDCHILD_FOO
+          - GRANDCHILD_BAR
+      grandchild-prop-const:
+        type: int
+        const: 32
+      grandchild-prop-req:
+        type: int
+        required: true
+      grandchild-prop-default:
+        type: int
+        default: 3
