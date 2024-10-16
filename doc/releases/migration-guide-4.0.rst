@@ -137,6 +137,12 @@ Device Drivers and Devicetree
   their driver API, users of these devices should ensure they pass appropriate values to
   :c:func:`gpio_pin_set`. (:github:`65797`)
 
+* The ``power-domain`` property has been removed in favor of ``power-domains``.
+  The new property allows to add more than one power domain.
+  ``power-domain-names`` is also available to optionally name each entry in
+  ``power-domains``. The number of cells in the ``power-domains`` property need
+  to be defined using ``#power-domain-cells``.
+
 Analog Digital Converter (ADC)
 ==============================
 
