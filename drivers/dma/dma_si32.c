@@ -141,6 +141,14 @@ static int dma_si32_config(const struct device *dev, uint32_t channel, struct dm
 		return -EINVAL;
 	}
 
+	/* Prevent messing up (potentially) ongoing DMA operations and their settings. This behavior
+	 * is required by the Zephyr DMA API.
+	 */
+	if (SI32_DMACTRL_A_is_channel_enabled(SI32_DMACTRL_0, channel)) {
+		LOG_ERR("DMA channel is currently in use");
+		return -EBUSY;
+	}
+
 	channel_descriptor = &channel_descriptors[channel];
 
 	if (cfg == NULL) {
