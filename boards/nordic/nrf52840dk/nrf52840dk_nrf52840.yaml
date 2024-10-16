@@ -25,4 +25,5 @@ supported:
   - usbd
   - watchdog
   - netif:openthread
+  - mcuboot
 vendor: nordic

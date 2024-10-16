@@ -18,4 +18,5 @@ supported:
   - spi
   - dma
   - watchdog
+  - mcuboot
 vendor: nxp

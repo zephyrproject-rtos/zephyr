@@ -16,4 +16,5 @@ toolchain:
 supported:
   - gpio
   - can
+  - mcuboot
 vendor: nxp

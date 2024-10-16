@@ -17,6 +17,7 @@ supported:
   - arduino_spi
   - counter
   - rtc
+  - mcuboot
 ram: 128
 flash: 1024
 vendor: st

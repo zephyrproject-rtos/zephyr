@@ -25,4 +25,5 @@ supported:
   - i2c
   - rtc
   - usbd
+  - mcuboot
 vendor: st

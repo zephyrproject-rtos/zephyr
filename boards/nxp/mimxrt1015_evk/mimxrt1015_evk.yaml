@@ -24,4 +24,5 @@ supported:
   - usb_device
   - spi
   - adc
+  - mcuboot
 vendor: nxp

@@ -31,4 +31,5 @@ supported:
   - watchdog
   - video
   - usbd
+  - mcuboot
 vendor: nxp

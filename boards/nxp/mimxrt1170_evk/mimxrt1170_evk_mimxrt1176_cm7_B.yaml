@@ -27,4 +27,5 @@ supported:
   - usb_device
   - watchdog
   - video
+  - mcuboot
 vendor: nxp

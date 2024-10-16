@@ -31,4 +31,5 @@ supported:
   - can
   - watchdog
   - adc
+  - mcuboot
 vendor: nxp

@@ -29,4 +29,5 @@ supported:
   - usbd
   - watchdog
   - adc
+  - mcuboot
 vendor: nxp

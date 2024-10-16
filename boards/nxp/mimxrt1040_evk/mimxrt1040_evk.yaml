@@ -22,4 +22,5 @@ supported:
   - spi
   - i2c
   - counter
+  - mcuboot
 vendor: nxp

@@ -28,4 +28,5 @@ supported:
   - regulator
   - adc
   - usb_device
+  - mcuboot
 vendor: nxp

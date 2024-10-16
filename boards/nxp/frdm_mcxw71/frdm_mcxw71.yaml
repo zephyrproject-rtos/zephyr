@@ -17,3 +17,4 @@ supported:
   - pinctrl
   - flash
   - i2c
+  - mcuboot

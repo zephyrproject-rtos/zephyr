@@ -29,4 +29,5 @@ supported:
   - pwm
   - i2s
   - dmic
+  - mcuboot
 vendor: nxp

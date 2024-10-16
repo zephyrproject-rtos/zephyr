@@ -32,4 +32,5 @@ supported:
   - watchdog
   - usb_device
   - usbd
+  - mcuboot
 vendor: nxp

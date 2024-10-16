@@ -26,4 +26,5 @@ supported:
   - usb_device
   - adc
   - sdhc
+  - mcuboot
 vendor: nxp

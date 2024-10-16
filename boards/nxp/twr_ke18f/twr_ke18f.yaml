@@ -18,4 +18,5 @@ supported:
   - pwm
   - spi
   - watchdog
+  - mcuboot
 vendor: nxp

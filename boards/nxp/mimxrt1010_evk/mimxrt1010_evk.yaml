@@ -27,4 +27,5 @@ supported:
   - spi
   - adc
   - gpio
+  - mcuboot
 vendor: nxp
