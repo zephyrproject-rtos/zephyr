@@ -84,3 +84,111 @@ Samples
 =======
 
  - :zephyr:code-sample:`ipc-icmsg`
+
+Detailed Protocol Specification
+===============================
+
+The ICMsg uses two shared memory regions and two MBOX channels.
+The region and channel pair are used to transfer messages in one direction.
+The other pair is symmetric and transfers messages in the opposite direction.
+For this reason, the specification below focuses on one such pair.
+The other pair is identical.
+
+The ICMsg provides just one endpoint per instance.
+
+Shared Memory Region Organization
+---------------------------------
+
+If data caching is enabled, the shared memory region provided to ICMsg must be aligned according to the cache requirement.
+If cache is not enabled, the required alignment is 4 bytes.
+
+The shared memory region is entirely used by a single FIFO.
+It contains read and write indexes followed by the data buffer.
+The detailed structure is contained in the following table:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field name
+     - Size (bytes)
+     - Byte order
+     - Description
+   * - ``rd_idx``
+     - 4
+     - little‑endian
+     - Index of the first incoming byte in the ``data`` field.
+   * - ``padding``
+     - depends on cache alignment
+     - n/a
+     - Padding added to align ``wr_idx`` to the cache alignment.
+   * - ``wr_idx``
+     - 4
+     - little‑endian
+     - Index of the byte after the last incoming byte in the ``data`` field.
+   * - ``data``
+     - everything to the end of the region
+     - n/a
+     - Circular buffer containing actual bytes to transfer.
+
+This is usual FIFO with a circular buffer:
+
+* The Indexes (``rd_idx`` and ``wr_idx``) are wrapped around when they reach the end of the ``data`` buffer.
+* The FIFO is empty if ``rd_idx == wr_idx``.
+* The FIFO has one byte less capacity than the ``data`` buffer length.
+
+Packets
+-------
+
+Packets are sent over the FIFO described in the above section.
+One packet can be wrapped around if it occurs at the end of the FIFO buffer.
+
+The following is the packet structure:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Field name
+     - Size (bytes)
+     - Byte order
+     - Description
+   * - ``len``
+     - 2
+     - big‑endian
+     - Length of the ``data`` field.
+   * - ``reserved``
+     - 2
+     - n/a
+     - Reserved for the future use.
+       It must be 0 for the current protocol version.
+   * - ``data``
+     - ``len``
+     - n/a
+     - Packet data.
+   * - ``padding``
+     - 0‑3
+     - n/a
+     - Padding is added to align the total packet size to 4 bytes.
+
+The packet send procedure is the following:
+
+#. Check if the packet fits into the buffer.
+#. Write the packet to ``data`` FIFO buffer starting at ``wr_idx``.
+   Wrap it if needed.
+#. Write a new value of the ``wr_idx``.
+#. Notify the receiver over the MBOX channel.
+
+Initialization
+--------------
+
+The initialization sequence is the following:
+
+#. Set the ``wr_idx`` and ``rd_idx`` to zero.
+#. Push a single packet to FIFO containing magic data: ``45 6d 31 6c 31 4b 30 72 6e 33 6c 69 34``.
+   The MBOX is not used yet.
+#. Initialize the MBOX.
+#. Repeat the notification over the MBOX channel using some interval, for example, 1 ms.
+#. Wait for an incoming packet containing the magic data.
+   It will arrive over the other pair (shared memory region and MBOX).
+#. Stop repeating the MBOX notification.
+
+After this, the ICMsg is bound, and it is ready to transfer packets.
