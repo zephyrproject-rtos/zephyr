@@ -1061,3 +1061,18 @@ li>a.code-sample-link.reference.internal {
 li>a.code-sample-link.reference.internal.current {
     text-decoration: underline;
 }
+
+.rst-content .sidebar {
+    border-radius: 12px;
+    background: var(--admonition-note-background-color);
+    color: var(--admonition-note-title-color);
+}
+
+.rst-content .sidebar .sidebar-title {
+background: var(--admonition-note-title-background-color);
+    border-radius: 12px 12px 0px 0px;
+}
+
+.rst-content .sidebar * {
+    color: var(--admonition-note-color);
+}
