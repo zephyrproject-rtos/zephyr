@@ -2,6 +2,8 @@
 # vim: set syntax=python ts=4 :
 #
 # Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2024 Arm Limited (or its affiliates). All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 import os
 import sys
@@ -14,7 +16,6 @@ from collections import OrderedDict
 from itertools import islice
 import logging
 import copy
-import shutil
 import random
 import snippets
 from pathlib import Path
@@ -95,7 +96,7 @@ class TestPlan:
     SAMPLE_FILENAME = 'sample.yaml'
     TESTSUITE_FILENAME = 'testcase.yaml'
 
-    def __init__(self, env=None):
+    def __init__(self, env: Namespace):
 
         self.options = env.options
         self.env = env
@@ -123,6 +124,7 @@ class TestPlan:
         self.levels = []
         self.test_config =  {}
 
+        self.name = "unnamed"
 
     def get_level(self, name):
         level = next((l for l in self.levels if l.name == name), None)
@@ -157,8 +159,9 @@ class TestPlan:
             if inherit:
                 for inherted_level in inherit:
                     _inherited = self.get_level(inherted_level)
+                    assert _inherited, "Unknown inherited level {inherted_level}"
                     _inherited_scenarios = _inherited.scenarios
-                    level_scenarios = _level.scenarios
+                    level_scenarios = _level.scenarios if _level else []
                     level_scenarios.extend(_inherited_scenarios)
 
     def find_subtests(self):
@@ -627,8 +630,9 @@ class TestPlan:
 
     def handle_quarantined_tests(self, instance: TestInstance, plat: Platform):
         if self.quarantine:
+            simulator = plat.simulator_by_name(self.options)
             matched_quarantine = self.quarantine.get_matched_quarantine(
-                instance.testsuite.id, plat.name, plat.arch, plat.simulation
+                instance.testsuite.id, plat.name, plat.arch, simulator.name if simulator is not None else 'na'
             )
             if matched_quarantine and not self.options.quarantine_verify:
                 instance.add_filter("Quarantine: " + matched_quarantine, Filters.QUARANTINE)
@@ -773,7 +777,7 @@ class TestPlan:
             platform_filter = _platforms
             platforms = list(filter(lambda p: p.name in platform_filter, self.platforms))
         elif emu_filter:
-            platforms = list(filter(lambda p: p.simulation != 'na', self.platforms))
+            platforms = list(filter(lambda p: bool(p.simulator_by_name(self.options.sim_name)), self.platforms))
         elif vendor_filter:
             platforms = list(filter(lambda p: p.vendor in vendor_filter, self.platforms))
             logger.info(f"Selecting platforms by vendors: {','.join(vendor_filter)}")
@@ -786,10 +790,8 @@ class TestPlan:
             # the default platforms list. Default platforms should always be
             # runnable.
             for p in _platforms:
-                if p.simulation and p.simulation_exec:
-                    if shutil.which(p.simulation_exec):
-                        platforms.append(p)
-                else:
+                sim = p.simulator_by_name(self.options.sim_name)
+                if (not sim) or sim.is_runnable():
                     platforms.append(p)
         else:
             platforms = self.platforms
@@ -931,7 +933,8 @@ class TestPlan:
                     instance.add_filter("Not enough RAM", Filters.PLATFORM)
 
                 if ts.harness:
-                    if ts.harness == 'robot' and plat.simulation != 'renode':
+                    sim = plat.simulator_by_name(self.options.sim_name)
+                    if ts.harness == 'robot' and sim and sim.name != 'renode':
                         instance.add_filter("No robot support for the selected platform", Filters.SKIP)
 
                 if ts.depends_on:
@@ -999,7 +1002,7 @@ class TestPlan:
                 # to run a test once per unique (arch, simulation) platform.
                 if not ignore_platform_key and hasattr(ts, 'platform_key') and len(ts.platform_key) > 0:
                     key_fields = sorted(set(ts.platform_key))
-                    keys = [getattr(plat, key_field) for key_field in key_fields]
+                    keys = [getattr(plat, key_field, None) for key_field in key_fields]
                     for key in keys:
                         if key is None or key == 'na':
                             instance.add_filter(
@@ -1054,7 +1057,8 @@ class TestPlan:
 
             elif emulation_platforms:
                 self.add_instances(instance_list)
-                for instance in list(filter(lambda inst: not inst.platform.simulation != 'na', instance_list)):
+                for instance in list(filter(lambda inst: not
+                                            inst.platform.simulator_by_name(self.options.sim_name), instance_list)):
                     instance.add_filter("Not an emulated platform", Filters.CMD_LINE)
             elif vendor_platforms:
                 self.add_instances(instance_list)

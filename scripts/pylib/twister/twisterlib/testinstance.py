@@ -11,7 +11,6 @@ import os
 import hashlib
 import random
 import logging
-import shutil
 import glob
 import csv
 
@@ -28,8 +27,11 @@ from twisterlib.handlers import (
     QEMUHandler,
     QEMUWinHandler,
     DeviceHandler,
+)
+from twisterlib.constants import (
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
+    SUPPORTED_SIMS_WITH_EXEC,
 )
 
 logger = logging.getLogger('twister')
@@ -211,12 +213,13 @@ class TestInstance:
 
         options = env.options
         common_args = (options, env.generator_cmd, not options.disable_suite_name_check)
+        simulator = self.platform.simulator_by_name(options.sim_name)
         if options.device_testing:
             handler = DeviceHandler(self, "device", *common_args)
             handler.call_make_run = False
             handler.ready = True
-        elif self.platform.simulation != "na":
-            if self.platform.simulation == "qemu":
+        elif simulator:
+            if simulator.name == "qemu":
                 if os.name != "nt":
                     handler = QEMUHandler(self, "qemu", *common_args)
                 else:
@@ -224,10 +227,9 @@ class TestInstance:
                 handler.args.append(f"QEMU_PIPE={handler.get_fifo()}")
                 handler.ready = True
             else:
-                handler = SimulationHandler(self, self.platform.simulation, *common_args)
+                handler = SimulationHandler(self, simulator.name, *common_args)
+                handler.ready = simulator.is_runnable()
 
-            if self.platform.simulation_exec and shutil.which(self.platform.simulation_exec):
-                handler.ready = True
         elif self.testsuite.type == "unit":
             handler = BinaryHandler(self, "unit", *common_args)
             handler.binary = os.path.join(self.build_dir, "testbinary")
@@ -242,21 +244,23 @@ class TestInstance:
 
     # Global testsuite parameters
     def check_runnable(self,
-                    options,
-                    hardware_map=None):
+                       options: TwisterEnv,
+                       hardware_map=None):
 
         enable_slow = options.enable_slow
         filter = options.filter
         fixtures = options.fixture
         device_testing = options.device_testing
+        simulation = options.sim_name
 
+        simulator = self.platform.simulator_by_name(simulation)
         if os.name == 'nt':
             # running on simulators is currently supported only for QEMU on Windows
-            if self.platform.simulation not in ('na', 'qemu'):
+            if (not simulator) or simulator.name not in ('na', 'qemu'):
                 return False
 
             # check presence of QEMU on Windows
-            if self.platform.simulation == 'qemu' and 'QEMU_BIN_PATH' not in os.environ:
+            if simulator.name == 'qemu' and 'QEMU_BIN_PATH' not in os.environ:
                 return False
 
         # we asked for build-only on the command line
@@ -269,20 +273,20 @@ class TestInstance:
             return False
 
         target_ready = bool(self.testsuite.type == "unit" or \
-                        self.platform.type == "native" or \
-                        (self.platform.simulation in SUPPORTED_SIMS and \
-                         self.platform.simulation not in self.testsuite.simulation_exclude) or device_testing)
+                            self.platform.type == "native" or \
+                            (simulator and simulator.name in SUPPORTED_SIMS and \
+                             simulator.name not in self.testsuite.simulation_exclude) or \
+                            device_testing)
 
         # check if test is runnable in pytest
         if self.testsuite.harness == 'pytest':
-            target_ready = bool(filter == 'runnable' or self.platform.simulation in SUPPORTED_SIMS_IN_PYTEST)
+            target_ready = bool(filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST)
 
-        SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']
         if filter != 'runnable' and \
-                self.platform.simulation in SUPPORTED_SIMS_WITH_EXEC and \
-                self.platform.simulation_exec:
-            if not shutil.which(self.platform.simulation_exec):
-                target_ready = False
+                simulator and \
+                simulator.name in SUPPORTED_SIMS_WITH_EXEC and \
+                not simulator.is_runnable():
+            target_ready = False
 
         testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
 
