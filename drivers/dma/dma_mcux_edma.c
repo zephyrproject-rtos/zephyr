@@ -789,13 +789,10 @@ static int dma_mcux_edma_get_status(const struct device *dev, uint32_t channel,
 static bool dma_mcux_edma_channel_filter(const struct device *dev,
 					 int channel_id, void *param)
 {
-	enum dma_channel_filter *filter = (enum dma_channel_filter *)param;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(channel_id);
+	ARG_UNUSED(param);
 
-	if (filter && *filter == DMA_CHANNEL_PERIODIC) {
-		if (channel_id > 3) {
-			return false;
-		}
-	}
 	return true;
 }
 
