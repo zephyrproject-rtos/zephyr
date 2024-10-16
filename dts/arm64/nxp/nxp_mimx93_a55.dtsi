@@ -359,7 +359,6 @@
 		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			<GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		#dma-cells = <2>;
-		hal-cfg-index = <1>;
 		status = "disabled";
 	};
 
