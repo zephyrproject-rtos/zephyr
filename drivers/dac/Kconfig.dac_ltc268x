@@ -1,0 +1,16 @@
+config DAC_LTC268X
+	bool
+	prompt "LTC-268X: 16-channel, 12 or 16-bit DAC"
+	default n
+	help
+	  This option enables support for the LTC-268X DAC
+
+if DAC_LTC268X
+
+config DAC_LTC268X_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  LTC 268x DAC device driver initialization priority.
+
+endif # DAC_LTC268X
