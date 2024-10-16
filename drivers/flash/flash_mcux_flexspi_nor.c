@@ -977,6 +977,37 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		}
 		/* Still return an error- we want the JEDEC configuration to run */
 		return -ENOTSUP;
+	case 0x40ef:
+		/* W25Q512JV flash, use 4 byte read/write */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
+		/* Flash needs 6 dummy cycles (at 104MHz) */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 6,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
+		/* Only 1S-1S-4S page program supported */
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x4,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		/* Update ERASE commands for 4 byte mode */
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xDC,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32),
+		/* Read instruction used for polling is 0x05 */
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		/* Device uses bit 1 of status reg 2 for QE */
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
+						     JESD216_DW15_QER_VAL_S2B1v5);
 	case 0x25C2:
 		/* MX25 flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
