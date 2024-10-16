@@ -1,0 +1,29 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MIMXRT798S_HIFI4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 325000000
+
+config XTENSA_TIMER
+	default y
+
+config MULTI_LEVEL_INTERRUPTS
+	default n
+
+# To prevent test uses TEST_LOGGING_MINIMAL
+config TEST_LOGGING_DEFAULTS
+	default n
+	depends on TEST
+
+config XTENSA_CCOUNT_HZ
+	default SYS_CLOCK_HW_CYCLES_PER_SEC
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config LOG
+	default n
+
+endif # SOC_MIMXRT798S_HIFI4
