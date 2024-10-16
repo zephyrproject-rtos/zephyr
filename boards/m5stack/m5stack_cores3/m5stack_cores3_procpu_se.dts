@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "m5stack_cores3_procpu_common.dtsi"
+
+/ {
+	model = "M5Stack CoreS3 SE PROCPU";
+	compatible = "m5stack,cores3-se";
+};
