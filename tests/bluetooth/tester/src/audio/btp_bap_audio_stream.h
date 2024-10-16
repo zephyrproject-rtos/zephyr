@@ -21,3 +21,4 @@ int btp_bap_audio_stream_init_send_worker(void);
 void btp_bap_audio_stream_started(struct btp_bap_audio_stream *stream);
 void btp_bap_audio_stream_stopped(struct btp_bap_audio_stream *a_stream);
 uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len);
+uint8_t btp_bap_audio_stream_send_data(const uint8_t *data, uint8_t data_len);
