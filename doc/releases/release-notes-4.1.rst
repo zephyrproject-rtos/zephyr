@@ -92,6 +92,10 @@ Drivers and Sensors
 
 * Display
 
+  * Added flag ``frame_incomplete`` to ``display_write`` that indicates whether a write is the last
+    write of the frame, allowing display drivers to implement double buffering / tearing enable
+    signal handling (:github:`81250`)
+
 * Ethernet
 
 * Flash
