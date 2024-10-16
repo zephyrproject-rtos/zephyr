@@ -4,4 +4,8 @@
 config HAS_NORDIC_DMM
 	bool
 
+config NRF_SYS_EVENT
+	bool "nRF system event support"
+	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
+
 rsource "vpr/Kconfig"
