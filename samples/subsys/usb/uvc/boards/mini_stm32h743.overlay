@@ -1,0 +1,20 @@
+#include "../app.overlay"
+
+/* Do not use the CDC-ACM based logger to avoid interfering in the logs */
+
+/ {
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+	};
+};
+
+&usb_cdc_acm_uart {
+	status = "disabled";
+};
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11>;
+	pinctrl-names = "default";
+	status = "okay";
+};

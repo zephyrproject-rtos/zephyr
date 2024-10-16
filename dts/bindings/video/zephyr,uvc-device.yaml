@@ -1,0 +1,55 @@
+# Copyright (c) 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class instance
+
+  The Video Class will present a video endpoint to interconnect with any video
+  device. It supports multiple endpoints, each becoming its own video streaming
+  interface to the host.
+
+  The devices that are connected will receive calls to all query and configure
+  the formats, frame intervals, video controls, and get the feed started via
+  their video API. Some of this information is used to generate the USB device
+  descriptors sent to the host, with the supported format and controls listed.
+
+  Example for single endpoint connected to mipi0:
+
+    uvc0: uvc {
+      compatible = "zephyr,uvc-device";
+      port {
+        uvc0_ep_in: endpoint {
+          remote-endpoint-label = "mipi0_ep_out";
+        };
+      };
+    };
+
+  Example for multiple endpoints connected to mipi0 and mipi1:
+
+    uvc0: uvc {
+      compatible = "zephyr,uvc-device";
+      port {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        uvc0_ep0_in: endpoint@0 {
+          reg = <0x0>;
+          remote-endpoint-label = "mipi0_ep_out";
+        };
+
+        uvc0_ep1_in: endpoint@1 {
+          reg = <0x1>;
+          remote-endpoint-label = "mipi1_ep_out";
+        };
+      };
+    };
+
+compatible: "zephyr,uvc-device"
+
+include: base.yaml
+
+on-bus: usb
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
