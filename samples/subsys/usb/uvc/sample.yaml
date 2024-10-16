@@ -1,0 +1,10 @@
+sample:
+  name: USB Video sample
+tests:
+  sample.subsys.usb.uvc:
+    depends_on:
+      - usbd
+    tags: usb video
+    integration_platforms:
+      - nrf52840dongle
+      - rpi_pico
