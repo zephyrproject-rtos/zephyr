@@ -9,24 +9,6 @@ config SOC_NRF54L15
 	help
 	  NRF54L15
 
-config SOC_NRF54L15_ENGA
-	bool
-	select SOC_NRF54L15
-	help
-	  NRF54L15 ENGA
-
-config SOC_NRF54L15_ENGA_CPUAPP
-	bool
-	select SOC_NRF54L15_ENGA
-	help
-	  NRF54L15 ENGA CPUAPP
-
-config SOC_NRF54L15_ENGA_CPUFLPR
-	bool
-	select SOC_NRF54L15_ENGA
-	help
-	  NRF54L15 ENGA CPUFLPR
-
 config SOC_NRF54L15_CPUAPP
 	bool
 	select SOC_NRF54L15
