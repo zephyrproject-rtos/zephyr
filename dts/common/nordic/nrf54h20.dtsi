@@ -194,6 +194,11 @@
 		};
 	};
 
+	gpd: global-power-domain {
+		compatible = "nordic,nrf-gpd";
+		#power-domain-cells = <1>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
