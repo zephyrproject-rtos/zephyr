@@ -596,6 +596,10 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	if (ret < 0) {
 		return ret;
 	}
+	if (qer == JESD216_DW15_QER_VAL_S2B1v5) {
+		/* Left shift buffer by a byte */
+		buffer = buffer << 8;
+	}
 	buffer |= bit;
 	transfer.dataSize = wr_size;
 	transfer.seqIndex = SCRATCH_CMD2;
