@@ -39,15 +39,15 @@ struct dma_mcux_edma_config {
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	DMAMUX_Type **dmamux_base;
 #endif
-	uint8_t channels_per_mux;
-	uint8_t dmamux_reg_offset;
-	int dma_requests;
-	int dma_channels; /* number of channels */
+	void (*irq_config_func)(const struct device *dev);
+	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
-	void (*irq_config_func)(const struct device *dev);
-	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
+	uint16_t dma_requests;
+	uint16_t dma_channels; /* number of channels */
+	uint8_t channels_per_mux;
+	uint8_t dmamux_reg_offset;
 };
 
 
@@ -927,8 +927,8 @@ static int dma_mcux_edma_init(const struct device *dev)
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		.base = (DMA_Type *)DT_INST_REG_ADDR(n),			\
 		DMAMUX_BASE_INIT(n)						\
-		.dma_requests = DT_INST_PROP(n, dma_requests),			\
-		.dma_channels = DT_INST_PROP(n, dma_channels),			\
+		.dma_requests = (uint16_t)DT_INST_PROP(n, dma_requests),	\
+		.dma_channels = (uint16_t)DT_INST_PROP(n, dma_channels),	\
 		CHANNELS_PER_MUX(n)						\
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
