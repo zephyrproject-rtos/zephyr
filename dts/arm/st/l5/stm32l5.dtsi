@@ -432,7 +432,7 @@
 			status = "disabled";
 		};
 
-		octospi1: octospi@44021000 {
+		octospi1: spi@44021000 {
 			compatible = "st,stm32-ospi";
 			reg = <0x44021000 0x400>;
 			interrupts = <76 0>;
