@@ -15,3 +15,6 @@ properties:
       Number used by the firmware running on the SCU to identify
       the resource on which the PD-related operations are to be
       performed.
+
+  "#power-domain-cells":
+    const: 0
