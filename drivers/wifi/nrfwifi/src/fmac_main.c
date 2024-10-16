@@ -320,27 +320,27 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 	k_mutex_lock(&reg_lock, K_FOREVER);
 
 	if (!dev || !reg_domain) {
-		goto err;
+		goto out;
 	}
 
 	vif_ctx_zep = dev->data;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 
 	if (!rpu_ctx_zep) {
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
 		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
-		goto err;
+		goto out;
 	}
 
 #ifdef CONFIG_NRF70_SCAN_ONLY
@@ -352,26 +352,26 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 		status = nrf_wifi_fmac_set_reg(fmac_dev_ctx, &reg_domain_info);
 		if (status != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: Failed to set regulatory domain", __func__);
-			goto err;
+			goto out;
 		}
 
-		goto err;
+		goto out;
 	}
 #endif
 	if (reg_domain->oper != WIFI_MGMT_GET) {
 		LOG_ERR("%s: Invalid operation: %d", __func__, reg_domain->oper);
-		goto err;
+		goto out;
 	}
 
 	if (!reg_domain->chan_info)	{
 		LOG_ERR("%s: Invalid regulatory info (NULL)\n", __func__);
-		goto err;
+		goto out;
 	}
 
 	status = nrf_wifi_fmac_get_reg(fmac_dev_ctx, &reg_domain_info);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: Failed to get regulatory domain", __func__);
-		goto err;
+		goto out;
 	}
 
 	memcpy(reg_domain->country_code, reg_domain_info.alpha2, WIFI_COUNTRY_CODE_LEN);
@@ -388,7 +388,7 @@ int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_do
 	}
 
 	ret = 0;
-err:
+out:
 	k_mutex_unlock(&reg_lock);
 	return ret;
 }
