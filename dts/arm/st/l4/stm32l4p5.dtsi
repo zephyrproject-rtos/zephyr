@@ -363,7 +363,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		octospi1: octospi@a0001000 {
+		octospi1: spi@a0001000 {
 			compatible = "st,stm32-ospi";
 			reg = <0xa0001000 0x400>;
 			interrupts = <71 0>;
@@ -377,7 +377,7 @@
 			status = "disabled";
 		};
 
-		octospi2: octospi@a0001400 {
+		octospi2: spi@a0001400 {
 			compatible = "st,stm32-ospi";
 			reg = <0xa0001400 0x400>;
 			interrupts = <76 0>;
