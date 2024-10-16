@@ -12,6 +12,7 @@ supported:
   - adc
   - clock
   - counter
+  - dma
   - gpio
   - hwinfo
   - i2c
