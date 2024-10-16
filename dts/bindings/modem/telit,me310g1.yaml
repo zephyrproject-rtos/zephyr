@@ -1,0 +1,13 @@
+description: Telit ME310G1 Modem
+
+compatible: "telit,me310g1"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-dtr-gpios:
+    type: phandle-array
