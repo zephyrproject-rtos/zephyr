@@ -1,0 +1,29 @@
+sample:
+  name: USB Video sample
+common:
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Waiting the host to select the video format"
+tests:
+  sample.subsys.usb.uvc:
+    depends_on:
+      - usbd
+    tags: usb video
+    extra_args: SNIPPET=video-sw-generator
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf54h20dk/nrf54h20/cpuapp
+      - frdm_k64f
+      - stm32f723e_disco
+      - nucleo_f413zh
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt1060_evk/mimxrt1062/qspi
+  sample.subsys.usb.uvc.camera:
+    depends_on:
+      - usbd
+    tags: usb video
+    filter: dt_chosen_enabled("zephyr,camera")
+    integration_platforms:
+      - arduino_nicla_vision/stm32h747xx/m7
