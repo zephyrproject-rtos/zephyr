@@ -13,4 +13,14 @@ config PINCTRL
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+config SYS_CLOCK_TICKS_PER_SEC
+	default 4096 if ULPT_RENESAS_RA
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 32768 if ULPT_RENESAS_RA
+	default 480000000
+
+config CORTEX_M_SYSTICK
+	default n if ULPT_RENESAS_RA
+
 endif # SOC_SERIES_RA8M1
