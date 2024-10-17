@@ -207,6 +207,26 @@
 		status = "disabled";
 	};
 
+	lpspi0: spi@36000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x36000 0x800>;
+		interrupts = <42 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xd8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpspi1: spi@37000 {
+		compatible = "nxp,imx-lpspi";
+		reg = <0x37000 0x800>;
+		interrupts = <43 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xdc>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
 	gpiod: gpio@46000{
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
