@@ -119,6 +119,20 @@ void bt_bas_bls_init(void);
 void bt_bas_bls_set_battery_level(uint8_t battery_level);
 
 /**
+ * @brief Set the battery critical state flag.
+ *
+ * @param critical_state The battery critical state to set (true for critical, false otherwise).
+ */
+void bt_bas_bcs_set_battery_critical_state(bool critical_state);
+
+/**
+ * @brief Set the immediate service required flag.
+ *
+ * @param service_required The immediate service required status to set.
+ */
+void bt_bas_bcs_set_immediate_service_required(bool service_required);
+
+/**
  * @brief Read the Battery Level Status characteristic.
  *
  * @param conn Pointer to the Bluetooth connection object representing the client requesting

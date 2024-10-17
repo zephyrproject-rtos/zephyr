@@ -31,6 +31,38 @@ LOG_MODULE_REGISTER(bas, CONFIG_BT_BAS_LOG_LEVEL);
 
 static uint8_t battery_level = 100U;
 
+#if defined(CONFIG_BT_BAS_BCS)
+
+#define BT_BAS_BATTERY_CRITICAL_STATUS_CHAR_HANDLE 9
+
+/* Indicate battery critical status to all connections */
+static struct bt_gatt_indicate_params bcs_ind_params;
+
+static uint8_t battery_critical_status;
+/**  Battery Critical Status Bit 0: Critical Power State */
+#define BCS_BATTERY_CRITICAL_STATE     (1 << 0)
+/**  Battery Critical Status Bit 1: Immediate Service Required */
+#define BCS_IMMEDIATE_SERVICE_REQUIRED (1 << 1)
+
+static void bcs_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
+{
+	ARG_UNUSED(attr);
+
+	bool ind_enabled = (value == BT_GATT_CCC_INDICATE);
+
+	LOG_INF("BAS Critical status Indication %s", ind_enabled ? "enabled" : "disabled");
+}
+
+static ssize_t read_battery_critical_status(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					    void *buf, uint16_t len, uint16_t offset)
+{
+	uint8_t bcs = battery_critical_status;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &bcs, sizeof(bcs));
+}
+
+#endif /* CONFIG_BT_BAS_BCS */
+
 static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
 	ARG_UNUSED(attr);
@@ -84,6 +116,12 @@ BT_GATT_SERVICE_DEFINE(
 			       BT_GATT_PERM_READ, bt_bas_bls_read_blvl_status, NULL, NULL),
 	BT_GATT_CCC(blvl_status_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 #endif
+#if defined(CONFIG_BT_BAS_BCS)
+	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_CRIT_STATUS,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE, BT_GATT_PERM_READ,
+			       read_battery_critical_status, NULL, NULL),
+	BT_GATT_CCC(bcs_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+#endif /* CONFIG_BT_BAS_BCS */
 );
 
 static int bas_init(void)
@@ -130,5 +168,67 @@ const struct bt_gatt_attr *bt_bas_get_bas_attr(uint16_t index)
 	}
 	return NULL;
 }
+
+#if defined(CONFIG_BT_BAS_BCS)
+
+static void bcs_indicate_cb(struct bt_conn *conn, struct bt_gatt_indicate_params *params,
+			    uint8_t err)
+{
+	if (err != 0) {
+		LOG_DBG("BCS Indication failed with error %d\n", err);
+	} else {
+		LOG_DBG("BCS Indication sent successfully\n");
+	}
+}
+
+static void bt_bas_bcs_update_battery_critical_status(void)
+{
+	uint8_t err;
+
+	/* Indicate all connections */
+	bcs_ind_params.attr = &bas.attrs[BT_BAS_BATTERY_CRITICAL_STATUS_CHAR_HANDLE];
+	bcs_ind_params.data = &battery_critical_status;
+	bcs_ind_params.len = sizeof(battery_critical_status);
+	bcs_ind_params.func = bcs_indicate_cb;
+	err = bt_gatt_indicate(NULL, &bcs_ind_params);
+	if (err) {
+		LOG_DBG("Failed to send ind to all connections (err %d)\n", err);
+	}
+}
+
+void bt_bas_bcs_set_battery_critical_state(bool critical_state)
+{
+	bool current_state = (battery_critical_status & BCS_BATTERY_CRITICAL_STATE) != 0;
+
+	if (current_state == critical_state) {
+		LOG_INF("Already battery_critical_state is %d\n", critical_state);
+		return;
+	}
+
+	if (critical_state) {
+		battery_critical_status |= BCS_BATTERY_CRITICAL_STATE;
+	} else {
+		battery_critical_status &= ~BCS_BATTERY_CRITICAL_STATE;
+	}
+	bt_bas_bcs_update_battery_critical_status();
+}
+
+void bt_bas_bcs_set_immediate_service_required(bool service_required)
+{
+	bool current_state = (battery_critical_status & BCS_IMMEDIATE_SERVICE_REQUIRED) != 0;
+
+	if (current_state == service_required) {
+		LOG_INF("Already immediate_service_required is %d\n", service_required);
+		return;
+	}
+
+	if (service_required) {
+		battery_critical_status |= BCS_IMMEDIATE_SERVICE_REQUIRED;
+	} else {
+		battery_critical_status &= ~BCS_IMMEDIATE_SERVICE_REQUIRED;
+	}
+	bt_bas_bcs_update_battery_critical_status();
+}
+#endif /* CONFIG_BT_BAS_BCS */
 
 SYS_INIT(bas_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
