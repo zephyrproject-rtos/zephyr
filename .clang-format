@@ -12,6 +12,7 @@
 ---
 BasedOnStyle: LLVM
 AlignConsecutiveMacros: AcrossComments
+AlignEscapedNewlines: LeftWithLastLine
 AllowShortBlocksOnASingleLine: Never
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortEnumsOnASingleLine: false
