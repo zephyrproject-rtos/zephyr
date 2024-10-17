@@ -4,4 +4,8 @@
 config HAS_NORDIC_DMM
 	bool
 
+config NRF_SYS_EVENT
+	bool "nRF system event support"
+	select NRFX_POWER if !SOC_SERIES_NRF54HX && !SOC_SERIES_NRF54LX
+
 rsource "vpr/Kconfig"
