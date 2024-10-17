@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Meta
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+zephyr_udc0: &usbotg_hs {
+	status = "okay";
+	cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
