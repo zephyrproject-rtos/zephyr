@@ -583,23 +583,6 @@ static int is_eap_valid_security(int security)
 }
 #endif
 
-static int is_security_check_pwd(int security)
-{
-	if (security == WIFI_SECURITY_TYPE_SAE_HNP ||
-	    security == WIFI_SECURITY_TYPE_SAE_H2E ||
-	    security == WIFI_SECURITY_TYPE_SAE_AUTO ||
-	    security == WIFI_SECURITY_TYPE_PSK ||
-	    security == WIFI_SECURITY_TYPE_PSK_SHA256 ||
-	    security == WIFI_SECURITY_TYPE_WPA_PSK ||
-	    security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP ||
-	    security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-	    security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
-		return 1;
-	}
-
-	return 0;
-}
-
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -681,28 +664,26 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
-		if (is_security_check_pwd(params->security)) {
-			if (params->sae_password) {
-				if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
-					(params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
-					wpa_printf(MSG_ERROR,
-						   "Passphrase should be in range (%d-%d) characters",
-						   WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
-					goto out;
-				}
-				strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
-				sae_null_terminated[params->sae_password_length] = '\0';
-			} else {
-				if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
-					(params->psk_length > WIFI_PSK_MAX_LEN)) {
-					wpa_printf(MSG_ERROR,
-						   "Passphrase should be in range (%d-%d) characters",
-						   WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
-					goto out;
-				}
-				strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
-				psk_null_terminated[params->psk_length] = '\0';
+		if (params->sae_password) {
+			if ((params->sae_password_length < WIFI_PSK_MIN_LEN) ||
+			    (params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+				wpa_printf(MSG_ERROR,
+					   "Passphrase should be in range (%d-%d) characters",
+					   WIFI_PSK_MIN_LEN, WIFI_SAE_PSWD_MAX_LEN);
+				goto out;
 			}
+			strncpy(sae_null_terminated, params->sae_password, WIFI_SAE_PSWD_MAX_LEN);
+			sae_null_terminated[params->sae_password_length] = '\0';
+		} else {
+			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
+			    (params->psk_length > WIFI_PSK_MAX_LEN)) {
+				wpa_printf(MSG_ERROR,
+					   "Passphrase should be in range (%d-%d) characters",
+					   WIFI_PSK_MIN_LEN, WIFI_PSK_MAX_LEN);
+				goto out;
+			}
+			strncpy(psk_null_terminated, params->psk, WIFI_PSK_MAX_LEN);
+			psk_null_terminated[params->psk_length] = '\0';
 		}
 
 		/* SAP - only open and WPA2-PSK are supported for now */
