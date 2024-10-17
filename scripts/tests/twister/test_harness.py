@@ -597,31 +597,48 @@ TEST_DATA_7 = [
         "",
         "Running TESTSUITE suite_name",
         ["suite_name"],
+        { 'suite_name': { 'count': 1, 'repeat': 0 } },
+        {},
         TwisterStatus.NONE,
         True,
         TwisterStatus.NONE,
     ),
-    ("", "START - test_testcase", [], TwisterStatus.STARTED, True, TwisterStatus.NONE),
     (
-        "",
+        "On TC_START: Ztest case 'testcase' is not known in {} running suite(s)",
+        "START - test_testcase",
+        [],
+        {},
+        { 'test_id.testcase': { 'count': 1 } },
+        TwisterStatus.STARTED,
+        True,
+        TwisterStatus.NONE
+    ),
+    (
+        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "PASS - test_example in 0 seconds",
         [],
+        {},
+        {},
         TwisterStatus.PASS,
         True,
         TwisterStatus.NONE,
     ),
     (
-        "",
+        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "SKIP - test_example in 0 seconds",
         [],
+        {},
+        {},
         TwisterStatus.SKIP,
         True,
         TwisterStatus.NONE,
     ),
     (
-        "",
+        "On TC_END: Ztest case 'example' is not known in {} running suite(s)",
         "FAIL - test_example in 0 seconds",
         [],
+        {},
+        {},
         TwisterStatus.FAIL,
         True,
         TwisterStatus.NONE,
@@ -630,6 +647,8 @@ TEST_DATA_7 = [
         "not a ztest and no state for test_id",
         "START - test_testcase",
         [],
+        {},
+        { 'test_id.testcase': { 'count': 1 } },
         TwisterStatus.PASS,
         False,
         TwisterStatus.PASS,
@@ -638,6 +657,8 @@ TEST_DATA_7 = [
         "not a ztest and no state for test_id",
         "START - test_testcase",
         [],
+        {},
+        { 'test_id.testcase': { 'count': 1 } },
         TwisterStatus.FAIL,
         False,
         TwisterStatus.FAIL,
@@ -646,12 +667,14 @@ TEST_DATA_7 = [
 
 
 @pytest.mark.parametrize(
-    "exp_out, line, exp_suite_name, exp_status, ztest, state",
+    "exp_out, line, exp_suite_name, exp_started_suites, exp_started_cases, exp_status, ztest, state",
     TEST_DATA_7,
     ids=["testsuite", "testcase", "pass", "skip", "failed", "ztest pass", "ztest fail"],
 )
 def test_test_handle(
-    tmp_path, caplog, exp_out, line, exp_suite_name, exp_status, ztest, state
+    tmp_path, caplog, exp_out, line,
+    exp_suite_name, exp_started_suites, exp_started_cases,
+    exp_status, ztest, state
 ):
     # Arrange
     line = line
@@ -662,6 +685,7 @@ def test_test_handle(
     mock_testsuite = mock.Mock(id="id", testcases=[])
     mock_testsuite.name = "mock_testsuite"
     mock_testsuite.harness_config = {}
+    mock_testsuite.ztest_suite_names = []
 
     outdir = tmp_path / "gtest_out"
     outdir.mkdir()
@@ -681,6 +705,9 @@ def test_test_handle(
 
     # Assert
     assert test_obj.detected_suite_names == exp_suite_name
+    assert test_obj.started_suites == exp_started_suites
+    assert test_obj.started_cases == exp_started_cases
+
     assert exp_out in caplog.text
     if not "Running" in line and exp_out == "":
         assert test_obj.instance.testcases[0].status == exp_status

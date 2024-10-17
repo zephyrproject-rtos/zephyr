@@ -31,7 +31,6 @@ logger.setLevel(logging.DEBUG)
 _WINDOWS = platform.system() == 'Windows'
 
 
-result_re = re.compile(r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds")
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
@@ -59,11 +58,18 @@ class Harness:
         self.ztest = False
         self.detected_suite_names = []
         self.run_id = None
+        self.started_suites = {}
+        self.started_cases = {}
         self.matched_run_id = False
         self.run_id_exists = False
         self.instance: TestInstance | None = None
         self.testcase_output = ""
         self._match = False
+
+
+    @property
+    def trace(self) -> bool:
+        return self.instance.handler.options.verbose > 2
 
     @property
     def status(self) -> TwisterStatus:
@@ -710,42 +716,124 @@ class Gtest(Harness):
 
 class Test(Harness):
     __test__ = False  # for pytest to skip this class when collects tests
-    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
-    RUN_FAILED = "PROJECT EXECUTION FAILED"
-    test_suite_start_pattern = r"Running TESTSUITE (?P<suite_name>.*)"
-    ZTEST_START_PATTERN = r"START - (test_)?([a-zA-Z0-9_-]+)"
+
+    test_suite_start_pattern = re.compile(r"Running TESTSUITE (?P<suite_name>\S*)")
+    test_suite_end_pattern = re.compile(r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)")
+    test_case_start_pattern = re.compile(r"START - (test_)?([a-zA-Z0-9_-]+)")
+    test_case_end_pattern = re.compile(r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds")
+    test_suite_summary_pattern = re.compile(r"SUITE (?P<suite_status>\S*) - .* \[(?P<suite_name>\S*)\]: .* duration = (\d*[.,]?\d*) seconds")
+    test_case_summary_pattern = re.compile(r" - (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds")
+
+
+    def get_testcase(self, tc_name, phase, ts_name=None):
+        """ Search a Ztest case among detected in the test image binary
+            expecting the same test names as already known from the ELF.
+            Track suites and cases unexpectedly found in the log.
+        """
+        ts_names = self.started_suites.keys()
+        if ts_name:
+            if ts_name not in self.instance.testsuite.ztest_suite_names:
+                logger.warning(f"On {phase}: unexpected Ztest suite '{ts_name}' "
+                               f"not present among: {self.instance.testsuite.ztest_suite_names}")
+            if ts_name not in self.detected_suite_names:
+                if self.trace:
+                    logger.debug(f"On {phase}: detected new Ztest suite '{ts_name}'")
+                self.detected_suite_names.append(ts_name)
+            ts_names = [ ts_name ] if ts_name in ts_names else []
+
+        # Firstly try to match the test case ID to the first running Ztest suite with this test name.
+        for ts_name_ in ts_names:
+            if self.started_suites[ts_name_]['count'] < (0 if phase == 'TS_SUM' else 1):
+                continue
+            tc_fq_id = "{}.{}.{}".format(self.id, ts_name_, tc_name)
+            if tc := self.instance.get_case_by_name(tc_fq_id):
+                if self.trace:
+                    logger.debug(f"On {phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
+                return tc
+        logger.debug(f"On {phase}: Ztest case '{tc_name}' is not known in {self.started_suites} running suite(s).")
+        tc_id = "{}.{}".format(self.id, tc_name)
+        return self.instance.get_case_or_create(tc_id)
+
+    def start_suite(self, suite_name):
+        if suite_name not in self.detected_suite_names:
+            self.detected_suite_names.append(suite_name)
+        if suite_name not in self.instance.testsuite.ztest_suite_names:
+            logger.warning(f"Unexpected Ztest suite '{suite_name}'")
+        if suite_name in self.started_suites:
+            if self.started_suites[suite_name]['count'] > 0:
+                logger.warning(f"Already STARTED '{suite_name}':{self.started_suites[suite_name]}")
+            elif self.trace:
+                logger.debug(f"START suite '{suite_name}'")
+            self.started_suites[suite_name]['count'] += 1
+            self.started_suites[suite_name]['repeat'] += 1
+        else:
+            self.started_suites[suite_name] = { 'count': 1, 'repeat': 0 }
+
+    def end_suite(self, suite_name, phase='', suite_status=None):
+        if suite_name in self.started_suites:
+            if phase == 'TS_SUM' and self.started_suites[suite_name]['count'] == 0:
+                return
+            if self.started_suites[suite_name]['count'] < 1:
+                logger.error(f"Already ENDED {phase} suite '{suite_name}':{self.started_suites[suite_name]}")
+            elif self.trace:
+                logger.debug(f"END {phase} suite '{suite_name}':{self.started_suites[suite_name]}")
+            self.started_suites[suite_name]['count'] -= 1
+        elif suite_status == 'SKIP':
+            self.start_suite(suite_name)  # register skipped suites at their summary end
+            self.started_suites[suite_name]['count'] -= 1
+        else:
+            logger.warning(f"END {phase} suite '{suite_name}' without START detected")
+
+    def start_case(self, tc_name):
+        if tc_name in self.started_cases:
+            if self.started_cases[tc_name]['count'] > 0:
+                logger.warning(f"Already STARTED '{tc_name}':{self.started_cases[tc_name]}")
+            self.started_cases[tc_name]['count'] += 1
+        else:
+            self.started_cases[tc_name] = { 'count': 1 }
+
+    def end_case(self, tc_name, phase=''):
+        if tc_name in self.started_cases:
+            if phase == 'TS_SUM' and self.started_cases[tc_name]['count'] == 0:
+                return
+            if self.started_cases[tc_name]['count'] < 1:
+                logger.error(f"Already ENDED {phase} case '{tc_name}':{self.started_cases[tc_name]}")
+            elif self.trace:
+                logger.debug(f"END {phase} case '{tc_name}':{self.started_cases[tc_name]}")
+            self.started_cases[tc_name]['count'] -= 1
+        elif phase != 'TS_SUM':
+            logger.warning(f"END {phase} case '{tc_name}' without START detected")
+
 
     def handle(self, line):
-        test_suite_match = re.search(self.test_suite_start_pattern, line)
-        if test_suite_match:
-            suite_name = test_suite_match.group("suite_name")
-            self.detected_suite_names.append(suite_name)
+        testcase_match = None
+        if self._match:
+            self.testcase_output += line + "\n"
 
-        testcase_match = re.search(self.ZTEST_START_PATTERN, line)
-        if testcase_match:
-            name = "{}.{}".format(self.id, testcase_match.group(2))
-            tc = self.instance.get_case_or_create(name)
+        if test_suite_start_match := re.search(self.test_suite_start_pattern, line):
+            self.start_suite(test_suite_start_match.group("suite_name"))
+        elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
+            suite_name=test_suite_end_match.group("suite_name")
+            self.end_suite(suite_name, 'TS_END')
+        elif testcase_match := re.search(self.test_case_start_pattern, line):
+            tc_name = testcase_match.group(2)
+            tc = self.get_testcase(tc_name, 'TC_START')
+            self.start_case(tc.name)
             # Mark the test as started, if something happens here, it is mostly
             # due to this tests, for example timeout. This should in this case
             # be marked as failed and not blocked (not run).
             tc.status = TwisterStatus.STARTED
-
-        if testcase_match or self._match:
-            self.testcase_output += line + "\n"
-            self._match = True
-
-        result_match = result_re.match(line)
+            if not self._match:
+                self.testcase_output += line + "\n"
+                self._match = True
         # some testcases are skipped based on predicates and do not show up
         # during test execution, however they are listed in the summary. Parse
         # the summary for status and use that status instead.
-
-        summary_re = re.compile(r"- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds")
-        summary_match = summary_re.match(line)
-
-        if result_match:
+        elif result_match := self.test_case_end_pattern.match(line):
             matched_status = result_match.group(1)
-            name = "{}.{}".format(self.id, result_match.group(3))
-            tc = self.instance.get_case_or_create(name)
+            tc_name = result_match.group(3)
+            tc = self.get_testcase(tc_name, 'TC_END')
+            self.end_case(tc.name)
             tc.status = TwisterStatus[matched_status]
             if tc.status == TwisterStatus.SKIP:
                 tc.reason = "ztest skip"
@@ -755,15 +843,22 @@ class Test(Harness):
             self.testcase_output = ""
             self._match = False
             self.ztest = True
-        elif summary_match:
-            matched_status = summary_match.group(1)
-            self.detected_suite_names.append(summary_match.group(2))
-            name = "{}.{}".format(self.id, summary_match.group(4))
-            tc = self.instance.get_case_or_create(name)
+        elif test_suite_summary_match := self.test_suite_summary_pattern.match(line):
+            suite_name=test_suite_summary_match.group("suite_name")
+            suite_status=test_suite_summary_match.group("suite_status")
+            self._match = False
+            self.ztest = True
+            self.end_suite(suite_name, 'TS_SUM', suite_status=suite_status)
+        elif test_case_summary_match := self.test_case_summary_pattern.match(line):
+            matched_status = test_case_summary_match.group(1)
+            suite_name = test_case_summary_match.group(2)
+            tc_name = test_case_summary_match.group(4)
+            tc = self.get_testcase(tc_name, 'TS_SUM', suite_name)
+            self.end_case(tc.name, 'TS_SUM')
             tc.status = TwisterStatus[matched_status]
             if tc.status == TwisterStatus.SKIP:
                 tc.reason = "ztest skip"
-            tc.duration = float(summary_match.group(5))
+            tc.duration = float(test_case_summary_match.group(5))
             if tc.status == TwisterStatus.FAIL:
                 tc.output = self.testcase_output
             self.testcase_output = ""
