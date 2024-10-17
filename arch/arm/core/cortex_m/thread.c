@@ -28,11 +28,6 @@
 #define FP_GUARD_EXTRA_SIZE	0
 #endif
 
-#ifndef EXC_RETURN_FTYPE
-/* bit [4] allocate stack for floating-point context: 0=done 1=skipped  */
-#define EXC_RETURN_FTYPE           (0x00000010UL)
-#endif
-
 /* Default last octet of EXC_RETURN, for threads that have not run yet.
  * The full EXC_RETURN value will be e.g. 0xFFFFFFBC.
  */
