@@ -1,0 +1,5 @@
+tests:
+  task_wdt.syswq_stall:
+    harness: ztest
+    integration_platforms:
+      - native_sim
