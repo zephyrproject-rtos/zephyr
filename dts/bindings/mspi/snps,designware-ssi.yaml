@@ -1,0 +1,35 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare Synchronous Serial Interface (SSI) node
+
+compatible: "snps,designware-ssi"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  aux-reg:
+    type: boolean
+    description: |
+      Activates auxiliary register access that is needed on some platforms.
+
+  fifo-depth:
+    required: true
+    type: int
+
+  rx-fifo-depth:
+    type: int
+    description: |
+      When not present, fifo-depth specifies size of both TX and RX FIFOs.
+
+  tx-fifo-threshold:
+    type: int
+
+  rx-fifo-threshold:
+    type: int
