@@ -45,4 +45,15 @@
 	 (((mask) & STM32_MCO_CFGR_MASK_MASK) << STM32_MCO_CFGR_MASK_SHIFT) |        \
 	 (((val) & STM32_MCO_CFGR_VAL_MASK) << STM32_MCO_CFGR_VAL_SHIFT))
 
+/**
+ * Format RCC register offset and a bit number into two 32-bit values.
+ *
+ * First value is the RCC register offset.
+ * Second value is pow(2, bit).
+ *
+ * @param bus STM32 bus name (expands to STM32_CLOCK_BUS_{bus})
+ * @param bit Clock bit number to bit-shift 2nd value by
+ */
+#define STM32_CLOCK(bus, bit) (STM32_CLOCK_BUS_##bus) (1 << bit)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32_COMMON_CLOCKS_H_ */

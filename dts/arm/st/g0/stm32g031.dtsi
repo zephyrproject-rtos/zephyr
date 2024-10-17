@@ -14,7 +14,7 @@
 		lpuart1: serial@40008000 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40008000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00100000>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20U)>;
 			resets = <&rctl STM32_RESET(APB1L, 20U)>;
 			interrupts = <29 0>;
 			status = "disabled";
@@ -23,7 +23,7 @@
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			clocks = <&rcc STM32_CLOCK(APB1, 0U)>;
 			resets = <&rctl STM32_RESET(APB1L, 0U)>;
 			interrupts = <15 0>;
 			interrupt-names = "global";
