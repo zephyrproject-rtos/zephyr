@@ -229,7 +229,6 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		break;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	case WLAN_REASON_UAP_SUCCESS:
-		net_eth_carrier_on(g_uap.netif);
 		LOG_DBG("WLAN: UAP Started");
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		ret = wlan_get_current_uap_network_ssid(uap_ssid);
@@ -252,7 +251,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			return 0;
 		}
 		net_if_ipv4_set_netmask_by_addr(g_uap.netif, &dhcps_addr4, &netmask_addr);
-		net_if_up(g_uap.netif);
+		net_if_dormant_off(g_uap.netif);
 
 		if (net_addr_pton(AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_BASE, &base_addr) < 0) {
 			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_BASE");
@@ -312,7 +311,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_DBG("%d", disassoc_resp->reason_code);
 		break;
 	case WLAN_REASON_UAP_STOPPED:
-		net_eth_carrier_off(g_uap.netif);
+		net_if_dormant_on(g_uap.netif);
 		LOG_DBG("WLAN: UAP Stopped");
 
 		net_dhcpv4_server_stop(g_uap.netif);
@@ -420,6 +419,14 @@ static int nxp_wifi_wlan_start(void)
 
 	/* L1 network layer (physical layer) is up */
 	net_eth_carrier_on(g_mlan.netif);
+
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	/* Initialize device as dormant */
+	net_if_dormant_on(g_uap.netif);
+
+	/* L1 network layer (physical layer) is up */
+	net_eth_carrier_on(g_uap.netif);
+#endif
 
 	return 0;
 }
@@ -1804,6 +1811,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.dpp_listen               = wifi_nxp_wpa_dpp_listen,
 	.remain_on_channel        = wifi_nxp_wpa_supp_remain_on_channel,
 	.cancel_remain_on_channel = wifi_nxp_wpa_supp_cancel_remain_on_channel,
+	.send_action_cancel_wait  = wifi_nxp_wpa_supp_cancel_action_wait,
 };
 #endif
 
