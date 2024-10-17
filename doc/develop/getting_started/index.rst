@@ -510,9 +510,16 @@ Then flash the sample using :ref:`west flash <west-flashing>`:
 
    west flash
 
-You may need to install additional :ref:`host tools <flash-debug-host-tools>`
-required by your board. The ``west flash`` command will print an error if any
-required dependencies are missing.
+.. note::
+
+    You may need to install additional :ref:`host tools <flash-debug-host-tools>`
+    required by your board. The ``west flash`` command will print an error if any
+    required dependencies are missing.
+
+.. note::
+
+    In using Linux case, we usually need to configure udev rules.
+    Please also see :ref:`setting-udev-rules`.
 
 If you're using blinky, the LED will start to blink as shown in this figure:
 
