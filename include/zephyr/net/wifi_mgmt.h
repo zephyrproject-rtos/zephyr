@@ -70,10 +70,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_AP_DISABLE,
 	/** Get interface status */
 	NET_REQUEST_WIFI_CMD_IFACE_STATUS,
-	/** 11k enable/disable */
-	NET_REQUEST_WIFI_CMD_11K_ENABLE,
-	/** Send 11k neighbor request */
-	NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST,
 	/** Set power save status */
 	NET_REQUEST_WIFI_CMD_PS,
 	/** Setup or teardown TWT flow */
@@ -157,18 +153,8 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
-#define NET_REQUEST_WIFI_11K_ENABLE				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_ENABLE)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_ENABLE);
-
-#define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST);
-
 /** Request a Wi-Fi power save */
-#define NET_REQUEST_WIFI_PS				\
+#define NET_REQUEST_WIFI_PS					\
 	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PS)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
@@ -633,14 +619,6 @@ struct wifi_iface_status {
 	bool twt_capable;
 	/** The current 802.11 PHY data rate */
 	int current_phy_rate;
-};
-
-/** Wi-Fi 11k parameters */
-struct wifi_11k_params {
-	/** 11k enable/disable */
-	int enable_11k;
-	/** SSID */
-	uint8_t ssid[WIFI_SSID_MAX_LEN+1];
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -1247,22 +1225,6 @@ struct wifi_mgmt_ops {
 	 */
 	int (*reset_stats)(const struct device *dev);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
-	/** Set 11k enable/disable
-	 *
-	 * @param dev Pointer to the device structure for the driver instance.
-	 * @param params 11k parameters
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*set_11k_enable)(const struct device *dev, struct wifi_11k_params *params);
-	/** Send 11k neighbor request
-	 *
-	 * @param dev Pointer to the device structure for the driver instance.
-	 * @param params 11k parameters
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*send_11k_neighbor_request)(const struct device *dev, struct wifi_11k_params *params);
 	/** Set power save status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
