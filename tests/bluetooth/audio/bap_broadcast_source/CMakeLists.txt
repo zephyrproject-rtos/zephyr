@@ -15,4 +15,5 @@ target_include_directories(testbinary PRIVATE include)
 target_sources(testbinary
   PRIVATE
     src/main.c
+    src/test_callback_register.c
 )
