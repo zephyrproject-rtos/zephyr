@@ -439,9 +439,6 @@ config EAP_EKE
 config EAP_IKEv2
 	bool
 
-config IEEE8021X_EAPOL
-	bool
-
 config CRYPTO_INTERNAL
 	bool
 
