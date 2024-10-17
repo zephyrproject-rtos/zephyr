@@ -252,14 +252,6 @@ int hapd_state(const struct device *dev, int *state);
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params);
-/**
- * @brief Set/Get Wi-Fi AP Bandwidth
- *
- * @param dev Wi-Fi device
- * @param params AP parameters
- * @return 0 for OK; -1 for ERROR
- */
-int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params);
 #else
 static inline int hapd_state(const struct device *dev, int *state)
 {

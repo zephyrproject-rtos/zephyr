@@ -1591,18 +1591,6 @@ out:
 
 	return ret;
 }
-
-int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_params *params)
-{
-	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
-
-	if (!wifi_mgmt_api || !wifi_mgmt_api->ap_bandwidth) {
-		wpa_printf(MSG_ERROR, "ap_bandwidth not supported");
-		return -ENOTSUP;
-	}
-
-	return wifi_mgmt_api->ap_bandwidth(dev, params);
-}
 #endif
 
 int supplicant_ap_enable(const struct device *dev,
