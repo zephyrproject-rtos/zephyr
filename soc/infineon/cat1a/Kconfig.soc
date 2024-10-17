@@ -27,7 +27,7 @@ config SOC_FAMILY_PSOC6_LEGACY_M4
 config SOC_FAMILY_PSOC6_LEGACY_M0
 	bool
 
-# Cypress PSoC™ 6 MCU lines
+# Cypress PSOC™ 6 MCU lines
 config SOC_SERIES_PSOC6_60
 	bool
 	select SOC_FAMILY_PSOC6 if !SOC_FAMILY_PSOC6_LEGACY

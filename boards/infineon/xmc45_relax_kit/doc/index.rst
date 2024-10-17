@@ -60,31 +60,50 @@ The Relax Kit development board configuration supports the following hardware fe
 +-----------+------------+-----------------------+
 
 More details about the supported peripherals are available in `XMC4500 TRM`_
+
+The default configuration can be found in the Kconfig
+
+:zephyr_file:`boards/infineon/xmc45_relax_kit/xmc45_relax_kit_defconfig`
+
 Other hardware features are not currently supported by the Zephyr kernel.
 
-Building and Flashing
-*********************
-Flashing
-========
-
-Here is an example for the :zephyr:code-sample:`hello_world` application.
+Build hello world sample
+************************
+Here is an example for building the :zephyr:code-sample:`hello_world` sample application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: xmc45_relax_kit
-   :goals: flash
+   :goals: build
 
-Debugging
-=========
-
+Programming and Debugging
+*************************
+West Commands
+=============
 Here is an example for the :zephyr:code-sample:`hello_world` application.
 
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: xmc45_relax_kit
-   :goals: debug
+   .. tabs::
+      .. group-tab:: Windows
 
-Step through the application in your debugger.
+         .. code-block:: shell
+
+            # Do a pristine build
+            west build -b xmc45_relax_kit -p always samples/hello_world
+
+            west flash
+            west debug
+
+      .. group-tab:: Linux
+
+         .. code-block:: shell
+
+            # Do a pristine build
+            west build -b xmc45_relax_kit -p always samples/hello_world
+
+            west flash
+            west debug
+
+Once the gdb console starts after executing the west debug command, you may now set breakpoints and perform other standard GDB debugging.
 
 References
 **********

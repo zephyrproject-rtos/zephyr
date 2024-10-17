@@ -28,7 +28,7 @@ properties:
       nodelabel that matches the Cypress SoC HAL defines and be of the
       form p<port>_<pin>_<periph><inst>_<signal>.
 
-      For example the UART on PSoC-63 Pioneer Kit would be
+      For example the UART on PSOC 63 Pioneer Kit would be
          pinctrl-0 = <&p5_0_uart5_rx &p5_1_uart5_tx>;
 
     required: true
