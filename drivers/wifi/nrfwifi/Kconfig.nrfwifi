@@ -814,4 +814,11 @@ config NRF_WIFI_PS_INT_PS
 	  whether to stay in PS (for lower amount of buffered data) or exit PS (for higher
 	  amount of buffered data).
 endchoice
+
+config NRF70_PASSIVE_SCAN_ONLY
+	bool "Forced Passive scan"
+	depends on NRF70_SCAN_ONLY
+	help
+	  Enable this configuration to force passive scan on all channels.
+	  This will override application specified scan type.
 endif # WIFI_NRF70
