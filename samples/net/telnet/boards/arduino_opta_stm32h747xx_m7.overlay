@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2024 DNDG srl
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mac {
+	status = "okay";
+};

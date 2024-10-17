@@ -58,6 +58,14 @@
 		};
 	};
 
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+
 	aliases {
 		sw0 = &user_button;
 		led0 = &status_led_1;
@@ -85,5 +93,9 @@
 };
 
 &mailbox {
+	status = "okay";
+};
+
+&rng {
 	status = "okay";
 };
