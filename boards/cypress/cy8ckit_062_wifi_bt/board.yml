@@ -1,6 +1,6 @@
 board:
   name: cy8ckit_062_wifi_bt
-  full_name: PSoC6 WiFi-BT Pioneer Kit
+  full_name: PSOC 6 WiFi-BT Pioneer Kit
   vendor: cypress
   socs:
   - name: cy8c6247

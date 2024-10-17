@@ -10,8 +10,8 @@
 #include "cy8cproto_062_4343w-pinctrl.dtsi"
 
 / {
-	model = "cy8cproto_062_4343w with an Cypress PSoC™ 6 SoC";
-	compatible = "cypress,cy8cproto_062_4343w", "cypress,PSoC6";
+	model = "cy8cproto_062_4343w with an Cypress PSOC™ 6 SoC";
+	compatible = "cypress,cy8cproto_062_4343w", "cypress,PSOC6";
 
 	aliases {
 		uart-5 = &uart5;
