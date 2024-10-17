@@ -427,6 +427,7 @@
 		edma0: dma-controller@40008000 {
 			#dma-cells = <2>;
 			compatible = "nxp,mcux-edma";
+			nxp,version = <2>;
 			dma-channels = <16>;
 			dma-requests = <64>;
 			nxp,mem2mem;
