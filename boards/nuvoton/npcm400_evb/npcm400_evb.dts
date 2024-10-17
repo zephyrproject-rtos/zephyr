@@ -210,7 +210,7 @@
 	};
 };
 
-&timer1 {
+&timer2 {
 	prescaler = <2>;
 	status = "okay";
 };

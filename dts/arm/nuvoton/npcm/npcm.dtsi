@@ -425,6 +425,66 @@
 			status = "disabled";
 		};
 
+		timer1: timer@400b0000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b0000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 0>;
+			interrupts = <29 1>;
+			status = "disabled";
+		};
+
+		timer2: timer@400b2000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b2000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 1>;
+			interrupts = <30 1>;
+			status = "disabled";
+                };
+
+		timer3: timer@400b4000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b4000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL4 2>;
+			interrupts = <31 1>;
+			status = "disabled";
+		};
+
+		timer4: timer@400b6000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b6000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 0>;
+			interrupts = <32 1>;
+			status = "disabled";
+		};
+
+		timer5: timer@400b8000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400b8000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 1>;
+			interrupts = <33 1>;
+			status = "disabled";
+		};
+
+		timer6: timer@400ba000 {
+			compatible = "nuvoton,npcm-itim32";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x400ba000 0x2000>;
+			clocks = <&pcc NPCM_CLOCK_BUS_APB2 NPCM_PWDWN_CTL6 2>;
+			interrupts = <34 1>;
+			status = "disabled";
+		};
+
 		tach1: tach@400e1000 {
 			compatible = "nuvoton,npcm-tach";
 			reg = <0x400e1000 0x2000>;
