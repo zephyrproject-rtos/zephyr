@@ -122,7 +122,7 @@ k_tid_t openthread_thread_id_get(void)
 static struct net_mgmt_event_callback ip6_addr_cb;
 
 static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb,
-					uint32_t mgmt_event, struct net_if *iface)
+				    uint32_t mgmt_event, struct net_if *iface)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
 		return;
@@ -159,14 +159,12 @@ static int ncp_hdlc_send(const uint8_t *buf, uint16_t len)
 	return len;
 }
 
-#ifndef CONFIG_OPENTHREAD_HDLC_RCP
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
 	ARG_UNUSED(instance);
 
 	memcpy(ieee_eui64, ll_addr->addr, ll_addr->len);
 }
-#endif
 
 void otTaskletsSignalPending(otInstance *instance)
 {
@@ -390,11 +388,9 @@ static enum net_verdict openthread_recv(struct net_if *iface, struct net_pkt *pk
 		net_pkt_hexdump(pkt, "Received 802.15.4 frame");
 	}
 
-	if (!IS_ENABLED(CONFIG_OPENTHREAD_HDLC_RCP)) {
-		if (notify_new_rx_frame(pkt) != 0) {
-			NET_ERR("Failed to queue RX packet for OpenThread");
-			return NET_DROP;
-		}
+	if (notify_new_rx_frame(pkt) != 0) {
+		NET_ERR("Failed to queue RX packet for OpenThread");
+		return NET_DROP;
 	}
 
 	return NET_OK;
@@ -410,10 +406,8 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 
 	net_capture_pkt(iface, pkt);
 
-	if (!IS_ENABLED(CONFIG_OPENTHREAD_HDLC_RCP)) {
-		if (notify_new_tx_frame(pkt) != 0) {
-			net_pkt_unref(pkt);
-		}
+	if (notify_new_tx_frame(pkt) != 0) {
+		net_pkt_unref(pkt);
 	}
 
 	return len;
@@ -458,9 +452,9 @@ int openthread_start(struct openthread_context *ot_context)
 		NET_DBG("Starting OpenThread join procedure.");
 
 		error = otJoinerStart(ot_instance, OT_JOINER_PSKD, NULL,
-					  PACKAGE_NAME, OT_PLATFORM_INFO,
-					  PACKAGE_VERSION, NULL,
-					  &ot_joiner_start_handler, ot_context);
+				      PACKAGE_NAME, OT_PLATFORM_INFO,
+				      PACKAGE_VERSION, NULL,
+				      &ot_joiner_start_handler, ot_context);
 
 		if (error != OT_ERROR_NONE) {
 			NET_ERR("Failed to start joiner [%d]", error);
@@ -472,7 +466,7 @@ int openthread_start(struct openthread_context *ot_context)
 		NET_DBG("Loading OpenThread default configuration.");
 
 		otExtendedPanId xpanid;
-		otNetworkKey	networkKey;
+		otNetworkKey    networkKey;
 
 		otThreadSetNetworkName(ot_instance, OT_NETWORK_NAME);
 		otLinkSetChannel(ot_instance, OT_CHANNEL);
@@ -620,7 +614,7 @@ void ieee802154_init(struct net_if *iface)
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
 	/* TODO: Should report NET_L2_PROMISC_MODE if the radio driver
-	 *	   reports the IEEE802154_HW_PROMISC capability.
+	 *       reports the IEEE802154_HW_PROMISC capability.
 	 */
 	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
@@ -727,4 +721,4 @@ void openthread_api_mutex_unlock(struct openthread_context *ot_context)
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send, openthread_enable,
-		openthread_flags);
+	    openthread_flags);
