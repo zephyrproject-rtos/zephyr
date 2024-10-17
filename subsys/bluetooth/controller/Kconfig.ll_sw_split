@@ -119,7 +119,7 @@ config BT_CTLR_RX_PRIO_STACK_SIZE
 config BT_CTLR_RX_STACK_SIZE
 	# Hidden, Controller's Co-Operative Rx thread stack size.
 	int
-	default 768
+	default 896
 
 config BT_CTLR_SETTINGS
 	bool "Settings System"
@@ -1106,14 +1106,6 @@ config BT_CTLR_SCAN_UNRESERVED
 	help
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
-
-config BT_CTLR_EARLY_ABORT_PREVIOUS_PREPARE
-	bool "Early abort previous prepare"
-	depends on !BT_CTLR_LOW_LAT
-	default y
-	help
-	  Early abort previous prepare present before a short prepare is
-	  enqueued in the prepare pipeline.
 
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
