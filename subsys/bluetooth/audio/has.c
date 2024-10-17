@@ -937,7 +937,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	return 0;
 }
 
-static BT_SETTINGS_DEFINE(has, "has", settings_set_cb, NULL);
+BT_SUBSYS_SETTINGS_DEFINE(BT_SETTINGS_PRIO_BT, has, "has", settings_set_cb, NULL);
 
 static void store_client_context(struct client_context *context)
 {
