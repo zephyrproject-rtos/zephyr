@@ -133,4 +133,13 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	mbox0: mailbox0@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		usr-id = <0>;
+		#mbox-cells = <1>;
+	};
 };
