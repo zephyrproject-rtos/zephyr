@@ -123,7 +123,8 @@ LOG_MODULE_REGISTER(rv3028, CONFIG_RTC_LOG_LEVEL);
 /* The RV3028 enumerates months 1 to 12 */
 #define RV3028_MONTH_OFFSET 1
 
-#define RV3028_EEBUSY_POLL_US           10000
+#define RV3028_EEBUSY_READ_POLL_MS      1
+#define RV3028_EEBUSY_WRITE_POLL_MS     10
 #define RV3028_EEBUSY_TIMEOUT_MS        100
 
 /* RTC alarm time fields supported by the RV3028 */
@@ -240,7 +241,7 @@ static int rv3028_update_reg8(const struct device *dev, uint8_t addr, uint8_t ma
 	return 0;
 }
 
-static int rv3028_eeprom_wait_busy(const struct device *dev)
+static int rv3028_eeprom_wait_busy(const struct device *dev, int poll_ms)
 {
 	uint8_t status = 0;
 	int err;
@@ -261,7 +262,7 @@ static int rv3028_eeprom_wait_busy(const struct device *dev)
 			return -ETIME;
 		}
 
-		k_busy_wait(RV3028_EEBUSY_POLL_US);
+		k_msleep(poll_ms);
 	}
 
 	return 0;
@@ -291,7 +292,7 @@ static int rv3028_enter_eerd(const struct device *dev)
 	ret = rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_EERD,
 				 RV3028_CONTROL1_EERD);
 
-	ret = rv3028_eeprom_wait_busy(dev);
+	ret = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 	if (ret) {
 		rv3028_exit_eerd(dev);
 		return ret;
@@ -321,7 +322,7 @@ static int rv3028_update(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_WRITE_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -338,7 +339,7 @@ static int rv3028_refresh(const struct device *dev)
 		goto exit_eerd;
 	}
 
-	err = rv3028_eeprom_wait_busy(dev);
+	err = rv3028_eeprom_wait_busy(dev, RV3028_EEBUSY_READ_POLL_MS);
 
 exit_eerd:
 	rv3028_exit_eerd(dev);
@@ -511,7 +512,7 @@ static int rv3028_set_time(const struct device *dev, const struct rtc_time *time
 	date[0] = bin2bcd(timeptr->tm_sec) & RV3028_SECONDS_MASK;
 	date[1] = bin2bcd(timeptr->tm_min) & RV3028_MINUTES_MASK;
 	date[2] = bin2bcd(timeptr->tm_hour) & RV3028_HOURS_24H_MASK;
-	date[3] = bin2bcd(timeptr->tm_wday) & RV3028_WEEKDAY_MASK;
+	date[3] = timeptr->tm_wday & RV3028_WEEKDAY_MASK;
 	date[4] = bin2bcd(timeptr->tm_mday) & RV3028_DATE_MASK;
 	date[5] = bin2bcd(timeptr->tm_mon + RV3028_MONTH_OFFSET) & RV3028_MONTH_MASK;
 	date[6] = bin2bcd(timeptr->tm_year - RV3028_YEAR_OFFSET) & RV3028_YEAR_MASK;
@@ -559,7 +560,7 @@ static int rv3028_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_sec = bcd2bin(date[0] & RV3028_SECONDS_MASK);
 	timeptr->tm_min = bcd2bin(date[1] & RV3028_MINUTES_MASK);
 	timeptr->tm_hour = bcd2bin(date[2] & RV3028_HOURS_24H_MASK);
-	timeptr->tm_wday = bcd2bin(date[3] & RV3028_WEEKDAY_MASK);
+	timeptr->tm_wday = date[3] & RV3028_WEEKDAY_MASK;
 	timeptr->tm_mday = bcd2bin(date[4] & RV3028_DATE_MASK);
 	timeptr->tm_mon = bcd2bin(date[5] & RV3028_MONTH_MASK) - RV3028_MONTH_OFFSET;
 	timeptr->tm_year = bcd2bin(date[6] & RV3028_YEAR_MASK) + RV3028_YEAR_OFFSET;
@@ -613,7 +614,7 @@ static int rv3028_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
 		regs[0] = bin2bcd(timeptr->tm_min) & RV3028_ALARM_MINUTES_MASK;
 	} else {
-		regs[0] = RTC_ALARM_TIME_MASK_MINUTE;
+		regs[0] = RV3028_ALARM_MINUTES_AE_M;
 	}
 
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
@@ -726,7 +727,7 @@ static int rv3028_alarm_set_callback(const struct device *dev, uint16_t id,
 	const struct rv3028_config *config = dev->config;
 	struct rv3028_data *data = dev->data;
 	uint8_t control_2;
-	int err = 0;
+	int err;
 
 	if (config->gpio_int.port == NULL) {
 		return -ENOTSUP;
