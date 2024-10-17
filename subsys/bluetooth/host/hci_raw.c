@@ -186,6 +186,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	return buf;
 }
 
+struct net_buf *bt_buf_get_evt_but_better(uint8_t evt, uint8_t meta, k_timeout_t timeout)
+{
+	return bt_buf_get_rx(BT_BUF_EVT, timeout);
+}
+
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeout)
 {
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
