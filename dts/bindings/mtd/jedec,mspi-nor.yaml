@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic NOR flash on MSPI bus
+
+compatible: "jedec,mspi-nor"
+
+include: [mspi-device.yaml, "jedec,spi-nor-common.yaml"]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      RESET line. If specified, the flash chip will be reset at initialization.
+
+  t-reset-pulse:
+    type: int
+    description: |
+      Minimum duration, in nanoseconds, of an active pulse on the RESET line.
+
+  t-reset-recovery:
+    type: int
+    description: |
+      Minimum time, in nanoseconds, the flash chip needs to recover after reset.
