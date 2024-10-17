@@ -500,6 +500,13 @@ static int spi_esp32_release(const struct device *dev,
 	return 0;
 }
 
+static int spi_esp32_apply_default_pin_state(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+
+	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+}
+
 static const struct spi_driver_api spi_api = {
 	.transceive = spi_esp32_transceive,
 #ifdef CONFIG_SPI_ASYNC
@@ -508,7 +515,8 @@ static const struct spi_driver_api spi_api = {
 #ifdef CONFIG_SPI_RTIO
 	.iodev_submit = spi_rtio_iodev_default_submit,
 #endif
-	.release = spi_esp32_release
+	.release = spi_esp32_release,
+	.apply_default_pin_state = spi_esp32_apply_default_pin_state,
 };
 
 #ifdef CONFIG_SOC_SERIES_ESP32
