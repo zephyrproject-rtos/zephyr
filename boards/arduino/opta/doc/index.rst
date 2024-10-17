@@ -67,6 +67,8 @@ supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-board   | eth                                 |
 +-----------+------------+-------------------------------------+
+| RS485     | on-board   | uart                                |
++-----------+------------+-------------------------------------+
 
 The ``arduino_opta/stm32h747xx/m4`` board target
 supports the following hardware features:
