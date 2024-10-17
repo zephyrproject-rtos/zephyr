@@ -438,23 +438,6 @@ static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8
 }
 #endif
 
-static const struct wifi_cipher_desc ciphers[] = {
-	{ WPA_CAPA_ENC_CCMP_256, "CCMP-256" },
-	{ WPA_CAPA_ENC_GCMP_256, "GCMP-256" },
-	{ WPA_CAPA_ENC_CCMP, "CCMP" },
-	{ WPA_CAPA_ENC_GCMP, "GCMP" },
-	{ WPA_CAPA_ENC_TKIP, "TKIP" },
-	{ WPA_CAPA_ENC_WEP104, "WEP104" },
-	{ WPA_CAPA_ENC_WEP40, "WEP40" }
-};
-
-static const struct wifi_cipher_desc ciphers_group_mgmt[] = {
-	{ WPA_CAPA_ENC_BIP, "AES-128-CMAC" },
-	{ WPA_CAPA_ENC_BIP_GMAC_128, "BIP-GMAC-128" },
-	{ WPA_CAPA_ENC_BIP_GMAC_256, "BIP-GMAC-256" },
-	{ WPA_CAPA_ENC_BIP_CMAC_256, "BIP-CMAC-256" },
-};
-
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
 				       bool mode_ap)
@@ -462,17 +445,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	struct add_network_resp resp = {0};
 	char *chan_list = NULL;
 	struct net_eth_addr mac = {0};
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	char *key_mgmt;
-	char *openssl_ciphers = "DEFAULT:!EXP:!LOW";
-	char *group_ciphers = "CCMP";
-	char *pairwise_cipher = "CCMP";
-	char *group_mgmt_cipher = "AES-128-CMAC";
-	char *method;
-	unsigned int cipher_capa;
-	unsigned int gropu_mgmt_cipher_capa;
-	unsigned int cipher_index;
-#endif
 	int ret = 0;
 	uint8_t ssid_null_terminated[WIFI_SSID_MAX_LEN + 1];
 	uint8_t psk_null_terminated[WIFI_PSK_MAX_LEN + 1];
@@ -537,35 +509,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			os_free(chan_list);
 		}
 	}
-
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	if (params->suiteb_type == WIFI_SUITEB) {
-		cipher_capa = WPA_CAPA_ENC_CCMP_256;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_CMAC_256;
-	} else if (params->suiteb_type == WIFI_SUITEB_192) {
-		cipher_capa = WPA_CAPA_ENC_GCMP_256;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
-	} else {
-		cipher_capa = WPA_CAPA_ENC_CCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP;
-	}
-
-	for (cipher_index = 0; cipher_index < ARRAY_SIZE(ciphers); cipher_index++) {
-		if (cipher_capa == ciphers[cipher_index].capa) {
-			group_ciphers = ciphers[cipher_index].name;
-			pairwise_cipher = ciphers[cipher_index].name;
-			break;
-		}
-	}
-
-	for (cipher_index = 0; cipher_index < ARRAY_SIZE(ciphers_group_mgmt); cipher_index++) {
-
-		if (gropu_mgmt_cipher_capa == ciphers_group_mgmt[cipher_index].capa) {
-			group_mgmt_cipher = ciphers_group_mgmt[cipher_index].name;
-			break;
-		}
-	}
-#endif
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
 		if (params->sae_password) {
@@ -664,49 +607,18 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 		} else if (params->security == WIFI_SECURITY_TYPE_EAP_TLS) {
-			method = "TLS";
-
-			if (params->suiteb_type == WIFI_SUITEB) {
-				key_mgmt = "WPA-EAP-SUITE-B";
-				openssl_ciphers = "SUITEB128";
-
-			} else if (params->suiteb_type == WIFI_SUITEB_192) {
-				key_mgmt = "WPA-EAP-SUITE-B-192";
-				openssl_ciphers = "SUITEB192";
-
-			} else {
-				key_mgmt = "WPA-EAP";
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d key_mgmt %s", resp.network_id,
-					   key_mgmt)) {
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt WPA-EAP",
+					   resp.network_id)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set openssl_ciphers %s", openssl_ciphers)) {
+			if (!wpa_cli_cmd_v("set_network %d proto RSN",
+					   resp.network_id)) {
 				goto out;
 			}
 
-			if (!wpa_cli_cmd_v("set_network %d group %s", resp.network_id,
-					   group_ciphers)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d pairwise %s", resp.network_id,
-					   pairwise_cipher)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d group_mgmt %s", resp.network_id,
-					   group_mgmt_cipher)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d proto RSN", resp.network_id)) {
-				goto out;
-			}
-
-			if (!wpa_cli_cmd_v("set_network %d eap %s", resp.network_id, method)) {
+			if (!wpa_cli_cmd_v("set_network %d eap TLS",
+					   resp.network_id)) {
 				goto out;
 			}
 
