@@ -92,3 +92,8 @@ def is_mcumgr_available() -> None:
 @pytest.fixture()
 def mcumgr(is_mcumgr_available: None, dut: DeviceAdapter) -> Generator[MCUmgr, None, None]:
     yield MCUmgr.create_for_serial(dut.device_config.serial)
+
+
+@pytest.fixture(scope='session')
+def required_images(request):
+    return request.config.getoption('--required-image')
