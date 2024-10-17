@@ -21,5 +21,6 @@ supported:
   - backup_sram
   - dma
   - rtc
+  - usb_device
 ram: 2450
 flash: 4096
