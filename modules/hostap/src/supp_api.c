@@ -367,7 +367,7 @@ static inline enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_
 	}
 }
 
-static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto, int pwe)
+static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int proto)
 {
 	switch (key_mgmt) {
 	case WPA_KEY_MGMT_IEEE8021X:
@@ -385,13 +385,7 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 	case WPA_KEY_MGMT_PSK_SHA256:
 		return WIFI_SECURITY_TYPE_PSK_SHA256;
 	case WPA_KEY_MGMT_SAE:
-		if (pwe == 1) {
-			return WIFI_SECURITY_TYPE_SAE_H2E;
-		} else if (pwe == 2) {
-			return WIFI_SECURITY_TYPE_SAE_AUTO;
-		} else {
-			return WIFI_SECURITY_TYPE_SAE_HNP;
-		}
+		return WIFI_SECURITY_TYPE_SAE;
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
@@ -401,13 +395,7 @@ static inline enum wifi_security_type wpas_key_mgmt_to_zephyr(int key_mgmt, int 
 	case WPA_KEY_MGMT_FT_IEEE8021X_SHA384:
 		return WIFI_SECURITY_TYPE_FT_EAP_SHA384;
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK:
-		if (pwe == 1) {
-			return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E;
-		} else if (pwe == 2) {
-			return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO;
-		} else {
-			return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP;
-		}
+		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -759,7 +747,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					goto out;
 				}
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP ||
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL ||
 		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
 		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
@@ -1248,21 +1236,22 @@ int supplicant_status(const struct device *dev, struct wifi_iface_status *status
 		u8 *_ssid = ssid->ssid;
 		size_t ssid_len = ssid->ssid_len;
 		struct status_resp cli_status;
+		bool is_ap;
 		int proto;
 		int key_mgmt;
-		int sae_pwe;
 
 		if (!ssid) {
 			wpa_printf(MSG_ERROR, "Failed to get current ssid");
 			goto out;
 		}
 
-		proto = ssid->proto;
-		key_mgmt = ssid->key_mgmt;
-		sae_pwe = wpa_s->conf->sae_pwe;
+		is_ap = ssid->mode == WPAS_MODE_AP;
+		/* For AP its always the configured one */
+		proto = is_ap ? ssid->proto : wpa_s->wpa_proto;
+		key_mgmt = is_ap ? ssid->key_mgmt : wpa_s->key_mgmt;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
 		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
-		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto, sae_pwe);
+		status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
 		status->mfp = ssid->ieee80211w; /* Same mapping */
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
@@ -2193,9 +2182,7 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
 				goto out;
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
-		       params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-		       params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
+		} else if (params->security == WIFI_SECURITY_TYPE_SAE) {
 			if (!hostapd_cli_cmd_v("set wpa 2")) {
 				goto out;
 			}
@@ -2210,18 +2197,10 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP")) {
 				goto out;
 			}
-			if (params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
-			    params->security == WIFI_SECURITY_TYPE_SAE_AUTO) {
-				if (!hostapd_cli_cmd_v("set sae_pwe %d",
-						   (params->security == WIFI_SECURITY_TYPE_SAE_H2E)
-							   ? 1
-							   : 2)) {
-					goto out;
-				}
+			if (!hostapd_cli_cmd_v("set sae_pwe 2")) {
+				goto out;
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP ||
-		       params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-		       params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
 			if (!hostapd_cli_cmd_v("set wpa 2"))
 				goto out;
 			if (!hostapd_cli_cmd_v("set wpa_key_mgmt WPA-PSK SAE"))
@@ -2233,14 +2212,8 @@ int hapd_config_network(struct hostapd_iface *iface, struct wifi_connect_req_par
 				goto out;
 			if (!hostapd_cli_cmd_v("set rsn_pairwise CCMP"))
 				goto out;
-			if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-			    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
-				if (!hostapd_cli_cmd_v("set sae_pwe %d", (params->security ==
-						WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E)
-							   ? 1 : 2)) {
-					goto out;
-				}
-			}
+			if (!hostapd_cli_cmd_v("set sae_pwe 2"))
+				goto out;
 		} else if (params->security == WIFI_SECURITY_TYPE_DPP) {
 			if (!hostapd_cli_cmd_v("set wpa 2")) {
 				goto out;
@@ -2381,7 +2354,6 @@ int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *sta
 
 	int proto;
 	int key_mgmt;
-	int sae_pwe;
 
 	status->state = iface->state;
 	struct hostapd_ssid *ssid = &bss->ssid;
@@ -2391,8 +2363,7 @@ int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *sta
 	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
 	key_mgmt = bss->wpa_key_mgmt;
 	proto = bss->wpa;
-	sae_pwe = bss->sae_pwe;
-	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto, sae_pwe);
+	status->security = wpas_key_mgmt_to_zephyr(key_mgmt, proto);
 	status->mfp = bss->ieee80211w;
 	status->channel = conf->channel;
 	os_memcpy(status->ssid, ssid->ssid, ssid->ssid_len);

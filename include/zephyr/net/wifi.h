@@ -64,10 +64,8 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP,
 	/** WPA-PSK security. */
 	WIFI_SECURITY_TYPE_WPA_PSK,
-	/** WPA/WPA2/WPA3 PSK security. */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
 	/** WPA/WPA2/WPA3 PSK security with hunting-and-pecking loop. */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_HNP = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
+	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
 	/** WPA/WPA2/WPA3 PSK security with hash-to-element. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E,
 	/** WPA/WPA2/WPA3 PSK security with both hunting-and-pecking
