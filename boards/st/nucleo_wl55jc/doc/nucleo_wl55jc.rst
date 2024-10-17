@@ -231,8 +231,8 @@ Default Zephyr Peripheral Mapping:
 .. rst-class:: rst-columns
 
 - LPUART_1 TX/RX : PA3/PA2 (ST-Link Virtual Port Com)
-- I2C_2_SCL : PA12 (Arduino I2C)
-- I2C_2_SDA : PA11 (Arduino I2C)
+- I2C_3_SCL : PB13 (Arduino I2C)
+- I2C_3_SDA : PB14 (Arduino I2C)
 - SPI_1_NSS : PA4 (arduino_spi)
 - SPI_1_SCK : PA5 (arduino_spi)
 - SPI_1_MISO : PA6 (arduino_spi)
