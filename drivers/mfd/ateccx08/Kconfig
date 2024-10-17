@@ -1,0 +1,43 @@
+# Microchip ATECCx08 MFD
+
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_ATECCX08
+	bool
+	help
+	  Enable support for Microchip ATECCx08 I2C CRYPTOs.
+
+config MFD_ATECC608
+	bool "Microchip ATECC608 I2C CRYPTO support"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC608_ENABLED
+	select I2C
+	select MFD_ATECCX08
+	help
+	  Enable support for Microchip ATECC608 I2C CRYPTOs.
+
+config MFD_ATECC508
+	bool "Microchip ATECC508 I2C CRYPTO support"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECC508_ENABLED
+	select I2C
+	select MFD_ATECCX08
+	help
+	  Enable support for Microchip ATECC508 I2C CRYPTOs.
+
+if MFD_ATECCX08
+
+config MFD_ATECCX08_INIT_PRIORITY
+	int "Microchip ATECCx08 Initialization priority"
+	default 55
+	help
+	  This option enables the Microchip ATECCx08 eeprom driver OTP.
+
+config MFD_ATECCX08_SUBDEVICE_INIT_PRIORITY
+	int "Microchip ATECCx08 subdevice Initialization priority"
+	default 56
+	help
+	  This option enables the Microchip ATECCx08 eeprom driver OTP.
+
+endif

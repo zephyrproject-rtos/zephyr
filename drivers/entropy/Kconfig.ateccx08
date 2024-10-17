@@ -1,0 +1,20 @@
+# Microchip ATECCx08 entropy generator driver configuration
+
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ATECCX08
+	bool "Microchip ATECCx08 RNG driver"
+	default y
+	depends on DT_HAS_MICROCHIP_ATECCX08_ENTROPY_ENABLED
+	depends on MFD_ATECCX08
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the Microchip ATECCx08 RNG driver.
+
+config ENTROPY_ATECCX08_INIT_PRIORITY
+	int "Microchip ATECCx08 RNG driver init priority"
+	default MFD_ATECCX08_SUBDEVICE_INIT_PRIORITY
+	depends on ENTROPY_ATECCX08
+	help
+	  Microchip ATECCx08 RNG driver device initialization priority.
