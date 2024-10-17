@@ -348,6 +348,140 @@ extern "C" {
 	DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
 
 /**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for a particular clock consumer and an indexed clock referenced by it.
+ * @param node_id Path to the clock consumer node
+ * @param idx Clock index (index to the phandle-array property)
+ * @return The variable name, unquoted
+ */
+#define DT_CLOCK_CONFIG_NAME_BY_IDX(node_id, idx) \
+	CONCAT(node_id, _CLOCK_IDX_, idx, _CONFIG)
+
+/**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for a particular clock consumer and a named clock referenced by it.
+ * @param node_id Path to the clock consumer node
+ * @param name Lowercase-and-underscores clock name
+ * @return The variable name, unquoted
+ */
+#define DT_CLOCK_CONFIG_NAME_BY_NAME(node_id, name) \
+	CONCAT(node_id, _CLOCK_NAME_, name, _CONFIG)
+
+/**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for a particular clock consumer and an indexed clock referenced by it.
+ * @param inst Driver instance number
+ * @param idx Clock index (index to the phandle-array property)
+ * @return The variable name, unquoted
+ */
+#define DT_INST_CLOCK_CONFIG_NAME_BY_IDX(inst, idx) \
+	DT_CLOCK_CONFIG_NAME_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for a particular clock consumer and an indexed clock referenced by it.
+ * @param inst Driver instance number
+ * @param name Lowercase-and-underscores clock name
+ * @return The variable name, unquoted
+ */
+#define DT_INST_CLOCK_CONFIG_NAME_BY_NAME(inst, name) \
+	DT_CLOCK_CONFIG_NAME_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for the first referenced clock of a particular clock consumer.
+ *
+ * Equivalent to: DT_CLOCK_CONFIG_NAME_BY_IDX(node_id, 0)
+ *
+ * @param node_id Path to the clock consumer node
+ * @return The variable name, unquoted
+ */
+#define DT_CLOCK_CONFIG_NAME(node_id) \
+	DT_CLOCK_CONFIG_NAME_BY_IDX(node_id, 0)
+
+/**
+ * @brief Get name of a variable (symbol) containing clock configuration cells
+ * for the first referenced clock of a particular clock consumer.
+ *
+ * Equivalent to: DT_CLOCK_CONFIG_NAME_BY_IDX(DT_DRV_INST(inst), 0)
+ *
+ * @param node_id Path to the clock consumer node
+ * @return The variable name, unquoted
+ */
+#define DT_INST_CLOCK_CONFIG_NAME(node_id) \
+	DT_CLOCK_CONFIG_NAME(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the count of cells of a particular clock referenced by a particular
+ * clock consumer node.
+ *
+ * @param node Path to the clock consumer node
+ * @param idx Clock index (index to the phandle-array property)
+ * @return The count of cells
+ */
+#define DT_CLOCK_NUM_CELLS_BY_IDX(node_id, idx) \
+	CONCAT(node_id, _CLOCK_IDX_, idx, _CELLS_COUNT)
+
+/**
+ * @brief Get the count of cells of a particular clock referenced by a
+ * particular clock consumer node.
+ *
+ * @param node Path to the clock consumer node
+ * @param name Lowercase-and-underscores clock name
+ * @return The count of cells
+ */
+#define DT_CLOCK_NUM_CELLS_BY_NAME(node_id, name) \
+	CONCAT(node_id, _CLOCK_NAME_, name, _CELLS_COUNT)
+
+/**
+ * @brief Get the count of cells of a particular clock referenced by a
+ * particular clock consumer node.
+ *
+ * @param inst Driver instance number
+ * @param idx Clock index (index to the phandle-array property)
+ * @return The count of cells
+ */
+#define DT_INST_CLOCK_NUM_CELLS_BY_IDX(inst, idx) \
+	DT_CLOCK_NUM_CELLS_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get the count of cells of a particular clock referenced by a
+ * particular clock consumer node.
+ *
+ * @param inst Driver instance number
+ * @param name Lowercase-and-underscores clock name
+ * @return The count of cells
+ */
+#define DT_INST_CLOCK_NUM_CELLS_BY_NAME(inst, name) \
+	DT_CLOCK_NUM_CELLS_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Get the count of cells of a the first clock referenced by a
+ * particular clock consumer node.
+ *
+ * Equivalent to: DT_CLOCK_NUM_CELLS_BY_IDX(node_id, 0)
+ *
+ * @param node_id Path to the clock consumer node
+ * @param name Lowercase-and-underscores clock name
+ * @return The count of cells
+ */
+#define DT_NUM_CLOCK_CELLS(node_id) \
+	DT_CLOCK_NUM_CELLS_BY_IDX(node_id, 0)
+
+/**
+ * @brief Get the count of cells of a the first clock referenced by a
+ * particular clock consumer node.
+ *
+ * Equivalent to: DT_NUM_CLOCK_CELLS(DT_DRV_INST(inst))
+ *
+ * @param inst Driver instance number
+ * @param name Lowercase-and-underscores clock name
+ * @return The count of cells
+ */
+#define DT_NUM_INST_CLOCK_CELLS(inst) \
+	DT_NUM_CLOCK_CELLS(DT_DRV_INST(inst))
+
+/**
  * @}
  */
 
