@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterator, List, Tuple, Final
 
 from docutils import nodes
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from docutils.statemachine import StringList
 
 from sphinx import addnodes
@@ -434,7 +434,7 @@ class ProcessRelatedCodeSamplesNode(SphinxPostTransform):
                 node.replace_self([])
 
 
-class CodeSampleDirective(Directive):
+class CodeSampleDirective(SphinxDirective):
     """
     A directive for creating a code sample node in the Zephyr documentation.
     """
