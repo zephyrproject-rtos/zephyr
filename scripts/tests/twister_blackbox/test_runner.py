@@ -43,7 +43,7 @@ class TestRunner:
     TESTDATA_2 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
-            ['qemu_x86', 'qemu_x86_64', 'intel_adl_crb'],
+            ['qemu_x86/atom', 'qemu_x86_64/atom', 'intel_adl_crb/alder_lake'],
             {
                 'selected_test_scenarios': 3,
                 'selected_test_instances': 6,
@@ -126,7 +126,7 @@ class TestRunner:
     TESTDATA_9 = [
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['device'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
@@ -136,7 +136,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['subgrouped'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              r'1 of 4 test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored, 2 skipped'
@@ -144,7 +144,7 @@ class TestRunner:
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             ['agnostic', 'device'],
             [r'2 of 4 test configurations passed \(66.67%\), 1 built \(not run\), 0 failed, 0 errored, 1 skipped']
         ),
@@ -152,7 +152,7 @@ class TestRunner:
     TESTDATA_10 = [
         (
             os.path.join(TEST_DATA, 'tests', 'one_fail_one_pass'),
-            ['qemu_x86'],
+            ['qemu_x86/atom'],
             {
                 'selected_test_instances': 2,
                 'skipped_configurations': 0,
@@ -629,7 +629,7 @@ class TestRunner:
 
 
         assert re.search(
-            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86 failed \(.*\)', err)
+            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom failed \(.*\)', err)
 
         pass_search = re.search(pass_regex, err, re.MULTILINE)
 
