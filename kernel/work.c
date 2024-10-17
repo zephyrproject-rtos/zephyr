@@ -188,19 +188,9 @@ static void queue_flusher_locked(struct k_work_q *queue,
 				 struct k_work *work,
 				 struct z_work_flusher *flusher)
 {
-	bool in_list = false;
-	struct k_work *wn;
-
-	/* Determine whether the work item is still queued. */
-	SYS_SLIST_FOR_EACH_CONTAINER(&queue->pending, wn, node) {
-		if (wn == work) {
-			in_list = true;
-			break;
-		}
-	}
-
 	init_flusher(flusher);
-	if (in_list) {
+
+	if ((flags_get(&work->flags) & K_WORK_QUEUED) != 0U) {
 		sys_slist_insert(&queue->pending, &work->node,
 				 &flusher->work.node);
 	} else {
@@ -877,6 +867,8 @@ static inline int work_delayable_busy_get_locked(const struct k_work_delayable *
 
 int k_work_delayable_busy_get(const struct k_work_delayable *dwork)
 {
+	__ASSERT_NO_MSG(dwork != NULL);
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	int ret = work_delayable_busy_get_locked(dwork);
 
@@ -974,10 +966,10 @@ static int cancel_delayable_async_locked(struct k_work_delayable *dwork)
 	return cancel_async_locked(&dwork->work);
 }
 
-int k_work_schedule_for_queue(struct k_work_q *queue,
-			       struct k_work_delayable *dwork,
-			       k_timeout_t delay)
+int k_work_schedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
+			      k_timeout_t delay)
 {
+	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, schedule_for_queue, queue, dwork, delay);
@@ -998,8 +990,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
 	return ret;
 }
 
-int k_work_schedule(struct k_work_delayable *dwork,
-				   k_timeout_t delay)
+int k_work_schedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, schedule, dwork, delay);
 
@@ -1010,10 +1001,10 @@ int k_work_schedule(struct k_work_delayable *dwork,
 	return ret;
 }
 
-int k_work_reschedule_for_queue(struct k_work_q *queue,
-				 struct k_work_delayable *dwork,
-				 k_timeout_t delay)
+int k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable *dwork,
+				k_timeout_t delay)
 {
+	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(dwork != NULL);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, reschedule_for_queue, queue, dwork, delay);
@@ -1034,8 +1025,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
 	return ret;
 }
 
-int k_work_reschedule(struct k_work_delayable *dwork,
-				     k_timeout_t delay)
+int k_work_reschedule(struct k_work_delayable *dwork, k_timeout_t delay)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, reschedule, dwork, delay);
 
