@@ -7,7 +7,8 @@ description: |
   channel: Select channel for data transmitting
 
   slot: Select peripheral data request
-    Use the definitions defined in `zephyr/dt-bindings/dma/rpi_pico_dma.h`.
+    Use the definitions defined in `zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h`,
+    or `zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h`
 
   channel-config: A 32bit mask specifying the DMA channel configuration
     - bit 3: Enable Quiet IRQ
