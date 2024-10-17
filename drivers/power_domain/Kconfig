@@ -90,4 +90,13 @@ config POWER_DOMAIN_NXP_SCU_INIT_PRIORITY
 
 endif #POWER_DOMAIN_NXP_SCU
 
+config POWER_DOMAIN_SOC_PM_STATE
+	bool "SoC PM state power domain"
+	default y
+	depends on DT_HAS_POWER_DOMAIN_SOC_STATE_CHANGE_ENABLED
+	select DEVICE_DEPS
+	help
+	  Generic power domain control to turn on/off devices when the
+	  PM subsystem transitions in and out certain power states.
+
 endif
