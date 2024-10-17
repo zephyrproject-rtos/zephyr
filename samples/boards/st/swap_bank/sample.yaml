@@ -1,0 +1,12 @@
+sample:
+  name: swap flash banks
+tests:
+  sample.board.stm32.crc:
+    tags: board
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - Running on bank *"
+    integration_platforms:
+      - b_u585i_iot02a
