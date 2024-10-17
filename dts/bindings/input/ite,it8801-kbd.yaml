@@ -1,0 +1,26 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8801 I2C-based keyboard matrix scan controller
+
+compatible: "ite,it8801-kbd"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  mfdctrl:
+    type: phandles
+    description: |
+      Switching the pin to KSO alternate function.
+
+  kso-mapping:
+    type: array
+
+  row-size:
+    required: true
+
+  col-size:
+    required: true
