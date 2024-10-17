@@ -124,6 +124,30 @@
 				compatible = "issi,is31fl3733";
 				reg = <0x10>;
 			};
+
+			axp192@11 {
+				compatible = "x-powers,axp192";
+				reg = <0x11>;
+				status = "okay";
+
+				pwr_led {
+					compatible = "x-powers,axp192-led";
+					status = "okay";
+					x-powers,mode = "by-reg";
+				};
+			};
+
+			axp2101@12 {
+				compatible = "x-powers,axp2101";
+				reg = <0x12>;
+				status = "okay";
+
+				pwr_led {
+					compatible = "x-powers,axp2101-led";
+					status = "okay";
+					x-powers,mode = "by-reg";
+				};
+			};
 		};
 	};
 };
