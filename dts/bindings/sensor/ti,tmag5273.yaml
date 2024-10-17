@@ -167,3 +167,22 @@ properties:
     description: |
       Ignore detected diagnostic fail.
       According to the manual, this should be done if VCC < 2.3V.
+
+  read-mode:
+    type: int
+    default: 0
+    enum: [0, 1, 2]
+    description: |
+      Selects the read mode of the sensor. Setting to 1 or 2 activates 1-byte
+      I2C read.
+
+      - 0 # TMAG5273_DT_I2C_READ_MODE_NORMAL (default)
+      - 1 # TMAG5273_DT_I2C_READ_MODE_16BIT
+      - 2 # TMAG5273_DT_I2C_READ_MODE_8BIT
+
+      When active, only the T, X, Y, Z channels are read.
+
+      Currently, the 1-byte read mode only supports operating mode continuous,
+      as the driver does not manually trigger conversion.
+
+      Default value is 0 at reset.
