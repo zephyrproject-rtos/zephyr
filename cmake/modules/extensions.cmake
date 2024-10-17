@@ -1452,7 +1452,7 @@ endmacro()
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR)
+  set(single_args LIBRARY LOCATION PHDR FILTER)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1471,6 +1471,12 @@ function(zephyr_code_relocate)
   endif()
   if(NOT CODE_REL_LOCATION)
     message(FATAL_ERROR "zephyr_code_relocate() requires a LOCATION argument")
+  endif()
+  if(CODE_REL_FILTER)
+    # Escape pipes in filter expression since pipe is used as relocation separator
+    string(REPLACE "|" "\\|" filter ":${CODE_REL_FILTER}")
+  else()
+    set(filter ":")
   endif()
   if(CODE_REL_LIBRARY)
     # Use cmake generator expression to convert library to file list,
@@ -1529,7 +1535,7 @@ function(zephyr_code_relocate)
     PROPERTY COMPILE_DEFINITIONS)
   set_property(TARGET code_data_relocation_target
     PROPERTY COMPILE_DEFINITIONS
-    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}")
+    "${code_rel_str}|${CODE_REL_LOCATION}:${flag_list}:${file_list}${filter}")
 endfunction()
 
 # Usage:
