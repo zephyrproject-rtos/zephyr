@@ -15,6 +15,38 @@
 
 LOG_MODULE_REGISTER(can_shell, CONFIG_CAN_LOG_LEVEL);
 
+#define CAN_HDL_LIST_ENTRY(node_id)                                                                \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	},
+
+static struct can_hdl {
+	const struct device *dev;
+} can_list[] = {
+	/* zephyr-keep-sorted-start */
+	DT_FOREACH_STATUS_OKAY(atmel_sam_can, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(atmel_sam0_can, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(espressif_esp32_twai, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(infineon_xmc4xxx_can_node, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(kvaser_pcican, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microchip_mcp251xfd, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microchip_mcp2515, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_can, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nuvoton_numaker_canfd, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_flexcan, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_mcan, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_s32_canxl, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(renesas_rcar_can, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(st_stm32_bxcan, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(st_stm32_fdcan, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(st_stm32h7_fdcan, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_tcan4x5x, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_can_loopback, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_fake_can, CAN_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_native_linux_can, CAN_HDL_LIST_ENTRY)
+	/* zephyr-keep-sorted-stop */
+};
+
 struct can_shell_tx_event {
 	unsigned int frame_no;
 	int error;
@@ -996,11 +1028,14 @@ static int cmd_can_recover(const struct shell *sh, size_t argc, char **argv)
 
 static void cmd_can_device_name(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	if (idx >= ARRAY_SIZE(can_list)) {
+		entry->syntax = NULL;
+		return;
+	}
 
-	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->syntax = can_list[idx].dev->name;
 	entry->handler = NULL;
-	entry->help = NULL;
+	entry->help = "Device";
 	entry->subcmd = NULL;
 }
 

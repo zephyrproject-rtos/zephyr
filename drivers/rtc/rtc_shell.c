@@ -11,6 +11,34 @@
 #include <time.h>
 #include <stdlib.h>
 
+#define RTC_HDL_LIST_ENTRY(node_id)                                                                \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+	},
+
+static struct rtc_hdl {
+	const struct device *dev;
+} rtc_list[] = {
+	/* zephyr-keep-sorted-start */
+	DT_FOREACH_STATUS_OKAY(ambiq_am1805, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ambiq_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(atmel_sam_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(infineon_xmc4xxx_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(maxim_ds1307, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microcrystal_rv3028, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(microcrystal_rv_8263_c8, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(motorola_mc146818, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nuvoton_numaker_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_pcf8523, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(nxp_pcf8563, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(raspberrypi_pico_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(renesas_smartbond_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(st_stm32_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_fake_rtc, RTC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(zephyr_rtc_emul, RTC_HDL_LIST_ENTRY)
+	/* zephyr-keep-sorted-stop */
+};
+
 /* Formats accepted when setting date and/or time */
 static const char format_iso8601[] = "%FT%T";
 static const char format_time[] = "%T";  /* hh:mm:ss */
@@ -219,11 +247,14 @@ static int cmd_get(const struct shell *sh, size_t argc, char **argv)
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	if (idx >= ARRAY_SIZE(rtc_list)) {
+		entry->syntax = NULL;
+		return;
+	}
 
-	entry->syntax = (dev != NULL) ? dev->name : NULL;
+	entry->syntax = rtc_list[idx].dev->name;
 	entry->handler = NULL;
-	entry->help = NULL;
+	entry->help = "Device";
 	entry->subcmd = NULL;
 }
 
