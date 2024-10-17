@@ -1651,7 +1651,7 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
 }
 
-int supplicant_bss_ext_capab(const struct device *dev, int capab)
+int supplicant_bss_ext_capab(const struct device *dev, enum wifi_ext_capab capab)
 {
 	struct wpa_supplicant *wpa_s;
 	int is_support = 0;
