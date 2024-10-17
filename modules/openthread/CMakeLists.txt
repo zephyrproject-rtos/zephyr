@@ -243,34 +243,6 @@ list(APPEND ot_libs openthread-mtd)
 endif()
 endif()
 
-if(CONFIG_OPENTHREAD_HDLC_RCP)
-
-set(ot_host_src
-    ${ZEPHYR_BASE}/modules/openthread/platform/platform_host.c
-    ${ZEPHYR_BASE}/modules/openthread/platform/radio_spinel.cpp
-    ${ZEPHYR_BASE}/modules/openthread/platform/spinel_hdlc.cpp
-    )
-
-add_library(openthread-host-rcp)
-
-target_compile_definitions(openthread-host-rcp PRIVATE
-    OPENTHREAD_FTD=1
-)
-
-target_sources(openthread-host-rcp PRIVATE ${COMMON_SOURCES} ${ot_host_src})
-
-target_link_libraries(openthread-host-rcp
-    PRIVATE
-      ot-config
-      openthread-platform
-      openthread-radio-spinel
-      openthread-spinel-ncp
-      openthread-url
-      openthread-hdlc
-)
-list(APPEND ot_libs openthread-host-rcp)
-endif()
-
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
