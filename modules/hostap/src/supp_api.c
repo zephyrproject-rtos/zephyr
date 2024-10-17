@@ -504,7 +504,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	char *group_ciphers = "CCMP";
 	char *pairwise_cipher = "CCMP";
 	char *group_mgmt_cipher = "AES-128-CMAC";
-	char *method = NULL;
+	char *method;
 	unsigned int cipher_capa;
 	unsigned int gropu_mgmt_cipher_capa;
 	char phase1[256] = {0};
@@ -810,11 +810,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (method != NULL) {
-				if (!wpa_cli_cmd_v("set_network %d eap %s", resp.network_id,
-						method)) {
-					goto out;
-				}
+			if (!wpa_cli_cmd_v("set_network %d eap %s", resp.network_id, method)) {
+				goto out;
 			}
 
 			if (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
