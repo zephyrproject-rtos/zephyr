@@ -343,6 +343,17 @@ config BT_CONN_PARAM_ANY
 	  min and max connection intervals in order to verify whether the
 	  desired parameters have been established in the connection.
 
+config BT_CONN_CHECK_NULL_BEFORE_CREATE
+	bool "Check if *conn is NULL when creating a connection"
+	help
+	  Enable this option to ensure that bt_conn_le_create and
+	  bt_conn_le_create_synced return an error if *conn is not initialized
+	  to NULL. This option is recommended to use to catch programming
+	  errors where the application reuses the connection pointer of an
+	  active connection object without dereferencing it. Without
+	  dereferencing, the connection object stays alive which can lead to an
+	  unpredictable behavior.
+
 config BT_USER_PHY_UPDATE
 	bool "User control of PHY Update Procedure"
 	depends on BT_PHY_UPDATE
