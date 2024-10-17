@@ -237,6 +237,11 @@ manifest:
       path: modules/hal/stm32
       groups:
         - hal
+    - name: hal_tdk
+      revision: 2e5043bd30d1f413eba9473edfbe5bf2a0fd25f9
+      path: modules/hal/tdk
+      groups:
+        - hal
     - name: hal_telink
       revision: 4226c7fc17d5a34e557d026d428fc766191a0800
       path: modules/hal/telink
