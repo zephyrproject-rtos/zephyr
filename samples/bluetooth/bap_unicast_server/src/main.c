@@ -751,8 +751,7 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
-	bt_bap_unicast_server_register(&param);
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	bt_bap_unicast_server_register(&param, &unicast_server_cb);
 
 	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
 	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);

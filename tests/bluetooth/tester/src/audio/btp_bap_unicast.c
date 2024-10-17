@@ -1656,16 +1656,10 @@ int btp_bap_unicast_init(void)
 
 	(void)memset(connections, 0, sizeof(connections));
 
-	err = bt_bap_unicast_server_register(&param);
+	err = bt_bap_unicast_server_register(&param, &unicast_server_cb);
 	if (err != 0) {
 		LOG_DBG("Failed to register unicast server (err %d)\n", err);
 
-		return err;
-	}
-
-	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
-	if (err != 0) {
-		LOG_DBG("Failed to register client callbacks: %d", err);
 		return err;
 	}
 

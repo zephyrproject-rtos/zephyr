@@ -492,14 +492,12 @@ static void init(void)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_bap_unicast_server_register(&param);
+	err = bt_bap_unicast_server_register(&param, &unicast_server_cb);
 	if (err != 0) {
 		FAIL("Failed to register unicast server (err %d)\n", err);
 
 		return;
 	}
-
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {
