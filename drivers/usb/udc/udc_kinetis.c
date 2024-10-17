@@ -882,6 +882,8 @@ static int usbfsotg_ep_enable(const struct device *dev,
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
 		struct net_buf *buf;
 
+		priv->busy[0] = false;
+		priv->busy[1] = false;
 		buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, USBFSOTG_EP0_SIZE);
 		usbfsotg_bd_set_ctrl(bd_even, buf->size, buf->data, false);
 		priv->out_buf[0] = buf;
