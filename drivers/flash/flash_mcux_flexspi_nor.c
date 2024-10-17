@@ -893,6 +893,43 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 
 #endif
 
+/* Helper to configure IS25 flash, by clearing read param bits */
+static int flash_flexspi_nor_is25_clear_read_param(struct flash_flexspi_nor_data *data,
+			uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ],
+			uint32_t *read_params)
+{
+	int ret;
+	/* Install Set Read Parameters (Volatile) command */
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.seqIndex = SCRATCH_CMD,
+		.SeqNumber = 1,
+		.data = read_params,
+		.dataSize = 1,
+		.cmdType = kFLEXSPI_Write,
+	};
+	flexspi_device_config_t config = {
+		.flexspiRootClk = MHZ(50),
+		.flashSize = FLEXSPI_FLSHCR0_FLSHSZ_MASK, /* Max flash size */
+		.ARDSeqNumber = 1,
+		.ARDSeqIndex = READ,
+	};
+
+	flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xC0,
+			kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
+	ret = memc_flexspi_set_device_config(&data->controller,
+				&config,
+				(uint32_t *)flexspi_lut,
+				FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
+				data->port);
+	if (ret < 0) {
+		return ret;
+	}
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+
 /* Checks JEDEC ID of flash. If supported, installs custom LUT table */
 static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 			uint32_t (*flexspi_lut)[MEMC_FLEXSPI_CMD_PER_SEQ])
@@ -907,6 +944,25 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 
 	/* Switch on manufacturer and vendor ID */
 	switch (vendor_id & 0xFFFF) {
+	case 0x709d:
+		/*
+		 * IS25WP flash. We can support this flash with the JEDEC probe,
+		 * but we need to insure P[6:3] are at the default value
+		 */
+		/* Install Set Read Parameters (Volatile) command */
+		uint32_t read_params = 0;
+		ret = flash_flexspi_nor_is25_clear_read_param(data, flexspi_lut, &read_params);
+		if (ret < 0) {
+			while (1) {
+				/*
+				 * Spin here, this flash won't configure correctly.
+				 * We can't print a warning, as we are unlikely to
+				 * be able to XIP at this point.
+				 */
+			}
+		}
+		/* Still return an error- we want the JEDEC configuration to run */
+		return -ENOTSUP;
 	case 0x25C2:
 		/* MX25 flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
