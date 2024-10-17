@@ -36,7 +36,7 @@ uint8_t __pufcc_descriptors[BUFFER_SIZE];
 
 static int pufs_query_hw_caps(const struct device *dev);
 
-static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data_addr) {
+static int fill_rs_crypto_hash_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data_addr) {
   uint8_t desc_count = 0;
 
   if((pkt == NULL) || (data_addr == NULL)) {
@@ -67,8 +67,46 @@ static int fill_rs_crypto_addr(struct hash_pkt *pkt, struct rs_crypto_addr *data
 
   if (pkt) {
     // No enough descriptors available
-    LOG_ERR("%s(%d) Not More Than %d Elements Allowed. Desc_Count:%d\n", \
-    __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count);
+    LOG_ERR("%s(%d) Not More Than %d Elements Allowed. Count:%d\n", \
+    __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count+1);
+    return -ENOTEMPTY;
+  }
+
+  return PUFCC_SUCCESS;
+}
+
+static int fill_rs_crypto_sign_addr(struct sign_pkt *pkt, struct rs_crypto_addr *data_addr) {
+
+  uint8_t desc_count = 0;
+
+  if((pkt == NULL) || (data_addr == NULL)) {
+    LOG_ERR("%s(%d) NULL pointer(s)\n", __func__, __LINE__);
+    return -EBADFD;
+  }
+
+  while(true) {
+
+    data_addr[desc_count].read_addr = (uint32_t)pkt->in_buf;
+    data_addr[desc_count].len = pkt->in_len;
+    
+    if((desc_count * sizeof(struct pufcc_sg_dma_desc)) < BUFFER_SIZE){            
+      pkt = pkt->next;
+    } else {
+      break;
+    }    
+    if(pkt != NULL) {
+      data_addr[desc_count].next = &data_addr[desc_count+1];
+    } else {
+      data_addr[desc_count].next = NULL;
+      break;
+    }
+    desc_count++;
+  }
+
+  if (pkt) {
+    // No enough descriptors available
+    LOG_ERR("%s(%d) Not More Than %d Elements Allowed. Count:%d\n", \
+    __func__, __LINE__, (BUFFER_SIZE/sizeof(struct pufcc_sg_dma_desc)), desc_count+1);
     return -ENOTEMPTY;
   }
 
@@ -321,9 +359,10 @@ static int pufs_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool finish)
 
     struct rs_crypto_addr lvHash_Data_Addr[(BUFFER_SIZE/sizeof(struct rs_crypto_addr))] = {0};
     struct hash_pkt *lvPkt = &pkt[0];
+    int error = fill_rs_crypto_hash_addr(pkt, lvHash_Data_Addr);
     
-    if(fill_rs_crypto_addr(pkt, lvHash_Data_Addr) != PUFCC_SUCCESS) {      
-      return -ENOTEMPTY;
+    if(error != PUFCC_SUCCESS) {      
+      return error;
     }
 
     struct rs_crypto_hash hash_in = {0};
@@ -438,21 +477,27 @@ static int pufs_hash_async_callback_set(const struct device *dev, hash_completio
   return PUFCC_SUCCESS;
 }
 
+///////////////////////////////////////////////////////////////
 int pufs_sign_rsa_op(struct sign_ctx *ctx, struct sign_pkt *pkt)
 {
   enum pufcc_status lvStatus = PUFCC_SUCCESS;
 
+  int error = 0;
+
   ((struct pufs_data*)ctx->device->data)->pufs_pkt.sign_pkt = pkt;
   ((struct pufs_data*)ctx->device->data)->pufs_ctx.sign_ctx = ctx; 
 
-  struct rs_crypto_addr msg_addr = {
-                                    .read_addr = (uint32_t)pkt->in_buf,
-                                    .len = pkt->in_len
-                                   };
+  struct rs_crypto_addr msg_addr[(BUFFER_SIZE/sizeof(struct rs_crypto_addr))] = {0};
+  
+  error = fill_rs_crypto_sign_addr(pkt, msg_addr);
+
+  if(error != PUFCC_SUCCESS) {
+    return error;
+  }
 
   lvStatus = pufcc_rsa2048_sign_verify(
                                         (uint8_t *)ctx->sig, 
-                                        &msg_addr, 
+                                        msg_addr,
                                         (struct rs_crypto_rsa2048_puk *)ctx->pub_key
                                       );
 

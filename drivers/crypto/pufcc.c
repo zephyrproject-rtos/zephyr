@@ -93,13 +93,13 @@ struct pufcc_ecc_param ecc_param_nistp256 = {
 };
 
 // Base register addresses of different PUFcc modules
-static struct pufcc_dma_regs *dma_regs;
-static struct pufcc_rt_regs *rt_regs;
-static struct pufcc_otp_mem *otp_mem;
-static struct pufcc_hmac_regs *hmac_regs;
-static struct pufcc_crypto_regs *crypto_regs;
-static struct pufcc_sp38a_regs *sp38a_regs;
-static struct pufcc_pkc_regs *pkc_regs;
+static volatile struct pufcc_dma_regs *dma_regs;
+static volatile struct pufcc_rt_regs *rt_regs;
+static volatile struct pufcc_otp_mem *otp_mem;
+static volatile struct pufcc_hmac_regs *hmac_regs;
+static volatile struct pufcc_crypto_regs *crypto_regs;
+static volatile struct pufcc_sp38a_regs *sp38a_regs;
+static volatile struct pufcc_pkc_regs *pkc_regs;
 
 /*****************************************************************************
  * Local function declarations
@@ -507,17 +507,29 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   enum pufcc_status status = PUFCC_SUCCESS;
   uint32_t temp32;
   uint8_t dec_msg[PUFCC_RSA_2048_LEN];
-
   // Configure signature scheme
   temp32 = 0;
-
+  printf("%s(%d) msg-1st-word:0x%08x\r\r\n", __func__, __LINE__, \
+  *(uint32_t*)msg_addr->read_addr);
   struct pufcc_pkc_ecp_ec_reg *ecp_ec_reg =
       (struct pufcc_pkc_ecp_ec_reg *)&temp32;
   ecp_ec_reg->field = PUFCC_RSA_2048;
   REG_WRITE_32(&pkc_regs->ecp_ec, ecp_ec_reg);
 
+  // .... Public key print TODO
+  printf("%s(%d) Public Key\r\n", __func__, __LINE__);
+  for(int i = 0; i < 256; i++) {
+    printf("0x%02x%s", pub_key->n[i], (i+1)%16==0?"\r\n":",");
+  } printf("\r\n");
+  ////////////////////////////
   // Reverse public key modulus
   reverse(pufcc_buffer, pub_key->n, PUFCC_RSA_2048_LEN);
+  // .... Reversed Public key print TODO
+  // printf("%s(%d) Reversed Public Key\r\n", __func__, __LINE__);
+  // for(int i = 0; i < 256; i++) {
+  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
+  // } printf("\r\n");
+  ////////////////////////////
 
   // Write reversed public key modulus to ECP data field at proper offset
   memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_MODULUS_OFFSET,
@@ -525,10 +537,22 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
 
   // Write public key exponent to ecp_e_short register
   REG_WRITE_32(&pkc_regs->ecp_e_short, &pub_key->e);
-  printf("%s(%d) pubKey_expo:0x%08x\n", __func__,__LINE__, pub_key->e);
+  printf("%s(%d) pubKey_expo:0x%08x\r\n", __func__,__LINE__, pub_key->e);
 
+  // .... Signature print TODO
+  printf("%s(%d) Signature\r\n", __func__, __LINE__);
+  for(int i = 0; i < 256; i++) {
+    printf("0x%02x%s", sig[i], (i+1)%16==0?"\r\n":",");
+  } printf("\r\n");
+  ////////////////////////////
   // Reverse signature
   reverse(pufcc_buffer, sig, PUFCC_RSA_2048_LEN);
+  // .... Reversed Signature print TODO
+  // printf("%s(%d) Reversed Signature\r\n", __func__, __LINE__);
+  // for(int i = 0; i < 256; i++) {
+  //   printf("0x%02x%s", pufcc_buffer[i], (i+1)%16==0?"\r\n":",");
+  // } printf("\r\n");
+  ////////////////////////////
 
   // Write reversed signature to ECP data field at proper offset
   memcpy((uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET,
@@ -552,7 +576,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
   status = busy_wait(&pkc_regs->status, PUFCC_PKC_ERROR_MASK);
 
   if (status != PUFCC_SUCCESS) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d) ecp_err_code:0x%x\r\n", __func__,__LINE__, pkc_regs->ecp_err_code);
     return status;
   }
 
@@ -561,7 +585,7 @@ enum pufcc_status pufcc_rsa2048_sign_verify(
          (uint8_t *)&pkc_regs->ecp_data + PUFCC_DATA_RSA2048_SIGN_OFFSET,
          PUFCC_RSA_2048_LEN);
   reverse(dec_msg, pufcc_buffer, PUFCC_RSA_2048_LEN);
-
+  
   status = rsa_p1v15_verify(dec_msg, msg_addr);
 
   return status;
@@ -1200,7 +1224,7 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
                       0,    0x05, 0x00, 0x04, 0};
 
   if ((dec_msg[0] != 0x00) || (dec_msg[1] != 0x01)) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1211,7 +1235,7 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
   }
 
   if (dec_msg[i++] != 0x00) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1221,25 +1245,25 @@ static enum pufcc_status rsa_p1v15_verify(const uint8_t *dec_msg,
     pret[14] = 0x01;
     pret[18] = 0x20;
   } else {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_INVALID;
   }
 
   if ((memcmp(dec_msg + i, pret, 19) != 0) ||
       ((i + 19 + pret[18]) != PUFCC_RSA_2048_LEN)) {
-        printf("%s(%d)\n", __func__,__LINE__);
+        printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
   // Calculate hash of the message
   if (pufcc_calc_sha256_hash_sg(msg_addr, true, true, &prev_len, NULL, &hash) !=
       PUFCC_SUCCESS) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_ERROR;
   }
 
   if (memcmp(dec_msg + i + 19, hash.val, hash.len) != 0) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_VERFAIL;
   }
 
@@ -1333,10 +1357,11 @@ static enum pufcc_status busy_wait(volatile uint32_t *status_reg_addr,
   } while ((status & PUFCC_BUSY_BIT_MASK) && (busy_count > 0));
 
   if (status & PUFCC_BUSY_BIT_MASK) {
-    printf("%s(%d)\n", __func__,__LINE__);
+    printf("%s(%d)\r\n", __func__,__LINE__);
     return PUFCC_E_TIMEOUT;
   } else if (status & error_mask) {
-    printf("%s(%d) status 0x%08x\n", __func__,__LINE__, status);
+    printf("%s(%d) status 0x%08x ecp_err_code:0x%x\r\n", \
+    __func__,__LINE__, status, pkc_regs->ecp_err_code);
     return PUFCC_E_ERROR;
   }
 

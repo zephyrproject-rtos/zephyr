@@ -424,13 +424,13 @@ struct pufcc_pkc_regs {
   volatile uint32_t ecp_err_pc;
   volatile uint32_t ecp_err_cmd;
   volatile uint32_t mp_version;
-  uint32_t _pad1[56];
+  volatile uint32_t _pad1[56];
   volatile uint32_t ecp_ec;
   volatile uint32_t ecp_keysel;
   volatile uint32_t ecp_otpkba;
   volatile uint32_t ecp_key_usage;
   volatile uint32_t ecp_e_short;
-  uint32_t _pad2[55];
+  volatile uint32_t _pad2[55];
   volatile uint32_t ecp_mac[4];
   volatile uint32_t ecp_data[512];
 };

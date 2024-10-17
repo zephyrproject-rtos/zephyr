@@ -163,6 +163,13 @@ struct sign_pkt {
 	 */
 	int out_len;
 
+	/**
+	 * The pointer is for creating a linkedlist of 
+	 * incoming data in case the sign is calculated / verified 
+	 * in chunks where data might be coming from different places.
+	 */
+	struct sign_pkt *next;
+
 	/** Context this packet relates to. This can be useful to get the
 	 * session details, especially for async ops. Will be populated by the
 	 * sign_xxx_op() API based on the ctx parameter.
