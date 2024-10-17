@@ -1,0 +1,151 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2023, BUGSENG Srl
+
+mainmenu "ECLAIR Configurations"
+
+menu "ECLAIR env configurations"
+
+config ECLAIR
+	bool
+	default y
+	select EXPERIMENTAL
+
+choice ECLAIR_RULESET
+	prompt "ECLAIR analysis ruleset"
+	default ECLAIR_RULESET_FIRST_ANALYSIS
+
+config ECLAIR_RULESET_FIRST_ANALYSIS
+	bool "first analysis [EXPERIMENTAL]"
+	help
+	  A tiny selection of the projects coding guideline rules to verify that everything is
+	  correctly working.
+
+config ECLAIR_RULESET_STU
+	bool "Single translation unit[EXPERIMENTAL]"
+	help
+	  Selection of the projects coding guidelines, which can be verified by analysing the single
+	  translation units independently.
+
+config ECLAIR_RULESET_STU_HEAVY
+	bool "STU heavy [EXPERIMENTAL]"
+	help
+	  Selection of complex STU project coding guidelines that require a significant amount
+	  of time.
+
+config ECLAIR_RULESET_WP
+	bool "Whole Program rules [EXPERIMENTAL]"
+	help
+	  All whole program project coding guidelines ("system" in MISRA's parlance).
+
+config ECLAIR_RULESET_STD_LIB
+	bool "Std library [EXPERIMENTAL]"
+	help
+	  Project coding guidelines about the C Standard Library.
+
+config ECLAIR_RULESET_USER
+	bool "user defined ruleset [EXPERIMENTAL]"
+	help
+	  With this option, a user specific ruleset can be defined and analyzed.
+
+endchoice
+
+config ECLAIR_USER_RULESET_NAME
+	string "Name of the user defined ruleset [EXPERIMENTAL]"
+	depends on ECLAIR_RULESET_USER
+	help
+	  Name of the user defined analysis ruleset for example: analysis_user.ecl.
+	  The name always need the prefix analysis_ and need to end with .ecl
+
+config ECLAIR_USER_RULESET_PATH
+	string "Path to the user defined ruleset [EXPERIMENTAL]"
+	depends on ECLAIR_RULESET_USER
+	help
+	  Path to the user defined analysis ruleset. The Path can be an absolute path or a relative path
+	  in the application source directory. If this is option is not set the default path is always
+	  the application source directory.
+
+endmenu
+
+menu "ECLAIR report generation configurations"
+
+config ECLAIR_METRICS_TAB
+	bool "Creation of metrics in spreadsheet format [EXPERIMENTAL]"
+	help
+	  Metrics in a spreadsheet format
+
+config ECLAIR_REPORTS_TAB
+	bool "Creation of findings in spreadsheet format [EXPERIMENTAL]"
+	help
+	  Findings in a spreadsheet format
+
+config ECLAIR_REPORTS_SARIF
+	bool "Creation of findings in sarif format [EXPERIMENTAL]"
+	help
+	  Findings in sarif JSON format
+
+config ECLAIR_SUMMARY_TXT
+	bool "Creation of summary report in plain textual format [EXPERIMENTAL]"
+	help
+	  Plain textual summary format
+
+config ECLAIR_SUMMARY_DOC
+	bool "Creation of summary report in DOC format [EXPERIMENTAL]"
+	help
+	  DOC summary format
+
+config ECLAIR_SUMMARY_ODT
+	bool "Creation of summary report in ODT format [EXPERIMENTAL]"
+	help
+	  ODT summary format
+
+config ECLAIR_FULL_TXT
+	bool "Creation of rich/detailed report in plain textual format [EXPERIMENTAL]"
+	help
+	  Detailed plain textual format
+
+config ECLAIR_FULL_DOC
+	bool "Creation of rich/detailed report in DOC format [EXPERIMENTAL]"
+	help
+	  Detailed DOC format
+
+config ECLAIR_FULL_ODT
+	bool "Creation of rich/detailed report in ODT format [EXPERIMENTAL]"
+	help
+	  Detailed ODT format
+
+choice ECLAIR_FULL_DOC_AREAS
+	prompt "Detail level of full DOC/ODT reports"
+	depends on (ECLAIR_FULL_DOC || ECLAIR_FULL_ODT)
+	default ECLAIR_FULL_DOC_FIRST_AREA
+
+config ECLAIR_FULL_DOC_ALL_AREAS
+	bool "areas [EXPERIMENTAL]"
+	help
+	  Show all areas
+
+config ECLAIR_FULL_DOC_FIRST_AREA
+	bool "first area [EXPERIMENTAL]"
+	help
+	  Show only the first area
+
+endchoice
+
+choice ECLAIR_FULL_TXT_AREAS
+	prompt "Detail level of full txt reports"
+	depends on ECLAIR_FULL_TXT
+	default ECLAIR_FULL_TXT_FIRST_AREA
+
+config ECLAIR_FULL_TXT_ALL_AREAS
+	bool "areas [EXPERIMENTAL]"
+	help
+	  Show all areas
+
+config ECLAIR_FULL_TXT_FIRST_AREA
+	bool "first area [EXPERIMENTAL]"
+	help
+	  Show only the first area
+
+endchoice
+
+endmenu
