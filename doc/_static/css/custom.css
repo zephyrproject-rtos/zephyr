@@ -114,42 +114,92 @@ hr,
 }
 
 /* JavaScript documentation directives */
-.rst-content dl:not(.docutils) dt {
-    background-color: var(--admonition-note-background-color) !important;
-    border-color: var(--admonition-note-title-background-color) !important;
-    color: var(--admonition-note-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl:not(.field-list) > dt {
+    background-color: var(--admonition-note-background-color);
+    border-color: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-color);
 }
-.rst-content dl:not(.docutils) dl dt {
-    background-color: var(--admonition-attention-background-color) !important;
-    border-color: var(--admonition-attention-title-background-color) !important;
-    color: var(--admonition-attention-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dl dt {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--footer-color);
 }
-
-.rst-content dt.sig .k {
-    color: var(--highlight-keyword2-color) !important;
-    font-style: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute dt {
+    font-weight: 600;
+    padding: 0 8px;
+    margin-bottom: 1px;
+    width: 100%;
 }
-
-.rst-content dt.sig .kt {
-    color: var(--highlight-keyword-color) !important;
-    font-style: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method > dt,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).attribute > dt {
+    font-family: var(--monospace-font-family);
+    font-variant-ligatures: none;
+    font-size: 90%;
+    font-weight: normal;
+    margin-bottom: 16px;
+    padding: 6px 8px;
 }
-
-.rst-content dt.sig .sig-name .n {
-    color: var(--highlight-function-color) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-prename.descclassname {
+    color: var(--highlight-type2-color);
+    font-weight: normal;
 }
-
-.rst-content dt.sig .k,
-.rst-content dt.sig .kt,
-.rst-content dt.sig .n {
-    font-weight: normal !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-name.descname {
+    color: var(--highlight-function-color);
+    font-weight: 700;
 }
-
-.rst-content dl:not(.docutils) dt a.headerlink {
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-paren,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
+    color: var(--highlight-operator-color) !important;
+    font-weight: normal;
+    padding: 0 2px;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .optional {
+    font-style: italic;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > em {
+    color: var(--code-literal-color);
+    font-style: normal;
+    padding: 0 4px;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .k {
+    font-style: normal;
+}
+html.writer-html5 .rst-content dl:not(.docutils) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
+    border-top-color: var(--highlight-background-emph-color);
+    background: var(--highlight-background-color);
+}
+html.writer-html5 .rst-content dl:not(.docutils) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt, html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt {
+    border-left-color: var(--highlight-background-emph-color);
+    background: var(--highlight-background-color);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .sig-param,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > .optional ~ em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).function dt > .optional ~ em,
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).method dt > .optional ~ em {
+    color: var(--highlight-number-color);
+    font-style: italic;
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple).class dt > em.property {
+    color: var(--highlight-keyword-color);
+}
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink {
     color: var(--link-color) !important;
 }
-.rst-content dl:not(.docutils) dt a.headerlink:visited {
-    color: var(--link-color-visited) !important;
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dt a.headerlink:visited {
+    color: var(--link-color-visited);
+}
+html.writer-html5 .rst-content dl.field-list > dd strong {
+    font-family: var(--monospace-font-family);
+    font-variant-ligatures: none;
 }
 
 footer,
