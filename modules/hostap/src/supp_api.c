@@ -550,8 +550,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	if (params->suiteb_type == WIFI_SUITEB) {
-		cipher_capa = WPA_CAPA_ENC_GCMP;
-		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_128;
+		cipher_capa = WPA_CAPA_ENC_CCMP_256;
+		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_CMAC_256;
 	} else if (params->suiteb_type == WIFI_SUITEB_192) {
 		cipher_capa = WPA_CAPA_ENC_GCMP_256;
 		gropu_mgmt_cipher_capa = WPA_CAPA_ENC_BIP_GMAC_256;
