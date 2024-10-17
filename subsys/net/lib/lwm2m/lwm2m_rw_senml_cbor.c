@@ -597,7 +597,7 @@ static int get_s64(struct lwm2m_input_context *in, int64_t *value)
 
 static int get_time(struct lwm2m_input_context *in, time_t *value)
 {
-	int64_t temp64;
+	int64_t temp64 = 0;
 	int ret;
 
 	ret = get_s64(in, &temp64);
