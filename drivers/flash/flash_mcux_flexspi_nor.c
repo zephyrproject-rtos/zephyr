@@ -591,11 +591,22 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	if (ret < 0) {
 		return ret;
 	}
+	/* Enable write */
+	ret = flash_flexspi_nor_write_enable(data);
+	if (ret < 0) {
+		return ret;
+	}
 	buffer |= bit;
 	transfer.dataSize = wr_size;
 	transfer.seqIndex = SCRATCH_CMD2;
 	transfer.cmdType = kFLEXSPI_Write;
-	return memc_flexspi_transfer(&data->controller, &transfer);
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Wait for QE bit to complete programming */
+	return flash_flexspi_nor_wait_bus_busy(data);
 }
 
 /*
@@ -721,6 +732,26 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	uint8_t mode_cmd;
 	int ret;
 
+	/* Read DW14 to determine the polling method we should use while programming */
+	ret = jesd216_bfp_decode_dw14(&header->phdr[0], bfp, &dw14);
+	if (ret < 0) {
+		/* Default to legacy polling mode */
+		dw14.poll_options = 0x0;
+	}
+	if (dw14.poll_options & BIT(1)) {
+		/* Read instruction used for polling is 0x70 */
+		data->legacy_poll = false;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x70,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+	} else {
+		/* Read instruction used for polling is 0x05 */
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+	}
+
 	addr_width = jesd216_bfp_addrbytes(bfp) ==
 		JESD216_SFDP_BFP_DW1_ADDRBYTES_VAL_4B ? 32 : 24;
 
@@ -823,26 +854,6 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 	}
 	/* Default to 111 mode if no support exists, leave READ/WRITE untouched */
-
-	/* Now, read DW14 to determine the polling method we should use while programming */
-	ret = jesd216_bfp_decode_dw14(&header->phdr[0], bfp, &dw14);
-	if (ret < 0) {
-		/* Default to legacy polling mode */
-		dw14.poll_options = 0x0;
-	}
-	if (dw14.poll_options & BIT(1)) {
-		/* Read instruction used for polling is 0x70 */
-		data->legacy_poll = false;
-		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0x70,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
-	} else {
-		/* Read instruction used for polling is 0x05 */
-		data->legacy_poll = true;
-		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
-	}
 
 	return 0;
 }
