@@ -161,6 +161,40 @@ static inline enum bt_buf_type bt_buf_get_type(struct net_buf *buf)
 		->type;
 }
 
+static inline enum bt_buf_type bt_buf_h4_type_to_out_type(uint8_t h4_type)
+{
+	switch (h4_type) {
+	case BT_HCI_H4_CMD:
+		return BT_BUF_CMD;
+	case BT_HCI_H4_ACL:
+		return BT_BUF_ACL_OUT;
+	case BT_HCI_H4_ISO:
+		return BT_BUF_ISO_OUT;
+	default:
+		__ASSERT_NO_MSG(false);
+		return 0xff;
+	}
+}
+
+static inline uint8_t bt_buf_type_to_h4_type(enum bt_buf_type buf_type)
+{
+	switch (buf_type) {
+	case BT_BUF_CMD:
+		return BT_HCI_H4_CMD;
+	case BT_BUF_ACL_IN:
+	case BT_BUF_ACL_OUT:
+		return BT_HCI_H4_ACL;
+	case BT_BUF_EVT:
+		return BT_HCI_H4_EVT;
+	case BT_BUF_ISO_IN:
+	case BT_BUF_ISO_OUT:
+		return BT_HCI_H4_ISO;
+	default:
+		__ASSERT_NO_MSG(false);
+		return BT_HCI_H4_NONE;
+	}
+}
+
 /**
  * @}
  */

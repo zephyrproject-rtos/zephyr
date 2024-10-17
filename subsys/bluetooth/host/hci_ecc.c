@@ -9,7 +9,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net/buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/sys/byteorder.h>
@@ -324,8 +327,22 @@ static void ecc_process(struct k_work *work)
 static void clear_ecc_events(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_set_event_mask *cmd;
+	struct bt_hci_cmd_hdr *hci_cmd_hdr;
+	uint8_t h4_type;
 
-	cmd = (void *)(buf->data + sizeof(struct bt_hci_cmd_hdr));
+	/* This function does not pull from the buffer to keep
+	 * it intact. The buffer is modified in place, and when
+	 * this function returns, the buffer continues to the
+	 * real HCI send function.
+	 */
+
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+	h4_type = buf->data[0];
+	__ASSERT_NO_MSG(h4_type == BT_HCI_H4_CMD);
+	hci_cmd_hdr = (void *)&buf->data[sizeof(h4_type)];
+	__ASSERT_NO_MSG(hci_cmd_hdr->opcode == BT_HCI_OP_LE_SET_EVENT_MASK);
+
+	cmd = (void *)&buf->data[sizeof(h4_type) + sizeof(*hci_cmd_hdr)];
 
 	/*
 	 * don't enable controller ECC events as those will be generated from
@@ -408,19 +425,27 @@ static void le_p256_pub_key(struct net_buf *buf)
 
 int bt_hci_ecc_send(struct net_buf *buf)
 {
-	if (bt_buf_get_type(buf) == BT_BUF_CMD) {
-		struct bt_hci_cmd_hdr *chdr = (void *)buf->data;
+	uint8_t h4_type;
+
+	__ASSERT_NO_MSG(bt_buf_get_type(buf) == BT_BUF_H4);
+	h4_type = buf->data[0];
+
+	if (h4_type == BT_HCI_H4_CMD) {
+		struct bt_hci_cmd_hdr *chdr = (void *)&buf->data[sizeof(h4_type)];
 
 		switch (sys_le16_to_cpu(chdr->opcode)) {
 		case BT_HCI_OP_LE_P256_PUBLIC_KEY:
+			net_buf_pull(buf, sizeof(h4_type));
 			net_buf_pull(buf, sizeof(*chdr));
 			le_p256_pub_key(buf);
 			return 0;
 		case BT_HCI_OP_LE_GENERATE_DHKEY:
+			net_buf_pull(buf, sizeof(h4_type));
 			net_buf_pull(buf, sizeof(*chdr));
 			le_gen_dhkey_v1(buf);
 			return 0;
 		case BT_HCI_OP_LE_GENERATE_DHKEY_V2:
+			net_buf_pull(buf, sizeof(h4_type));
 			net_buf_pull(buf, sizeof(*chdr));
 			le_gen_dhkey_v2(buf);
 			return 0;
@@ -435,6 +460,7 @@ int bt_hci_ecc_send(struct net_buf *buf)
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 	return bt_hci_send(bt_dev.hci, buf);
 #else
+	bt_buf_set_type(buf, bt_buf_out_type_from_h4_type(net_buf_pull_u8(buf)));
 	return bt_dev.drv->send(buf);
 #endif
 }
