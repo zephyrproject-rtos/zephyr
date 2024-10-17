@@ -84,11 +84,43 @@ int i3c_ccc_do_getpid(struct i3c_device_desc *target,
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
 
+int i3c_reset_addresses(const struct device *controller)
+{
+	struct i3c_driver_data *data;
+	sys_snode_t *node;
+
+	if (controller == NULL) {
+		LOG_ERR("%s controller null", __func__);
+		return 0;
+	}
+
+	data = (struct i3c_driver_data *)controller->data;
+	if (data == NULL) {
+		LOG_ERR("%s data null", __func__);
+		return 0;
+	}
+
+	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
+		SYS_SLIST_FOR_EACH_NODE(&data->attached_dev.devices.i3c, node) {
+			struct i3c_device_desc *desc =
+				CONTAINER_OF(node, struct i3c_device_desc, node);
+			if (desc != NULL) {
+				desc->dynamic_addr = 0;
+				LOG_WRN("Reset dynamic address for device %s",
+					desc->dev->name);
+			}
+		}
+	}
+
+	return 0;
+}
+
 int i3c_ccc_do_rstact_all(const struct device *controller,
 			  enum i3c_ccc_rstact_defining_byte action)
 {
 	struct i3c_ccc_payload ccc_payload;
 	uint8_t def_byte;
+	int ret;
 
 	__ASSERT_NO_MSG(controller != NULL);
 
@@ -99,7 +131,10 @@ int i3c_ccc_do_rstact_all(const struct device *controller,
 	ccc_payload.ccc.data = &def_byte;
 	ccc_payload.ccc.data_len = 1U;
 
-	return i3c_do_ccc(controller, &ccc_payload);
+	ret =  i3c_do_ccc(controller, &ccc_payload);
+	if (ret == 0) {
+		i3c_reset_addresses(controller);
+	}
 }
 
 int i3c_ccc_do_rstact(const struct i3c_device_desc *target,
