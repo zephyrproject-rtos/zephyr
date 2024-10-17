@@ -1,0 +1,24 @@
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mps3/corstone310/fvp
+name: Arm MPS3-Corstone310-FVP
+type: mcu
+arch: arm
+ram: 32
+flash: 32
+simulation: armfvp
+simulation_exec: FVP_Corstone_SSE-310
+toolchain:
+  - gnuarmemb
+  - zephyr
+  - xtools
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - net
+    - timer
+vendor: arm
