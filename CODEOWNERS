@@ -133,6 +133,7 @@
 /boards/arm64/intel_socfpga_agilex_socdk/ @siclim @ngboonkhai
 /boards/arm64/intel_socfpga_agilex5_socdk/ @teikheng @gdengi
 /boards/arm64/rcar_*/                     @lorc @xakep-amatop
+/boards/amd/acp_6_0_adsp/               @dineshkumar.kalva @basavaraj.hiregoudar
 # All cmake related files
 /doc/develop/tools/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/services/device_mgmt/smp_protocol.rst  @de-nordic @nordicjm
