@@ -216,6 +216,7 @@
 			interrupts = <42 4>;
 			resolution = <32>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm0_1: pwm@404a0080 {
 			compatible = "infineon,cat1-pwm";
@@ -223,6 +224,7 @@
 			interrupts = <43 4>;
 			resolution = <32>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_0: pwm@404a8000 {
 			compatible = "infineon,cat1-pwm";
@@ -230,6 +232,7 @@
 			interrupts = <44 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_1: pwm@404a8080 {
 			compatible = "infineon,cat1-pwm";
@@ -237,6 +240,7 @@
 			interrupts = <45 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_2: pwm@404a8100 {
 			compatible = "infineon,cat1-pwm";
@@ -244,6 +248,7 @@
 			interrupts = <46 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_3: pwm@404a8180 {
 			compatible = "infineon,cat1-pwm";
@@ -251,6 +256,7 @@
 			interrupts = <47 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_4: pwm@404a8200 {
 			compatible = "infineon,cat1-pwm";
@@ -258,6 +264,7 @@
 			interrupts = <48 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_5: pwm@404a8280 {
 			compatible = "infineon,cat1-pwm";
@@ -265,6 +272,7 @@
 			interrupts = <49 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 		pwm1_6: pwm@404a8300 {
 			compatible = "infineon,cat1-pwm";
@@ -272,6 +280,7 @@
 			interrupts = <50 4>;
 			resolution = <16>;
 			status = "disabled";
+			#pwm-cells = <3>;
 		};
 
 		dma0: dw@40180000 {
