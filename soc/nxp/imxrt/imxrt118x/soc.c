@@ -283,6 +283,64 @@ static ALWAYS_INLINE void clock_init(void)
 
 #endif /* CONFIG_MCUX_ACMP */
 
+#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
+	/* Configure ENET using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_ENET_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Enet, &rootCfg);
+
+	/* Configure TMR_1588 using SYS_PLL3_CLK */
+	rootCfg.mux = kCLOCK_TMR_1588_ClockRoot_MuxSysPll3Out;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Tmr_1588, &rootCfg);
+
+	/* Configure NETC using SYS_PLL3_PFD3_CLK */
+	rootCfg.mux = kCLOCK_NETC_ClockRoot_MuxSysPll3Pfd3;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Netc, &rootCfg);
+
+	/* Configure MAC0 using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_MAC0_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Mac0, &rootCfg);
+
+	/* Configure MAC1 using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_MAC1_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Mac1, &rootCfg);
+
+	/* Configure MAC2 using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_MAC2_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Mac2, &rootCfg);
+
+	/* Configure MAC3 using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_MAC3_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 4;
+	CLOCK_SetRootClock(kCLOCK_Root_Mac3, &rootCfg);
+
+	/* Configure MAC4 using SYS_PLL1_DIV2_CLK */
+	rootCfg.mux = kCLOCK_MAC4_ClockRoot_MuxSysPll1Div2;
+	rootCfg.div = 10;
+	CLOCK_SetRootClock(kCLOCK_Root_Mac4, &rootCfg);
+
+	/* Set NETC PORT Ref clock source. */
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG &=
+		~BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_PORT0_RMII_REF_CLK_DIR_MASK;
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG &=
+		~BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_PORT1_RMII_REF_CLK_DIR_MASK;
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG &=
+		~BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_PORT2_RMII_REF_CLK_DIR_MASK;
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG &=
+		~BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_PORT3_RMII_REF_CLK_DIR_MASK;
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG &=
+		~BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_PORT4_RMII_REF_CLK_DIR_MASK;
+
+	/* Set TMR 1588 Ref clock source. */
+	BLK_CTRL_WAKEUPMIX->NETC_PORT_MISC_CFG |=
+		BLK_CTRL_WAKEUPMIX_NETC_PORT_MISC_CFG_TMR_EXT_CLK_SEL_MASK;
+#endif
+
 	/* Keep core clock ungated during WFI */
 	CCM->LPCG[1].LPM0 = 0x33333333;
 	CCM->LPCG[1].LPM1 = 0x33333333;

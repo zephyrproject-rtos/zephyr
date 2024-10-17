@@ -9,19 +9,42 @@
 
 struct stepper_fixture {
 	const struct device *dev;
-	struct k_poll_signal signal;
-	struct k_poll_event event;
+	stepper_event_callback_t callback;
 };
+
+struct k_poll_signal stepper_signal;
+struct k_poll_event stepper_event;
+
+static void stepper_print_event_callback(const struct device *dev, enum stepper_event event)
+{
+	switch (event) {
+	case STEPPER_EVENT_STEPS_COMPLETED:
+		k_poll_signal_raise(&stepper_signal, STEPPER_EVENT_STEPS_COMPLETED);
+		break;
+	case STEPPER_EVENT_LEFT_END_STOP_DETECTED:
+		k_poll_signal_raise(&stepper_signal, STEPPER_EVENT_LEFT_END_STOP_DETECTED);
+		break;
+	case STEPPER_EVENT_RIGHT_END_STOP_DETECTED:
+		k_poll_signal_raise(&stepper_signal, STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
+		break;
+	case STEPPER_EVENT_STALL_DETECTED:
+		k_poll_signal_raise(&stepper_signal, STEPPER_EVENT_STALL_DETECTED);
+		break;
+	default:
+		break;
+	}
+}
 
 static void *stepper_setup(void)
 {
 	static struct stepper_fixture fixture = {
 		.dev = DEVICE_DT_GET(DT_NODELABEL(motor_1)),
+		.callback = stepper_print_event_callback,
 	};
 
-	k_poll_signal_init(&fixture.signal);
-	k_poll_event_init(&fixture.event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
-			  &fixture.signal);
+	k_poll_signal_init(&stepper_signal);
+	k_poll_event_init(&stepper_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY,
+			  &stepper_signal);
 
 	zassert_not_null(fixture.dev);
 	return &fixture;
@@ -31,7 +54,7 @@ static void stepper_before(void *f)
 {
 	struct stepper_fixture *fixture = f;
 	(void)stepper_set_actual_position(fixture->dev, 0);
-	k_poll_signal_reset(&fixture->signal);
+	k_poll_signal_reset(&stepper_signal);
 }
 
 ZTEST_SUITE(stepper, NULL, stepper_setup, stepper_before, NULL, NULL);
@@ -39,7 +62,7 @@ ZTEST_SUITE(stepper, NULL, stepper_setup, stepper_before, NULL, NULL);
 ZTEST_F(stepper, test_micro_step_res)
 {
 	(void)stepper_set_micro_step_res(fixture->dev, 2);
-	enum micro_step_resolution res;
+	enum stepper_micro_step_resolution res;
 	(void)stepper_get_micro_step_res(fixture->dev, &res);
 	zassert_equal(res, 2, "Micro step resolution not set correctly");
 }
@@ -57,14 +80,15 @@ ZTEST_F(stepper, test_target_position)
 	int32_t pos = 100u;
 
 	(void)stepper_set_max_velocity(fixture->dev, 100u);
-	(void)stepper_set_target_position(fixture->dev, pos, &fixture->signal);
-	(void)k_poll(&fixture->event, 1, K_SECONDS(5));
+	(void)stepper_set_callback(fixture->dev, fixture->callback, NULL);
+	(void)stepper_set_target_position(fixture->dev, pos);
+	(void)k_poll(&stepper_event, 1, K_SECONDS(5));
 	unsigned int signaled;
 	int result;
 
-	k_poll_signal_check(&fixture->signal, &signaled, &result);
+	k_poll_signal_check(&stepper_signal, &signaled, &result);
 	zassert_equal(signaled, 1, "Signal not set");
-	zassert_equal(result, STEPPER_SIGNAL_STEPS_COMPLETED, "Signal not set");
+	zassert_equal(result, STEPPER_EVENT_STEPS_COMPLETED, "Signal not set");
 	(void)stepper_get_actual_position(fixture->dev, &pos);
 	zassert_equal(pos, 100u, "Target position should be %d but is %d", 100u, pos);
 }

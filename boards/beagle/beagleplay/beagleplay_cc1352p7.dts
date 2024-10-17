@@ -87,7 +87,7 @@
 };
 
 &ieee802154 {
-	status = "okay";
+	status = "disabled";
 };
 
 &ieee802154g {

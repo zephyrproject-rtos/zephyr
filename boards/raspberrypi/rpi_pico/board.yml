@@ -1,5 +1,6 @@
 board:
   name: rpi_pico
+  full_name: Raspberry Pi Pico
   vendor: raspberrypi
   socs:
   - name: rp2040

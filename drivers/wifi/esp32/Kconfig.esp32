@@ -20,6 +20,12 @@ menuconfig WIFI_ESP32
 
 if WIFI_ESP32
 
+config HEAP_MEM_POOL_ADD_SIZE_WIFI
+	int
+	default 4096
+	help
+	  Make sure there is a minimal heap available for Wi-Fi driver.
+
 config NET_TCP_WORKQ_STACK_SIZE
 	default 2048
 

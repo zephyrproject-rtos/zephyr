@@ -15,6 +15,7 @@ import re
 import sys
 import time
 
+# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
@@ -50,6 +51,7 @@ class TestRunner:
                 'skipped_by_static_filter': 0,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 4,
+                'built_configurations': 2,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 8,
@@ -129,7 +131,7 @@ class TestRunner:
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup2 SKIPPED: Command line testsuite tag filter',
              'dummy.agnostic.group1.subgroup1 SKIPPED: Command line testsuite tag filter',
-             r'0 of 4 test configurations passed \(0.00%\), 0 failed, 0 errored, 4 skipped'
+             r'0 of 4 test configurations passed \(0.00%\), 0 built \(not run\), 0 failed, 0 errored, 4 skipped'
              ]
         ),
         (
@@ -137,14 +139,14 @@ class TestRunner:
             ['qemu_x86'],
             ['subgrouped'],
             ['dummy.agnostic.group2 SKIPPED: Command line testsuite tag filter',
-             r'2 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 2 skipped'
+             r'1 of 4 test configurations passed \(50.00%\), 1 built \(not run\), 0 failed, 0 errored, 2 skipped'
              ]
         ),
         (
             os.path.join(TEST_DATA, 'tests', 'dummy'),
             ['qemu_x86'],
             ['agnostic', 'device'],
-            [r'3 of 4 test configurations passed \(100.00%\), 0 failed, 0 errored, 1 skipped']
+            [r'2 of 4 test configurations passed \(66.67%\), 1 built \(not run\), 0 failed, 0 errored, 1 skipped']
         ),
     ]
     TESTDATA_10 = [
@@ -155,6 +157,7 @@ class TestRunner:
                 'selected_test_instances': 2,
                 'skipped_configurations': 0,
                 'passed_configurations': 0,
+                'built_configurations': 0,
                 'failed_configurations': 1,
                 'errored_configurations': 0,
             }
@@ -264,7 +267,8 @@ class TestRunner:
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
                      r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
                      r' (?P<skipped_configurations>[0-9]+) skipped with' \
                      r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
@@ -302,6 +306,8 @@ class TestRunner:
             expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
             expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+            expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
             expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \
@@ -611,7 +617,8 @@ class TestRunner:
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
                      r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
                      r' (?P<skipped_configurations>[0-9]+) skipped with' \
                      r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
@@ -631,6 +638,8 @@ class TestRunner:
                 expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
                 expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+                expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
                 expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \

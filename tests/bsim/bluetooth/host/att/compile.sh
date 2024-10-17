@@ -22,5 +22,6 @@ run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/sequential/compil
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/pipeline/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/long_read/compile.sh
 run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/open_close/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/host/att/timeout/compile.sh
 
 wait_for_background_jobs

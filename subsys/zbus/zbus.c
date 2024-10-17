@@ -355,6 +355,11 @@ int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t 
 		return err;
 	}
 
+#if defined(CONFIG_ZBUS_CHANNEL_PUBLISH_STATS)
+	chan->data->publish_timestamp = k_uptime_ticks();
+	chan->data->publish_count += 1;
+#endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
+
 	memcpy(chan->message, msg, chan->message_size);
 
 	err = _zbus_vded_exec(chan, end_time);

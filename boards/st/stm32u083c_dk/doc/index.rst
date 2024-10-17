@@ -36,6 +36,12 @@ board:
 - Touchkey
 - Temperature sensor
 
+.. image:: img/stm32u083c_dk.jpg
+   :align: center
+   :alt: STM32U083C_DK
+
+More information about the board can be found at the `STM32U083_DK website`_.
+
 Hardware
 ********
 

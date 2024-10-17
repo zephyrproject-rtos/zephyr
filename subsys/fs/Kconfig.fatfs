@@ -26,6 +26,7 @@ config FS_FATFS_READ_ONLY
 
 config FS_FATFS_MKFS
 	bool "mkfs support for FAT FS"
+	depends on !FS_FATFS_READ_ONLY
 	default y if FILE_SYSTEM_MKFS
 	help
 	  Adds code for creating disks with FAT file system.
@@ -87,6 +88,30 @@ config FS_FATFS_NUM_DIRS
 	  DIR is defined in ff.h of ELM FAT driver, and is pre-allocated
 	  at compile-time.
 	  This affects use of fs_opendir on FAT type mounted file systems.
+
+config FS_FATFS_HAS_RTC
+	bool "Timestamping support"
+	help
+	  Enable file system timestamping instead of using a hardcoded date
+	  for all operations. Requires an application supplied implementation
+	  of `get_fattime`. Format of the uint32_t bits are as follows:
+	    31:25 = Year from 1980
+	    24:21 = Month (1..12)
+	    20:16 = Day of month (1..31)
+	    15:11 = Hour (0..23)
+	    10: 5 = Minute (0..59)
+	     4: 0 = Seconds/2 (0..29)
+
+config FS_FATFS_EXTRA_NATIVE_API
+	bool "Additional native API functions"
+	help
+	  Enable the following additional native API functions that do not have
+	  an equivalent in the Zephyr VFS API:
+	   * `f_getlabel`
+	   * `f_setlabel`
+	   * `f_expand`
+	   * `f_findfirst`
+	   * `f_findnext`
 
 config FS_FATFS_LFN
 	bool "Long filenames (LFN)"

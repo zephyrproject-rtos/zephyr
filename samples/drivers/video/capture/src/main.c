@@ -36,10 +36,14 @@ static inline int display_setup(const struct device *const display_dev, const ui
 	/* Set display pixel format to match the one in use by the camera */
 	switch (pixfmt) {
 	case VIDEO_PIX_FMT_RGB565:
-		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_RGB_565);
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_BGR_565) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_BGR_565);
+		}
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
-		ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_ARGB_8888) {
+			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		}
 		break;
 	default:
 		return -ENOTSUP;
@@ -62,9 +66,9 @@ static inline void video_display_frame(const struct device *const display_dev,
 	buf_desc.buf_size = vbuf->bytesused;
 	buf_desc.width = fmt.width;
 	buf_desc.pitch = buf_desc.width;
-	buf_desc.height = fmt.height;
+	buf_desc.height = vbuf->bytesused / fmt.pitch;
 
-	display_write(display_dev, 0, 0, &buf_desc, vbuf->buffer);
+	display_write(display_dev, 0, vbuf->line_offset, &buf_desc, vbuf->buffer);
 }
 #endif
 
@@ -182,7 +186,11 @@ int main(void)
 #endif
 
 	/* Size to allocate for each buffer */
-	bsize = fmt.pitch * fmt.height;
+	if (caps.min_line_count == LINE_COUNT_HEIGHT) {
+		bsize = fmt.pitch * fmt.height;
+	} else {
+		bsize = fmt.pitch * caps.min_line_count;
+	}
 
 	/* Alloc video buffers and enqueue for capture */
 	for (i = 0; i < ARRAY_SIZE(buffers); i++) {

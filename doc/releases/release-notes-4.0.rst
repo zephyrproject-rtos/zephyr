@@ -56,6 +56,16 @@ Deprecated in this release
 
 * The :ref:`kscan_api` subsystem has been marked as deprecated.
 
+* The TinyCrypt library was marked as deprecated (:github:`79566`). The reasons
+  for this are (:github:`43712``):
+
+  * the upstream version of this library is unmaintained.
+
+  * to reduce the number of crypto libraries available in Zephyr (currently there are
+    3 different implementations: TinyCrypt, MbedTLS and PSA Crypto APIs).
+
+  The PSA Crypto API is now the de-facto standard to perform crypto operations.
+
 Architectures
 *************
 
@@ -107,6 +117,11 @@ Bluetooth
 
   * Added API :c:func:`bt_gatt_get_uatt_mtu` to get current Unenhanced ATT MTU of a given
     connection (experimental).
+  * Added :kconfig:option:`CONFIG_BT_CONN_TX_NOTIFY_WQ`.
+    The option allows using a separate workqueue for connection TX notify processing
+    (:c:func:`bt_conn_tx_notify`) to make Bluetooth stack more independent from the system workqueue.
+
+  * The host now disconnects from the peer upon ATT timeout.
 
 * HCI Drivers
 
@@ -170,6 +185,14 @@ Drivers and Sensors
 * Charger
 
 * Clock control
+
+* Comparator
+
+  * Introduced comparator device driver subsystem selected with :kconfig:option:`CONFIG_COMPARATOR`
+  * Introduced comparator shell commands selected with :kconfig:option:`CONFIG_COMPARATOR_SHELL`
+  * Added support for Nordic nRF COMP (:dtcompatible:`nordic,nrf-comp`)
+  * Added support for Nordic nRF LPCOMP (:dtcompatible:`nordic,nrf-lpcomp`)
+  * Added support for NXP Kinetis ACMP (:dtcompatible:`nxp,kinetis-acmp`)
 
 * Counter
 

@@ -24,7 +24,7 @@ static void create_file(const char *filename, uint32_t size)
 {
 	int fh;
 
-	fh = open(filename, O_CREAT | O_WRONLY);
+	fh = open(filename, O_CREAT | O_WRONLY, 0440);
 	zassert(fh >= 0, "Failed creating test file");
 
 	uint8_t filling[FILL_SIZE];

@@ -1,5 +1,6 @@
 board:
   name: sam_v71_xult
+  full_name: SAM V71(B) Xplained Ultra
   vendor: atmel
   socs:
     - name: samv71q21

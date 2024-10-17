@@ -61,6 +61,7 @@ tests:
       - nucleo_h723zg
   sample.net.wifi.nrf7002eb:
     extra_args:
+      - NRF70_UTIL=y
       - CONFIG_NRF_WIFI_BUILD_ONLY_MODE=y
       - SHIELD=nrf7002eb
     platform_allow:

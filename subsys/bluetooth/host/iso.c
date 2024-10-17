@@ -3316,7 +3316,7 @@ int bt_iso_big_sync(struct bt_le_per_adv_sync *sync, struct bt_iso_big_sync_para
 		return -EINVAL;
 	}
 
-	CHECKIF(param->bis_bitfield == 0U || param->bis_bitfield > BIT_MASK(BT_ISO_BIS_INDEX_MAX)) {
+	CHECKIF(!BT_ISO_VALID_BIS_BITFIELD(param->bis_bitfield)) {
 		LOG_DBG("Invalid BIS bitfield 0x%08x", param->bis_bitfield);
 		return -EINVAL;
 	}

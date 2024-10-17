@@ -96,7 +96,7 @@ static void walk_socket_services(const struct net_socket_service_desc *svc,
 	const struct shell *sh = data->sh;
 	int *count = data->user_data;
 	int len = 0;
-	static char pev_output[sizeof("xxx,") * CONFIG_NET_SOCKETS_POLL_MAX];
+	static char pev_output[sizeof("xxx,") * CONFIG_ZVFS_POLL_MAX];
 	static char owner[MAX_OWNER_LEN + 1];
 
 	NET_ASSERT(svc->pev != NULL);

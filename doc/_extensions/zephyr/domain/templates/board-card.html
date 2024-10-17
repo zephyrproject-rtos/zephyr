@@ -1,0 +1,27 @@
+{#
+  Copyright (c) 2024, The Linux Foundation.
+  SPDX-License-Identifier: Apache-2.0
+#}
+
+<a
+  class="board-card"
+  {% if board.doc_page -%}
+  href="../{{ board.doc_page | replace(".rst", ".html") }}"
+  {% else -%}
+  href="#"
+  {% endif -%}
+  aria-label="Open the documentation page for {{ board.full_name }}"
+  data-name="{{ board.full_name}}"
+  data-arch="{{ board.archs | join(" ") }}"
+  data-vendor="{{ board.vendor }}"
+  data-socs="{{ board.socs | join(" ") }}"
+  tabindex="0">
+  <div class="vendor">{{ catalog.vendors[board.vendor] }}</div>
+  {% if board.image -%}
+  <img alt="A picture of the {{ board.name }} board" src="{{ board.image }}" class="picture" />
+  {% else -%}
+  <div class="no-picture fa fa-microchip picture"></div>
+  {% endif -%}
+  <div class="board-name">{{ board.full_name }}</div>
+  <div class="arch">{{ board.archs | join(", ") }}</div>
+</a>

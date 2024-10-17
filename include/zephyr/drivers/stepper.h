@@ -33,9 +33,9 @@ extern "C" {
 /**
  * @brief Stepper Motor micro step resolution options
  */
-enum micro_step_resolution {
+enum stepper_micro_step_resolution {
 	/** Full step resolution */
-	STEPPER_FULL_STEP = 1,
+	STEPPER_MICRO_STEP_1 = 1,
 	/** 2 micro steps per full step */
 	STEPPER_MICRO_STEP_2 = 2,
 	/** 4 micro steps per full step */
@@ -58,10 +58,10 @@ enum micro_step_resolution {
  * @brief Stepper Motor direction options
  */
 enum stepper_direction {
-	/** Positive direction */
-	STEPPER_DIRECTION_POSITIVE = 0,
 	/** Negative direction */
-	STEPPER_DIRECTION_NEGATIVE,
+	STEPPER_DIRECTION_NEGATIVE = 0,
+	/** Positive direction */
+	STEPPER_DIRECTION_POSITIVE = 1,
 };
 
 /**
@@ -69,22 +69,25 @@ enum stepper_direction {
  */
 enum stepper_run_mode {
 	/** Hold Mode */
-	STEPPER_HOLD_MODE = 0,
+	STEPPER_RUN_MODE_HOLD = 0,
 	/** Position Mode*/
-	STEPPER_POSITION_MODE,
+	STEPPER_RUN_MODE_POSITION = 1,
 	/** Velocity Mode */
-	STEPPER_VELOCITY_MODE,
+	STEPPER_RUN_MODE_VELOCITY = 2,
 };
 
 /**
- * @brief Stepper Motor signal results
+ * @brief Stepper Events
  */
-enum stepper_signal_result {
+enum stepper_event {
 	/** Steps set using move or set_target_position have been executed */
-	STEPPER_SIGNAL_STEPS_COMPLETED = 0,
-	STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED = 1,
-	STEPPER_SIGNAL_LEFT_END_STOP_DETECTED = 2,
-	STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED = 3,
+	STEPPER_EVENT_STEPS_COMPLETED = 0,
+	/** Stall detected */
+	STEPPER_EVENT_STALL_DETECTED = 1,
+	/** Left end switch status changes to pressed */
+	STEPPER_EVENT_LEFT_END_STOP_DETECTED = 2,
+	/** Right end switch status changes to pressed */
+	STEPPER_EVENT_RIGHT_END_STOP_DETECTED = 3,
 };
 
 /**
@@ -106,8 +109,7 @@ typedef int (*stepper_enable_t)(const struct device *dev, const bool enable);
  *
  * @see stepper_move() for details.
  */
-typedef int (*stepper_move_t)(const struct device *dev, const int32_t micro_steps,
-			      struct k_poll_signal *async);
+typedef int (*stepper_move_t)(const struct device *dev, const int32_t micro_steps);
 
 /**
  * @brief Set the max velocity in micro_steps per seconds.
@@ -123,7 +125,7 @@ typedef int (*stepper_set_max_velocity_t)(const struct device *dev,
  * @see stepper_set_micro_step_res() for details.
  */
 typedef int (*stepper_set_micro_step_res_t)(const struct device *dev,
-					    const enum micro_step_resolution resolution);
+					    const enum stepper_micro_step_resolution resolution);
 
 /**
  * @brief Get the micro-step resolution
@@ -131,7 +133,7 @@ typedef int (*stepper_set_micro_step_res_t)(const struct device *dev,
  * @see stepper_get_micro_step_res() for details.
  */
 typedef int (*stepper_get_micro_step_res_t)(const struct device *dev,
-					    enum micro_step_resolution *resolution);
+					    enum stepper_micro_step_resolution *resolution);
 /**
  * @brief Set the actual a.k.a reference position of the stepper
  *
@@ -151,8 +153,7 @@ typedef int (*stepper_get_actual_position_t)(const struct device *dev, int32_t *
  *
  * @see stepper_set_target_position() for details.
  */
-typedef int (*stepper_set_target_position_t)(const struct device *dev, const int32_t value,
-					     struct k_poll_signal *async);
+typedef int (*stepper_set_target_position_t)(const struct device *dev, const int32_t value);
 
 /**
  * @brief Is the target position fo the stepper reached
@@ -171,6 +172,19 @@ typedef int (*stepper_enable_constant_velocity_mode_t)(const struct device *dev,
 						       const uint32_t value);
 
 /**
+ * @brief Callback function for stepper events
+ */
+typedef void (*stepper_event_callback_t)(const struct device *dev, const enum stepper_event event);
+
+/**
+ * @brief Set the callback function to be called when a stepper event occurs
+ *
+ * @see stepper_set_callback() for details.
+ */
+typedef int (*stepper_set_event_callback_t)(const struct device *dev,
+					    stepper_event_callback_t callback, void *user_data);
+
+/**
  * @brief Stepper Motor Controller API
  */
 __subsystem struct stepper_driver_api {
@@ -184,6 +198,7 @@ __subsystem struct stepper_driver_api {
 	stepper_set_target_position_t set_target_position;
 	stepper_is_moving_t is_moving;
 	stepper_enable_constant_velocity_mode_t enable_constant_velocity_mode;
+	stepper_set_event_callback_t set_event_callback;
 };
 
 /**
@@ -213,23 +228,17 @@ static inline int z_impl_stepper_enable(const struct device *dev, const bool ena
  *
  * @param dev pointer to the stepper motor controller instance
  * @param micro_steps target micro_steps to be moved from the current position
- * @param async Pointer to a valid and ready to be signaled struct
- *              k_poll_signal. (Note: if NULL this function will not notify
- *              the end of the transaction, and whether it went successfully
- *              or not).
  *
  * @retval -EIO General input / output error
  * @retval	0 Success
  */
-__syscall int stepper_move(const struct device *dev, int32_t micro_steps,
-			   struct k_poll_signal *async);
+__syscall int stepper_move(const struct device *dev, int32_t micro_steps);
 
-static inline int z_impl_stepper_move(const struct device *dev, const int32_t micro_steps,
-				      struct k_poll_signal *async)
+static inline int z_impl_stepper_move(const struct device *dev, const int32_t micro_steps)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
-	return api->move(dev, micro_steps, async);
+	return api->move(dev, micro_steps);
 }
 
 /**
@@ -270,10 +279,10 @@ static inline int z_impl_stepper_set_max_velocity(const struct device *dev,
  * @retval 0 Success
  */
 __syscall int stepper_set_micro_step_res(const struct device *dev,
-					 enum micro_step_resolution resolution);
+					 enum stepper_micro_step_resolution resolution);
 
 static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
-						    enum micro_step_resolution resolution)
+						    enum stepper_micro_step_resolution resolution)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
@@ -294,10 +303,10 @@ static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
  * @retval 0 Success
  */
 __syscall int stepper_get_micro_step_res(const struct device *dev,
-					 enum micro_step_resolution *resolution);
+					 enum stepper_micro_step_resolution *resolution);
 
 static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
-						    enum micro_step_resolution *resolution)
+						    enum stepper_micro_step_resolution *resolution)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
@@ -356,27 +365,21 @@ static inline int z_impl_stepper_get_actual_position(const struct device *dev, i
  *
  * @param dev pointer to the stepper motor controller instance
  * @param value target position to set in micro_steps
- * @param async Pointer to a valid and ready to be signaled struct
- *              k_poll_signal. If changing the target position
- *              triggers stepper movement, this can be used to await
- *              the end of the transaction. (Note: can be left NULL)
  *
  * @retval -EIO General input / output error
  * @retval -ENOSYS If not implemented by device driver
  * @retval 0 Success
  */
-__syscall int stepper_set_target_position(const struct device *dev, int32_t value,
-					  struct k_poll_signal *async);
+__syscall int stepper_set_target_position(const struct device *dev, int32_t value);
 
-static inline int z_impl_stepper_set_target_position(const struct device *dev, const int32_t value,
-						     struct k_poll_signal *async)
+static inline int z_impl_stepper_set_target_position(const struct device *dev, const int32_t value)
 {
 	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
 
 	if (api->set_target_position == NULL) {
 		return -ENOSYS;
 	}
-	return api->set_target_position(dev, value, async);
+	return api->set_target_position(dev, value);
 }
 
 /**
@@ -432,6 +435,31 @@ static inline int z_impl_stepper_enable_constant_velocity_mode(
 		return -ENOSYS;
 	}
 	return api->enable_constant_velocity_mode(dev, direction, value);
+}
+
+/**
+ * @brief Set the callback function to be called when a stepper event occurs
+ *
+ * @param dev pointer to the stepper motor controller instance
+ * @param callback Callback function to be called when a stepper event occurs
+ * passing NULL will disable the callback
+ * @param user_data User data to be passed to the callback function
+ *
+ * @retval -ENOSYS If not implemented by device driver
+ * @retval 0 Success
+ */
+__syscall int stepper_set_callback(const struct device *dev, stepper_event_callback_t callback,
+				   void *user_data);
+
+static inline int z_impl_stepper_set_callback(const struct device *dev,
+					      stepper_event_callback_t callback, void *user_data)
+{
+	const struct stepper_driver_api *api = (const struct stepper_driver_api *)dev->api;
+
+	if (api->set_event_callback == NULL) {
+		return -ENOSYS;
+	}
+	return api->set_event_callback(dev, callback, user_data);
 }
 
 /**

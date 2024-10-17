@@ -41,6 +41,8 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "WAPI";
 	case WIFI_SECURITY_TYPE_EAP_TLS:
 		return "EAP";
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		return "WPA/WPA2/WPA3 PSK";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -235,6 +237,18 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode)
 		return "PS wakeup mode DTIM";
 	case WIFI_PS_WAKEUP_MODE_LISTEN_INTERVAL:
 		return "PS wakeup mode listen interval";
+	default:
+		return "UNKNOWN";
+	}
+}
+
+const char * const wifi_ps_exit_strategy_txt(enum wifi_ps_exit_strategy ps_exit_strategy)
+{
+	switch (ps_exit_strategy) {
+	case WIFI_PS_EXIT_EVERY_TIM:
+		return "Every TIM";
+	case WIFI_PS_EXIT_CUSTOM_ALGO:
+		return "Custom algorithm";
 	default:
 		return "UNKNOWN";
 	}
@@ -570,6 +584,13 @@ static int wifi_set_power_save(uint32_t mgmt_request, struct net_if *iface,
 	case WIFI_PS_PARAM_WAKEUP_MODE:
 	case WIFI_PS_PARAM_TIMEOUT:
 		break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		if (ps_params->exit_strategy > WIFI_PS_EXIT_MAX) {
+			ps_params->fail_reason =
+				WIFI_PS_PARAM_FAIL_INVALID_EXIT_STRATEGY;
+			return -EINVAL;
+		}
+	break;
 	default:
 		ps_params->fail_reason =
 			WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;

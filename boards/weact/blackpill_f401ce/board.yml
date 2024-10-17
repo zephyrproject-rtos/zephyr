@@ -1,5 +1,6 @@
 board:
   name: blackpill_f401ce
+  full_name: Black Pill V3.0
   vendor: weact
   socs:
     - name: stm32f401xe

@@ -7,6 +7,7 @@ menuconfig DISPLAY_MCUX_ELCDIF
 	bool "MCUX eLCDIF driver"
 	default y
 	depends on DT_HAS_NXP_IMX_ELCDIF_ENABLED
+	select PINCTRL
 	help
 	  Enable support for mcux eLCDIF driver.
 

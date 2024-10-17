@@ -113,3 +113,11 @@
 &ctimer0 {
 	status = "okay";
 };
+
+&vref {
+	status = "okay";
+};
+
+&lpadc0 {
+	status = "okay";
+};

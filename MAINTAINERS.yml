@@ -1049,6 +1049,7 @@ Release Notes:
     - yperess
   files:
     - tests/drivers/bbram/
+    - tests/drivers/build_all/bbram/
     - drivers/bbram/
     - include/zephyr/drivers/bbram.h
     - doc/hardware/peripherals/bbram.rst
@@ -1149,6 +1150,23 @@ Release Notes:
     - "area: Clock control"
   tests:
     - drivers.clock
+
+"Drivers: Comparator":
+  status: maintained
+  maintainers:
+    - bjarki-andreasen
+  files:
+    - drivers/comparator/
+    - dts/bindings/comparator/
+    - include/zephyr/drivers/comparator.h
+    - include/zephyr/drivers/comparator/
+    - tests/drivers/build_all/comparator/
+    - tests/drivers/comparator/
+    - doc/hardware/peripherals/comparator.rst
+  labels:
+    - "area: Comparator"
+  tests:
+    - drivers.comparator
 
 "Drivers: Console":
   status: odd fixes
@@ -1362,6 +1380,8 @@ Release Notes:
     - dts/bindings/ethernet/
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
+    - include/zephyr/net/phy.h
+    - include/zephyr/net/ethernet.h
   labels:
     - "area: Ethernet"
   tests:
@@ -1382,6 +1402,7 @@ Release Notes:
     - doc/hardware/peripherals/flash.rst
     - include/zephyr/drivers/flash/
     - tests/drivers/flash_simulator/
+    - tests/drivers/build_all/flash/
   labels:
     - "area: Flash"
   tests:
@@ -1612,6 +1633,7 @@ Release Notes:
     - doc/hardware/peripherals/mdio.rst
     - drivers/mdio/
     - include/zephyr/drivers/mdio.h
+    - include/zephyr/net/mdio.h
     - tests/drivers/build_all/mdio/
     - dts/bindings/mdio/
   labels:
@@ -2359,9 +2381,9 @@ IPC:
   status: maintained
   maintainers:
     - doki-nordic
-    - arnopo
   collaborators:
     - carlocaione
+    - arnopo
   files:
     - include/zephyr/ipc/
     - samples/subsys/ipc/
@@ -3534,6 +3556,19 @@ Silabs SiM3U Platforms:
     - "platform: Silabs SiM3U"
   description: >-
     SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
+
+Gardena Platforms:
+  status: maintained
+  maintainers:
+    - rettichschnidi
+  collaborators:
+    - M1cha
+  files:
+    - boards/gardena/
+  labels:
+    - "platform: Gardena"
+  description: >-
+    Gardena board(s).
 
 Intel Platforms (X86):
   status: maintained

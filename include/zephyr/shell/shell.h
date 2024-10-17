@@ -912,6 +912,41 @@ struct shell {
 
 extern void z_shell_print_stream(const void *user_ctx, const char *data,
 				 size_t data_len);
+
+/** @brief Internal macro for defining a shell instance.
+ *
+ * As it does not create the default shell logging backend it allows to use
+ * custom approach for integrating logging with shell.
+ *
+ * @param[in] _name		Instance name.
+ * @param[in] _prompt		Shell default prompt string.
+ * @param[in] _transport_iface	Pointer to the transport interface.
+ * @param[in] _out_buf		Output buffer.
+ * @param[in] _log_backend	Pointer to the log backend instance.
+ * @param[in] _shell_flag	Shell output newline sequence.
+ */
+#define Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _out_buf, _log_backend, _shell_flag)      \
+	static const struct shell _name;                                                           \
+	static struct shell_ctx UTIL_CAT(_name, _ctx);                                             \
+	Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER);                      \
+	Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _out_buf, CONFIG_SHELL_PRINTF_BUFF_SIZE,   \
+			       true, z_shell_print_stream);                                        \
+	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);                               \
+	Z_SHELL_STATS_DEFINE(_name);                                                               \
+	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE);                      \
+	static struct k_thread _name##_thread;                                                     \
+	static const STRUCT_SECTION_ITERABLE(shell, _name) = {                                     \
+		.default_prompt = _prompt,                                                         \
+		.iface = _transport_iface,                                                         \
+		.ctx = &UTIL_CAT(_name, _ctx),                                                     \
+		.history = IS_ENABLED(CONFIG_SHELL_HISTORY) ? &_name##_history : NULL,             \
+		.shell_flag = _shell_flag,                                                         \
+		.fprintf_ctx = &_name##_fprintf,                                                   \
+		.stats = Z_SHELL_STATS_PTR(_name),                                                 \
+		.log_backend = _log_backend,                                                       \
+		LOG_INSTANCE_PTR_INIT(log, shell, _name).name =                                    \
+			STRINGIFY(_name), .thread = &_name##_thread, .stack = _name##_stack}
+
 /**
  * @brief Macro for defining a shell instance.
  *
@@ -925,37 +960,12 @@ extern void z_shell_print_stream(const void *user_ctx, const char *data,
  *				message is dropped.
  * @param[in] _shell_flag	Shell output newline sequence.
  */
-#define SHELL_DEFINE(_name, _prompt, _transport_iface,			      \
-		     _log_queue_size, _log_timeout, _shell_flag)	      \
-	static const struct shell _name;				      \
-	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];     \
-	Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
-				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-				 _log_queue_size, _log_timeout);	      \
-	Z_SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER); \
-	Z_SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,   \
-			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
-			     true, z_shell_print_stream);		      \
-	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	      \
-	Z_SHELL_STATS_DEFINE(_name);					      \
-	static K_KERNEL_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
-	static struct k_thread _name##_thread;				      \
-	static const STRUCT_SECTION_ITERABLE(shell, _name) = {		      \
-		.default_prompt = _prompt,				      \
-		.iface = _transport_iface,				      \
-		.ctx = &UTIL_CAT(_name, _ctx),				      \
-		.history = IS_ENABLED(CONFIG_SHELL_HISTORY) ?		      \
-				&_name##_history : NULL,		      \
-		.shell_flag = _shell_flag,				      \
-		.fprintf_ctx = &_name##_fprintf,			      \
-		.stats = Z_SHELL_STATS_PTR(_name),			      \
-		.log_backend = Z_SHELL_LOG_BACKEND_PTR(_name),		      \
-		LOG_INSTANCE_PTR_INIT(log, shell, _name)		      \
-		.name = STRINGIFY(_name),				      \
-		.thread = &_name##_thread,				      \
-		.stack = _name##_stack					      \
-	}
+#define SHELL_DEFINE(_name, _prompt, _transport_iface, _log_queue_size, _log_timeout, _shell_flag) \
+	static uint8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];                          \
+	Z_SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer, CONFIG_SHELL_PRINTF_BUFF_SIZE,       \
+				   _log_queue_size, _log_timeout);                                 \
+	Z_SHELL_DEFINE(_name, _prompt, _transport_iface, _name##_out_buffer,                       \
+		       Z_SHELL_LOG_BACKEND_PTR(_name), _shell_flag)
 
 /**
  * @brief Function for initializing a transport layer and internal shell state.

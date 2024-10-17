@@ -201,6 +201,7 @@ config I2C_IMX
 	bool "i.MX I2C driver"
 	default y
 	depends on DT_HAS_FSL_IMX21_I2C_ENABLED
+	select PINCTRL
 	help
 	  Enable the i.MX I2C driver.
 

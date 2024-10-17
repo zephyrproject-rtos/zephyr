@@ -9,5 +9,9 @@ toolchain:
 ram: 24
 flash: 192
 supported:
+  - arduino_i2c
+  - arduino_spi
   - gpio
+  - i2c
+  - spi
 vendor: st

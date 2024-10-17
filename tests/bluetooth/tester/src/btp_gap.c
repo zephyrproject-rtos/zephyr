@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/bluetooth/gap.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 #include <string.h>
@@ -987,14 +988,15 @@ static uint8_t stop_discovery(const void *cmd, uint16_t cmd_len,
 static uint8_t connect(const void *cmd, uint16_t cmd_len,
 		       void *rsp, uint16_t *rsp_len)
 {
+	const struct bt_le_conn_param *conn_param =
+		BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MIN, 0, 400);
 	const struct btp_gap_connect_cmd *cp = cmd;
 	int err;
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
 		struct bt_conn *conn;
 
-		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN,
-					BT_LE_CONN_PARAM_DEFAULT, &conn);
+		err = bt_conn_le_create(&cp->address, BT_CONN_LE_CREATE_CONN, conn_param, &conn);
 		if (err) {
 			LOG_ERR("Failed to create connection (%d)", err);
 			return BTP_STATUS_FAILED;
@@ -1002,8 +1004,7 @@ static uint8_t connect(const void *cmd, uint16_t cmd_len,
 
 		bt_conn_unref(conn);
 	} else {
-		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN,
-					     BT_LE_CONN_PARAM_DEFAULT);
+		err = bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN, conn_param);
 		if (err) {
 			LOG_ERR("Failed to create auto connection (%d)", err);
 			return BTP_STATUS_FAILED;

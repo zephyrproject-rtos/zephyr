@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2024 Tenstorrent AI ULC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
 
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/kernel.h>
@@ -301,77 +303,120 @@ int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-ssize_t zvfs_read(int fd, void *buf, size_t sz)
+static bool supports_pread_pwrite(uint32_t mode)
 {
+	switch (mode & ZVFS_MODE_IFMT) {
+	case ZVFS_MODE_IFSHM:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static ssize_t zvfs_rw(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset)
+{
+	bool prw;
 	ssize_t res;
+	const size_t *off;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-	res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
-	if (res > 0) {
-		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
-		case ZVFS_MODE_IFDIR:
-		case ZVFS_MODE_IFBLK:
-		case ZVFS_MODE_IFSHM:
-		case ZVFS_MODE_IFREG:
-			fdtable[fd].offset += res;
-			break;
-		default:
-			break;
+
+	prw = supports_pread_pwrite(fdtable[fd].mode);
+	if (from_offset != NULL && !prw) {
+		/*
+		 * Seekable file types should support pread() / pwrite() and per-fd offset passing.
+		 * Otherwise, it's a bug.
+		 */
+		errno = ENOTSUP;
+		res = -1;
+		goto unlock;
+	}
+
+	/* If there is no specified from_offset, then use the current offset of the fd */
+	off = (from_offset == NULL) ? &fdtable[fd].offset : from_offset;
+
+	if (is_write) {
+		if (fdtable[fd].vtable->write_offs == NULL) {
+			res = -1;
+			errno = EIO;
+		} else {
+			res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, *off);
+		}
+	} else {
+		if (fdtable[fd].vtable->read_offs == NULL) {
+			res = -1;
+			errno = EIO;
+		} else {
+			res = fdtable[fd].vtable->read_offs(fdtable[fd].obj, buf, sz, *off);
 		}
 	}
+	if (res > 0 && prw && from_offset == NULL) {
+		/*
+		 * only update the fd offset when from_offset is not specified
+		 * See pread() / pwrite()
+		 */
+		fdtable[fd].offset += res;
+	}
+
+unlock:
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	return res;
 }
 
-ssize_t zvfs_write(int fd, const void *buf, size_t sz)
+ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset)
 {
-	ssize_t res;
+	return zvfs_rw(fd, buf, sz, false, from_offset);
+}
 
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
-	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-	res = fdtable[fd].vtable->write_offs(fdtable[fd].obj, buf, sz, fdtable[fd].offset);
-	if (res > 0) {
-		switch (fdtable[fd].mode & ZVFS_MODE_IFMT) {
-		case ZVFS_MODE_IFDIR:
-		case ZVFS_MODE_IFBLK:
-		case ZVFS_MODE_IFSHM:
-		case ZVFS_MODE_IFREG:
-			fdtable[fd].offset += res;
-			break;
-		default:
-			break;
-		}
-	}
-	k_mutex_unlock(&fdtable[fd].lock);
-
-	return res;
+ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset)
+{
+	return zvfs_rw(fd, (void *)buf, sz, true, from_offset);
 }
 
 int zvfs_close(int fd)
 {
-	int res;
+	int res = 0;
 
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
 	(void)k_mutex_lock(&fdtable[fd].lock, K_FOREVER);
-
-	res = fdtable[fd].vtable->close(fdtable[fd].obj);
-
+	if (fdtable[fd].vtable->close != NULL) {
+		/* close() is optional - e.g. stdinout_fd_op_vtable */
+		res = fdtable[fd].vtable->close(fdtable[fd].obj);
+	}
 	k_mutex_unlock(&fdtable[fd].lock);
 
 	zvfs_free_fd(fd);
 
 	return res;
+}
+
+FILE *zvfs_fdopen(int fd, const char *mode)
+{
+	ARG_UNUSED(mode);
+
+	if (_check_fd(fd) < 0) {
+		return NULL;
+	}
+
+	return (FILE *)&fdtable[fd];
+}
+
+int zvfs_fileno(FILE *file)
+{
+	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
+		errno = EBADF;
+		return -1;
+	}
+
+	return (struct fd_entry *)file - fdtable;
 }
 
 int zvfs_fstat(int fd, struct stat *buf)
@@ -493,7 +538,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 #if defined(CONFIG_BOARD_NATIVE_POSIX)
-	return zvfs_write(1, buffer, count);
+	return zvfs_write(1, buffer, count, NULL);
 #elif defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else

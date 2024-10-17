@@ -141,6 +141,7 @@ static void tab_item_print(const struct shell *sh, const char *option,
 
 	columns = (sh->ctx->vt100_ctx.cons.terminal_wid
 			- z_shell_strlen(tab)) / longest_option;
+	__ASSERT_NO_MSG(columns != 0);
 	diff = longest_option - z_shell_strlen(option);
 
 	if (sh->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {

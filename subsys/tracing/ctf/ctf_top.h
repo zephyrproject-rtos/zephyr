@@ -157,6 +157,7 @@ typedef enum {
 	CTF_EVENT_NET_SEND_DATA_EXIT = 0x5F,
 	CTF_EVENT_NET_RX_TIME = 0x60,
 	CTF_EVENT_NET_TX_TIME = 0x61,
+	CTF_EVENT_NAMED_EVENT = 0x62,
 
 } ctf_event_t;
 
@@ -656,6 +657,13 @@ static inline void ctf_top_net_tx_time(int32_t if_index, uint32_t iface, uint32_
 {
 	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NET_TX_TIME),
 		  if_index, iface, pkt, priority, tc, duration);
+}
+
+static inline void ctf_named_event(ctf_bounded_string_t name, uint32_t arg0,
+				   uint32_t arg1)
+{
+	CTF_EVENT(CTF_LITERAL(uint8_t, CTF_EVENT_NAMED_EVENT), name,
+		  arg0, arg1);
 }
 
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

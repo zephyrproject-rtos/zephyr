@@ -11,7 +11,7 @@ high performance with the lowest possible power on a small physical size. In add
 which is a user-configurable RISC-V SoC based on the VexRiscv core with configurable feature set and extension.
 Using the Efinity IP Manager, you can configure the SoC to include only the peripherals that you require.
 
-.. figure:: img/ti60f225-board-top.jpg
+.. figure:: img/titanium_ti60_f225.jpg
    :align: center
    :alt: titanium_ti60_f225_board
 

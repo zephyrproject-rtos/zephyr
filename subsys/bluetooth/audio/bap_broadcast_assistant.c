@@ -955,6 +955,8 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 
 	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
 		memset(&inst->recv_states[i], 0, sizeof(inst->recv_states[i]));
+		inst->recv_states[i].broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+		inst->recv_states[i].adv_sid = BT_HCI_LE_EXT_ADV_SID_INVALID;
 		inst->recv_states[i].past_avail = false;
 		inst->recv_state_handles[i] = 0U;
 	}

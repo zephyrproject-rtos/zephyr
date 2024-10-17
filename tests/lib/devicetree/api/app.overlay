@@ -114,6 +114,16 @@
 			compatible = "vnd,enum-required-false-holder-inst";
 		};
 
+		test_enum_string_array: enum-8 {
+			compatible = "vnd,enum-string-array-holder";
+			val = "foo", "zoo", "foo";
+		};
+
+		test_enum_int_array: enum-9 {
+			compatible = "vnd,enum-int-array-holder";
+			val = <4 3 4 0>;
+		};
+
 		/*
 		 * disabled/reserved should be the only nodes with their
 		 * compatible in the tree.

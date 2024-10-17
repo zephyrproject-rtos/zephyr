@@ -20,4 +20,4 @@ tests:
     extra_configs:
       - CONFIG_THRIFT_COMPACT_PROTOCOL=y
   thrift.ThriftTest.newlib.tlsTransport:
-    extra_args: OVERLAY_CONFIG="overlay-tls.conf"
+    extra_args: EXTRA_CONF_FILE="overlay-tls.conf"

@@ -21,10 +21,11 @@
 	chosen {
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
-		zephyr,code-partition = &code_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,uart-pipe = &lpuart0;
 	};
 
 	user_led {
@@ -52,10 +53,23 @@
 	status = "okay";
 };
 
+&lpuart0 {
+	current-speed = <115200>;
+	status =  "okay";
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
 &lpuart1 {
 	current-speed = <115200>;
 	status =  "okay";
 	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
 };
 
@@ -65,15 +79,20 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_K(896)>;
-			label = "code";
-			read-only;
+		boot_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			reg = <0x10000 DT_SIZE_K(416)>;
+		};
+
+		slot1_partition: partition@78000 {
+			reg = <0x78000 DT_SIZE_K(416)>;
 		};
 
 		storage_partition: partition@e0000 {
 			reg = <0xe0000 DT_SIZE_K(128)>;
-			label = "storage";
 		};
 	};
 };

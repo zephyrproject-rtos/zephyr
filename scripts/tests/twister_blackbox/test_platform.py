@@ -14,6 +14,7 @@ import pytest
 import sys
 import json
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -30,10 +31,11 @@ class TestPlatform:
                 'skipped_configurations': 3,
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
-                'passed_configurations': 6,
+                'passed_configurations': 4,
+                'built_configurations': 2,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
-                'executed_test_cases': 10,
+                'executed_test_cases': 8,
                 'skipped_test_cases': 5,
                 'platform_count': 3,
                 'executed_on_platform': 4,
@@ -50,6 +52,7 @@ class TestPlatform:
                 'skipped_by_static_filter': 3,
                 'skipped_at_runtime': 0,
                 'passed_configurations': 0,
+                'built_configurations': 0,
                 'failed_configurations': 0,
                 'errored_configurations': 0,
                 'executed_test_cases': 0,
@@ -187,7 +190,7 @@ class TestPlatform:
                 os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic'),
                 ['qemu_x86', 'qemu_x86_64'],
                 {
-                    'passed_configurations': 3,
+                    'passed_configurations': 2,
                     'selected_test_instances': 6,
                     'executed_on_platform': 2,
                     'only_built': 1,
@@ -265,7 +268,8 @@ class TestPlatform:
 
         pass_regex = r'^INFO    - (?P<passed_configurations>[0-9]+) of' \
                      r' (?P<test_instances>[0-9]+) test configurations passed' \
-                     r' \([0-9]+\.[0-9]+%\), (?P<failed_configurations>[0-9]+) failed,' \
+                     r' \([0-9]+\.[0-9]+%\), (?P<built_configurations>[0-9]+) built \(not run\),' \
+                     r' (?P<failed_configurations>[0-9]+) failed,' \
                      r' (?P<errored_configurations>[0-9]+) errored,' \
                      r' (?P<skipped_configurations>[0-9]+) skipped with' \
                      r' [0-9]+ warnings in [0-9]+\.[0-9]+ seconds$'
@@ -304,6 +308,8 @@ class TestPlatform:
                expected['passed_configurations']
         assert int(pass_search.group('test_instances')) == \
                expected['selected_test_instances']
+        assert int(pass_search.group('built_configurations')) == \
+               expected['built_configurations']
         assert int(pass_search.group('failed_configurations')) == \
                expected['failed_configurations']
         assert int(pass_search.group('errored_configurations')) == \

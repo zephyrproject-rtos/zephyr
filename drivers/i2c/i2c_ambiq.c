@@ -183,16 +183,16 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 			      uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
-	int ret = 0;
+	int pm_ret, ret = 0;
 
 	if (!num_msgs) {
 		return 0;
 	}
 
-	ret = pm_device_runtime_get(dev);
+	pm_ret = pm_device_runtime_get(dev);
 
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+	if (pm_ret < 0) {
+		LOG_ERR("pm_device_runtime_get failed: %d", pm_ret);
 	}
 
 	/* Send out messages */
@@ -206,8 +206,8 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 
 		if (ret != 0) {
-			k_sem_give(&data->bus_sem);
-			return ret;
+			LOG_ERR("i2c transfer failed: %d", ret);
+			break;
 		}
 	}
 
@@ -216,13 +216,15 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
-	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+	if (!pm_ret) {
+		pm_ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 
-	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		if (pm_ret < 0) {
+			LOG_ERR("pm_device_runtime_put failed: %d", pm_ret);
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int i2c_ambiq_init(const struct device *dev)

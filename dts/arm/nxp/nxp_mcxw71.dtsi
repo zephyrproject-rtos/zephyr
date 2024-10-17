@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,15 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	aliases {
 		watchdog0 = &wdog0;
+	};
+
+	chosen {
+		zephyr,bt-hci = &hci;
 	};
 
 	cpus {
@@ -64,8 +69,6 @@
 
 		smu2: sram@489c0000 {
 			ranges = <0x0 0x489c0000 DT_SIZE_K(40)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -120,6 +123,18 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
+&smu2 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	rpmsgmem: memory@8800 {
+		compatible = "zephyr,memory-region","mmio-sram";
+		reg = <0x8800 DT_SIZE_K(6)>;
+		zephyr,memory-region = "rpmsg_sh_mem";
+		zephyr,memory-attr = <( DT_MEM_ARM(ATTR_MPU_RAM) )>;
+	};
+};
+
 &pbridge2 {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -166,6 +181,28 @@
 		compatible = "nxp,kinetis-lpuart";
 		reg = <0x39000 0x34>;
 		interrupts = <45 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
+		status = "disabled";
+	};
+
+	lpi2c0: i2c@33000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x33000 0x200>;
+		interrupts = <39 0>;
+		clocks = <&scg SCG_K4_FIRC_CLK 0xe0>;
+		status = "disabled";
+	};
+
+	lpi2c1: i2c@34000 {
+		compatible = "nxp,imx-lpi2c";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x34000 0x200>;
+		interrupts = <40 0>;
 		clocks = <&scg SCG_K4_FIRC_CLK 0xe4>;
 		status = "disabled";
 	};
@@ -243,6 +280,12 @@
 		prescaler = <1>;
 		resolution = <32>;
 		status = "disabled";
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+		interrupts = <48 2>;
+		interrupt-names = "hci_int";
 	};
 };
 

@@ -28,7 +28,14 @@
 {% endblock %}
 {% block extrahead %}
   <meta name="color-scheme" content="dark light">
-  {# Light/Dark stylesheets added here due to https://github.com/readthedocs/sphinx_rtd_theme/issues/1100 #}
-  <link rel="stylesheet" href="{{ pathto('_static/css/light.css', 1) }}" type="text/css" media="(prefers-color-scheme: light)"/>
-  <link rel="stylesheet" href="{{ pathto('_static/css/dark.css', 1) }}" type="text/css" media="(prefers-color-scheme: dark)"/>
+  {# Use dark mode loader script to prevent "flashing" of the page on load.
+     As we need a <noscript> tag and very specific orderding of the tags, this can't be done via
+     the usual add_js_file()/add_css_file() Sphinx API.
+     See https://github.com/GoogleChromeLabs/dark-mode-toggle/issues/77 #}
+  <noscript id="dark-mode-toggle-stylesheets">
+    <link rel="stylesheet" href="{{ pathto('_static/css/light.css', 1) }}" type="text/css" media="(prefers-color-scheme: light)"/>
+    <link rel="stylesheet" href="{{ pathto('_static/css/dark.css', 1) }}" type="text/css" media="(prefers-color-scheme: dark)"/>
+  </noscript>
+  <script src="{{ pathto('_static/js/dark-mode-toggle-stylesheets-loader.min.js', 1) }}"></script>
+  <script type="module" src="{{ pathto('_static/js/dark-mode-toggle.min.mjs', 1) }}"></script>
 {% endblock %}

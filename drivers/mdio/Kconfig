@@ -26,6 +26,7 @@ config MDIO_SHELL
 # overridden (by defining symbols in multiple locations)
 source "drivers/mdio/Kconfig.esp32"
 source "drivers/mdio/Kconfig.sam"
+source "drivers/mdio/Kconfig.nxp_imx_netc"
 source "drivers/mdio/Kconfig.nxp_s32_netc"
 source "drivers/mdio/Kconfig.nxp_s32_gmac"
 source "drivers/mdio/Kconfig.adin2111"

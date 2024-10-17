@@ -13,7 +13,7 @@ tests:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_ram.overlay"
-      - OVERLAY_CONFIG="boards/nrf52840dk_nrf52840_ram.conf"
+      - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_ram.conf"
     tags:
       - drivers
       - retained_mem

@@ -22,4 +22,6 @@ supported:
   - watchdog
   - pwm
   - counter
+  - regulator
+  - adc
 vendor: nxp

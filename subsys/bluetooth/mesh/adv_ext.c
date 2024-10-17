@@ -241,6 +241,28 @@ static const char * const adv_tag_to_str[] = {
 	[BT_MESH_ADV_TAG_PROV]   = "prov adv",
 };
 
+static bool schedule_send_with_mask(struct bt_mesh_ext_adv *ext_adv, int ignore_mask)
+{
+	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
+		atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY_START);
+		(void)bt_le_ext_adv_stop(ext_adv->instance);
+
+		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
+	}
+
+	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_ACTIVE)) {
+		atomic_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
+		return false;
+	} else if ((~ignore_mask) & k_work_busy_get(&ext_adv->work)) {
+		return false;
+	}
+
+	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
+	k_work_submit(&ext_adv->work);
+
+	return true;
+}
+
 static void send_pending_adv(struct k_work *work)
 {
 	struct bt_mesh_ext_adv *ext_adv;
@@ -314,30 +336,13 @@ static void send_pending_adv(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING)) {
-		schedule_send(ext_adv);
+		schedule_send_with_mask(ext_adv, K_WORK_RUNNING);
 	}
 }
 
 static bool schedule_send(struct bt_mesh_ext_adv *ext_adv)
 {
-	if (atomic_test_and_clear_bit(ext_adv->flags, ADV_FLAG_PROXY)) {
-		atomic_clear_bit(ext_adv->flags, ADV_FLAG_PROXY_START);
-		(void)bt_le_ext_adv_stop(ext_adv->instance);
-
-		atomic_clear_bit(ext_adv->flags, ADV_FLAG_ACTIVE);
-	}
-
-	if (atomic_test_bit(ext_adv->flags, ADV_FLAG_ACTIVE)) {
-		atomic_set_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
-		return false;
-	} else if (k_work_is_pending(&ext_adv->work)) {
-		return false;
-	}
-
-	atomic_clear_bit(ext_adv->flags, ADV_FLAG_SCHEDULE_PENDING);
-	k_work_submit(&ext_adv->work);
-
-	return true;
+	return schedule_send_with_mask(ext_adv, 0);
 }
 
 void bt_mesh_adv_gatt_update(void)

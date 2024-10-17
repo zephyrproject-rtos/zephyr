@@ -12,4 +12,20 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MCUX_FLASH_K4_API
 	default y
 
+if BT
+
+# Include intercore messaging component
+config NXP_RF_IMU
+	default y
+
+#  Set the controller's public identity using NXP vendor command
+config BT_HCI_SET_PUBLIC_ADDR
+	default y
+
+# HCI RX buffers are received in ISR context. RX messages
+# need to be queued and processed by a dedicated thread
+config HCI_NXP_RX_THREAD
+	default y
+
+endif # BT
 endif # SOC_SERIES_MCXW

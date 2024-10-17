@@ -79,6 +79,10 @@ class ExecutionCounter(object):
         # updated by report_out()
         self._passed = Value('i', 0)
 
+        # instances that are built but not runnable
+        # updated by report_out()
+        self._notrun = Value('i', 0)
+
         # static filter + runtime filter + build skipped
         # updated by update_counting_before_pipeline() and report_out()
         self._skipped_configs = Value('i', 0)
@@ -113,6 +117,7 @@ class ExecutionCounter(object):
         print(f"Skipped test cases: {self.skipped_cases}")
         print(f"Completed test suites: {self.done}")
         print(f"Passing test suites: {self.passed}")
+        print(f"Built only test suites: {self.notrun}")
         print(f"Failing test suites: {self.failed}")
         print(f"Skipped test suites: {self.skipped_configs}")
         print(f"Skipped test suites (runtime): {self.skipped_runtime}")
@@ -179,6 +184,16 @@ class ExecutionCounter(object):
     def passed(self, value):
         with self._passed.get_lock():
             self._passed.value = value
+
+    @property
+    def notrun(self):
+        with self._notrun.get_lock():
+            return self._notrun.value
+
+    @notrun.setter
+    def notrun(self, value):
+        with self._notrun.get_lock():
+            self._notrun.value = value
 
     @property
     def skipped_configs(self):
@@ -285,9 +300,11 @@ class CMake:
             msg = f"Finished building {self.source_dir} for {self.platform.name} in {duration:.2f} seconds"
             logger.debug(msg)
 
-            self.instance.status = TwisterStatus.PASS
             if not self.instance.run:
-                self.instance.add_missing_case_status(TwisterStatus.SKIP, "Test was built only")
+                self.instance.status = TwisterStatus.NOTRUN
+                self.instance.add_missing_case_status(TwisterStatus.NOTRUN, "Test was built only")
+            else:
+                self.instance.status = TwisterStatus.PASS
             ret = {"returncode": p.returncode}
 
             if out:
@@ -838,6 +855,7 @@ class ProjectBuilder(FilterBuilder):
 
         if detected_cases:
             logger.debug(f"{', '.join(detected_cases)} in {elf_file}")
+            tc_keeper = {tc.name: {'status': tc.status, 'reason': tc.reason} for tc in self.instance.testcases}
             self.instance.testcases.clear()
             self.instance.testsuite.testcases.clear()
 
@@ -846,8 +864,13 @@ class ProjectBuilder(FilterBuilder):
             # Then we can further include the new_ztest_suite info in the testcase_id.
 
             for testcase_id in detected_cases:
-                self.instance.add_testcase(name=testcase_id)
+                testcase = self.instance.add_testcase(name=testcase_id)
                 self.instance.testsuite.add_testcase(name=testcase_id)
+
+                # Keep previous statuses and reasons
+                tc_info = tc_keeper.get(testcase_id, {})
+                testcase.status = tc_info.get('status', TwisterStatus.NONE)
+                testcase.reason = tc_info.get('reason')
 
 
     def cleanup_artifacts(self, additional_keep: List[str] = []):
@@ -1083,6 +1106,12 @@ class ProjectBuilder(FilterBuilder):
                 # test cases skipped at the test case level
                 if case.status == TwisterStatus.SKIP:
                     results.skipped_cases += 1
+        elif instance.status == TwisterStatus.NOTRUN:
+            status = Fore.CYAN + "NOT RUN" + Fore.RESET
+            results.notrun += 1
+            for case in instance.testcases:
+                if case.status == TwisterStatus.SKIP:
+                    results.skipped_cases += 1
         else:
             logger.debug(f"Unknown status = {instance.status}")
             status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
@@ -1125,12 +1154,13 @@ class ProjectBuilder(FilterBuilder):
             if total_to_do > 0:
                 completed_perc = int((float(results.done) / total_to_do) * 100)
 
-            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
+            sys.stdout.write("INFO    - Total complete: %s%4d/%4d%s  %2d%%  built (not run): %4d, skipped: %s%4d%s, failed: %s%4d%s, error: %s%4d%s\r" % (
                 Fore.GREEN,
                 results.done,
                 total_to_do,
                 Fore.RESET,
                 completed_perc,
+                results.notrun,
                 Fore.YELLOW if results.skipped_configs > 0 else Fore.RESET,
                 results.skipped_configs,
                 Fore.RESET,
@@ -1182,8 +1212,26 @@ class ProjectBuilder(FilterBuilder):
         return args_expanded
 
     def cmake(self, filter_stages=[]):
+        args = []
+        for va in self.testsuite.extra_args.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    args.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if self.instance.platform.name == cond_args[1]:
+                    args.append(cond_args[2])
+            elif cond_args[0] == "simulation" and len(cond_args) == 3:
+                if self.instance.platform.simulation == cond_args[1]:
+                    args.append(cond_args[2])
+            else:
+                if cond_args[0] in ["arch", "platform", "simulation"]:
+                    logger.warning(f"Unexpected extra_args: {va}")
+                args.append(va)
+
+
         args = self.cmake_assemble_args(
-            self.testsuite.extra_args.copy(), # extra_args from YAML
+            args,
             self.instance.handler,
             self.testsuite.extra_conf_files,
             self.testsuite.extra_overlay_confs,
@@ -1391,7 +1439,7 @@ class TwisterRunner:
             if build_only:
                 instance.run = False
 
-            no_retry_statuses = [TwisterStatus.PASS, TwisterStatus.SKIP, TwisterStatus.FILTER]
+            no_retry_statuses = [TwisterStatus.PASS, TwisterStatus.SKIP, TwisterStatus.FILTER, TwisterStatus.NOTRUN]
             if not retry_build_errors:
                 no_retry_statuses.append(TwisterStatus.ERROR)
 

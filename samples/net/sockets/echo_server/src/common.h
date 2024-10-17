@@ -82,6 +82,15 @@ static inline int init_vlan(void)
 }
 #endif /* CONFIG_NET_VLAN */
 
+#if defined(CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE)
+int init_ws(void);
+#else
+static inline int init_ws(void)
+{
+	return 0;
+}
+#endif /* CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE */
+
 #if defined(CONFIG_NET_L2_IPIP)
 int init_tunnel(void);
 bool is_tunnel(struct net_if *iface);

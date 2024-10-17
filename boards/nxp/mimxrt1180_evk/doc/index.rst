@@ -102,6 +102,8 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | GPT       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| QTMR      | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -110,6 +112,8 @@ configuration supports the following hardware features:
 | ACMP      | on-chip    | analog comparator                   |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
+| NETC      | on-chip    | ethernet, mdio                      |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -147,6 +151,11 @@ Serial Port
 
 The MIMXRT1180 SoC has 12 UARTs. One is configured for the console and the
 remaining are not used.
+
+Ethernet
+========
+
+NETC driver supports to manage the Physical Station Interface (PSI).
 
 Programming and Debugging
 *************************

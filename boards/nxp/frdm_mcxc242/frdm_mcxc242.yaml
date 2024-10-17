@@ -16,9 +16,11 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - uart
   - i2c
   - pwm
   - adc
+  - counter
 testing:
   ignore_tags:
     - net

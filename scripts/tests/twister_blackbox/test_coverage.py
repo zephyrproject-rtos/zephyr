@@ -14,6 +14,7 @@ import sys
 import json
 
 # pylint: disable=duplicate-code
+# pylint: disable=no-name-in-module
 from conftest import TEST_DATA, ZEPHYR_BASE, testsuite_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 

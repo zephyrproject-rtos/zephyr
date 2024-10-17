@@ -1,5 +1,6 @@
 board:
   name: rcar_spider_s4
+  full_name: R-CAR Spider S4 (ARM64)
   vendor: renesas
   socs:
   - name: r8a779f0

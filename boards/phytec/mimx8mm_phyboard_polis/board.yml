@@ -1,5 +1,6 @@
 board:
   name: mimx8mm_phyboard_polis
+  full_name: PhyBOARD Polis (NXP i.MX8M Mini)
   vendor: phytec
   socs:
     - name: mimx8mm6

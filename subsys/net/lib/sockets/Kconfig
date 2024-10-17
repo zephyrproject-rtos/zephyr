@@ -5,7 +5,9 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	select FDTABLE
+	select ZVFS
+	select ZVFS_POLL
+	select ZVFS_SELECT
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -46,13 +48,11 @@ config NET_SOCKETS_POSIX_NAMES
 	  with 3rd-party socket libraries.
 
 config NET_SOCKETS_POLL_MAX
-	int "Max number of supported poll() entries"
-	default 6 if WIFI_NM_WPA_SUPPLICANT
-	default 4 if SHELL_BACKEND_TELNET
-	default 3
-	range 1 ZVFS_OPEN_MAX
+	int "Max number of supported poll() entries [DEPRECATED]"
+	default 0
 	help
-	  Maximum number of entries supported for poll() call.
+	  This option is deprecated.
+	  Please use CONFIG_ZVFS_POLL_MAX instead.
 
 config NET_SOCKETS_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
@@ -108,7 +108,7 @@ config NET_SOCKETS_SERVICE
 	  The socket service can monitor multiple sockets and save memory
 	  by only having one thread listening socket data. If data is received
 	  in the monitored socket, a user supplied work is called.
-	  Note that you need to set CONFIG_NET_SOCKETS_POLL_MAX high enough
+	  Note that you need to set CONFIG_ZVFS_POLL_MAX high enough
 	  so that enough sockets entries can be serviced. This depends on
 	  system needs as multiple services can be activated at the same time
 	  depending on network configuration.

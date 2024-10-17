@@ -639,13 +639,11 @@ __subsystem struct i3c_driver_api {
 	 *
 	 * @param dev Pointer to controller device driver instance.
 	 * @param target Pointer to target device descriptor.
-	 * @param addr Address to attach with
 	 *
 	 * @return See i3c_attach_i3c_device()
 	 */
 	int (*attach_i3c_device)(const struct device *dev,
-			struct i3c_device_desc *target,
-			uint8_t addr);
+			struct i3c_device_desc *target);
 
 	/**
 	 * I3C Address Update
@@ -1272,21 +1270,6 @@ struct i3c_device_desc *i3c_dev_list_i3c_addr_find(const struct device *dev,
  */
 struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
 							   uint16_t addr);
-
-/**
- * @brief Helper function to find the default address an i3c device is attached with
- *
- * This is a helper function to find the default address the
- * device will be loaded with. This could be either it's static
- * address, a requested dynamic address, or just a dynamic address
- * that is available
- * @param[in] target The pointer of the device descriptor
- * @param[out] addr Address to be assigned to target device.
- *
- * @retval 0 if successful.
- * @retval -EINVAL if the expected default address is already in use
- */
-int i3c_determine_default_addr(struct i3c_device_desc *target, uint8_t *addr);
 
 /**
  * @brief Helper function to find a usable address during ENTDAA.

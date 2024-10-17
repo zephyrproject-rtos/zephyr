@@ -61,6 +61,8 @@ function(runners_yaml_append_config)
     runners_yaml_append("  uf2_file: ${uf2}")
   endif()
 
+  zephyr_get(OPENOCD)
+  zephyr_get(OPENOCD_DEFAULT_PATH)
   if(CMAKE_GDB OR OPENOCD OR OPENOCD_DEFAULT_PATH)
     runners_yaml_append("  # Host tools:")
   endif()

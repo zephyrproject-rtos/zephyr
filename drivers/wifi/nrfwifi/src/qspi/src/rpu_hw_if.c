@@ -405,6 +405,31 @@ int rpu_clks_on(void)
 	return 0;
 }
 
+#define RPU_EXP_SIG 0x42000020
+/* Read a known value from RPU memory to validate RPU communication */
+int rpu_validate_comms(void)
+{
+	uint32_t rpu_test;
+	int ret;
+
+	/* UCCP_SOC_FAB_MST_READ_IDLE - HW reset value */
+	ret = rpu_read(0x0005C, &rpu_test, 4);
+	if (ret) {
+		LOG_ERR("Error: RPU comms test: read failed\n");
+		return ret;
+	}
+
+	if (rpu_test != RPU_EXP_SIG) {
+		LOG_ERR("Error: RPU comms test: sig failed: expected 0x%x, got 0x%x\n",
+			RPU_EXP_SIG, rpu_test);
+		return -1;
+	}
+
+	LOG_DBG("RPU comms test passed\n");
+
+	return 0;
+}
+
 int rpu_init(void)
 {
 	int ret;
@@ -454,6 +479,11 @@ int rpu_enable(void)
 	}
 
 	ret = rpu_clks_on();
+	if (ret) {
+		goto rpu_pwroff;
+	}
+
+	ret = rpu_validate_comms();
 	if (ret) {
 		goto rpu_pwroff;
 	}

@@ -19,6 +19,9 @@ config ZBUS_CHANNEL_NAME
 config ZBUS_OBSERVER_NAME
 	bool "Observer name field"
 
+config ZBUS_CHANNEL_PUBLISH_STATS
+	bool "Channel publishing statistics (Timestamp and count)"
+
 config ZBUS_MSG_SUBSCRIBER
 	select NET_BUF
 	bool "Message subscribers will receive all messages in sequence."

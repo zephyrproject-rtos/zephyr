@@ -1,5 +1,6 @@
 board:
   name: efm32wg_stk3800
+  full_name: EFM32 Wonder Gecko (EFM32WG-STK3800)
   vendor: silabs
   socs:
   - name: efm32wg990f256

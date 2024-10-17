@@ -37,7 +37,6 @@ config STEPPER_ADI_TMC5041
 config STEPPER_ADI_TMC5041_RAMPSTAT_POLL
 	bool "TMC5041 poll ramp status"
 	depends on STEPPER_ADI_TMC5041
-	select POLL
 	default y
 	help
 	  When enabled, the ramp status will be polled on TMC5041, to check for events:

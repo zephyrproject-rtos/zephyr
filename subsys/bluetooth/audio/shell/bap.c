@@ -2345,7 +2345,6 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 #endif /* IS_BAP_INITIATOR */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
-#define INVALID_BROADCAST_ID (BT_AUDIO_BROADCAST_ID_MAX + 1)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
 
@@ -2354,14 +2353,14 @@ static struct broadcast_sink_auto_scan {
 	uint32_t broadcast_id;
 	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
-	.broadcast_id = INVALID_BROADCAST_ID,
+	.broadcast_id = BT_BAP_INVALID_BROADCAST_ID,
 };
 
 static void clear_auto_scan(void)
 {
-	if (auto_scan.broadcast_id != INVALID_BROADCAST_ID) {
+	if (auto_scan.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 		memset(&auto_scan, 0, sizeof(auto_scan));
-		auto_scan.broadcast_id = INVALID_BROADCAST_ID;
+		auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 	}
 }
 

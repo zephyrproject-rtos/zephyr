@@ -73,4 +73,40 @@ config NRF_ETR_SYNC_PERIOD
 	  sent on regular intervals. This frame is sent between Coresight formatter
 	  frames. Use 0 to disable.
 
+config NRF_ETR_SHELL
+	bool "Use shell"
+	select UART_ASYNC_API
+	select UART_ASYNC_RX_HELPER
+	select SHELL_LOG_BACKEND_CUSTOM
+	depends on NRF_ETR_DECODE
+	default y if SHELL
+	help
+	  Enable shell with Coresight STM logging support.
+
+if NRF_ETR_SHELL
+
+config NRF_ETR_SHELL_PROMPT
+	string "Displayed prompt name"
+	default "uart:~$ "
+	help
+	  Displayed prompt name for UART shell with Coresight STM logging.
+
+config NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE
+	int "Size of the RX buffer"
+	default 16
+	help
+	  Size of a single RX buffer. Together with buffer count it defines the
+	  space that can hold RX data. It may be decreased if shell input is
+	  slow and may need to be increased if long messages are pasted directly
+	  to the shell prompt.
+
+config NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT
+	int "Number of RX buffers"
+	default 4
+	range 2 64
+	help
+	  Number of RX buffers.
+
+endif # NRF_ETR_SHELL
+
 endif # NRF_ETR

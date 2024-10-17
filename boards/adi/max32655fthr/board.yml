@@ -3,6 +3,7 @@
 
 board:
   name: max32655fthr
+  full_name: MAX32655FTHR
   vendor: adi
   socs:
     - name: max32655

@@ -587,7 +587,7 @@
 
 	smartdma: dma@27020 {
 		compatible = "nxp,smartdma";
-		reg = <0x27020 0x1000>;
+		reg = <0x27000 0x1000>;
 		program-mem = <0x24100000>;
 		interrupts = <73 0>;
 		status = "disabled";

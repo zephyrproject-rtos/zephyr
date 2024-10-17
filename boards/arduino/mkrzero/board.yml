@@ -1,5 +1,6 @@
 board:
   name: arduino_mkrzero
+  full_name: Arduino MKR Zero
   vendor: arduino
   socs:
     - name: samd21g18a

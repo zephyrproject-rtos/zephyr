@@ -53,4 +53,15 @@
 			<RA_PSEL(RA_PSEL_SPI, 4, 13)>;
 		};
 	};
+
+	pwm7_default: pwm7_default {
+		group1 {
+			/* GTIOC7A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 3)>;
+		};
+		group2 {
+			/* GTIOC7B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 2)>;
+		};
+	};
 };

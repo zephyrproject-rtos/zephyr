@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT adi_tmc5041
 
-#include "stdlib.h"
+#include <stdlib.h>
 
 #include <zephyr/drivers/stepper.h>
 #include <zephyr/drivers/stepper/stepper_trinamic.h>
@@ -35,7 +35,8 @@ struct tmc5041_stepper_data {
 #endif
 	/* device pointer required to access config in k_work */
 	const struct device *stepper;
-	struct k_poll_signal *async_signal;
+	stepper_event_callback_t callback;
+	void *event_cb_user_data;
 };
 
 struct tmc5041_stepper_config {
@@ -103,18 +104,14 @@ static void calculate_velocity_from_hz_to_fclk(const struct device *dev, const u
 		velocity_hz, *velocity_fclk);
 }
 
-static void set_async_signal(const struct device *dev, struct k_poll_signal *async)
+static int tmc5041_stepper_set_event_callback(const struct device *dev,
+					      stepper_event_callback_t callback, void *user_data)
 {
 	struct tmc5041_stepper_data *data = dev->data;
 
-	if (!async) {
-		return;
-	}
-
-	if (data->async_signal) {
-		k_poll_signal_reset(data->async_signal);
-	}
-	data->async_signal = async;
+	data->callback = callback;
+	data->event_cb_user_data = user_data;
+	return 0;
 }
 
 static int stallguard_enable(const struct device *dev, const bool enable)
@@ -180,19 +177,15 @@ static void stallguard_work_handler(struct k_work *work)
 
 #ifdef CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL
 
-static void emit_signal(struct k_poll_signal *async_signal, const enum stepper_signal_result signal)
+static void execute_callback(const struct device *dev, const enum stepper_event event)
 {
-	int err;
+	struct tmc5041_stepper_data *data = dev->data;
 
-	if (!async_signal) {
-		LOG_WRN("Async signal is NULL");
+	if (!data->callback) {
+		LOG_WRN_ONCE("No callback registered");
 		return;
 	}
-
-	err = k_poll_signal_raise(async_signal, signal);
-	if (err != 0) {
-		LOG_ERR("Failed to raise signal %d error %d", signal, err);
-	}
+	data->callback(dev, event);
 }
 
 static void rampstat_work_handler(struct k_work *work)
@@ -237,26 +230,25 @@ static void rampstat_work_handler(struct k_work *work)
 
 		case TMC5041_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", stepper_data->stepper->name);
-			emit_signal(stepper_data->async_signal,
-				    STEPPER_SIGNAL_LEFT_END_STOP_DETECTED);
+			execute_callback(stepper_data->stepper,
+					 STEPPER_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5041_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", stepper_data->stepper->name);
-			emit_signal(stepper_data->async_signal,
-				    STEPPER_SIGNAL_RIGHT_END_STOP_DETECTED);
+			execute_callback(stepper_data->stepper,
+					 STEPPER_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
 		case TMC5041_POS_REACHED_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", stepper_data->stepper->name);
-			emit_signal(stepper_data->async_signal, STEPPER_SIGNAL_STEPS_COMPLETED);
+			execute_callback(stepper_data->stepper, STEPPER_EVENT_STEPS_COMPLETED);
 			break;
 
 		case TMC5041_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", stepper_data->stepper->name);
 			stallguard_enable(stepper_data->stepper, false);
-			emit_signal(stepper_data->async_signal,
-				    STEPPER_SIGNAL_SENSORLESS_STALL_DETECTED);
+			execute_callback(stepper_data->stepper, STEPPER_EVENT_STALL_DETECTED);
 			break;
 		default:
 			LOG_ERR("Illegal ramp stat bit field");
@@ -314,14 +306,11 @@ static int tmc5041_stepper_is_moving(const struct device *dev, bool *is_moving)
 	return 0;
 }
 
-static int tmc5041_stepper_move(const struct device *dev, const int32_t steps,
-				struct k_poll_signal *async)
+static int tmc5041_stepper_move(const struct device *dev, const int32_t steps)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
 	struct tmc5041_stepper_data *data = dev->data;
 	int err;
-
-	set_async_signal(dev, async);
 
 	if (config->is_sg_enabled) {
 		err = stallguard_enable(dev, false);
@@ -355,8 +344,11 @@ static int tmc5041_stepper_move(const struct device *dev, const int32_t steps,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL
-	k_work_reschedule(&data->rampstat_callback_dwork,
-			  K_MSEC(CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	if (data->callback) {
+		k_work_reschedule(
+			&data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	}
 #endif
 	return 0;
 }
@@ -377,7 +369,7 @@ static int tmc5041_stepper_set_max_velocity(const struct device *dev, uint32_t v
 }
 
 static int tmc5041_stepper_set_micro_step_res(const struct device *dev,
-					      enum micro_step_resolution res)
+					      enum stepper_micro_step_resolution res)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
 	uint32_t reg_value;
@@ -403,7 +395,7 @@ static int tmc5041_stepper_set_micro_step_res(const struct device *dev,
 }
 
 static int tmc5041_stepper_get_micro_step_res(const struct device *dev,
-					      enum micro_step_resolution *res)
+					      enum stepper_micro_step_resolution *res)
 {
 	const struct tmc5041_stepper_config *config = dev->config;
 	uint32_t reg_value;
@@ -452,15 +444,12 @@ static int tmc5041_stepper_get_actual_position(const struct device *dev, int32_t
 	return 0;
 }
 
-static int tmc5041_stepper_set_target_position(const struct device *dev, const int32_t position,
-					       struct k_poll_signal *async)
+static int tmc5041_stepper_set_target_position(const struct device *dev, const int32_t position)
 {
 	LOG_DBG("Stepper motor controller %s set target position to %d", dev->name, position);
 	const struct tmc5041_stepper_config *config = dev->config;
 	struct tmc5041_stepper_data *data = dev->data;
 	int err;
-
-	set_async_signal(dev, async);
 
 	if (config->is_sg_enabled) {
 		stallguard_enable(dev, false);
@@ -478,8 +467,11 @@ static int tmc5041_stepper_set_target_position(const struct device *dev, const i
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
 #ifdef CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL
-	k_work_reschedule(&data->rampstat_callback_dwork,
-			  K_MSEC(CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	if (data->callback) {
+		k_work_reschedule(
+			&data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	}
 #endif
 	return 0;
 }
@@ -533,6 +525,13 @@ static int tmc5041_stepper_enable_constant_velocity_mode(const struct device *de
 		k_work_reschedule(&data->stallguard_dwork,
 				  K_MSEC(config->sg_velocity_check_interval_ms));
 	}
+#ifdef CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL
+	if (data->callback) {
+		k_work_reschedule(
+			&data->rampstat_callback_dwork,
+			K_MSEC(CONFIG_STEPPER_ADI_TMC5041_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+	}
+#endif
 	return 0;
 }
 
@@ -730,7 +729,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 		.get_actual_position = tmc5041_stepper_get_actual_position,			\
 		.set_target_position = tmc5041_stepper_set_target_position,			\
 		.enable_constant_velocity_mode = tmc5041_stepper_enable_constant_velocity_mode,	\
-	};
+		.set_event_callback = tmc5041_stepper_set_event_callback, };
 
 #define TMC5041_STEPPER_DEFINE(child)								\
 	DEVICE_DT_DEFINE(child, tmc5041_stepper_init, NULL, &tmc5041_stepper_data_##child,	\
@@ -744,7 +743,7 @@ static int tmc5041_stepper_init(const struct device *dev)
 	static struct tmc5041_data tmc5041_data_##inst;						\
 	static const struct tmc5041_config tmc5041_config_##inst = {				\
 		.gconf = (									\
-		(DT_INST_PROP(inst, poscmp_enable) << TMC5041_GCONF_POSCMP_ENABLE_SHIFT) |\
+		(DT_INST_PROP(inst, poscmp_enable) << TMC5041_GCONF_POSCMP_ENABLE_SHIFT) |	\
 		(DT_INST_PROP(inst, test_mode) << TMC5041_GCONF_TEST_MODE_SHIFT) |		\
 		DT_INST_FOREACH_CHILD(inst, TMC5041_SHAFT_CONFIG)				\
 		(DT_INST_PROP(inst, lock_gconf) << TMC5041_LOCK_GCONF_SHIFT)),			\

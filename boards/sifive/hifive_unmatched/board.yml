@@ -1,5 +1,6 @@
 board:
   name: hifive_unmatched
+  full_name: HiFive Unmatched
   vendor: sifive
   socs:
     - name: fu740

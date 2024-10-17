@@ -1,5 +1,6 @@
 board:
   name: b_g474e_dpow1
+  full_name: B-G474E-DPOW1 Discovery
   vendor: st
   socs:
     - name: stm32g474xx

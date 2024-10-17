@@ -1,5 +1,6 @@
 board:
   name: seeeduino_xiao
+  full_name: Seeeduino XIAO
   vendor: seeed
   socs:
     - name: samd21g18a

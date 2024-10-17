@@ -68,6 +68,7 @@ config UART_$(nrfx_uart_num)_NRF_ASYNC_LOW_POWER
 	depends on HAS_HW_NRF_UARTE$(nrfx_uart_num)
 	depends on UART_ASYNC_API
 	depends on UART_NRFX_UARTE_LEGACY_SHIM
+	default y
 	help
 	  When enabled, UARTE is enabled before each TX or RX usage and disabled
 	  when not used. Disabling UARTE while in idle allows to achieve lowest

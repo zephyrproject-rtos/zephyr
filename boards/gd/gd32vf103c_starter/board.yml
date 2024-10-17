@@ -1,5 +1,6 @@
 board:
   name: gd32vf103c_starter
+  full_name: GD32VF103C-STARTER
   vendor: gd
   socs:
     - name: gd32vf103

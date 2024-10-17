@@ -138,7 +138,22 @@ static int counter_esp32_get_value(const struct device *dev, uint32_t *ticks)
 	struct counter_esp32_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
+	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
+	*ticks = (uint32_t)timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
+
+	k_spin_unlock(&lock, key);
+
+	return 0;
+}
+
+static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
+{
+	struct counter_esp32_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	timer_ll_trigger_soft_capture(data->hal_ctx.dev, data->hal_ctx.timer_id);
 	*ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
+
 	k_spin_unlock(&lock, key);
 
 	return 0;
@@ -217,6 +232,7 @@ static const struct counter_driver_api counter_api = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,
+	.get_value_64 = counter_esp32_get_value_64,
 	.set_alarm = counter_esp32_set_alarm,
 	.cancel_alarm = counter_esp32_cancel_alarm,
 	.set_top_value = counter_esp32_set_top_value,

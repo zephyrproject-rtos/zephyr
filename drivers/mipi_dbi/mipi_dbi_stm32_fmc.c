@@ -178,7 +178,8 @@ static struct mipi_dbi_driver_api mipi_dbi_stm32_fmc_driver_api = {
 	.write_display = mipi_dbi_stm32_fmc_write_display,
 };
 
-#define MIPI_DBI_FMC_GET_ADDRESS(n) _CONCAT(FMC_BANK1_, UTIL_INC(DT_REG_ADDR(DT_INST_PARENT(n))))
+#define MIPI_DBI_FMC_GET_ADDRESS(n) _CONCAT(FMC_BANK1_,                                            \
+					UTIL_INC(DT_REG_ADDR_RAW(DT_INST_PARENT(n))))
 
 #define MIPI_DBI_FMC_GET_DATA_ADDRESS(n)                                                           \
 	MIPI_DBI_FMC_GET_ADDRESS(n) + (1 << (DT_INST_PROP(n, register_select_pin) + 1))

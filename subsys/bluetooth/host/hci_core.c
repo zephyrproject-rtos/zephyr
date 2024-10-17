@@ -605,7 +605,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 			atomic_dec(&conn->in_ll);
 
 			/* TX context free + callback happens in there */
-			k_work_submit(&conn->tx_complete_work);
+			bt_conn_tx_notify(conn, false);
 		}
 
 		bt_conn_unref(conn);
@@ -2833,6 +2833,9 @@ static const struct event_handler meta_events[] = {
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
 		      bt_hci_le_cs_subevent_result,
 		      sizeof(struct bt_hci_evt_le_cs_subevent_result)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT_CONTINUE,
+		      bt_hci_le_cs_subevent_result_continue,
+		      sizeof(struct bt_hci_evt_le_cs_subevent_result_continue)),
 #if defined(CONFIG_BT_CHANNEL_SOUNDING_TEST)
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_TEST_END_COMPLETE,
 		      bt_hci_le_cs_test_end_complete,
@@ -3416,6 +3419,7 @@ static int le_set_event_mask(void)
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_CONFIG_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT;
+		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT_CONTINUE;
 		mask |= BT_EVT_MASK_LE_CS_TEST_END_COMPLETE;
 	}
 

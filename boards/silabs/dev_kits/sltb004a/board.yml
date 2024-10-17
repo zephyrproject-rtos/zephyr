@@ -1,5 +1,6 @@
 board:
   name: sltb004a
+  full_name: EFR32MG12 Thunderboard (SLTB004A)
   vendor: silabs
   socs:
   - name: efr32mg12p332f1024gl125

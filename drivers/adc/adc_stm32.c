@@ -1754,15 +1754,16 @@ static const struct adc_driver_api api_stm32_driver_api = {
 /* Concat prefix (1st element) and DIV value (2nd element) of st,adc-prescaler */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 #define ADC_STM32_DT_PRESC(x)	0
+#define ADC_STM32_CHECK_DT_CLOCK(x)
 #else
 #define ADC_STM32_DT_PRESC(x)	\
 	_CONCAT(ADC_STM32_CLOCK_PREFIX(x), ADC_STM32_DIV(x))
-#endif
-
 /* Macro to check if the ADC instance clock setup is correct */
 #define ADC_STM32_CHECK_DT_CLOCK(x)								\
 	BUILD_ASSERT(IS_EQ(ADC_STM32_CLOCK(x), SYNC) || (DT_INST_NUM_CLOCKS(x) > 1),		\
 		     "ASYNC clock mode defined without ASYNC clock defined in device tree")
+#endif
+
 
 #if defined(CONFIG_ADC_STM32_DMA)
 

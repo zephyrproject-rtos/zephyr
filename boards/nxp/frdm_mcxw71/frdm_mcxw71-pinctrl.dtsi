@@ -6,6 +6,14 @@
 #include <nxp/mcx/MCXW716CMFTA-pinctrl.h>
 
 &pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RX_PTA16>, <LPUART0_TX_PTA17>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <LPUART1_RX_PTC2>, <LPUART1_TX_PTC3>;
@@ -21,6 +29,16 @@
 				<TPM0_CH2_PTA19>;
 			drive-strength = "low";
 			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <LPI2C1_SCL_PTB5>,
+				<LPI2C1_SDA_PTB4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			drive-open-drain;
 		};
 	};
 };

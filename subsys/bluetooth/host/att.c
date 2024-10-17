@@ -3135,9 +3135,10 @@ static void att_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct bt_att_chan *chan = CONTAINER_OF(dwork, struct bt_att_chan,
 						timeout_work);
+	int err;
 
 	bt_addr_le_to_str(bt_conn_get_dst(chan->att->conn), addr, sizeof(addr));
-	LOG_ERR("ATT Timeout for device %s", addr);
+	LOG_ERR("ATT Timeout for device %s. Disconnecting...", addr);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 480:
 	 *
@@ -3148,6 +3149,16 @@ static void att_timeout(struct k_work *work)
 	 * target device on this ATT Bearer.
 	 */
 	bt_att_disconnected(&chan->chan.chan);
+
+	/* The timeout state is local and can block new ATT operations, but does not affect the
+	 * remote side. Disconnecting the GATT connection upon ATT timeout simplifies error handling
+	 * for developers. This reduces rare failure conditions to a common one, allowing developers
+	 * to handle unexpected disconnections without needing special cases for ATT timeouts.
+	 */
+	err = bt_conn_disconnect(chan->chan.chan.conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	if (err) {
+		LOG_ERR("Disconnecting failed (err %d)", err);
+	}
 }
 
 static struct bt_att_chan *att_get_fixed_chan(struct bt_conn *conn)

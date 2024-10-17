@@ -1,5 +1,6 @@
 board:
   name: slwrb4321a
+  full_name: WGM160P Wi-Fi Module (SLWRB4321A)
   vendor: silabs
   socs:
   - name: efm32gg11b820f2048gm64

@@ -324,16 +324,23 @@ ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 }
 
 #if NOCACHE_MEM
-static __aligned(32) uint8_t chained_read_buf[2][8] __used __NOCACHE;
+/* To ensure 32-bit alignment of the buffer array,
+ * the two arrays are defined instead using an array of arrays
+ */
+static __aligned(32) uint8_t chained_read_buf_0[8] __used __NOCACHE;
+static __aligned(32) uint8_t chained_read_buf_1[8] __used __NOCACHE;
 static __aligned(32) uint8_t chained_cpy_buf[10] __used __NOCACHE;
 #else
-ZTEST_BMEM uint8_t chained_read_buf[2][8];
+ZTEST_BMEM uint8_t chained_read_buf_0[8];
+ZTEST_BMEM uint8_t chained_read_buf_1[8];
 ZTEST_BMEM uint8_t chained_cpy_buf[10];
 #endif /* NOCACHE_MEM */
 ZTEST_BMEM volatile uint8_t rx_data_idx;
 ZTEST_BMEM uint8_t rx_buf_idx;
 
 ZTEST_BMEM uint8_t *read_ptr;
+
+static uint8_t *chained_read_buf[2] = {chained_read_buf_0, chained_read_buf_1};
 
 static void test_chained_read_callback(const struct device *dev,
 				struct uart_event *evt, void *user_data)
@@ -352,9 +359,8 @@ static void test_chained_read_callback(const struct device *dev,
 		rx_data_idx += evt->data.rx.len;
 		break;
 	case UART_RX_BUF_REQUEST:
-		err = uart_rx_buf_rsp(dev,
-				      chained_read_buf[rx_buf_idx],
-				      sizeof(chained_read_buf[0]));
+		err = uart_rx_buf_rsp(dev, chained_read_buf[rx_buf_idx],
+				      sizeof(chained_read_buf_0));
 		zassert_equal(err, 0);
 		rx_buf_idx = !rx_buf_idx ? 1 : 0;
 		break;
@@ -387,11 +393,10 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 	uint32_t rx_timeout_ms = 50;
 	int err;
 
-	err = uart_rx_enable(uart_dev,
-			     chained_read_buf[rx_buf_idx++],
-			     sizeof(chained_read_buf[0]),
+	err = uart_rx_enable(uart_dev, chained_read_buf[rx_buf_idx++], sizeof(chained_read_buf_0),
 			     rx_timeout_ms * USEC_PER_MSEC);
 	zassert_equal(err, 0);
+	rx_data_idx = 0;
 
 	for (int i = 0; i < iter; i++) {
 		zassert_not_equal(k_sem_take(&rx_disabled, K_MSEC(10)),
@@ -406,7 +411,7 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 				"Unexpected amount of data received %d exp:%d",
 				rx_data_idx, sizeof(tx_buf));
 		zassert_equal(memcmp(tx_buf, chained_cpy_buf, sizeof(tx_buf)), 0,
-			      "Buffers not equal");
+			      "Buffers not equal exp %s, real %s", tx_buf, chained_cpy_buf);
 		rx_data_idx = 0;
 	}
 	uart_rx_disable(uart_dev);

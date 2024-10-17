@@ -81,6 +81,12 @@ config OPENTHREAD_CSL_AUTO_SYNC
 	bool "CSL autosync"
 	default y if OPENTHREAD_CSL_RECEIVER
 
+config OPENTHREAD_CSL_REQUEST_TIME_AHEAD
+	int "CSL transmitter request time ahead"
+	default 2000
+	help
+	  Defines how many microseconds ahead should MAC deliver a CSL frame to the sub-MAC layer.
+
 config OPENTHREAD_CSL_RECEIVE_TIME_AHEAD
 	int "CSL receiver wake up margin in microseconds"
 	default 5000
@@ -174,6 +180,13 @@ config OPENTHREAD_MAC_STAY_AWAKE_BETWEEN_FRAGMENTS
 	bool "Stay awake between packet fragments"
 	help
 	  This optimization is done at the expense of power consumption on SED/SSED devices.
+
+config OPENTHREAD_DEFAULT_RX_SENSITIVITY
+	int "OpenThread default RX sensitivity in dBm"
+	range $(INT8_MIN) $(INT8_MAX)
+	default -100
+	help
+	  Set the default receive sensitivity [dBm] in radio driver.
 
 config OPENTHREAD_DEFAULT_TX_POWER
 	int "OpenThread default tx power in dBm"

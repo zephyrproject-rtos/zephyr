@@ -35,6 +35,13 @@
 #include <mgmt/mcumgr/transport/smp_internal.h>
 #endif
 
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+#include <bootutil/boot_status.h>
+#include <zephyr/retention/blinfo.h>
+#endif
+
+#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+
 #ifndef CONFIG_FLASH_LOAD_OFFSET
 #error MCUmgr requires application to be built with CONFIG_FLASH_LOAD_OFFSET set \
 	to be able to figure out application running slot.
@@ -71,6 +78,10 @@ BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 #else
 #define ACTIVE_IMAGE_IS 0
 #endif
+#else
+#define ACTIVE_IMAGE_IS 0
+#endif
+
 #else
 #define ACTIVE_IMAGE_IS 0
 #endif
@@ -198,9 +209,23 @@ int img_mgmt_active_slot(int image)
 {
 	int slot = 0;
 
-	/* Multi image does not support DirectXIP currently */
+	/* Multi image does not support DirectXIP or RAM load currently */
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
 	slot = (image << 1);
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
+	/* RAM load requires querying bootloader */
+	int rc;
+	uint8_t temp_slot;
+
+	rc = blinfo_lookup(BLINFO_RUNNING_SLOT, &temp_slot, sizeof(temp_slot));
+
+	if (rc <= 0) {
+		LOG_ERR("Failed to fetch active slot: %d", rc);
+
+		return 255;
+	}
+
+	slot = (int)temp_slot;
 #else
 	/* This covers single image, including DirectXiP */
 	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
@@ -1056,7 +1081,8 @@ static int img_mgmt_translate_error_code(uint16_t err)
 static const struct mgmt_handler img_mgmt_handlers[] = {
 	[IMG_MGMT_ID_STATE] = {
 		.mh_read = img_mgmt_state_read,
-#ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 		.mh_write = NULL
 #else
 		.mh_write = img_mgmt_state_write,

@@ -33,9 +33,9 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #define MAX_OPTIONS    CONFIG_COAP_SERVER_MESSAGE_OPTIONS
 #define MAX_PENDINGS   CONFIG_COAP_SERVICE_PENDING_MESSAGES
 #define MAX_OBSERVERS  CONFIG_COAP_SERVICE_OBSERVERS
-#define MAX_POLL_FD    CONFIG_NET_SOCKETS_POLL_MAX
+#define MAX_POLL_FD    CONFIG_ZVFS_POLL_MAX
 
-BUILD_ASSERT(CONFIG_NET_SOCKETS_POLL_MAX > 0, "CONFIG_NET_SOCKETS_POLL_MAX can't be 0");
+BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX > 0, "CONFIG_ZVFS_POLL_MAX can't be 0");
 
 static K_MUTEX_DEFINE(lock);
 static int control_socks[2];
@@ -760,7 +760,7 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			}
 			if (sock_nfds >= MAX_POLL_FD) {
 				LOG_ERR("Maximum active CoAP services reached (%d), "
-					"increase CONFIG_NET_SOCKETS_POLL_MAX to support more.",
+					"increase CONFIG_ZVFS_POLL_MAX to support more.",
 					MAX_POLL_FD);
 				break;
 			}

@@ -188,7 +188,7 @@ def find_v2_archs(args):
         archs_yml = root / ARCHS_YML_PATH
 
         if Path(archs_yml).is_file():
-            with Path(archs_yml).open('r') as f:
+            with Path(archs_yml).open('r', encoding='utf-8') as f:
                 archs = yaml.load(f.read(), Loader=SafeLoader)
 
             try:

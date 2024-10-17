@@ -35,7 +35,7 @@ struct k_spinlock _sched_spinlock;
  */
 __incoherent struct k_thread _thread_dummy;
 
-static void update_cache(int preempt_ok);
+static ALWAYS_INLINE void update_cache(int preempt_ok);
 static void halt_thread(struct k_thread *thread, uint8_t new_state);
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q);
 
@@ -320,7 +320,7 @@ static void update_metairq_preempt(struct k_thread *thread)
  */
 }
 
-static void update_cache(int preempt_ok)
+static ALWAYS_INLINE void update_cache(int preempt_ok)
 {
 #ifndef CONFIG_SMP
 	struct k_thread *thread = next_up();
@@ -386,13 +386,6 @@ static void ready_thread(struct k_thread *thread)
 		update_cache(0);
 
 		flag_ipi(ipi_mask_create(thread));
-	}
-}
-
-void z_ready_thread_locked(struct k_thread *thread)
-{
-	if (thread_active_elsewhere(thread) == NULL) {
-		ready_thread(thread);
 	}
 }
 
@@ -718,7 +711,7 @@ struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
 	K_SPINLOCK(&_sched_spinlock) {
 		thread = _priq_wait_best(&wait_q->waitq);
 
-		if (thread != NULL) {
+		if (unlikely(thread != NULL)) {
 			unpend_thread_no_timeout(thread);
 			(void)z_abort_thread_timeout(thread);
 		}

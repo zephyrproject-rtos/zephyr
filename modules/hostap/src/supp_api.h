@@ -251,6 +251,15 @@ static inline int hapd_state(const struct device *dev, int *state)
 #endif
 
 /**
+ * @brief Get Wi-Fi SAP status
+ *
+ * @param dev Wi-Fi device
+ * @param status SAP status
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status);
+
+/**
  * @brief Set Wi-Fi AP configuration
  *
  * @param dev Wi-Fi interface name to use
@@ -287,7 +296,6 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 /**
@@ -299,4 +307,5 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
  */
 int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 #endif /* ZEPHYR_SUPP_MGMT_H */
