@@ -15,12 +15,12 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,shell-uart = &uart0;
-		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart1;
+		zephyr,console = &uart1;
 	};
 
 	aliases {
-		watchdog0 = &twd0;
+		watchdog0 = &twd;
 	};
 
 	zephyr,user {
@@ -33,25 +33,25 @@
 		 * Exsample : if you select channel 6(VIN16),
 		 *            and you can't select channel 7(THR16) and channel 19(TD2P).
 		 */
-		io-channels = <&adc0 17>, <&adc0 18>;
+		io-channels = <&dsadc 17>, <&dsadc 18>;
 	};
 };
 
-&uart0 {
+&uart1 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&cr_uart1_sin_gp14 &cr_uart1_sout_gp15>;
 	pinctrl-names = "default";
 };
 
-&uart1 {
+&uart2 {
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&cr_uart2_sin_gp30 &cr_uart2_sout_gp31>;
 	pinctrl-names = "default";
 };
 
-&adc0 {
+&dsadc {
 	status = "okay";
 	/* Pin D7 is shared by thermal signal VIN16, THR16, TD2P.
 	 * Pin C7 is shared by thermal signal VIN15, THR15, TD1P.
@@ -175,7 +175,7 @@
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&usbd0 {
+&usbd20 {
 	status = "okay";
 	pinctrl-0 = <&usbdphy_en &usbdphy_clk_external>;
 	pinctrl-names = "default";
@@ -187,7 +187,7 @@
 	pinctrl-names = "default";
 };
 
-&spip0 {
+&spip1 {
 	pinctrl-0 = <&pspi1_clk_io0_io1_io2_io3_cs_gp66_67_70_73_76_77>;
 	pinctrl-names = "default";
 	status = "okay";

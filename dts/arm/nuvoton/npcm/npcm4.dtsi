@@ -50,7 +50,7 @@
 			interrupts = <29 1>;
 		};
 
-		qspi_spim0: quad-spim@40017000 {
+		qspi_spim: quad-spim@40017000 {
 			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL1 0>;
 		};
 
@@ -58,7 +58,7 @@
 			clocks = <&pcc NPCM_CLOCK_BUS_FIU NPCM_PWDWN_CTL1 2>;
 		};
 
-		spip0: spi@40016000 {
+		spip1: spi@40016000 {
 			clocks = <&pcc NPCM_CLOCK_BUS_APB3 NPCM_PWDWN_CTL4 7>;
 		};
 
@@ -142,7 +142,7 @@
 				    &wui_none &wui_none &wui_none &wui_none>;
 		};
 
-		adc0: adc@400d1100 {
+		dasdc: dsadc@400d1100 {
 			channel-count = <24>;
 		};
 	};

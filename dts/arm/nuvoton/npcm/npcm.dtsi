@@ -61,7 +61,7 @@
 			#lvol-cells = <2>;
 		};
 
-		uart0: serial@400c4000 {
+		uart1: serial@400c4000 {
 			compatible = "nuvoton,npcm-uart";
 			reg = <0x400c4000 0x100>;
 			interrupts = <23 3>;
@@ -69,7 +69,7 @@
 			status = "disabled";
 		};
 
-		uart1: serial@400c4200 {
+		uart2: serial@400c4200 {
 			compatible = "nuvoton,npcm-uart";
 			reg = <0x400c4200 0x100>;
 			interrupts = <76 3>;
@@ -110,7 +110,7 @@
 			#miwu-cells = <2>;
 		};
 
-		qspi_spim0: quad-spim@40017000 {
+		qspi_spim: quad-spim@40017000 {
 			compatible = "nuvoton,npcm-spim-qspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -124,7 +124,7 @@
 			reg = <0x40020000 0x2000>;
 		};
 
-		spip0: spi@40016000 {
+		spip1: spi@40016000 {
 			compatible = "nuvoton,npcm-spip";
 			reg = <0x40016000 0x100>;
 			#address-cells = <1>;
@@ -259,13 +259,13 @@
 			#gpio-cells=<2>;
 		};
 
-		twd0: watchdog@400d8000 {
+		twd: watchdog@400d8000 {
 			compatible = "nuvoton,npcm-watchdog";
 			reg = <0x400d8000 0x100>;
 			t0-out = <&wui_t0out>;
 		};
 
-		adc0: adc@400d1100 {
+		dsadc: dsadc@400d1100 {
 			compatible = "nuvoton,npcm-adc";
 			#io-channel-cells = <1>;
 			reg = <0x400d1100 0xf00>;
@@ -589,7 +589,7 @@
 			status = "disabled";
 		};
 
-		usbd0: usbd@4001b000 {
+		usbd20: usbd@4001b000 {
 			compatible = "nuvoton,npcm-usbd";
 			reg = <0x4001b000 0x1000>;
 			interrupts = <13 3>;
