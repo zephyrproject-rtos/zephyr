@@ -109,11 +109,13 @@ configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-| ACMP      | on-chip    | analog comparator                   |
+| ACMP      | on-chip    | sensor                              |
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | adc                                 |
 +-----------+------------+-------------------------------------+
 | NETC      | on-chip    | ethernet, mdio                      |
++-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
