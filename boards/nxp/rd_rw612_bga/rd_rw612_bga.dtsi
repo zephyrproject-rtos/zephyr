@@ -313,8 +313,3 @@ nxp_8080_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 	wakeup-level = "low";
 };
-
-&imu {
-	status = "okay";
-	wakeup-source;
-};
