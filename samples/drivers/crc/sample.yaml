@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: CRC Sample
+tests:
+  crc_sample.test:
+    depends_on: crc
+    tags:
+      - drivers
+      - crc

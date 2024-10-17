@@ -1211,6 +1211,22 @@ Release Notes:
   tests:
     - drivers.counter
 
+"Drivers: CRC":
+  status: maintained
+  maintainers:
+    - zkat2
+  files:
+    - drivers/crc/
+    - dts/bindings/crc/
+    - include/zephyr/drivers/crc.h
+    - samples/drivers/crc/
+    - tests/drivers/crc/
+    - doc/hardware/peripherals/crc.rst
+  labels:
+    - "area: CRC"
+  tests:
+    - drivers.crc
+
 "Drivers: Crypto":
   status: maintained
   maintainers:
