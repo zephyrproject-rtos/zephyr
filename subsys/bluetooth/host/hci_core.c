@@ -2830,6 +2830,12 @@ static const struct event_handler meta_events[] = {
 		      sizeof(struct bt_hci_evt_le_cs_read_remote_fae_table_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_CONFIG_COMPLETE, bt_hci_le_cs_config_complete_event,
 		      sizeof(struct bt_hci_evt_le_cs_config_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SECURITY_ENABLE_COMPLETE,
+			  bt_hci_le_cs_security_enable_complete,
+			  sizeof(struct bt_hci_evt_le_cs_security_enable_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_LE_CS_PROCEDURE_ENABLE_COMPLETE,
+			  bt_hci_le_cs_procedure_enable_complete,
+			  sizeof(struct bt_hci_evt_le_cs_procedure_enable_complete)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_CS_SUBEVENT_RESULT,
 		      bt_hci_le_cs_subevent_result,
 		      sizeof(struct bt_hci_evt_le_cs_subevent_result)),
@@ -3418,6 +3424,8 @@ static int le_set_event_mask(void)
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_SUPPORTED_CAPABILITIES_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_READ_REMOTE_FAE_TABLE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_CONFIG_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_SECURITY_ENABLE_COMPLETE;
+		mask |= BT_EVT_MASK_LE_CS_PROCEDURE_ENABLE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT;
 		mask |= BT_EVT_MASK_LE_CS_SUBEVENT_RESULT_CONTINUE;
 		mask |= BT_EVT_MASK_LE_CS_TEST_END_COMPLETE;

@@ -3402,6 +3402,41 @@ void notify_cs_config_removed(struct bt_conn *conn, uint8_t config_id)
 	}
 }
 
+void notify_cs_security_enable_available(struct bt_conn *conn)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_security_enabled) {
+			callback->le_cs_security_enabled(conn);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_security_enabled) {
+			cb->le_cs_security_enabled(conn);
+		}
+	}
+}
+
+void notify_cs_procedure_enable_available(struct bt_conn *conn,
+					  struct bt_conn_le_cs_procedure_enable_complete *params)
+{
+	struct bt_conn_cb *callback;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
+		if (callback->le_cs_procedure_enabled) {
+			callback->le_cs_procedure_enabled(conn, params);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_cs_procedure_enabled) {
+			cb->le_cs_procedure_enabled(conn, params);
+		}
+	}
+}
+
 void notify_cs_subevent_result(struct bt_conn *conn, struct bt_conn_le_cs_subevent_result *result)
 {
 	struct bt_conn_cb *callback;
