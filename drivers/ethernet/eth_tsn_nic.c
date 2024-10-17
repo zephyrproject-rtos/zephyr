@@ -229,8 +229,6 @@ done:
 	data->has_pkt = false; /* TODO: This is for test only */
 
 	pthread_spin_unlock(&data->rx_lock);
-
-	k_work_submit(&data->rx_work); /* TODO: use polling for now */
 }
 
 static void eth_tsn_nic_iface_init(struct net_if *iface)
@@ -352,8 +350,7 @@ static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 
 	pthread_spin_unlock(&data->rx_lock);
 
-	k_work_submit(&data->rx_work);
-
+	k_work_submit(&data->rx_work); /* TODO: use polling for now */
 	/* TODO: sw-240 (Tx) */
 	return 0;
 }
@@ -391,9 +388,8 @@ static int eth_tsn_nic_init(const struct device *dev)
 
 	k_work_init(&data->rx_work, tsn_nic_rx);
 
-	k_work_submit(&data->rx_work); /* TODO: use polling for now */
-
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_tsn_nic_isr, DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_tsn_nic_isr,
+		    DEVICE_DT_INST_GET(0), 0);
 
 	/* Test logs */
 	mm_reg_t test_dma_addr;
