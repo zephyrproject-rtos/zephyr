@@ -79,6 +79,12 @@ struct flash_flexspi_nor_data {
 	struct flash_parameters flash_parameters;
 };
 
+/*
+ * FLEXSPI LUT buffer used during configuration. Stored in .data to avoid
+ * using too much stack
+ */
+static uint32_t flexspi_probe_lut[FLEXSPI_INSTR_END][MEMC_FLEXSPI_CMD_PER_SEQ] = {0};
+
 /* Initial LUT table */
 static const uint32_t flash_flexspi_nor_base_lut[][MEMC_FLEXSPI_CMD_PER_SEQ] = {
 	/* 1S-1S-1S flash read command, should be compatible with all SPI nor flashes */
@@ -924,7 +930,6 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 /* Probe parameters from flash SFDP header, and use them to configure the FlexSPI */
 static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 {
-	uint32_t flexspi_lut[FLEXSPI_INSTR_END][MEMC_FLEXSPI_CMD_PER_SEQ] = {0};
 	/* JESD216B defines up to 23 basic flash parameters */
 	uint32_t param_buf[23];
 	/* Space to store SFDP header and first parameter header */
@@ -959,10 +964,11 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	}
 
 	/* Setup initial LUT table and FlexSPI configuration */
-	memcpy(flexspi_lut, flash_flexspi_nor_base_lut, sizeof(flash_flexspi_nor_base_lut));
+	memcpy(flexspi_probe_lut, flash_flexspi_nor_base_lut,
+	       sizeof(flash_flexspi_nor_base_lut));
 
 	ret = memc_flexspi_set_device_config(&data->controller, &config,
-					(uint32_t *)flexspi_lut,
+					(uint32_t *)flexspi_probe_lut,
 					FLEXSPI_INSTR_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
 	if (ret < 0) {
@@ -972,7 +978,7 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	/* First, check if the JEDEC ID of this flash has explicit support
 	 * in this driver
 	 */
-	ret = flash_flexspi_nor_check_jedec(data, flexspi_lut);
+	ret = flash_flexspi_nor_check_jedec(data, flexspi_probe_lut);
 	if (ret == 0) {
 		/* Flash was supported, SFDP probe not needed */
 		goto _program_lut;
@@ -1007,7 +1013,8 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	}
 
 	/* Configure flash */
-	ret = flash_flexspi_nor_config_flash(data, header, bfp, flexspi_lut);
+	ret = flash_flexspi_nor_config_flash(data, header, bfp,
+					     flexspi_probe_lut);
 	if (ret < 0) {
 		goto _exit;
 	}
@@ -1018,7 +1025,7 @@ _program_lut:
 	 * from devicetree and the configured LUT
 	 */
 	ret = memc_flexspi_set_device_config(&data->controller, &data->config,
-					(uint32_t *)flexspi_lut,
+					(uint32_t *)flexspi_probe_lut,
 					FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
 	if (ret < 0) {
