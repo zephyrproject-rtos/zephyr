@@ -842,12 +842,6 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (params->domain_match_length > 0) {
-				if (!wpa_cli_cmd_v("set_network %d domain_match \"%s\"",
-						resp.network_id, params->domain_match))
-					goto out;
-			}
-
 			if (!wpa_cli_cmd_v("set_network %d anonymous_identity \"%s\"",
 					   resp.network_id, params->anon_id)) {
 				goto out;

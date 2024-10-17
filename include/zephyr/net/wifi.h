@@ -260,8 +260,7 @@ const char *const wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_ENT_PSWD_MAX_LEN 128
 /** Max enterprise identity users */
 #define WIFI_ENT_IDENTITY_MAX_USERS 8
-/** MAX domain len */
-#define WIFI_DOMAIN_NAME_MAX_LENGTH 64
+
 
 /** Minimum channel number */
 #define WIFI_CHANNEL_MIN 1
