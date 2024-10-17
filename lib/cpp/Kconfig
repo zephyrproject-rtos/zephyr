@@ -143,6 +143,14 @@ config CPP_RTTI
 
 endif # !MINIMAL_LIBCPP
 
+config CPP_STD_THREAD
+	bool "Support for std::thread"
+	default y if !STD_CPP98
+	depends on !STD_CPP98
+	select POSIX_API
+	help
+	  This option enables support for std::thread and std::this_thread.
+
 config CPP_STATIC_INIT_GNU
 	bool
 	select STATIC_INIT_GNU
