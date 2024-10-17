@@ -124,6 +124,8 @@
 					//reg = <0x0 0x1b 0x8000000 0x0 0x1000>;
 					status = "okay";
 					compatible = "tsnlab,tsn-nic-eth";
+					interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL
+						      IRQ_DEFAULT_PRIORITY>;
 				};
 			};
 		};

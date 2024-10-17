@@ -49,6 +49,9 @@ LOG_MODULE_REGISTER(eth_tsn_nic, LOG_LEVEL_ERR);
 #define DMA_ENGINE_START 16268831
 #define DMA_ENGINE_STOP  16268830
 
+#define RX_METADATA_SIZE (sizeof(struct rx_metadata))
+#define CRC_LEN          4
+
 /* Temporary macros: need to be deleted later */
 #define RX_ENGINE_REG_ADDR 0x1b08001000
 #define RX_SGDMA_REG_ADDR  0x1b08005000
@@ -112,6 +115,11 @@ struct dma_tsn_nic_result {
 	uint32_t reserved_1[6]; /* padding */
 };
 
+struct rx_metadata {
+	uint64_t timestamp;
+	uint16_t frame_length;
+} __attribute__((packed, scalar_storage_order("big-endian")));
+
 struct eth_tsn_nic_config {
 	const struct device *pci_dev;
 	const struct device *dma_dev;
@@ -132,7 +140,17 @@ struct eth_tsn_nic_data {
 	uint8_t rx_buffer[BUFFER_SIZE];
 
 	struct dma_tsn_nic_result res;
+
+	struct k_work rx_work;
+
+	bool has_pkt; /* TODO: This is for test only */
 };
+
+static void eth_tsn_nic_isr(const struct device *port)
+{
+	/* TODO: Implement interrupts */
+	ARG_UNUSED(port);
+}
 
 static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t len)
 {
@@ -152,10 +170,72 @@ static void rx_desc_set(struct dma_tsn_nic_desc *desc, uintptr_t addr, uint32_t 
 	desc->bytes = sys_cpu_to_le32(len);
 }
 
+static void tsn_nic_rx(struct k_work *item)
+{
+	struct eth_tsn_nic_data *data = CONTAINER_OF(item, struct eth_tsn_nic_data, rx_work);
+	struct net_pkt *pkt;
+	struct net_ptp_time timestamp;
+	size_t pkt_len;
+	int ret;
+
+	pthread_spin_lock(&data->rx_lock);
+
+	if (!data->has_pkt) { /* Check if there is a packet to receive */
+		goto done;
+	}
+
+	/* TODO: disable interrupts */
+
+	/* pkt_len = data->res.length - RX_METADATA_SIZE - CRC_LEN */;
+	pkt_len = data->res.length;
+	if (pkt_len < 0) {
+		goto done;
+	}
+
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, pkt_len, AF_UNSPEC, 0, K_NO_WAIT);
+	if (pkt == NULL) {
+		/* TODO: stats */
+		printk("alloc failed\n");
+		goto done;
+	}
+
+	ret = net_pkt_write(pkt, data->rx_buffer, pkt_len);
+	/* ret = net_pkt_write(pkt, data->rx_buffer + RX_METADATA_SIZE, pkt_len); */
+	if (ret != 0) {
+		net_pkt_unref(pkt);
+		printk("write failed\n");
+		goto done;
+	}
+
+	ret = net_recv_data(data->iface, pkt);
+	if (ret != 0) {
+		net_pkt_unref(pkt);
+		printk("recv failed\n");
+		goto done;
+	}
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	/* Not sure this is how it's supposed to be used as there are not much examples */
+	if (net_pkt_is_rx_timestamping(pkt)) {
+		/* TODO: Get HW timestamp */
+		net_pkt_set_timestamp(pkt, &timestamp);
+	}
+#else
+	ARG_UNUSED(timestamp);
+#endif /* CONFIG_NET_PKT_TIMESTMP */
+
+done:
+	/* TODO: enable interrupts */
+	data->has_pkt = false; /* TODO: This is for test only */
+
+	pthread_spin_unlock(&data->rx_lock);
+
+	k_work_submit(&data->rx_work); /* TODO: use polling for now */
+}
+
 static void eth_tsn_nic_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct eth_tsn_nic_config *config = dev->config;
 	struct eth_tsn_nic_data *data = dev->data;
 
 	if (data->iface == NULL) {
@@ -164,15 +244,13 @@ static void eth_tsn_nic_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, data->mac_addr, 6, NET_LINK_ETHERNET);
 	ethernet_init(iface);
-
-	ARG_UNUSED(config);
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(const struct device *dev)
+static struct net_stats_eth *eth_tsn_nic_get_stats(const struct device *dev)
 {
 	/* TODO: sw-257 (Misc. APIs) */
-	return -ENOTSUP;
+	return NULL;
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
@@ -195,6 +273,7 @@ static int eth_tsn_nic_start(const struct device *dev)
 
 	pthread_spin_lock(&data->rx_lock);
 
+	/* TODO: It seems the board is not reading the descriptor properly */
 	sys_read32(rx_regs + offsetof(struct dma_tsn_nic_engine_regs, status_rc)); /* Clear reg */
 	sys_write32(sys_cpu_to_le32(PCI_DMA_L((uintptr_t)&data->rx_desc)),
 		    rx_regs + offsetof(struct dma_tsn_nic_engine_sgdma_regs, first_desc_lo));
@@ -259,8 +338,24 @@ static const struct device *eth_tsn_nic_get_phy(const struct device *dev)
 
 static int eth_tsn_nic_send(const struct device *dev, struct net_pkt *pkt)
 {
+	/* TODO: This is for test only */
+	struct eth_tsn_nic_data *data = dev->data;
+	size_t len;
+
+	len = net_pkt_get_len(pkt);
+
+	pthread_spin_lock(&data->rx_lock);
+
+	net_pkt_read(pkt, data->rx_buffer, len);
+	data->res.length = len;
+	data->has_pkt = true;
+
+	pthread_spin_unlock(&data->rx_lock);
+
+	k_work_submit(&data->rx_work);
+
 	/* TODO: sw-240 (Tx) */
-	return -ENOTSUP;
+	return 0;
 }
 
 static const struct ethernet_api eth_tsn_nic_api = {
@@ -285,7 +380,7 @@ static const struct ethernet_api eth_tsn_nic_api = {
 
 static int eth_tsn_nic_init(const struct device *dev)
 {
-	struct eth_tsn_nic_config *config = dev->config;
+	const struct eth_tsn_nic_config *config = dev->config;
 	struct eth_tsn_nic_data *data = dev->data;
 
 	pthread_spin_init(&data->tx_lock, PTHREAD_PROCESS_PRIVATE);
@@ -294,9 +389,11 @@ static int eth_tsn_nic_init(const struct device *dev)
 	/* TODO: Select proper values for the first three bytes */
 	gen_random_mac(data->mac_addr, 0x0, 0x0, 0xab);
 
-	printk("Ethernet init\n");
+	k_work_init(&data->rx_work, tsn_nic_rx);
 
-	eth_tsn_nic_start(dev); /* TODO: This is for test only: this is called by zephyr subsys */
+	k_work_submit(&data->rx_work); /* TODO: use polling for now */
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), eth_tsn_nic_isr, DEVICE_DT_INST_GET(0), 0);
 
 	/* Test logs */
 	mm_reg_t test_dma_addr;
