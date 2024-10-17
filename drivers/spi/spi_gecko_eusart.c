@@ -23,7 +23,8 @@ LOG_MODULE_REGISTER(spi_gecko_eusart, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#define SPI_WORD_SIZE 8
+#define SPI_WORD_SIZE_8  8
+#define SPI_WORD_SIZE_16 16
 
 /* Structure Declarations */
 
@@ -71,8 +72,9 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
-	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE) {
-		LOG_ERR("Word size must be %d", SPI_WORD_SIZE);
+	if (SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE_8 &&
+	    SPI_WORD_SIZE_GET(config->operation) != SPI_WORD_SIZE_16) {
+		LOG_ERR("Word size must be either %d or %d", SPI_WORD_SIZE_8, SPI_WORD_SIZE_16);
 		return -ENOTSUP;
 	}
 
@@ -92,6 +94,12 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
+	/* Disable EUSART clock */
+	err = clock_control_off(gecko_config->clock_dev,
+				(clock_control_subsys_t)&gecko_config->clock_cfg);
+	if (err < 0) {
+		return err;
+	}
 	/* Set frequency to the minimum of what the device supports, what the
 	 * user has configured the controller to, and the max frequency for the
 	 * transaction.
@@ -133,12 +141,21 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 		eusartAdvancedSpiInit.csPolarity = eusartCsActiveLow;
 	}
 
-	eusartInit.databits = eusartDataBits8;
+	eusartAdvancedSpiInit.msbFirst = true; // SPI standard MSB first
+
+	/* Configure SPI word size */
+	if (SPI_WORD_SIZE_GET(config->operation) == 8) {
+		eusartInit.databits = eusartDataBits8;
+	} else {
+		eusartInit.databits = eusartDataBits16;
+	}
+
+	// eusartInit.databits = eusartDataBits8;
 	eusartInit.advancedSettings = &eusartAdvancedSpiInit;
 
 	/* Enable EUSART clock */
 	err = clock_control_on(gecko_config->clock_dev,
-						  (clock_control_subsys_t)&gecko_config->clock_cfg);
+			       (clock_control_subsys_t)&gecko_config->clock_cfg);
 	if (err < 0) {
 		return err;
 	}
@@ -150,6 +167,7 @@ static int spi_eusart_config(const struct device *dev, const struct spi_config *
 
 	/* Enable the peripheral */
 	gecko_config->base->CMD = (uint32_t)eusartEnable;
+	EUSART_Enable(gecko_config->base, eusartEnable);
 
 	return 0;
 }
@@ -186,21 +204,45 @@ static inline uint8_t spi_eusart_next_tx(struct spi_gecko_eusart_data *data)
 	return tx_frame;
 }
 
-static int spi_eusart_shift_frames(EUSART_TypeDef *eusart, struct spi_gecko_eusart_data *data)
+static inline uint16_t spi_eusart_next_tx_16bits(struct spi_gecko_eusart_data *data)
 {
-	uint8_t tx_frame;
-	uint8_t rx_frame;
+	uint16_t tx_frame = 0;
 
-	tx_frame = spi_eusart_next_tx(data);
-	spi_gecko_eusart_send(eusart, tx_frame);
-	spi_context_update_tx(&data->ctx, 1, 1);
-
-	rx_frame = spi_gecko_eusart_recv(eusart);
-
-	if (spi_context_rx_buf_on(&data->ctx)) {
-		UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+	if (spi_context_tx_buf_on(&data->ctx)) {
+		tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 	}
-	spi_context_update_rx(&data->ctx, 1, 1);
+
+	return tx_frame;
+}
+
+static int spi_eusart_shift_frames(EUSART_TypeDef *eusart, struct spi_gecko_eusart_data *data,
+				   const struct spi_config *config)
+{
+	const uint8_t frame_size = SPI_WORD_SIZE_GET(config->operation);
+
+	if (frame_size == SPI_WORD_SIZE_8) {
+		const uint8_t tx_frame = spi_eusart_next_tx(data);
+		spi_gecko_eusart_send(eusart, tx_frame);
+		spi_context_update_tx(&data->ctx, 1, 1);
+
+		const uint8_t rx_frame = spi_gecko_eusart_recv(eusart);
+
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+		}
+		spi_context_update_rx(&data->ctx, 1, 1);
+
+	} else if (frame_size == SPI_WORD_SIZE_16) {
+		const uint16_t tx_frame = spi_eusart_next_tx_16bits(data);
+		const uint16_t rx_frame = EUSART_Spi_TxRx(eusart, tx_frame);
+
+		spi_context_update_tx(&data->ctx, 2, 1);
+		if (spi_context_rx_buf_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+		}
+		spi_context_update_rx(&data->ctx, 2, 1);
+	}
+
 	return 0;
 }
 
@@ -214,7 +256,7 @@ static void spi_gecko_eusart_xfer(const struct device *dev, const struct spi_con
 	spi_context_cs_control(ctx, true);
 
 	do {
-		ret = spi_eusart_shift_frames(gecko_config->base, data);
+		ret = spi_eusart_shift_frames(gecko_config->base, data, config);
 	} while (!ret && spi_eusart_transfer_ongoing(data));
 
 	spi_context_cs_control(ctx, false);
@@ -258,7 +300,14 @@ static int spi_gecko_eusart_transceive(const struct device *dev, const struct sp
 		return ret;
 	}
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	// spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	/* Set buffers info */
+	if (SPI_WORD_SIZE_GET(config->operation) == SPI_WORD_SIZE_8) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+	} else if (SPI_WORD_SIZE_GET(config->operation) == SPI_WORD_SIZE_16) {
+		spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 2);
+	}
+
 	spi_gecko_eusart_xfer(dev, config);
 
 	spi_context_release(&data->ctx, ret);
@@ -299,20 +348,19 @@ static const struct spi_driver_api spi_gecko_eusart_api = {
 	.release = spi_gecko_eusart_release,
 };
 
-#define SPI_INIT(n)                                                                    \
-	PINCTRL_DT_INST_DEFINE(n);                                                         \
-	static struct spi_gecko_eusart_data spi_gecko_eusart_data_##n = {                  \
-		SPI_CONTEXT_INIT_LOCK(spi_gecko_eusart_data_##n, ctx),                         \
-		SPI_CONTEXT_INIT_SYNC(spi_gecko_eusart_data_##n, ctx),                         \
-		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                         \
-	static struct spi_gecko_eusart_config spi_gecko_eusart_cfg_##n = {                 \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
-		.base = (EUSART_TypeDef *)DT_INST_REG_ADDR(n),                                 \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                            \
-		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n),                                      \
-		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000)                \
-	};                                                                                 \
-	DEVICE_DT_INST_DEFINE(n, spi_gecko_eusart_init, NULL, &spi_gecko_eusart_data_##n,  \
+#define SPI_INIT(n)                                                                                \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static struct spi_gecko_eusart_data spi_gecko_eusart_data_##n = {                          \
+		SPI_CONTEXT_INIT_LOCK(spi_gecko_eusart_data_##n, ctx),                             \
+		SPI_CONTEXT_INIT_SYNC(spi_gecko_eusart_data_##n, ctx),                             \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(n), ctx)};                             \
+	static struct spi_gecko_eusart_config spi_gecko_eusart_cfg_##n = {                         \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.base = (EUSART_TypeDef *)DT_INST_REG_ADDR(n),                                     \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(n),                                          \
+		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 1000000)};                  \
+	DEVICE_DT_INST_DEFINE(n, spi_gecko_eusart_init, NULL, &spi_gecko_eusart_data_##n,          \
 			      &spi_gecko_eusart_cfg_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,    \
 			      &spi_gecko_eusart_api);
 
