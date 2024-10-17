@@ -243,3 +243,12 @@
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
+
+/* Arduino Header pins: Tx:D1, Rx:D0 */
+&lpuart1 {
+	dma-names = "tx", "rx";
+	pinctrl-0 = <&lpuart1_tx_pb6 &lpuart1_rx_pb7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
