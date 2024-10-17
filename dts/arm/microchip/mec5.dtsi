@@ -136,6 +136,7 @@
 			};
 		};
 		pinctrl: pin-controller@40081000 {
+			compatible = "microchip,mec5-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40081000 0x1000>;
