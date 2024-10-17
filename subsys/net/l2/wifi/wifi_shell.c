@@ -652,8 +652,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			params->channel = channel;
 			break;
 		case 'b':
-			if (iface_mode == WIFI_MODE_INFRA ||
-				iface_mode == WIFI_MODE_AP) {
+			if (iface_mode == WIFI_MODE_INFRA) {
 				switch (atoi(state->optarg)) {
 				case 2:
 					params->band = WIFI_FREQ_BAND_2_4_GHZ;
