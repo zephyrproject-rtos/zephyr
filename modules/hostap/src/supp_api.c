@@ -2392,6 +2392,7 @@ int supplicant_ap_bandwidth(const struct device *dev, struct wifi_ap_config_para
 
 	return wifi_mgmt_api->ap_bandwidth(dev, params);
 }
+#endif
 
 int supplicant_ap_status(const struct device *dev, struct wifi_iface_status *status)
 {
@@ -2560,7 +2561,6 @@ int supplicant_ap_wps_config(const struct device *dev, struct wifi_wps_config_pa
 
 	return ret;
 }
-#endif
 #endif
 
 int supplicant_ap_enable(const struct device *dev,
