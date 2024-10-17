@@ -7,6 +7,6 @@ tests:
     build_only: true
     platform_allow:
       - mimxrt1060_evk
-      - mimxrt1060_evkb
+      - mimxrt1060_evk@B
     integration_platforms:
       - mimxrt1060_evk

@@ -1,8 +1,10 @@
 /*
- * Copyright (c) 2018, NXP
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "mimxrt1050_evk.dtsi"
 
 / {
 	chosen {
@@ -16,6 +18,8 @@
 	status = "okay";
 	ahb-prefetch;
 	ahb-read-addr-opt;
+	pinctrl-0 = <&pinmux_flexspi1>;
+	pinctrl-names = "default";
 	ahb-bufferable;
 	ahb-cacheable;
 	sck-differential-clock;

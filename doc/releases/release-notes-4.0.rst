@@ -144,6 +144,9 @@ Boards & SoC Support
   * Support for Google Kukui EC board (``google_kukui``) has been dropped.
   * STM32: Deprecated MCO configuration via Kconfig in favour of setting it through devicetree.
     See ``samples/boards/stm32/mco`` sample.
+  * ``mimxrt1050_evk`` and ``mimxrt1060_evk`` revisions for ``qspi`` and ``hyperflash`` have been
+    converted into variants. ``mimxrt1060_evkb`` has been converted into revision ``B`` of
+    ``mimxrt1060_evk``.
 
 * Added support for the following shields:
 
