@@ -6,7 +6,7 @@
  */
 
 /**
- * @brief Infineon PSoC 6 SOC.
+ * @brief Infineon PSOC 6 SOC.
  */
 
 #include <zephyr/device.h>

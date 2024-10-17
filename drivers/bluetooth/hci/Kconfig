@@ -144,7 +144,7 @@ config BT_PSOC6_BLESS
 	depends on ZEPHYR_HAL_INFINEON_MODULE_BLOBS
 	select BT_HCI_SETUP
 	help
-	  PSOC6 BLESS driver with BLE Controller which operates in
+	  PSOC 6 BLESS driver with BLE Controller which operates in
 	  Single CPU mode.
 
 config BT_DA1469X
