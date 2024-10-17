@@ -12,7 +12,7 @@
 
 #include "bmp388.h"
 
-#if BMP388_BUS_I2C
+#ifdef BMP3XX_USE_I2C_BUS
 static int bmp388_bus_check_i2c(const union bmp388_bus *bus)
 {
 	return i2c_is_ready_dt(&bus->i2c) ? 0 : -ENODEV;
@@ -35,4 +35,4 @@ const struct bmp388_bus_io bmp388_bus_io_i2c = {
 	.read = bmp388_reg_read_i2c,
 	.write = bmp388_reg_write_i2c,
 };
-#endif /* BMP388_BUS_I2C */
+#endif /* BMP3XX_USE_I2C_BUS */
