@@ -1,0 +1,5 @@
+board:
+  name: rak3172
+  vendor: rakwireless
+  socs:
+  - name: stm32wle5xx
