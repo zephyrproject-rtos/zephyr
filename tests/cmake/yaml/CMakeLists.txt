@@ -204,6 +204,57 @@ function(test_setting_list_strings)
   endforeach()
 endfunction()
 
+function(test_append_list_strings)
+  yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  # start with entries that will be overwritten
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string
+           LIST dropped entries
+  )
+
+  set(new_value "A" "new" "list" "of" "strings")
+  list(GET new_value 0 first)
+  list(SUBLIST new_value 1 -1 others)
+
+  # re-initialize the list with the first correct value
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string
+           LIST ${first}
+  )
+
+  # append the rest of the values
+  foreach(entry IN LISTS others)
+    yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+             KEY cmake test set key-list-string
+             APPEND LIST ${entry}
+    )
+  endforeach()
+
+  yaml_save(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
+
+  # Read-back the yaml and verify the value.
+  yaml_load(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
+            NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  yaml_length(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  test_assert(TEST 5 EQUAL ${readback}
+              COMMENT "readback yaml list length does not match original."
+  )
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string)
+
+  foreach(a e IN ZIP_LISTS readback new_value)
+    test_assert(TEST "${e}" STREQUAL "${a}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
 function(test_setting_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -397,6 +448,8 @@ test_setting_list_int()
 
 test_setting_empty_value()
 test_setting_empty_list()
+
+test_append_list_strings()
 
 test_set_remove_int()
 
