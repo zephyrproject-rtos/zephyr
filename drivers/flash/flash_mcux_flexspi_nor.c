@@ -899,6 +899,7 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 {
 	int ret;
 	uint32_t vendor_id;
+	uint32_t read_params;
 
 	ret = flash_flexspi_nor_read_id_helper(data, (uint8_t *)&vendor_id);
 	if (ret < 0) {
@@ -907,13 +908,15 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 
 	/* Switch on manufacturer and vendor ID */
 	switch (vendor_id & 0xFFFF) {
+	case 0x609d: /* IS25LP flash, needs P[4:3] cleared with same method as IS25WP */
+		read_params = 0xE0U;
 	case 0x709d:
 		/*
 		 * IS25WP flash. We can support this flash with the JEDEC probe,
 		 * but we need to insure P[6:3] are at the default value
 		 */
 		/* Install Set Read Parameters (Volatile) command */
-		uint32_t read_params = 0;
+		read_params = 0U;
 		flexspi_transfer_t transfer = {
 			.deviceAddress = 0,
 			.port = data->port,
