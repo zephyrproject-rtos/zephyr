@@ -64,7 +64,7 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP,
 	/** WPA-PSK security. */
 	WIFI_SECURITY_TYPE_WPA_PSK,
-	/** WPA/WPA2/WPA3 PSK security with hunting-and-pecking loop. */
+	/** WPA/WPA2/WPA3 PSK security. */
 	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL,
 	/** DPP security */
 	WIFI_SECURITY_TYPE_DPP,
@@ -84,12 +84,6 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP,
 	/** FT-EAP-SHA384 security */
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
-	/** WPA/WPA2/WPA3 PSK security with hash-to-element. */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E,
-	/** WPA/WPA2/WPA3 PSK security with both hunting-and-pecking
-	 *  loop and hash-to-element enabled.
-	 */
-	WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,

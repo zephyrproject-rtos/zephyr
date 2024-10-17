@@ -705,9 +705,7 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 					goto out;
 				}
 			}
-		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL ||
-		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-		    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO ||) {
+		} else if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL) {
 			if (!wpa_cli_cmd_v("set_network %d psk \"%s\"", resp.network_id,
 					   params->psk)) {
 				goto out;
@@ -719,11 +717,8 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				goto out;
 			}
 
-			if (params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E ||
-			    params->security == WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_AUTO) {
-				if (!wpa_cli_cmd_v("set sae_pwe %d", (params->security ==
-						WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL_H2E)
-							   ? 1 : 2)) {
+			if (params->pwe_configed) {
+				if (!wpa_cli_cmd_v("set sae_pwe %d", params->sae_pwe)) {
 					goto out;
 				}
 			}
