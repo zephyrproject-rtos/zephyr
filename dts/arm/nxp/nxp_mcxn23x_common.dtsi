@@ -456,7 +456,8 @@
 
 	edma0: dma-controller@80000 {
 		#dma-cells = <2>;
-		compatible = "nxp,mcux-edma-v4";
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <120>;
 
@@ -471,7 +472,8 @@
 
 	edma1: dma-controller@a0000 {
 		#dma-cells = <2>;
-		compatible = "nxp,mcux-edma-v4";
+		compatible = "nxp,mcux-edma";
+		nxp,version = <4>;
 		dma-channels = <16>;
 		dma-requests = <120>;
 
