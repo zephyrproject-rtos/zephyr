@@ -400,6 +400,23 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
+#ifndef ABS_DIFF
+/**
+ * @brief Obtain the absolute difference of two values.
+ *
+ * The advantage over ABS(a - b) is that it guards against integer underflow
+ * in case unsigned values are used.
+ *
+ * @note Arguments are evaluated twice.
+ *
+ * @param a First value.
+ * @param b Second value.
+ *
+ * @returns Positive difference between between @p a and @p b.
+ */
+#define ABS_DIFF(a, b) ((a) > (b) ? (a) - (b) : (b) - (a))
+#endif
+
 #ifndef CLAMP
 /**
  * @brief Clamp a value to a given range.

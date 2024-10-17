@@ -94,8 +94,6 @@ LOG_MODULE_REGISTER(video_ov5640, CONFIG_VIDEO_LOG_LEVEL);
 
 #define PI 3.141592654
 
-#define ABS(a, b) (a > b ? a - b : b - a)
-
 #define PCLK_ROOT_DIV 1
 #define SCLK2X_DIV    1
 #define SCLK_DIV      2
@@ -514,8 +512,8 @@ static int ov5640_set_frmival(const struct device *dev, enum video_endpoint_id e
 	/* Find the supported frame rate closest to the desired one */
 	for (i = 0; i < ARRAY_SIZE(ov5640_frame_rates); i++) {
 		if (ov5640_frame_rates[i] <= drv_data->cur_mode->max_frmrate &&
-		    ABS(desired_frmrate, ov5640_frame_rates[i]) <
-			    ABS(desired_frmrate, best_match)) {
+		    ABS_DIFF(desired_frmrate, ov5640_frame_rates[i]) <
+		    ABS_DIFF(desired_frmrate, best_match)) {
 			best_match = ov5640_frame_rates[i];
 			ind = i;
 		}
