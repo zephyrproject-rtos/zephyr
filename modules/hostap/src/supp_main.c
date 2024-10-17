@@ -98,7 +98,8 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.dpp_dispatch = supplicant_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.pmksa_flush = supplicant_pmksa_flush,
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
+	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
 #endif
 };
@@ -121,9 +122,6 @@ static const struct wifi_mgmt_ops mgmt_ap_ops = {
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 	.ap_config_params = supplicant_ap_config_params,
 	.set_rts_threshold = supplicant_set_rts_threshold,
-#if defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
-	.enterprise_creds = supplicant_add_enterprise_creds,
-#endif
 };
 
 DEFINE_WIFI_NM_INSTANCE(hostapd, &mgmt_ap_ops);

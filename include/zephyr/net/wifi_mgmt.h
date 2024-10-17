@@ -844,29 +844,18 @@ struct wifi_enterprise_creds_params {
 	uint8_t *client_key;
 	/** Client key length */
 	uint32_t client_key_len;
-	/** CA certification of phase2*/
+
 	uint8_t *ca_cert2;
-	/** Phase2 CA certification length */
 	uint32_t ca_cert2_len;
-	/** Client certification of phase2*/
 	uint8_t *client_cert2;
-	/** Phase2 Client certification length */
 	uint32_t client_cert2_len;
-	/** Client key of phase2*/
 	uint8_t *client_key2;
-	/** Phase2 Client key length */
 	uint32_t client_key2_len;
-	/** Server certification */
 	uint8_t *server_cert;
-	/** Server certification length */
 	uint32_t server_cert_len;
-	/** Server key */
 	uint8_t *server_key;
-	/** Server key length */
 	uint32_t server_key_len;
-	/** Diffie–Hellman parameter */
 	uint8_t *dh_param;
-	/** Diffie–Hellman parameter length */
 	uint32_t dh_param_len;
 };
 
