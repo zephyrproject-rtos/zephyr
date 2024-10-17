@@ -84,6 +84,12 @@ BT_GATT_SERVICE_DEFINE(
 			       BT_GATT_PERM_READ, bt_bas_bls_read_blvl_status, NULL, NULL),
 	BT_GATT_CCC(blvl_status_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
 #endif
+#if defined(CONFIG_BT_BAS_BCS)
+	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_CRIT_STATUS,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_INDICATE, BT_GATT_PERM_READ,
+			       bt_bas_bcs_read_critical_status, NULL, NULL),
+	BT_GATT_CCC(bt_bas_bcs_ccc_cfg_changed, BT_GATT_PERM_READ | BT_GATT_PERM_WRITE),
+#endif /* CONFIG_BT_BAS_BCS */
 );
 
 static int bas_init(void)
