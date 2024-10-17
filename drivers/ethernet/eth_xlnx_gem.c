@@ -772,9 +772,9 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev)
 	 * The frequency of the PLL to which the divisors shall be applied are
 	 * provided in the respective GEM's device tree data.
 	 */
-	for (div0 = 1; div0 < 64; div0++) {
-		for (div1 = 1; div1 < 64; div1++) {
-			tmp = ((dev_conf->pll_clock_frequency / div0) / div1);
+	for (div1 = 1; div1 < 64; div1++) {
+		for (div0 = 1; div0 < 64; div0++) {
+			tmp = ((dev_conf->pll_clock_frequency / div1) / div0);
 			if (tmp >= (target - 10) && tmp <= (target + 10)) {
 				break;
 			}
