@@ -7,10 +7,6 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
-#if CONFIG_GPIO && (DT_NODE_HAS_STATUS(DT_NODELABEL(pin0), okay) || \
-		    DT_NODE_HAS_STATUS(DT_NODELABEL(pin1), okay))
-#include <zephyr/drivers/gpio/gpio_mcux_lpc.h>
-#endif
 
 #include "fsl_power.h"
 
@@ -38,9 +34,6 @@ power_sleep_config_t slp_cfg;
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
 pinctrl_soc_pin_t pin_cfg;
-#if CONFIG_GPIO
-const struct device *gpio;
-#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
@@ -213,15 +206,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-#if CONFIG_GPIO && (DT_NODE_HAS_STATUS(DT_NODELABEL(pin0), okay) || \
-		    DT_NODE_HAS_STATUS(DT_NODELABEL(pin1), okay))
-	if (state == PM_STATE_STANDBY) {
-		/* GPIO_0_24 & GPIO_0_25 are used for wakeup */
-		uint32_t pins = PMU->WAKEUP_STATUS &
-				(PMU_WAKEUP_STATUS_PIN0_MASK | PMU_WAKEUP_STATUS_PIN1_MASK);
-		gpio_mcux_lpc_trigger_cb(gpio, (pins << 24));
-	}
-#endif
 	/* Clear PRIMASK */
 	__enable_irq();
 }
@@ -263,12 +247,4 @@ void nxp_rw6xx_power_init(void)
 	/* Clear the RTC wakeup bits */
 	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
 	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
-
-#if CONFIG_GPIO && (DT_NODE_HAS_STATUS(DT_NODELABEL(pin0), okay) || \
-		    DT_NODE_HAS_STATUS(DT_NODELABEL(pin1), okay))
-	gpio = DEVICE_DT_GET(DT_NODELABEL(hsgpio0));
-	if (!device_is_ready(gpio)) {
-		return;
-	}
-#endif
 }
