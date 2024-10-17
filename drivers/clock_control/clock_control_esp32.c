@@ -154,7 +154,10 @@ static void esp32_clock_perip_init(void)
 #if !defined(CONFIG_SOC_SERIES_ESP32)
 	uint32_t common_perip_clk1;
 #endif
-
+	/* Avoid APPCPU to mess with the clocks. */
+#if defined(CONFIG_SOC_ESP32_APPCPU) || defined(CONFIG_SOC_ESP32S3_APPCPU)
+	return;
+#endif
 	/* For reason that only reset CPU, do not disable the clocks
 	 * that have been enabled before reset.
 	 */
