@@ -189,17 +189,6 @@ static int burtc_init(void)
 	/* Enable clock for BURTC CSRs on APB */
 	CMU_ClockEnable(cmuClock_BURTC, true);
 
-	/* Configure BURTC LF clocksource according to Kconfig */
-#if defined(CONFIG_CMU_BURTCCLK_LFXO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_LFXO);
-#elif defined(CONFIG_CMU_BURTCCLK_LFRCO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_LFRCO);
-#elif defined(CONFIG_CMU_BURTCCLK_ULFRCO)
-	CMU_ClockSelectSet(cmuClock_BURTC, cmuSelect_ULFRCO);
-#else
-#error "Unsupported BURTC clock specified"
-#endif
-
 	/* Calculate timing constants and init BURTC */
 	hw_clock_freq = CMU_ClockFreqGet(cmuClock_BURTC);
 	z_clock_hw_cycles_per_sec = hw_clock_freq;

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2017 Christian Taedcke
 
-rsource "*/*/Kconfig.defconfig"
+rsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
