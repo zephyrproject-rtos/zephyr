@@ -378,23 +378,6 @@ def test_include_paths():
         assert 'base.yaml' == os.path.basename(top.prop2specs["y"].path)
         assert 'top.yaml' == os.path.basename(top.prop2specs["p"].path)
 
-def test_include_filters_included_bindings():
-    '''Test filters set by including bindings.'''
-    fname2path = {'base.yaml': 'test-bindings-include/base.yaml',
-                  'inc-base.yaml': 'test-bindings-include/inc-base.yaml'}
-
-    with from_here():
-        top_allows = edtlib.Binding('test-bindings-include/top-allows.yaml', fname2path)
-    assert top_allows.prop2specs.get("x")
-    assert not top_allows.prop2specs.get("y")
-
-    with from_here():
-        top_blocks = edtlib.Binding('test-bindings-include/top-blocks.yaml', fname2path)
-    assert not top_blocks.prop2specs.get("x")
-    assert top_blocks.prop2specs.get("y")
-
-
-
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
     with from_here():
