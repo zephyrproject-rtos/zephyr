@@ -2568,8 +2568,6 @@ int supplicant_ap_enable(const struct device *dev,
 		goto out;
 	}
 
-	iface->owner = iface;
-
 	if (iface->state == HAPD_IFACE_ENABLED) {
 		ret = -EBUSY;
 		wpa_printf(MSG_ERROR, "Interface %s is not in disable state", dev->name);
