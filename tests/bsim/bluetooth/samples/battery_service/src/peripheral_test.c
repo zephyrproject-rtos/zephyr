@@ -160,6 +160,14 @@ static void test_bas_peripheral_main(void)
 	/* Main thread waits for the sync signal from other device */
 	bk_sync_wait();
 
+	/*
+	 * Once BLS Additional status service required flag is set to false,
+	 * BCS Immediate service flag is also set to false. BCS char is
+	 * read from central.
+	 */
+	bt_bas_bls_set_service_required(BT_BAS_BLS_SERVICE_REQUIRED_FALSE);
+	bk_sync_wait();
+
 	bst_result = Passed;
 	TEST_PASS_AND_EXIT("Peripheral Test Passed");
 }
