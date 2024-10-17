@@ -25,7 +25,7 @@ ZTEST(publish_stats, test_channel_metadata)
 	zassert_equal(0, zbus_chan_pub_stats_avg_period(&chan));
 
 	/* Should be no different after a second of runtime */
-	k_sleep(K_SECONDS(1));
+	k_sleep(K_TIMEOUT_ABS_MS(1000));
 	zassert_equal(0, zbus_chan_pub_stats_count(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_last_time(&chan));
 	zassert_equal(0, zbus_chan_pub_stats_avg_period(&chan));
