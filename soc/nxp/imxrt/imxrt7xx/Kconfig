@@ -1,0 +1,29 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MIMXRT798S_HIFI4
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select XTENSA_GEN_HANDLERS
+	select GEN_ISR_TABLES
+	select HAS_MCUX
+
+config SOC_MIMXRT798S_HIFI1
+	select XTENSA
+	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
+	select XTENSA_RESET_VECTOR
+	select XTENSA_USE_CORE_CRT1
+	select XTENSA_GEN_HANDLERS
+	select GEN_ISR_TABLES
+	select XTENSA_SMALL_VECTOR_TABLE_ENTRY
+	select HAS_MCUX
+
+if SOC_SERIES_IMXRT7XX
+
+config MCUX_CORE_SUFFIX
+	default "_hifi4" if SOC_MIMXRT798S_HIFI4
+	default "_hifi1" if SOC_MIMXRT798S_HIFI1
+
+endif # SOC_SERIES_IMXRT7XX
