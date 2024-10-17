@@ -10,4 +10,5 @@ ram: 64
 flash: 512
 supported:
   - gpio
+  - ble
 vendor: st
