@@ -2347,22 +2347,43 @@ static int cmd_preset(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP         5
+#define DEFAULT_SCAN_TIMEOUT_SEC 10
 
 static struct broadcast_sink_auto_scan {
 	struct broadcast_sink *broadcast_sink;
 	uint32_t broadcast_id;
+	char broadcast_name[BT_AUDIO_BROADCAST_NAME_LEN_MAX + 1];
 	struct bt_le_per_adv_sync **out_sync;
 } auto_scan = {
 	.broadcast_id = BT_BAP_INVALID_BROADCAST_ID,
 };
 
+struct bt_scan_recv_info {
+	uint32_t broadcast_id;
+	char broadcast_name[BT_AUDIO_BROADCAST_NAME_LEN_MAX + 1];
+};
+
 static void clear_auto_scan(void)
 {
-	if (auto_scan.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
-		memset(&auto_scan, 0, sizeof(auto_scan));
-		auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	memset(&auto_scan, 0, sizeof(auto_scan));
+	auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+}
+
+static void active_scan_timeout(struct k_work *work)
+{
+	int err;
+
+	shell_print(ctx_shell, "Scan timeout");
+
+	err = bt_le_scan_stop();
+	if (err != 0) {
+		shell_error(ctx_shell, "Could not stop scan: %d", err);
+	} else {
+		clear_auto_scan();
 	}
 }
+
+static K_WORK_DELAYABLE_DEFINE(active_scan_timeout_work, active_scan_timeout);
 
 static uint16_t interval_to_sync_timeout(uint16_t interval)
 {
@@ -2381,69 +2402,110 @@ static uint16_t interval_to_sync_timeout(uint16_t interval)
 
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
-	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
+	struct bt_scan_recv_info *sr_info = (struct bt_scan_recv_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
-	uint32_t broadcast_id;
 
-	if (data->type != BT_DATA_SVC_DATA16) {
-		return true;
-	}
-
-	if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
-		return true;
-	}
-
-	if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
-		return true;
-	}
-
-	if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO)) {
-		return true;
-	}
-
-	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	shell_print(ctx_shell,
-		    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X (looking for "
-		    "0x%06X)",
-		    broadcast_id, le_addr, info->sid, auto_scan.broadcast_id);
-
-	if (auto_scan.broadcast_id == broadcast_id && auto_scan.broadcast_sink != NULL &&
-	    auto_scan.broadcast_sink->pa_sync == NULL) {
-		struct bt_le_per_adv_sync_param create_params = {0};
-		int err;
-
-		err = bt_le_scan_stop();
-		if (err != 0) {
-			shell_error(ctx_shell, "Could not stop scan: %d", err);
+	switch (data->type) {
+	case BT_DATA_SVC_DATA16:
+		if (data->data_len < BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE) {
+			return true;
 		}
 
-		bt_addr_le_copy(&create_params.addr, info->addr);
-		create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
-		create_params.sid = info->sid;
-		create_params.skip = PA_SYNC_SKIP;
-		create_params.timeout = interval_to_sync_timeout(info->interval);
-
-		shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
-		err = bt_le_per_adv_sync_create(&create_params, auto_scan.out_sync);
-		if (err != 0) {
-			shell_error(ctx_shell, "Could not create Broadcast PA sync: %d", err);
-		} else {
-			auto_scan.broadcast_sink->pa_sync = *auto_scan.out_sync;
+		if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+			return true;
 		}
-	}
 
-	/* Stop parsing */
-	return false;
+		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
+			return true;
+		}
+
+		sr_info->broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
+		return true;
+	case BT_DATA_BROADCAST_NAME:
+		if (!IN_RANGE(data->data_len, BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+		    BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+			return true;
+		}
+
+		utf8_lcpy(sr_info->broadcast_name, data->data, (data->data_len) + 1);
+		return true;
+	default:
+		return true;
+	}
 }
 
 static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_simple *ad)
 {
-	if (passes_scan_filter(info, ad)) {
-		bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)info);
+	struct bt_scan_recv_info sr_info = { 0 };
+
+	sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+
+	if ((auto_scan.broadcast_id == BT_BAP_INVALID_BROADCAST_ID) &&
+	    (strlen(auto_scan.broadcast_name) == 0U)) {
+		/* no op */
+		return;
+	}
+
+	if (!passes_scan_filter(info, ad)) {
+		return;
+	}
+
+	bt_data_parse(ad, scan_check_and_sync_broadcast, (void *)&sr_info);
+
+	/* Verify that it is a BAP broadcaster*/
+	if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
+		char addr_str[BT_ADDR_LE_STR_LEN];
+		bool identified_broadcast = false;
+
+		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+
+		if (sr_info.broadcast_id == auto_scan.broadcast_id) {
+			identified_broadcast = true;
+		}
+
+		if ((strlen(auto_scan.broadcast_name) != 0U) &&
+		    is_substring(auto_scan.broadcast_name, sr_info.broadcast_name)) {
+			auto_scan.broadcast_id = sr_info.broadcast_id;
+			identified_broadcast = true;
+
+			shell_print(ctx_shell, "Found matched broadcast name '%s' with address %s",
+				    sr_info.broadcast_name, addr_str);
+		}
+
+		if (identified_broadcast) {
+			shell_print(ctx_shell,
+				    "Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X ",
+				    sr_info.broadcast_id, addr_str, info->sid);
+
+			if (auto_scan.broadcast_sink != NULL &&
+			    auto_scan.broadcast_sink->pa_sync == NULL) {
+				struct bt_le_per_adv_sync_param create_params = {0};
+				int err;
+
+				/* Cancel the potentially pending scan timeout work */
+				(void)k_work_cancel_delayable(&active_scan_timeout_work);
+
+				err = bt_le_scan_stop();
+				if (err != 0) {
+					shell_error(ctx_shell, "Could not stop scan: %d", err);
+				}
+
+				bt_addr_le_copy(&create_params.addr, info->addr);
+				create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+				create_params.sid = info->sid;
+				create_params.skip = PA_SYNC_SKIP;
+				create_params.timeout = interval_to_sync_timeout(info->interval);
+
+				shell_print(ctx_shell, "Attempting to PA sync to the broadcaster");
+				err = bt_le_per_adv_sync_create(&create_params, auto_scan.out_sync);
+				if (err != 0) {
+					shell_error(ctx_shell,
+						    "Could not create Broadcast PA sync: %d", err);
+				} else {
+					auto_scan.broadcast_sink->pa_sync = *auto_scan.out_sync;
+				}
+			}
+		}
 	}
 }
 
@@ -3412,7 +3474,7 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 			.options = BT_LE_SCAN_OPT_NONE,
 			.interval = BT_GAP_SCAN_FAST_INTERVAL,
 			.window = BT_GAP_SCAN_FAST_WINDOW,
-			.timeout = 1000, /* 10ms units -> 10 second timeout */
+			.timeout = 0,
 		};
 
 		shell_print(sh, "No PA sync available, starting scanning for broadcast_id");
@@ -3423,6 +3485,10 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 
 			return -ENOEXEC;
 		}
+
+		/* Schedule the k_work to act as a timeout */
+		(void)k_work_reschedule(&active_scan_timeout_work,
+					K_SECONDS(DEFAULT_SCAN_TIMEOUT_SEC));
 
 		auto_scan.broadcast_sink = &default_broadcast_sink;
 		auto_scan.broadcast_id = broadcast_id;
@@ -3440,6 +3506,50 @@ static int cmd_create_broadcast_sink(const struct shell *sh, size_t argc, char *
 			return -ENOEXEC;
 		}
 	}
+
+	return 0;
+}
+
+static int cmd_create_by_broadcast_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	char *broadcast_name;
+	int err = 0;
+
+	broadcast_name = argv[1];
+	if (!IN_RANGE(strlen(broadcast_name), BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+	    BT_AUDIO_BROADCAST_NAME_LEN_MAX)) {
+
+		shell_error(sh, "Broadcast name should be minimum %d "
+			    "and maximum %d characters", BT_AUDIO_BROADCAST_NAME_LEN_MIN,
+			    BT_AUDIO_BROADCAST_NAME_LEN_MAX);
+
+		return -ENOEXEC;
+	}
+
+	const struct bt_le_scan_param param = {
+		.type = BT_LE_SCAN_TYPE_ACTIVE,
+		.options = BT_LE_SCAN_OPT_NONE,
+		.interval = BT_GAP_SCAN_FAST_INTERVAL,
+		.window = BT_GAP_SCAN_FAST_WINDOW,
+		.timeout = 0,
+	};
+
+	shell_print(sh, "Starting scanning for broadcast_name");
+
+	err = bt_le_scan_start(&param, NULL);
+	if (err) {
+		shell_print(sh, "Fail to start scanning: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	/* Schedule the k_work to act as a timeout */
+	(void)k_work_reschedule(&active_scan_timeout_work, K_SECONDS(DEFAULT_SCAN_TIMEOUT_SEC));
+
+	utf8_lcpy(auto_scan.broadcast_name, broadcast_name, strlen(broadcast_name) + 1);
+	auto_scan.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+	auto_scan.broadcast_sink = &default_broadcast_sink;
+	auto_scan.out_sync = &per_adv_syncs[selected_per_adv_sync];
 
 	return 0;
 }
@@ -4061,6 +4171,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 	SHELL_CMD_ARG(create_broadcast_sink, NULL, "0x<broadcast_id>", cmd_create_broadcast_sink, 2,
 		      0),
+	SHELL_CMD_ARG(create_by_broadcast_name, NULL, "0x<broadcast_name>",
+		      cmd_create_by_broadcast_name, 2, 0),
 	SHELL_CMD_ARG(sync_broadcast, NULL,
 		      "0x<bis_index> [[[0x<bis_index>] 0x<bis_index>] ...] "
 		      "[bcode <broadcast code> || bcode_str <broadcast code as string>]",
