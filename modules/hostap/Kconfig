@@ -463,10 +463,6 @@ config ACS
 config IEEE80211AC
 	bool
 
-config IEEE80211R
-	bool
-	default y
-
 config NW_SEL_RELIABILITY
 	bool
 	default y
