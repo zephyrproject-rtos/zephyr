@@ -117,3 +117,8 @@
 	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
 	pinctrl-names = "default";
 };
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};

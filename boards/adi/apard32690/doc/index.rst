@@ -117,6 +117,8 @@ Below interfaces are supported by Zephyr on APARD32690.
 +-----------+------------+------------------------------------+
 | Timer     | on-chip    | counter                            |
 +-----------+------------+------------------------------------+
+| W1        | on-chip    | one wire master                    |
++-----------+------------+------------------------------------+
 
 
 Connections and IOs
