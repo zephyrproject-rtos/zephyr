@@ -7,6 +7,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - gpio
   - adc
   - ble
   - pwm

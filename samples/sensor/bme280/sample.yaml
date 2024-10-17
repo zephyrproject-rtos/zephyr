@@ -17,19 +17,18 @@ tests:
   sample.sensor.bme280.spi:
     harness: console
     tags: sensors
-    depends_on:
-      - spi
-      - bme280
-    extra_args: "DTC_OVERLAY_FILE=arduino_spi.overlay"
     harness_config:
       type: one_line
       regex:
         - "temp: (.*); press: (.*); humidity: (.*)"
       fixture: fixture_spi_bme280
+    platform_allow:
+      - ruuvi_ruuvitag
   sample.sensor.bme280.rpi_pico.pio:
     harness: console
     tags: sensors
-    platform_allow: rpi_pico
+    platform_allow:
+      - rpi_pico
     integration_platforms:
       - rpi_pico
     extra_args: "DTC_OVERLAY_FILE=rpi_pico_spi_pio.overlay"

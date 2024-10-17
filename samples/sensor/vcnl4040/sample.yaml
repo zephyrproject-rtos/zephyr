@@ -3,8 +3,6 @@ sample:
 tests:
   sample.sensor.vcnl4040:
     harness: sensor
-    platform_allow: adafruit_feather_stm32f405
-    integration_platforms:
+    platform_allow:
       - adafruit_feather_stm32f405
     tags: sensors
-    filter: dt_compat_enabled("vishay,vcnl4040")

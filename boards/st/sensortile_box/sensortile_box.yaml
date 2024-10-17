@@ -15,6 +15,7 @@ supported:
   - usb device
   - nvs
   - counter
+  - lps22hh
 ram: 640
 flash: 2048
 vendor: st

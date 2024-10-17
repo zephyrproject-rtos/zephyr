@@ -4,8 +4,10 @@ tests:
   sample.sensor.lsm6dso.i2c_on_i3c_bus:
     harness: console
     tags: sensors
-    depends_on: i3c
-    filter: dt_compat_enabled("st,lsm6dso")
+    depends_on:
+      - i3c
+    platform_allow:
+      - mimxrt685_evk/mimxrt685s/cm33
     timeout: 15
     build_only: true
     harness_config:

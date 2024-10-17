@@ -7,3 +7,5 @@ tests:
       - samples
       - sensor
     depends_on: arduino_i2c
+    platform_allow:
+      - nrf52840dk/nrf52840

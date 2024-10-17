@@ -4,7 +4,8 @@ tests:
   sample.sensor.isl29035:
     tags: sensors
     depends_on: i2c
-    platform_allow: nrf52dk/nrf52832
+    platform_allow:
+      - nrf52dk/nrf52832
     integration_platforms:
       - nrf52dk/nrf52832
     harness: console

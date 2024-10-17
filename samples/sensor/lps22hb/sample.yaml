@@ -14,3 +14,5 @@ tests:
         - "Temperature: (.*)"
         - "Relative Humidity: (.*)"
       fixture: fixture_i2c_lps22hb
+    integration_platforms:
+      - disco_l475_iot1

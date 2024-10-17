@@ -3,7 +3,8 @@ sample:
 tests:
   sample.sensor.apds9960:
     harness: console
-    platform_allow: reel_board
+    platform_allow:
+      - reel_board
     integration_platforms:
       - reel_board
     tags: sensors
@@ -19,7 +20,8 @@ tests:
       fixture: fixture_i2c_apds9960
   sample.sensor.apds9960.trigger:
     harness: console
-    platform_allow: reel_board
+    platform_allow:
+      - reel_board
     integration_platforms:
       - reel_board
     tags: sensors

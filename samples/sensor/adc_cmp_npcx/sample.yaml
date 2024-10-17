@@ -2,7 +2,8 @@ sample:
   description: Demonstration of nuvoton NPCX ADC comparator driver
   name: NPCX ADC comparator sample
 common:
-  platform_allow: npcx9m6f_evb
+  platform_allow:
+    - npcx9m6f_evb
   integration_platforms:
     - npcx9m6f_evb
   tags:
