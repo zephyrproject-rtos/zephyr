@@ -1,0 +1,19 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+    networks:
+      - net-tools
+  mqttsn-gateway:
+    image: kyberpunk/paho
+    volumes:
+      - ./gateway.conf:/etc/paho/gateway.conf:ro
+    restart: unless-stopped
+    networks:
+      - net-tools
+networks:
+  net-tools:
+    name: net-tools0
+    external: true

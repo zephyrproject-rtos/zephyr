@@ -27,6 +27,18 @@ config MQTT_SN_LIB_MAX_TOPIC_SIZE
 	int "Maximum topic length"
 	default 64
 
+config MQTT_SN_LIB_MAX_GATEWAYS
+	int "Maximum number of gateways to store internally"
+	default 2
+
+config MQTT_SN_LIB_MAX_ADDR_SIZE
+	int "Maximum address size for the transport"
+	default 21
+
+config MQTT_SN_LIB_BROADCAST_RADIUS
+	int "Radius for broadcast messages"
+	default 1
+
 config MQTT_SN_LIB_MAX_PUBLISH
 	int "Number of publishes that can be in-flight at the same time"
 	default 5
@@ -50,6 +62,18 @@ config MQTT_SN_LIB_N_RETRY
 config MQTT_SN_LIB_T_RETRY
 	int "Time (seconds) to wait for responses"
 	default 10
+
+config MQTT_SN_LIB_T_SEARCHGW
+	int "Max time (seconds) to wait before sending SEARCHGW"
+	default 10
+
+config MQTT_SN_LIB_T_GWINFO
+	int "Max time (seconds) to wait before sending GWINFO"
+	default 10
+
+config MQTT_SN_LIB_N_ADV
+	int "Number of missed Advertise messages before considering GW lost"
+	default 2
 
 module=MQTT_SN
 module-dep=NET_LOG

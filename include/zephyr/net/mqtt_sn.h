@@ -84,7 +84,7 @@ enum mqtt_sn_return_code {
 /** @brief Abstracts memory buffers. */
 struct mqtt_sn_data {
 	const uint8_t *data; /**< Pointer to data. */
-	uint16_t size;	     /**< Size of data, in bytes. */
+	size_t size;	     /**< Size of data, in bytes. */
 };
 
 /**
@@ -114,10 +114,13 @@ struct mqtt_sn_data {
 enum mqtt_sn_evt_type {
 	MQTT_SN_EVT_CONNECTED,	  /**< Connected to a gateway */
 	MQTT_SN_EVT_DISCONNECTED, /**< Disconnected */
-	MQTT_SN_EVT_ASLEEP,	  /**< Entered ASLEEP state */
-	MQTT_SN_EVT_AWAKE,	  /**< Entered AWAKE state */
+	MQTT_SN_EVT_ASLEEP,		  /**< Entered ASLEEP state */
+	MQTT_SN_EVT_AWAKE,		  /**< Entered AWAKE state */
 	MQTT_SN_EVT_PUBLISH,	  /**< Received a PUBLISH message */
-	MQTT_SN_EVT_PINGRESP	  /**< Received a PINGRESP */
+	MQTT_SN_EVT_PINGRESP,	  /**< Received a PINGRESP */
+	MQTT_SN_EVT_ADVERTISE,	  /**< Received a ADVERTISE */
+	MQTT_SN_EVT_GWINFO,		  /**< Received a GWINFO */
+	MQTT_SN_EVT_SEARCHGW	  /**< Received a SEARCHGW */
 };
 
 /**
@@ -180,16 +183,27 @@ struct mqtt_sn_transport {
 	void (*deinit)(struct mqtt_sn_transport *transport);
 
 	/**
-	 * Will be called by the library when it wants to send a message.
+	 * @brief Will be called by the library when it wants to send a message.
+	 *
+	 * Implementations should follow sendto conventions with exceptions.
+	 * When dest_addr == NULL, message should be broadcast with addrlen being
+	 * the broadcast radius. This should also handle setting up/destroying
+	 * connections as required when the address changes.
+	 *
+	 * @return ENOERR on connection+transmission success, Negative values
+	 *		signal errors.
 	 */
-	int (*msg_send)(struct mqtt_sn_client *client, void *buf, size_t sz);
+	int (*sendto)(struct mqtt_sn_client *client, void *buf, size_t sz,
+		      const void *dest_addr, size_t addrlen);
 
 	/**
 	 * @brief Will be called by the library when it wants to receive a message.
 	 *
-	 * Implementations should follow recv conventions.
+	 * Implementations should follow recvfrom conventions with the exception
+	 * of a NULL src_addr being a broadcast message.
 	 */
-	ssize_t (*recv)(struct mqtt_sn_client *client, void *buffer, size_t length);
+	ssize_t (*recvfrom)(struct mqtt_sn_client *client, void *rx_buf,
+			    size_t rx_len, void *src_addr, size_t *addrlen);
 
 	/**
 	 * @brief Check if incoming data is available.
@@ -215,12 +229,13 @@ struct mqtt_sn_transport_udp {
 	/** Socket FD */
 	int sock;
 
-	/** Address of the gateway */
-	struct sockaddr gwaddr;
-	socklen_t gwaddrlen;
+	/** Address of broadcasts */
+	struct sockaddr bcaddr;
+	socklen_t bcaddrlen;
 };
 
-#define UDP_TRANSPORT(transport) CONTAINER_OF(transport, struct mqtt_sn_transport_udp, tp)
+#define UDP_TRANSPORT(transport) \
+	CONTAINER_OF(transport, struct mqtt_sn_transport_udp, tp)
 
 /**
  * @brief Initialize the UDP transport.
@@ -229,7 +244,8 @@ struct mqtt_sn_transport_udp {
  * @param[in] gwaddr Pre-initialized gateway address
  * @param[in] addrlen Size of the gwaddr structure.
  */
-int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct sockaddr *gwaddr,
+int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp,
+			       struct sockaddr *gwaddr,
 			       socklen_t addrlen);
 #endif
 
@@ -265,6 +281,9 @@ struct mqtt_sn_client {
 	/** Buffer for incoming data */
 	struct net_buf_simple rx;
 
+	/** Buffer for incoming data sender address */
+	struct net_buf_simple rx_addr;
+
 	/** Event callback */
 	mqtt_sn_evt_cb_t evt_cb;
 
@@ -277,6 +296,9 @@ struct mqtt_sn_client {
 	/** List of registered topics */
 	sys_slist_t topic;
 
+	/** List of found gateways */
+	sys_slist_t gateway;
+
 	/** Current state of the MQTT-SN client */
 	int state;
 
@@ -285,6 +307,15 @@ struct mqtt_sn_client {
 
 	/** Number of retries for failed ping attempts */
 	uint8_t ping_retries;
+
+	/** Timestamp of the next SEARCHGW transmission */
+	int64_t ts_searchgw;
+
+	/** Timestamp of the next GWINFO transmission */
+	int64_t ts_gwinfo;
+
+	/** Radius of the next GWINFO transmission */
+	int64_t radius_gwinfo;
 
 	/** Delayable work structure for processing MQTT-SN events */
 	struct k_work_delayable process_work;
@@ -304,9 +335,14 @@ struct mqtt_sn_client {
  *
  * @return 0 or a negative error code (errno.h) indicating reason of failure.
  */
-int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data *client_id,
-			struct mqtt_sn_transport *transport, mqtt_sn_evt_cb_t evt_cb, void *tx,
-			size_t txsz, void *rx, size_t rxsz);
+int mqtt_sn_client_init(struct mqtt_sn_client *client,
+			const struct mqtt_sn_data *client_id,
+			struct mqtt_sn_transport *transport,
+			mqtt_sn_evt_cb_t evt_cb,
+			void *tx,
+			size_t txsz,
+			void *rx,
+			size_t rxsz);
 
 /**
  * @brief Deinitialize the client.
@@ -318,6 +354,21 @@ int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data
 void mqtt_sn_client_deinit(struct mqtt_sn_client *client);
 
 /**
+ * @brief Manually add a Gateway, bypasing the normal search process.
+ *
+ * This function manually creates a gateway that is stored internal to the library.
+ *
+ * @param client      The MQTT-SN client to connect.
+ * @param gw_id       Single byte Gateway Identifier
+ * @param duration    Seconds between pings
+ * @param gw_addr     Address data structure to be used by the transport layer.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_add_gw(struct mqtt_sn_client *client, uint8_t gw_id,
+		   struct mqtt_sn_data gw_addr);
+
+/**
  * @brief Connect the client.
  *
  * @param client            The MQTT-SN client to connect.
@@ -326,7 +377,19 @@ void mqtt_sn_client_deinit(struct mqtt_sn_client *client);
  *
  * @return 0 or a negative error code (errno.h) indicating reason of failure.
  */
-int mqtt_sn_connect(struct mqtt_sn_client *client, bool will, bool clean_session);
+int mqtt_sn_search(struct mqtt_sn_client *client, uint8_t radius);
+
+/**
+ * @brief Connect the client.
+ *
+ * @param client            The MQTT-SN client to connect.
+ * @param will              Flag indicating if a Will message should be sent.
+ * @param clean_session     Flag indicating if a clean session should be started.
+ *
+ * @return 0 or a negative error code (errno.h) indicating reason of failure.
+ */
+int mqtt_sn_connect(struct mqtt_sn_client *client, bool will,
+		    bool clean_session);
 
 /**
  * @brief Disconnect the client.
