@@ -436,6 +436,7 @@ static int wpas_config_process_blob(struct wpa_config *config, char *name, uint8
 
 	return 0;
 }
+#endif
 
 static const struct wifi_cipher_desc ciphers[] = {
 	{ WPA_CAPA_ENC_CCMP_256, "CCMP-256" },
@@ -461,7 +462,6 @@ static struct wifi_eap_config eap_config[] = {
 	{ WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2, "TTLS", "auth=MSCHAPV2"},
 	{ WIFI_SECURITY_TYPE_EAP_PEAP_TLS, "PEAP", "auth=TLS"},
 };
-#endif
 
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
