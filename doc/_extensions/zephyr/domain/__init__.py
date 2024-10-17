@@ -806,11 +806,11 @@ class ZephyrDomain(Domain):
             # only boards that do have a documentation page are to be considered as valid objects
             if "docname" in board:
                 yield (
-                    board["id"],
+                    board["name"],
                     board["full_name"],
                     "board",
                     board["docname"],
-                    board["id"],
+                    board["name"],
                     1,
                 )
 
