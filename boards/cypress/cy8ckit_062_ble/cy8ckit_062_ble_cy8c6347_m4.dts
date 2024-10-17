@@ -11,7 +11,7 @@
 #include "cy8ckit_062_ble_common.dtsi"
 
 / {
-	model = "Cypress PSoC6 BLE Pioneer Kit";
+	model = "Cypress PSOC 6 BLE Pioneer Kit";
 	compatible = "cypress,cy8c6xx7_cm4", "cypress,psoc6";
 
 	chosen {

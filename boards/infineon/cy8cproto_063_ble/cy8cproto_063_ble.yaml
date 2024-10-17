@@ -4,7 +4,7 @@
 #
 
 identifier: cy8cproto_063_ble
-name: CY8CPROTO-063-BLE PSoC™ 6 BLE Prototyping Kit
+name: CY8CPROTO-063-BLE PSOC™ 6 BLE Prototyping Kit
 type: mcu
 arch: arm
 ram: 288
