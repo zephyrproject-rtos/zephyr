@@ -145,16 +145,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		suit_storage_partition: memory@e1eb000 {
-			reg = <0xe1eb000 DT_SIZE_K(24)>;
-		};
-
-		cpurad_uicr_ext: memory@e1ff000 {
-			reg = <0xe1ff000 DT_SIZE_K(2)>;
-		};
-
-		cpuapp_uicr_ext: memory@e1ff800 {
-			reg = <0xe1ff800 DT_SIZE_K(2)>;
+		suit_storage_partition: memory@e1ed000 {
+			reg = <0xe1ed000 DT_SIZE_K(20)>;
 		};
 	};
 
@@ -217,14 +209,12 @@
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
 			domain = <2>;
-			ptr-ext-uicr = <&cpuapp_uicr_ext>;
 		};
 
 		cpurad_uicr: uicr@fffa000 {
 			compatible = "nordic,nrf-uicr-v2";
 			reg = <0xfffa000 DT_SIZE_K(2)>;
 			domain = <3>;
-			ptr-ext-uicr = <&cpurad_uicr_ext>;
 		};
 
 		ficr: ficr@fffe000 {
