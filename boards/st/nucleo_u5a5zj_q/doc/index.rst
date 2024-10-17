@@ -204,6 +204,8 @@ The Zephyr nucleo_u5a5zj_q board configuration supports the following hardware f
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | rtc                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB 2.0 HS                          |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -245,13 +247,15 @@ Default Zephyr Peripheral Mapping:
 - UART_2_TX : PD5
 - UART_2_RX : PD6
 - USER_PB : PC13
+- USB_DM : PA11
+- USB_DP : PA12
 
 System Clock
 ------------
 
 Nucleo U5A5ZJ Q System Clock could be driven by internal or external oscillator,
 as well as main PLL clock. By default System clock is driven by PLL clock at
-160MHz, driven by 4MHz medium speed internal oscillator.
+160MHz, driven by the 16MHz high speed oscillator.
 
 Serial Port
 -----------
@@ -259,13 +263,18 @@ Serial Port
 Nucleo U5A5ZJ Q board has 6 U(S)ARTs. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
 
-
 Backup SRAM
 -----------
 
 In order to test backup SRAM you may want to disconnect VBAT from VDD. You can
 do it by removing ``SB50`` jumper on the back side of the board.
 
+Using USB
+---------
+
+USB 2.0 high speed (HS) operation requires the HSE clock source to be populated
+and enabled.  The Nucleo U5A5ZJ-Q includes the 16MHz oscillator and required
+jumper settings.
 
 Programming and Debugging
 *************************
