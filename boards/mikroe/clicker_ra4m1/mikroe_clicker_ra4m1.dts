@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,interrupt-controller = &icu;
 	};
 
 	leds {
@@ -67,12 +68,43 @@
 	};
 };
 
+&ioport0 {
+	/delete-property/ port-irq2-pins;  /* P002: Not connected */
+	/delete-property/ port-irq3-pins;  /* P004: Not connected */
+	/delete-property/ port-irq6-pins;  /* P000: Confilict with P301/T2 */
+	/delete-property/ port-irq7-pins;  /* P001: Not connected */
+	/delete-property/ port-irq10-pins; /* P005: Not available */
+	/delete-property/ port-irq15-pins; /* P011: Connect to GND */
+};
+
+&ioport1 {
+	/delete-property/ port-irq0-pins; /* P105: Not connected */
+	/delete-property/ port-irq4-pins; /* P111: Not connected */
+};
+
+&ioport2 {
+	/delete-property/ port-irq0-pins; /* P206: Conflict with P400, choose either. */
+	/delete-property/ port-irq1-pins; /* P205: Conflict with P101, choose either. */
+	/delete-property/ port-irq2-pins; /* P213: XTAL */
+	/delete-property/ port-irq3-pins; /* P212: EXTAL */
+};
+
 &ioport3 {
+	/delete-property/ port-irq8-pins; /* P305: Not available */
 	status = "okay";
 };
 
 &ioport4 {
+	/delete-property/ port-irq5-pins; /* P410: Conflict with P302/MBINT */
+	/delete-property/ port-irq6-pins; /* P409: Connect to LED */
+	/delete-property/ port-irq7-pins; /* P408: Connect to LED */
+	/delete-property/ port-irq8-pins; /* P415: Not available */
+	/delete-property/ port-irq9-pins; /* P414: Conflict with P304/T1 */
 	status = "okay";
+};
+
+&ioport5 {
+	/delete-property/ port-irq14-pins; /* P505: Not available */
 };
 
 &fcu {

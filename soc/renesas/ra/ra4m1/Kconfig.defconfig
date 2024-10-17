@@ -6,4 +6,8 @@ if SOC_SERIES_RA4M1
 config NUM_IRQS
 	default 32
 
+config GEN_ISR_TABLES_SCRIPT
+	string
+	default "${ZEPHYR_BASE}/soc/renesas/ra/common/gen_isr_tables.py"
+
 endif # SOC_SERIES_RA4M1
