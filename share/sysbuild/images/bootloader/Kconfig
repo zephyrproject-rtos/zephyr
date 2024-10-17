@@ -150,7 +150,7 @@ config BOOT_SIGNATURE_KEY_FILE
 
 config BOOT_ENCRYPTION
 	bool "Encrypted image support"
-	depends on !BOOT_SIGNATURE_TYPE_NONE
+	depends on !BOOT_SIGNATURE_TYPE_NONE && !MCUBOOT_MODE_DIRECT_XIP && !MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT && !MCUBOOT_MODE_FIRMWARE_UPDATER
 	help
 	  Support encrypted images.
 
