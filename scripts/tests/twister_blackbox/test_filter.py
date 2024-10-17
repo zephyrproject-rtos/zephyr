@@ -14,6 +14,7 @@ import sys
 import json
 import re
 
+# pylint: disable=no-name-in-module
 from conftest import ZEPHYR_BASE, TEST_DATA, testsuite_filename_mock
 from twisterlib.testplan import TestPlan
 
@@ -83,11 +84,12 @@ class TestFilter:
     @pytest.mark.parametrize(
         'tag, expected_test_count',
         [
-            ('device', 5),   # dummy.agnostic.group1.subgroup1.assert
-                             # dummy.agnostic.group1.subgroup2.assert
-                             # dummy.agnostic.group2.assert1
-                             # dummy.agnostic.group2.assert2
-                             # dummy.agnostic.group2.assert3
+            ('device', 6),   # dummy.agnostic.group1.subgroup1.a1_1_tests.assert
+                             # dummy.agnostic.group1.subgroup2.a2_2_tests.assert
+                             # dummy.agnostic.group2.a2_tests.assert1
+                             # dummy.agnostic.group2.a2_tests.assert2
+                             # dummy.agnostic.group2.a2_tests.assert3
+                             # dummy.agnostic.group2.a3_tests.assert1
             ('agnostic', 1)  # dummy.device.group.assert
         ],
         ids=['no device', 'no agnostic']
@@ -144,7 +146,7 @@ class TestFilter:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 5
+        assert len(filtered_j) == 6
 
     @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', testsuite_filename_mock)
     def test_enable_slow_only(self, out_path):
@@ -172,7 +174,7 @@ class TestFilter:
 
         assert str(sys_exit.value) == '0'
 
-        assert len(filtered_j) == 3
+        assert len(filtered_j) == 4
 
     @pytest.mark.parametrize(
         'arch, expected',
