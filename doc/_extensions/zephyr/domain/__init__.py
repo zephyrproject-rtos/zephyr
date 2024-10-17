@@ -578,13 +578,16 @@ class BoardCatalogDirective(SphinxDirective):
         if self.env.app.builder.format == "html":
             self.env.domaindata["zephyr"]["has_board_catalog"][self.env.docname] = True
 
-            # As it is not expected that more than one board-catalog directive is used across
-            # the documentation, and since the generation is only taking a few seconds,  we don't
-            # store the catalog in the domain data. It might change in the future if the generation
-            # becomes more expensive.
-            board_catalog = get_catalog()
+            domain_data = self.env.domaindata["zephyr"]
             renderer = SphinxRenderer([TEMPLATES_DIR])
-            rendered = renderer.render("board-catalog.html", {"catalog": board_catalog})
+            rendered = renderer.render(
+                "board-catalog.html",
+                {
+                    "boards": domain_data["boards"],
+                    "vendors": domain_data["vendors"],
+                    "socs": domain_data["socs"],
+                },
+            )
             return [nodes.raw("", rendered, format="html")]
         else:
             return [nodes.paragraph(text="Board catalog is only available in HTML.")]
@@ -804,6 +807,13 @@ def install_static_assets_as_needed(
         app.add_js_file("js/board-catalog.js")
 
 
+def load_board_catalog_into_domain(app: Sphinx) -> None:
+    board_catalog = get_catalog()
+    app.env.domaindata["zephyr"]["boards"] = board_catalog["boards"]
+    app.env.domaindata["zephyr"]["vendors"] = board_catalog["vendors"]
+    app.env.domaindata["zephyr"]["socs"] = board_catalog["socs"]
+
+
 def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
 
@@ -820,6 +830,8 @@ def setup(app):
         "builder-inited",
         (lambda app: app.config.html_static_path.append(RESOURCES_DIR.as_posix())),
     )
+    app.connect("builder-inited", load_board_catalog_into_domain)
+
     app.connect("html-page-context", install_static_assets_as_needed)
     app.connect("env-updated", compute_sample_categories_hierarchy)
 
