@@ -261,23 +261,6 @@ int supplicant_get_rts_threshold(const struct device *dev, unsigned int *rts_thr
 int supplicant_btm_query(const struct device *dev, uint8_t reason);
 #endif
 
-/** Send legacy roam
- *
- * @param dev Pointer to the device structure for the driver instance.
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_legacy_roam(const struct device *dev);
-
-/** Judge ap whether support the capability
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param capab is the capability to judge
- *
- * @return 1 if support, 0 if not support
- */
-int supplicant_bss_ext_capab(const struct device *dev, enum wifi_ext_capab capab);
-
 /** Get Wi-Fi connection parameters recently used
  *
  * @param dev Pointer to the device structure for the driver instance
