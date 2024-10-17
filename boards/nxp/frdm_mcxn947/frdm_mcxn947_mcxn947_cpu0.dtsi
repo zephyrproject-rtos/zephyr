@@ -192,3 +192,7 @@ zephyr_udc0: &usb1 {
 &flexio0 {
 	status = "okay";
 };
+
+&mrt0_channel0 {
+	status = "okay";
+};

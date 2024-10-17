@@ -101,6 +101,8 @@ The FRDM-MCXN947 board configuration supports the following hardware features:
 | DISPLAY   | on-chip    | flexio; MIPI-DBI. Tested with       |
 |           |            | :ref:`lcd_par_s035`                 |
 +-----------+------------+-------------------------------------+
+| MRT       | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 Targets available
 ==================
