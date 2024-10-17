@@ -15,3 +15,8 @@ properties:
     required: true
     type: phandle
     description: the connected camera sensor
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml

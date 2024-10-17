@@ -18,3 +18,7 @@ properties:
     description: |
       The PWDN pin is asserted to disable the sensor. The sensor
       receives this as an active-high signal.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
