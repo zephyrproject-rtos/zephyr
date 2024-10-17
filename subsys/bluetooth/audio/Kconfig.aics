@@ -19,7 +19,7 @@ config BT_AICS_MAX_INSTANCE_COUNT
 config BT_AICS
 	bool # hidden
 	default y if BT_AICS_MAX_INSTANCE_COUNT > 0
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  This hidden option enables support for Audio Input Control Service.
 

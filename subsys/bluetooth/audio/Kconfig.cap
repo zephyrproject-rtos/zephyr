@@ -20,7 +20,7 @@ config BT_CAP_ACCEPTOR_SET_MEMBER
 	bool "Common Audio Profile Acceptor Role Set Member support"
 	depends on BT_CAP_ACCEPTOR
 	depends on BT_CSIP_SET_MEMBER
-	select BT_GATT_DYNAMIC_DB
+	depends on BT_GATT_DYNAMIC_DB
 	help
 	  Enabling this will allow a CAP acceptor to be a set member.
 	  Enabling this will require a manual register of the CAS service.
