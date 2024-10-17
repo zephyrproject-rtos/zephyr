@@ -275,7 +275,7 @@ int can_mcan_get_capabilities(const struct device *dev, can_mode_t *cap)
 {
 	ARG_UNUSED(dev);
 
-	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	*cap = CAN_MODE_NORMAL | CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 
 	if (IS_ENABLED(CONFIG_CAN_MANUAL_RECOVERY_MODE)) {
 		*cap |=  CAN_MODE_MANUAL_RECOVERY;
@@ -373,7 +373,7 @@ int can_mcan_stop(const struct device *dev)
 
 int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 {
-	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY;
+	can_mode_t supported = CAN_MODE_LOOPBACK | CAN_MODE_LISTENONLY | CAN_MODE_ONE_SHOT;
 	struct can_mcan_data *data = dev->data;
 	uint32_t cccr;
 	uint32_t test;
@@ -421,6 +421,13 @@ int can_mcan_set_mode(const struct device *dev, can_mode_t mode)
 		cccr |= CAN_MCAN_CCCR_MON;
 	} else {
 		cccr &= ~CAN_MCAN_CCCR_MON;
+	}
+
+	if ((mode & CAN_MODE_ONE_SHOT) != 0) {
+		/* No automatic retransmission */
+		cccr |= CAN_MCAN_CCCR_DAR;
+	} else {
+		cccr &= ~CAN_MCAN_CCCR_DAR;
 	}
 
 #ifdef CONFIG_CAN_FD_MODE
