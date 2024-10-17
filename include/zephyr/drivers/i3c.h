@@ -1018,6 +1018,9 @@ struct i3c_device_desc {
 		uint8_t max_ibi;
 	} data_length;
 
+	/** Controller Handoff Delay Parameters */
+	uint8_t crhdly1;
+
 	/** Describes advanced (Target) capabilities and features */
 	struct {
 		union {
@@ -1069,6 +1072,28 @@ struct i3c_device_desc {
 		 */
 		uint8_t getcap4;
 	} getcaps;
+
+	/* Describes Controller Feature Capabilities */
+	struct {
+		/**
+		 * CRCAPS1
+		 * - Bit[0]: Hot-Join Support
+		 * - Bit[1]: Group Management Support
+		 * - Bit[2]: Multi-Lane Support
+		 * - Bit[7:3]: Reserved
+		 */
+		uint8_t crcaps1;
+
+		/**
+		 * CRCAPS2
+		 * - Bit[0]: In-Band Interrupt Support
+		 * - Bit[1]: Controller Pass-Back
+		 * - Bit[2]: Deep Sleep Capable
+		 * - Bit[3]: Delayed Controller Handoff
+		 * - Bit[7:4]: Reserved
+		 */
+		uint8_t crcaps2;
+	} crcaps;
 
 	/** @cond INTERNAL_HIDDEN */
 	/**
@@ -2129,6 +2154,33 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_deftgts(const struct device *dev);
+
+/**
+ * @brief Calculate odd parity
+ *
+ * Calculate the Odd Parity of a Target Address.
+ *
+ * @param p The 7b target dynamic address
+ *
+ * @return The odd parity bit
+ */
+uint8_t i3c_odd_parity(uint8_t p);
+
+/**
+ * @brief Perform Controller Handoff
+ *
+ * This performs the controller handoff according to 5.1.7.1 of
+ * I3C v1.1.1 Specification.
+ *
+ * @param target I3C target device descriptor.
+ * @param requested True if the target requested the Handoff, False if
+ * the active controller is passing it to a secondary controller
+ *
+ * @retval 0 if successful.
+ * @retval -EIO General Input/Output error.
+ * @retval -EBUSY Target cannot accept Controller Handoff
+ */
+int i3c_device_controller_handoff(const struct i3c_device_desc *target, bool requested);
 
 /*
  * This needs to be after declaration of struct i3c_driver_api,
