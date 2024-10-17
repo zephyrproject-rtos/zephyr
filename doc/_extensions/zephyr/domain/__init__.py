@@ -586,6 +586,8 @@ class BoardCatalogDirective(SphinxDirective):
             renderer = SphinxRenderer([TEMPLATES_DIR])
             rendered = renderer.render("board-catalog.html", {"catalog": board_catalog})
             return [nodes.raw("", rendered, format="html")]
+        else:
+            return [nodes.paragraph(text="Board catalog is only available in HTML.")]
 
 
 class ZephyrDomain(Domain):
