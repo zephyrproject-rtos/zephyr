@@ -20,12 +20,164 @@
 	};
 
 	clocks {
-		clk_hfxo: clk-hfxo {
+		/* Oscillators */
+		fsrco: fsrco {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(20)>;
+		};
+		clk_hfxo: hfxo: hfxo {
 			#clock-cells = <0>;
 			compatible = "silabs,hfxo";
 			clock-frequency = <DT_FREQ_M(39)>;
 			ctune = <140>;
 			precision = <50>;
+			status = "disabled";
+		};
+		hfxort: hfxort {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfxo>;
+		};
+		lfxo: lfxo {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-lfxo";
+			clock-frequency = <32768>;
+			ctune = <63>;
+			precision = <50>;
+			timeout = <4096>;
+			status = "disabled";
+		};
+		hfrcodpll: hfrcodpll {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-hfrcodpll";
+			clock-frequency = <DT_FREQ_M(19)>;
+		};
+		hfrcodpllrt: hfrcodpllrt {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		hfrcoem23: hfrcoem23 {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-hfrcoem23";
+			clock-frequency = <DT_FREQ_M(19)>;
+		};
+		lfrco: lfrco {
+			#clock-cells = <0>;
+			compatible = "silabs,series2-lfrco";
+			clock-frequency = <32768>;
+		};
+		ulfrco: ulfrco {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <1000>;
+		};
+		clkin0: clkin0 {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(38)>;
+		};
+		/* Clock tree */
+		sysclk: sysclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		hclk: hclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&sysclk>;
+			/* Divider 1, 2, 4, 8, or 16 */
+			clock-div = <1>;
+		};
+		pclk: pclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+			/* Divider 1 or 2 */
+			clock-div = <2>;
+		};
+		lspclk: lspclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&pclk>;
+			/* Fixed divider of 2 */
+			clock-div = <2>;
+		};
+		hclkdiv1024: hclkdiv1024 {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+			/* Fixed divider of 1024 */
+			clock-div = <1024>;
+		};
+		traceclk: traceclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&sysclk>;
+			/* Divider 1, 2, 3 or 4 */
+			clock-div = <1>;
+		};
+		em01grpaclk: em01grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		em01grpcclk: em01grpcclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hfrcodpll>;
+		};
+		iadcclk: iadcclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
+		};
+		em23grpaclk: em23grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		em4grpaclk: em4grpaclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		sysrtcclk: sysrtcclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		wdog0clk: wdog0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		wdog1clk: wdog1clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&lfrco>;
+		};
+		pcnt0clk: pcnt0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em23grpaclk>;
+		};
+		eusart0clk: eusart0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpcclk>;
+		};
+		systickclk: systickclk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&hclk>;
+		};
+		vdac0clk: vdac0clk {
+			#clock-cells = <0>;
+			compatible = "fixed-factor-clock";
+			clocks = <&em01grpaclk>;
 		};
 	};
 
@@ -229,6 +381,13 @@
 			clocks = <&cmu CLOCK_IADC0 CLOCK_BRANCH_IADCCLK>;
 			status = "disabled";
 			#io-channel-cells = <1>;
+		};
+
+		dcdc: dcdc@50094000 {
+			compatible = "silabs,series2-dcdc";
+			reg = <0x50094000 0x4000>;
+			interrupts = <53 0>;
+			status = "disabled";
 		};
 	};
 
