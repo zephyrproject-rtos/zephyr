@@ -2374,21 +2374,17 @@ static const struct tcpc_driver_api numaker_tcpc_driver_api = {
 								   : 0)
 
 /* UTCPD.VBVOL.VBSCALE cast */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST(inst) NUMAKER_UTCPD_VBUS_DIVIDE_CAST_NO_DIVIDE(inst)
-/* no_divide */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_NO_DIVIDE(inst)                                             \
-	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, no_divice),                  \
-		    ({.bit = (0 << UTCPD_VBVOL_VBSCALE_Pos), .value = 1}),                         \
+#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST(inst) NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)
+/* divide_20 */
+#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)                                             \
+	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, divide_20),                  \
+		    ({.bit = (0 << UTCPD_VBVOL_VBSCALE_Pos), .value = 20}),                        \
 		    (NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_10(inst)))
 /* divide_10 */
 #define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_10(inst)                                             \
 	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, divide_10),                  \
 		    ({.bit = (1 << UTCPD_VBVOL_VBSCALE_Pos), .value = 10}),                        \
-		    (NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)))
-/* divide_20 */
-#define NUMAKER_UTCPD_VBUS_DIVIDE_CAST_DIVIDE_20(inst)                                             \
-	COND_CODE_1(DT_ENUM_HAS_VALUE(DT_DRV_INST(inst), vbus_divide, divide_20),                  \
-		    ({.bit = (2 << UTCPD_VBVOL_VBSCALE_Pos), .value = 20}), (no_divide error))
+		    (vbus-divide error))
 
 /* UTCPD.PINPL */
 #define NUMAKER_UTCPD_PINPL_INIT(inst)                                                             \
