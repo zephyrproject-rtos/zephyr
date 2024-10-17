@@ -81,7 +81,10 @@ else()
   message(STATUS "Found west (found suitable version \"${west_version}\", minimum required is \"${MIN_WEST_VERSION}\")")
 
   execute_process(
-    COMMAND ${WEST} topdir
+    COMMAND ${CMAKE_COMMAND} -E env
+    # Prevent colorama from using colors
+    TERM=none
+    ${WEST} topdir
     OUTPUT_VARIABLE WEST_TOPDIR
     ERROR_QUIET
     RESULT_VARIABLE west_topdir_result
