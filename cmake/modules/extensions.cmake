@@ -1812,7 +1812,10 @@ function(zephyr_blobs_verify)
   endif()
 
   execute_process(
-    COMMAND ${WEST} blobs list ${BLOBS_VERIFY_MODULE} --format "{status} {abspath}"
+    COMMAND ${CMAKE_COMMAND} -E env
+    # Prevent colorama from using colors
+    TERM=none
+    ${WEST} blobs list ${BLOBS_VERIFY_MODULE} --format "{status} {abspath}"
     OUTPUT_VARIABLE BLOBS_LIST_OUTPUT
     OUTPUT_STRIP_TRAILING_WHITESPACE
     COMMAND_ERROR_IS_FATAL ANY
