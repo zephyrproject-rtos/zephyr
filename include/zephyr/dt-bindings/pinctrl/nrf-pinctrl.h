@@ -166,6 +166,8 @@
 #define NRF_FUN_TWIS_SCL 48U
 /** TWIS SDA */
 #define NRF_FUN_TWIS_SDA 49U
+/** EXMIF RWDS */
+#define NRF_FUN_EXMIF_RWDS 50U
 
 /** @} */
 
