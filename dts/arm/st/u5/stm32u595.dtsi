@@ -115,7 +115,9 @@
 
 	otghs_phy: otghs_phy {
 		/* Clock source defined by USBPHYC_SEL in */
-		compatible = "usb-nop-xceiv";
+		compatible = "st,stm32-otghs-phy";
+		/* Default to assuming the HSE clock is 16MHz */
+		clock-cfg = <STM32U5_OTGHS_PHY_CLKSEL_16MHZ>;
 		#phy-cells = <0>;
 	};
 
