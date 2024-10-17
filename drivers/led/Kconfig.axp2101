@@ -1,0 +1,11 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_AXP2101
+	bool "AXP2101 LED driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP2101_LED_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the AXP2101 LED driver.
