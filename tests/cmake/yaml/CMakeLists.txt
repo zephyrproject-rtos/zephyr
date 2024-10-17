@@ -154,7 +154,7 @@ function(test_setting_string)
   )
 
   set(new_value "A new string")
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-string VALUE ${new_value}
   )
 
@@ -178,7 +178,7 @@ function(test_setting_list_strings)
   )
 
   set(new_value "A" "new" "list" "of" "strings")
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-list-string LIST ${new_value}
   )
 
@@ -210,7 +210,7 @@ function(test_setting_int)
   )
 
   set(new_value 42)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
@@ -234,7 +234,7 @@ function(test_setting_list_int)
   )
 
   set(new_value 42 41 40 2 10)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-list-int LIST ${new_value}
   )
 
@@ -266,7 +266,7 @@ function(test_setting_empty_value)
   )
 
   set(new_value)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
@@ -365,7 +365,7 @@ function(test_fail_missing_filename)
   yaml_create(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create)
 
   set(new_value 42)
-  yaml_set(actual NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
            KEY cmake test set key-int VALUE ${new_value}
   )
 
