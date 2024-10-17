@@ -91,3 +91,15 @@
 &rng {
 	status = "okay";
 };
+
+&usart3 {
+	pinctrl-0 = <&usart3_tx_pb10 &usart3_rx_pb11 &usart3_cts_pb13 &usart3_de_pb14>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	/* The RS485 is often used with the ModBus protocol. */
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&gpiob 13 GPIO_ACTIVE_LOW>;
+	};
+};
