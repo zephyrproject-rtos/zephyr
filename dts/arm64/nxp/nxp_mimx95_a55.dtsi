@@ -239,4 +239,70 @@
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
+
+	tpm1: tpm@44310000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x44310000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_BUSAON>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm2: tpm@44320000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x44320000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM2>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm3: tpm@424e0000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x424e0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm4: tpm@424f0000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x424f0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM4>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm5: tpm@42500000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x42500000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM5>;
+		prescaler = <1>;
+		status = "disabled";
+	};
+
+	tpm6: tpm@42510000 {
+		compatible = "nxp,tpm-timer";
+		reg = <0x42510000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM6>;
+		prescaler = <1>;
+		status = "disabled";
+	};
 };
