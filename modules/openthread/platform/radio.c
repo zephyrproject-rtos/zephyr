@@ -102,8 +102,9 @@ static struct ieee802154_radio_api *radio_api;
 
 /* Get the default tx output power from Kconfig */
 static int8_t tx_power = CONFIG_OPENTHREAD_DEFAULT_TX_POWER;
-static uint16_t channel;
 static bool promiscuous;
+static uint16_t channel;
+static enum ieee802154_hw_caps radio_caps;
 
 static uint16_t energy_detection_time;
 static uint8_t energy_detection_channel;
@@ -366,8 +367,9 @@ void platformRadioInit(void)
 			   OT_WORKER_PRIORITY, NULL);
 	k_thread_name_set(&ot_work_q.thread, "ot_radio_workq");
 
-	if ((radio_api->get_capabilities(radio_dev) &
-	     IEEE802154_HW_TX_RX_ACK) != IEEE802154_HW_TX_RX_ACK) {
+	radio_caps = radio_api->get_capabilities(radio_dev);
+
+	if ((radio_caps & IEEE802154_HW_TX_RX_ACK) != IEEE802154_HW_TX_RX_ACK) {
 		LOG_ERR("Only radios with automatic ack handling "
 			"are currently supported");
 		k_panic();
@@ -375,6 +377,12 @@ void platformRadioInit(void)
 
 	cfg.event_handler = handle_radio_event;
 	radio_api->configure(radio_dev, IEEE802154_CONFIG_EVENT_HANDLER, &cfg);
+}
+
+static void radio_set_channel(uint16_t ch)
+{
+	channel = ch;
+	radio_api->set_channel(radio_dev, ch);
 }
 
 void transmit_message(struct k_work *tx_job)
@@ -392,10 +400,7 @@ void transmit_message(struct k_work *tx_job)
 	 */
 	tx_payload->len = sTransmitFrame.mLength - FCS_SIZE;
 
-	channel = sTransmitFrame.mChannel;
-
-	radio_api->set_channel(radio_dev, channel);
-	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(channel));
+	radio_api->set_txpower(radio_dev, get_transmit_power_for_channel(sTransmitFrame.mChannel));
 
 #if defined(CONFIG_OPENTHREAD_TIME_SYNC)
 	if (sTransmitFrame.mInfo.mTxInfo.mIeInfo->mTimeIeOffset != 0) {
@@ -413,17 +418,27 @@ void transmit_message(struct k_work *tx_job)
 					     sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed);
 	net_pkt_set_ieee802154_mac_hdr_rdy(tx_pkt, sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated);
 
-	if ((radio_api->get_capabilities(radio_dev) & IEEE802154_HW_TXTIME) &&
+	if ((radio_caps & IEEE802154_HW_TXTIME) &&
 	    (sTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)) {
 #if defined(CONFIG_NET_PKT_TXTIME)
 		uint32_t tx_at = sTransmitFrame.mInfo.mTxInfo.mTxDelayBaseTime +
 				 sTransmitFrame.mInfo.mTxInfo.mTxDelay;
 		net_pkt_set_timestamp_ns(tx_pkt, convert_32bit_us_wrapped_to_64bit_ns(tx_at));
 #endif
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		if (radio_caps & IEEE802154_HW_SELECTIVE_TXCHANNEL) {
+			net_pkt_set_ieee802154_txchannel(tx_pkt, sTransmitFrame.mChannel);
+		} else {
+			radio_set_channel(sTransmitFrame.mChannel);
+		}
+#else
+		radio_set_channel(sTransmitFrame.mChannel);
+#endif
 		tx_err =
 			radio_api->tx(radio_dev, IEEE802154_TX_MODE_TXTIME_CCA, tx_pkt, tx_payload);
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
-		if (radio_api->get_capabilities(radio_dev) & IEEE802154_HW_CSMA) {
+		radio_set_channel(sTransmitFrame.mChannel);
+		if (radio_caps & IEEE802154_HW_CSMA) {
 			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
 					       tx_payload);
 		} else {
@@ -434,6 +449,7 @@ void transmit_message(struct k_work *tx_job)
 			}
 		}
 	} else {
+		radio_set_channel(sTransmitFrame.mChannel);
 		tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_DIRECT, tx_pkt, tx_payload);
 	}
 
@@ -660,7 +676,7 @@ void platformRadioProcess(otInstance *aInstance)
 		reset_pending_event(PENDING_EVENT_TX_DONE);
 
 		if (sState == OT_RADIO_STATE_TRANSMIT ||
-		    radio_api->get_capabilities(radio_dev) & IEEE802154_HW_SLEEP_TO_TX) {
+		    (radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
 			sState = OT_RADIO_STATE_RECEIVE;
 			handle_tx_done(aInstance);
 		}
@@ -846,10 +862,6 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 
 	__ASSERT_NO_MSG(aPacket == &sTransmitFrame);
 
-	enum ieee802154_hw_caps radio_caps;
-
-	radio_caps = radio_api->get_capabilities(radio_dev);
-
 	if ((sState == OT_RADIO_STATE_RECEIVE) || (radio_caps & IEEE802154_HW_SLEEP_TO_TX)) {
 		if (run_tx_task(aInstance) == 0) {
 			error = OT_ERROR_NONE;
@@ -878,10 +890,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 	int8_t ret_rssi = INT8_MAX;
 	int error = 0;
 	const uint16_t detection_time = 1;
-	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
-
-	radio_caps = radio_api->get_capabilities(radio_dev);
 
 	if (!(radio_caps & IEEE802154_HW_ENERGY_SCAN)) {
 		/*
@@ -911,12 +920,9 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
 	otRadioCaps caps = OT_RADIO_CAPS_NONE;
 
-	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 	__ASSERT(radio_api,
 	    "platformRadioInit needs to be called prior to otPlatRadioGetCaps");
-
-	radio_caps = radio_api->get_capabilities(radio_dev);
 
 	if (radio_caps & IEEE802154_HW_ENERGY_SCAN) {
 		caps |= OT_RADIO_CAPS_ENERGY_SCAN;

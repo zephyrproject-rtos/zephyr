@@ -92,6 +92,14 @@ config IEEE802154_CSL_DEBUG
 	help
 	  Enable support for CSL debugging by avoiding sleep state in favor of receive state.
 
+config IEEE802154_SELECTIVE_TXCHANNEL
+	bool "Support for selective TX channel setting"
+	help
+	  Enable support for selectively setting TX channel for every timed transmission request.
+	  The drivers MAY have the capability IEEE802154_HW_SELECTIVE_TXCHANNEL only if
+	  this Kconfig option is enabled. If the Kconfig option is disabled the drivers
+	  MUST NOT have the capability.
+
 module = IEEE802154_DRIVER
 module-str = IEEE 802.15.4 driver
 module-help = Sets log level for IEEE 802.15.4 Device Drivers.
