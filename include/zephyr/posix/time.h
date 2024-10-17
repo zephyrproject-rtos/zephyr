@@ -58,7 +58,7 @@ struct itimerspec {
 
 #include <zephyr/kernel.h>
 #include <errno.h>
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 #include <zephyr/posix/signal.h>
 
 #ifdef __cplusplus

@@ -11,6 +11,18 @@
 #include <sys/types.h>
 #endif
 
+#if !defined(_CLOCK_T_DECLARED) && !defined(__clock_t_defined)
+typedef unsigned long clock_t;
+#define _CLOCK_T_DECLARED
+#define __clock_t_defined
+#endif
+
+#if !defined(_CLOCKID_T_DECLARED) && !defined(__clockid_t_defined)
+typedef unsigned long clockid_t;
+#define _CLOCKID_T_DECLARED
+#define __clockid_t_defined
+#endif
+
 #ifdef CONFIG_NEWLIB_LIBC
 #include <sys/_pthreadtypes.h>
 #endif

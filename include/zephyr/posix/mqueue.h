@@ -12,7 +12,7 @@
 #include <zephyr/posix/fcntl.h>
 #include <zephyr/posix/signal.h>
 #include <zephyr/posix/sys/stat.h>
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 
 #ifdef __cplusplus
 extern "C" {
