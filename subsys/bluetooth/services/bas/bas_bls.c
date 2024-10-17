@@ -194,6 +194,20 @@ void bt_bas_bls_set_battery_charge_level(enum bt_bas_bls_battery_charge_level le
 	bls.power_state &= ~BATTERY_CHARGE_LEVEL_MASK;
 	bls.power_state |= (level << BATTERY_CHARGE_LEVEL_SHIFT) & BATTERY_CHARGE_LEVEL_MASK;
 	bt_bas_bls_update_battery_level_status();
+
+	if (IS_ENABLED(CONFIG_BT_BAS_BCS)) {
+		/*
+		 * Set the BCS Critical Power State bit as per BAS 1.1 specification
+		 * section 3.4.1.1: The BCS Critical Power State bit should be set to true if the
+		 * Battery Charge Level is set to Critical in the Power State field.
+		 */
+		if (level == BT_BAS_BLS_CHARGE_LEVEL_CRITICAL) {
+			bt_bas_bcs_set_battery_critical_state(true);
+			return;
+		} else if (level != BT_BAS_BLS_CHARGE_LEVEL_UNKNOWN) {
+			bt_bas_bcs_set_battery_critical_state(false);
+		}
+	}
 }
 
 void bt_bas_bls_set_battery_charge_type(enum bt_bas_bls_battery_charge_type type)
@@ -232,6 +246,20 @@ void bt_bas_bls_set_service_required(enum bt_bas_bls_service_required value)
 	bls.additional_status &= ~SERVICE_REQUIRED_MASK;
 	bls.additional_status |= (value << SERVICE_REQUIRED_SHIFT) & SERVICE_REQUIRED_MASK;
 	bt_bas_bls_update_battery_level_status();
+
+	if (IS_ENABLED(CONFIG_BT_BAS_BCS)) {
+		/*
+		 * Set the BCS Immediate Service Required bit as per BAS 1.1 specification
+		 * section 3.4.1.1: The BCS Immediate Service Required bit should be set to true if
+		 * the service Required bit is set to true in the Additional Status field.
+		 */
+		if (value == BT_BAS_BLS_SERVICE_REQUIRED_TRUE) {
+			bt_bas_bcs_set_immediate_service_required(true);
+			return;
+		} else if (value != BT_BAS_BLS_SERVICE_REQUIRED_UNKNOWN) {
+			bt_bas_bcs_set_immediate_service_required(false);
+		}
+	}
 }
 
 void bt_bas_bls_set_battery_fault(enum bt_bas_bls_battery_fault value)
