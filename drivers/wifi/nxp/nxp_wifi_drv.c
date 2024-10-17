@@ -547,7 +547,7 @@ static int nxp_wifi_stop_ap(const struct device *dev)
 
 static int nxp_wifi_ap_config_params(const struct device *dev, struct wifi_ap_config_params *params)
 {
-	int status = NXP_WIFI_RET_SUCCESS;
+	nxp_wifi_ret_t status = NXP_WIFI_RET_SUCCESS;
 	int ret = WM_SUCCESS;
 	interface_t *if_handle = (interface_t *)dev->data;
 
