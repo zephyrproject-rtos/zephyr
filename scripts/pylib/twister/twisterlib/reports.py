@@ -36,7 +36,7 @@ class Reporting:
             'deny_suite': ['footprint']
         },
         'footprint.json': {
-            'deny_status': ['FILTER'],
+            'deny_status': ['filtered'],
             'deny_suite': ['testcases', 'execution_time', 'recording', 'retries', 'runnable']
         }
     }
