@@ -120,15 +120,6 @@ int supplicant_set_power_save(const struct device *dev, struct wifi_ps_params *p
 int supplicant_set_twt(const struct device *dev, struct wifi_twt_params *params);
 
 /**
- * @brief Set Wi-Fi BTWT parameters
- *
- * @param dev Wi-Fi interface name to use
- * @param params BTWT parameters to set
- * @return 0 for OK; -1 for ERROR
- */
-int supplicant_set_btwt(const struct device *dev, struct wifi_twt_params *params);
-
-/**
  * @brief Get Wi-Fi power save configuration
  *
  * @param dev Wi-Fi interface name to use
