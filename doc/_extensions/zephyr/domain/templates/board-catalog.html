@@ -38,8 +38,8 @@
         <option value="" disabled selected>Select a vendor</option>
         {# Only show those vendors that have actual boards in the catalog.
            Note: as sorting per vendor name is not feasible in Jinja, the option list is sorted in the JavaScript code later #}
-        {% for vendor in (catalog.boards | items | map(attribute='1.vendor') | unique ) -%}
-        <option value="{{ vendor }}">{{ catalog.vendors[vendor] }}</option>
+        {% for vendor in (boards | items | map(attribute='1.vendor') | unique ) -%}
+        <option value="{{ vendor }}">{{ vendors[vendor] }}</option>
         {% endfor %}
       </select>
     </div>
@@ -82,11 +82,11 @@
 <div id="nb-matches" style="text-align: center"></div>
 
 <div id="catalog">
-  {% for board_name, board in catalog.boards | items | sort(attribute='1.full_name') -%}
+  {% for board_name, board in boards | items | sort(attribute='1.full_name') -%}
   {% include "board-card.html" %}
   {% endfor %}
 </div>
 
 <script>
-  socs_data = {{ catalog.socs | tojson }};
+  socs_data = {{ socs | tojson }};
 </script>
