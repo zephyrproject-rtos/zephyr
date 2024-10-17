@@ -9,4 +9,7 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y if CCS811
+
 endif # BOARD_SLTB004A

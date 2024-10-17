@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(dev_kit, CONFIG_BOARD_XG27_DK2602A_LOG_LEVEL);
 
 static int dev_kit_init_clocks(void);
 
-static int dev_kit_init(void)
+void board_late_init_hook(void)
 {
 	int ret;
 
@@ -29,15 +29,12 @@ static int dev_kit_init(void)
 
 
 	if (!gpio_is_ready_dt(&wake_up_gpio_dev)) {
-		LOG_ERR("Wake-up GPIO device was not found!\n");
-		return -ENODEV;
+		LOG_ERR("Wake-up GPIO device was not found!");
 	}
 	ret = gpio_pin_configure_dt(&wake_up_gpio_dev, GPIO_OUTPUT_ACTIVE);
 	if (ret < 0) {
-		return ret;
+		LOG_ERR("Failed to configure wake-up GPIO device!");
 	}
-
-	return 0;
 }
 
 #ifdef CONFIG_SOC_GECKO_DEV_INIT
@@ -59,6 +56,3 @@ static int dev_kit_init_clocks(void)
 	return 0;
 }
 #endif
-
-/* needs to be done after GPIO driver init */
-SYS_INIT(dev_kit_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

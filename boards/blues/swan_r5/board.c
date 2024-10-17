@@ -5,9 +5,8 @@
  */
 
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/init.h>
 
-static int board_swan_init(void)
+void board_late_init_hook(void)
 {
 	const struct gpio_dt_spec dischrg =
 		GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), dischrg_gpios);
@@ -18,8 +17,4 @@ static int board_swan_init(void)
 	}
 
 	(void)gpio_pin_configure_dt(&dischrg, GPIO_OUTPUT_INACTIVE);
-
-	return 0;
 }
-
-SYS_INIT(board_swan_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

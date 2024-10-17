@@ -5,6 +5,9 @@
 
 if BOARD_PARTICLE_ARGON
 
+config BOARD_LATE_INIT_HOOK
+	def_bool y
+
 config BT_CTLR
 	default BT
 

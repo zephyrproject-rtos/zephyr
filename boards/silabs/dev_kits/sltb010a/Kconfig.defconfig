@@ -1,6 +1,7 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
+if BOARD_SLTB010A
 config CMU_HFXO_FREQ
 	default 38400000
 
@@ -30,3 +31,7 @@ endif # BT
 
 config REGULATOR
 	default y if SI7210
+
+config BOARD_LATE_INIT_HOOK
+	def_bool y if UART_GECKO
+endif # BOARD_SLTB010A

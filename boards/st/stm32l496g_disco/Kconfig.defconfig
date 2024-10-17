@@ -13,4 +13,7 @@ config SPI_STM32_INTERRUPT
 config DISK_DRIVER_SDMMC
 	default y if DISK_DRIVERS
 
+config BOARD_EARLY_INIT_HOOK
+	default y if ADC
+
 endif # BOARD_STM32L496G_DISCO

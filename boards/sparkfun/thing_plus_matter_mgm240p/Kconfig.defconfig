@@ -42,4 +42,8 @@ config SHELL_STACK_SIZE
 endif # SHELL
 
 endif # BT
+
+config BOARD_LATE_INIT_HOOK
+	default y if UART_GECKO
+
 endif # BOARD_SPARKFUN_THING_PLUS_MGM240P

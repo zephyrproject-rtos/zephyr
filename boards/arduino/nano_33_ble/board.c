@@ -7,7 +7,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-static int board_init(void)
+void board_late_init_hook(void)
 {
 
 	int res;
@@ -29,7 +29,5 @@ static int board_init(void)
 		return res;
 	}
 
-	return gpio_pin_configure_dt(&user_led, GPIO_OUTPUT_INACTIVE);
+	(void)gpio_pin_configure_dt(&user_led, GPIO_OUTPUT_INACTIVE);
 }
-
-SYS_INIT(board_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

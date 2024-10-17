@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <zephyr/sys/sys_io.h>
@@ -132,13 +131,7 @@ static void arm_v2m_beetle_pinmux_defaults(void)
 	CMSDK_AHB_GPIO1_DEV->data |= (0x1 << 15);
 }
 
-static int arm_v2m_beetle_pinmux_init(void)
+void arm_v2m_beetle_pinmux_init(void)
 {
-
 	arm_v2m_beetle_pinmux_defaults();
-
-	return 0;
 }
-
-SYS_INIT(arm_v2m_beetle_pinmux_init, PRE_KERNEL_1,
-	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

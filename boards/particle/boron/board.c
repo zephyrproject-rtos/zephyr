@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
 #define ANT_UFLn_GPIO_SPEC	GPIO_DT_SPEC_GET(DT_NODELABEL(sky13351), vctl1_gpios)
@@ -26,11 +25,7 @@ static inline void external_antenna(bool on)
 	gpio_pin_configure_dt(&ufl_gpio, (on ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 
-static int board_particle_boron_init(void)
+void board_late_init_hook(void)
 {
 	external_antenna(false);
-
-	return 0;
 }
-
-SYS_INIT(board_particle_boron_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

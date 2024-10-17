@@ -130,7 +130,7 @@ const struct flexspi_nor_config_t g_flash_fast_config = {
 };
 
 
-__ramfunc int imxrt_reclock_initialize(void)
+__ramfunc void board_early_init_hook(void)
 {
 	const uint32_t instance =  1;
 
@@ -143,8 +143,4 @@ __ramfunc int imxrt_reclock_initialize(void)
 	ROM_API_Init();
 
 	ROM_FLEXSPI_NorFlash_Init(instance, (struct flexspi_nor_config_t *)&bootConfig);
-
-	return 0;
 }
-
-SYS_INIT(imxrt_reclock_initialize,  PRE_KERNEL_1, 0);
