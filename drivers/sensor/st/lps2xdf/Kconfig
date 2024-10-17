@@ -7,14 +7,19 @@
 menuconfig LPS2XDF
 	bool "LPS2xDF pressure and temperature"
 	default y
-	depends on DT_HAS_ST_LPS22DF_ENABLED || DT_HAS_ST_LPS28DFW_ENABLED
+	depends on DT_HAS_ST_LPS22DF_ENABLED || DT_HAS_ST_LPS28DFW_ENABLED ||\
+		   DT_HAS_ST_ILPS22QS_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i2c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ILPS22QS),i2c) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i2c)
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i3c) ||\
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),i3c) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ILPS22QS),i3c) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS28DFW),i3c)
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),spi)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22DF),spi) ||\
+		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ILPS22QS),spi)
 	select HAS_STMEMSC
+	select USE_STDC_ILPS22QS if DT_HAS_ST_ILPS22QS_ENABLED
 	select USE_STDC_LPS22DF if DT_HAS_ST_LPS22DF_ENABLED
 	select USE_STDC_LPS28DFW if DT_HAS_ST_LPS28DFW_ENABLED
 	help
