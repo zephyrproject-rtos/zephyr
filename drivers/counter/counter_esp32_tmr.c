@@ -100,9 +100,9 @@ static int counter_esp32_init(const struct device *dev)
 	k_spin_unlock(&lock, key);
 
 	int ret = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-				(ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
+				 ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+					 ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+				 (ISR_HANDLER)counter_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -202,8 +202,7 @@ static int counter_esp32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static int counter_esp32_set_top_value(const struct device *dev,
-				       const struct counter_top_cfg *cfg)
+static int counter_esp32_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct counter_esp32_config *config = dev->config;
 
@@ -256,44 +255,44 @@ static void counter_esp32_isr(void *arg)
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 }
 
-#define ESP32_COUNTER_GET_CLK_DIV(idx)						 \
-	(((DT_INST_PROP(idx, prescaler) & UINT16_MAX) < 2) ?			 \
-	2 : (DT_INST_PROP(idx, prescaler) & UINT16_MAX))
+#if defined(CONFIG_SOC_SERIES_ESP32C2)
+#define CLK_LL_PLL_40M_FREQ MHZ(40)
+#define CLOCK_SOURCE_FREQ   CLK_LL_PLL_40M_FREQ
+#else
+#define CLOCK_SOURCE_FREQ APB_CLK_FREQ
+#endif
 
-#define ESP32_COUNTER_INIT(idx)							 \
-										 \
-	static struct counter_esp32_data counter_data_##idx;			 \
-										 \
-	static const struct counter_esp32_config counter_config_##idx = {	 \
-		.counter_info = {						 \
-			.max_top_value = UINT32_MAX,				 \
-			.freq = (APB_CLK_FREQ / ESP32_COUNTER_GET_CLK_DIV(idx)), \
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			 \
-			.channels = 1						 \
-		},								 \
-		.config = {							 \
-			.alarm_en = TIMER_ALARM_DIS,				 \
-			.counter_en = TIMER_START,				 \
-			.intr_type = TIMER_INTR_LEVEL,				 \
-			.counter_dir = TIMER_COUNT_UP,				 \
-			.auto_reload = TIMER_AUTORELOAD_DIS,			 \
-			.divider = ESP32_COUNTER_GET_CLK_DIV(idx),		 \
-		},								 \
-		.group = DT_INST_PROP(idx, group),				 \
-		.index = DT_INST_PROP(idx, index),				 \
-		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),			\
-		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),	\
-		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags)	\
-	};									 \
-										 \
-										 \
-	DEVICE_DT_INST_DEFINE(idx,						 \
-			      counter_esp32_init,				 \
-			      NULL,						 \
-			      &counter_data_##idx,				 \
-			      &counter_config_##idx,				 \
-			      PRE_KERNEL_1,					 \
-			      CONFIG_COUNTER_INIT_PRIORITY,			 \
+#define ESP32_COUNTER_GET_CLK_DIV(idx)                                                             \
+	(((DT_INST_PROP(idx, prescaler) & UINT16_MAX) < 2)                                         \
+		 ? 2                                                                               \
+		 : (DT_INST_PROP(idx, prescaler) & UINT16_MAX))
+
+#define ESP32_COUNTER_INIT(idx)                                                                    \
+                                                                                                   \
+	static struct counter_esp32_data counter_data_##idx;                                       \
+                                                                                                   \
+	static const struct counter_esp32_config counter_config_##idx = {                          \
+		.counter_info = {.max_top_value = UINT32_MAX,                                      \
+				 .freq = (CLOCK_SOURCE_FREQ / ESP32_COUNTER_GET_CLK_DIV(idx)),     \
+				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,                            \
+				 .channels = 1},                                                   \
+		.config =                                                                          \
+			{                                                                          \
+				.alarm_en = TIMER_ALARM_DIS,                                       \
+				.counter_en = TIMER_START,                                         \
+				.intr_type = TIMER_INTR_LEVEL,                                     \
+				.counter_dir = TIMER_COUNT_UP,                                     \
+				.auto_reload = TIMER_AUTORELOAD_DIS,                               \
+				.divider = ESP32_COUNTER_GET_CLK_DIV(idx),                         \
+			},                                                                         \
+		.group = DT_INST_PROP(idx, group),                                                 \
+		.index = DT_INST_PROP(idx, index),                                                 \
+		.irq_source = DT_INST_IRQ_BY_IDX(idx, 0, irq),                                     \
+		.irq_priority = DT_INST_IRQ_BY_IDX(idx, 0, priority),                              \
+		.irq_flags = DT_INST_IRQ_BY_IDX(idx, 0, flags)};                                   \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(idx, counter_esp32_init, NULL, &counter_data_##idx,                  \
+			      &counter_config_##idx, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,   \
 			      &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_COUNTER_INIT);
