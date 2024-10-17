@@ -1,0 +1,16 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: imx93_evk/mimx9352/m33/ddr
+name: NXP i.MX93 EVK M33 DDR
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 4096
+flash: 0
+supported:
+  - gpio
+  - uart
+vendor: nxp
