@@ -126,6 +126,8 @@ Below interfaces are supported by Zephyr on MAX32666EVKIT.
 +-----------+------------+-------------------------------------+
 | W1        | on-chip    | one wire master                     |
 +-----------+------------+-------------------------------------+
+| Flash     | on-chip    | flash                               |
++-----------+------------+-------------------------------------+
 
 
 Connections and IOs
