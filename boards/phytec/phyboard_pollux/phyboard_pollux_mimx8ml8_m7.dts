@@ -7,11 +7,11 @@
 /dts-v1/;
 
 #include <nxp/nxp_imx8ml_m7.dtsi>
-#include "mimx8mp_phyboard_pollux-pinctrl.dtsi"
+#include "phyboard_pollux-pinctrl.dtsi"
 
 / {
-	model = "PhyBOARD Pollux (i.MX8MP)";
-	compatible = "nxp,mimx8mp_phyboard_pollux";
+	model = "phyBOARD-Pollux i.MX8MP";
+	compatible = "nxp,phyboard_pollux";
 
 	chosen {
 		/* TCM */

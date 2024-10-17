@@ -1,7 +1,7 @@
-.. _mimx8mm_phyboard_polis:
+.. _phyboard_polis:
 
-PhyBOARD Polis (NXP i.MX8M Mini)
-################################
+phyBOARD-Polis i.MX8M Mini
+##########################
 
 Overview
 ********
@@ -61,7 +61,7 @@ the phyCORE-i.MX 8M Mini/Nano.
 
 .. image:: img/phyBOARD-Polis.jpg
    :align: center
-   :alt: PhyBOARD Polis
+   :alt: phyBOARD-Polis
    :width: 500
 
 More information about the board can be found at the
@@ -70,8 +70,8 @@ More information about the board can be found at the
 Supported Features
 ==================
 
-The Zephyr ``mimx8mm_phyboard_polis/mimx8mm6/m4`` board configuration supports the following
-hardware features:
+The Zephyr ``phyboard_polis/mimx8mm6/m4`` board target configuration supports
+the following hardware features:
 
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
@@ -96,7 +96,7 @@ hardware features:
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
-:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4_defconfig`.
+:zephyr_file:`boards/phytec/phyboard_polis/phyboard_polis_mimx8mm6_m4_defconfig`.
 
 It is recommended to disable peripherals used by the M4 core on the Linux host.
 
@@ -111,7 +111,7 @@ The following components are tested and working correctly.
 UART:
 -----
 
-Zephyr is configured to use UART4 on the PhyBoard Polis by default to minimize
+Zephyr is configured to use UART4 on the phyBOARD-Polis by default to minimize
 problems with the A53-Core because UART4 is only accessible from the M4-Core.
 
 +---------------+-----------------+-----------------------------------+
@@ -137,7 +137,7 @@ problems with the A53-Core because UART4 is only accessible from the M4-Core.
 SPI:
 ----
 
-ECSPI is disabled by default. On phyBOARD Polis, the SoC's ECSPI3 is not
+ECSPI is disabled by default. On phyBOARD-Polis, the SoC's ECSPI3 is not
 usable.
 ECSPI1 is connected to the MCP2518 CAN controller with a chip select.
 Another device can be connected via the expansion header (X8):
@@ -174,9 +174,9 @@ devicetree.
 .. warning::
   There is a bug in the MCP2518 driver that causes the enable pin of the
   transceiver to be not set. This causes a ENETDOWN error when trying to send
-  a CAN frame. Receiving CAN frames in `listen-only` mode is possible.
+  a CAN frame. Receiving CAN frames in *listen-only* mode is possible.
 
-The Pinout of the PhyBOARD Polis can be found here:
+The Pinout of the phyBOARD-Polis can be found here:
 
 `PHYTEC website`_
 
@@ -218,7 +218,7 @@ For more information about memory mapping see the
 
 At compilation time you have to choose which RAM will be used. This
 configuration is done in
-:zephyr_file:`boards/phytec/mimx8mm_phyboard_polis/mimx8mm_phyboard_polis_mimx8mm6_m4.dts`
+:zephyr_file:`boards/phytec/phyboard_polis/phyboard_polis_mimx8mm6_m4.dts`
 with "zephyr,flash" and "zephyr,sram" properties.
 
 The following configurations are possible for the flash and sram chosen nodes
@@ -308,7 +308,7 @@ on UART4.
 Debugging
 =========
 
-The PhyBOARD Polis can be debugged using a JTAG Debugger.
+The phyBOARD-Polis can be debugged using a JTAG Debugger.
 The easiest way to do that is to use a SEGGER JLink Debugger and Phytec's
 ``PEB-EVAL-01`` Shield, which can be directly connected to the JLink.
 You can find the JLink Software package here: `JLink Software`_
@@ -391,7 +391,7 @@ For example: disabling ECSPI1 in Linux to use it on the M4-Core with Zephyr:
 .. _PHYTEC website:
    https://www.phytec.de/produkte/single-board-computer/phyboard-polis-imx8m-mini/
 
-.. _PhyBOARD Polis pinout:
+.. _phyBOARD-Polis pinout:
    https://download.phytec.de/Products/phyBOARD-Polis-iMX8M_Mini/TechData/phyCORE-i.MX8M_MINI_Pin_Muxing_Table.A1.xlsx?_ga=2.237582016.1177557183.1660563641-1900651135.1634193918
 
 .. _Remoteproc BSP:
