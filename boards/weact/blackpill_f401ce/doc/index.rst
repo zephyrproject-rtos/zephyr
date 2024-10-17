@@ -44,7 +44,7 @@ hardware components:
 Supported Features
 ==================
 
-The Zephyr blackpill_f401ce board configuration supports the following
+The Zephyr ``blackpill_f401ce`` board target supports the following
 hardware features:
 
 +------------+------------+-------------------------------------+

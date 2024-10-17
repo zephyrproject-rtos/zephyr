@@ -30,7 +30,7 @@ Hardware
 Supported Features
 ==================
 
-The saml21_xpro board configuration supports the following hardware
+The ``saml21_xpro`` board target supports the following hardware
 features:
 
 .. list-table::

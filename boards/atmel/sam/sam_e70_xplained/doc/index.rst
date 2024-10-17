@@ -34,7 +34,7 @@ Hardware
 Supported Features
 ==================
 
-The sam_e70_xplained board configuration supports the following hardware
+The ``sam_e70_xplained`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+

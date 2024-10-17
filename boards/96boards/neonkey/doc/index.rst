@@ -49,7 +49,7 @@ Hardware
 Supported Features
 ==================
 
-The Zephyr 96b_neonkey board configuration supports the following hardware
+The Zephyr ``96b_neonkey`` board target supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
