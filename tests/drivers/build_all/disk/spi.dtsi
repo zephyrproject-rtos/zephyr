@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+sdhc@0 {
+	compatible = "zephyr,sdhc-spi-slot";
+	reg = <0>;
+	status = "okay";
+	spi-max-frequency = <24000000>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		status = "okay";
+	};
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		status = "okay";
+	};
+};

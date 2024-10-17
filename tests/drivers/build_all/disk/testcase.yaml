@@ -1,0 +1,12 @@
+# Copyright (c) 2024 TOKITA hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.disk.build:
+    tags:
+      - drivers
+      - disk
+    build_only: true
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
