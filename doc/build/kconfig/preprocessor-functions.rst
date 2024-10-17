@@ -30,7 +30,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_alias_enabled,<node alias>)
    $(dt_chosen_bool_prop, <property in /chosen>, <prop>)
    $(dt_chosen_enabled,<property in /chosen>)
-   $(dt_chosen_has_compat,<property in /chosen>)
+   $(dt_chosen_has_compat,<property in /chosen>,<compatible string>)
    $(dt_chosen_label,<property in /chosen>)
    $(dt_chosen_partition,addr_hex,<chosen>[,<index>,<unit>])
    $(dt_chosen_partition,addr_int,<chosen>[,<index>,<unit>])
