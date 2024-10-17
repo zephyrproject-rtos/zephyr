@@ -1719,38 +1719,6 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
-if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
-  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
-    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
-  else()
-    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
-  endif()
-
-  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
-    # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
-    #       variable is undefined and thus expands to nothing.
-    math(EXPR flash_addr
-        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
-         OUTPUT_FORMAT HEXADECIMAL
-    )
-  endif()
-
-  list(APPEND
-    post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
-            -c
-            -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${flash_addr}
-            -o ${KERNEL_UF2_NAME}
-            ${KERNEL_BIN_NAME}
-  )
-  list(APPEND
-    post_build_byproducts
-    ${KERNEL_UF2_NAME}
-  )
-  set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
-endif()
-
 set(KERNEL_META_PATH  ${PROJECT_BINARY_DIR}/${KERNEL_META_NAME} CACHE INTERNAL "")
 if(CONFIG_BUILD_OUTPUT_META)
   list(APPEND
@@ -2019,6 +1987,44 @@ list(APPEND
   post_build_byproducts
   ${extra_post_build_byproducts}
   )
+
+if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
+    set(flash_addr "${CONFIG_FLASH_BASE_ADDRESS}")
+  else()
+    set(flash_addr "${CONFIG_FLASH_LOAD_OFFSET}")
+  endif()
+
+  if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_OFFSET)
+    # Note, the `+ 0` in formula below avoids errors in cases where a Kconfig
+    #       variable is undefined and thus expands to nothing.
+    math(EXPR flash_addr
+        "${flash_addr} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+         OUTPUT_FORMAT HEXADECIMAL
+    )
+  endif()
+
+  if(CONFIG_BOOTLOADER_MCUBOOT)
+    set(kernel_to_uf2_artifact "${KERNEL_NAME}.signed.bin")
+  else()
+    set(kernel_to_uf2_artifact "${KERNEL_BIN_NAME}")
+  endif()
+
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+            -c
+            -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+            -b ${flash_addr}
+            -o ${KERNEL_UF2_NAME}
+            ${kernel_to_uf2_artifact}
+  )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_UF2_NAME}
+  )
+  set(BYPRODUCT_KERNEL_UF2_NAME "${PROJECT_BINARY_DIR}/${KERNEL_UF2_NAME}" CACHE FILEPATH "Kernel uf2 file" FORCE)
+endif()
 
 if(CONFIG_LOG_DICTIONARY_DB)
   set(LOG_DICT_DB_NAME ${PROJECT_BINARY_DIR}/log_dictionary.json)
