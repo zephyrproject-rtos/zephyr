@@ -152,7 +152,7 @@ blob requires the build system to provide.
   provided by Zephyr (or an RTOS in general), an implementation of an OS
   abstraction layer (aka porting layer) can be provided alongside the library.
   The implementation of this OS abstraction layer must be in source code form,
-  released under an OSI approved license and documented using Doxygen
+  released under an OSI approved license and documented using Doxygen.
 
 Toolchain requirements
 ======================
