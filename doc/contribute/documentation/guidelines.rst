@@ -1184,6 +1184,23 @@ Code samples
 Boards
 ======
 
+.. rst:directive:: .. zephyr:board:: name
+
+   This directive is used at the beginning of a document to indicate it is the main documentation
+   page for a board whose name is given as the directive argument.
+
+   For example::
+
+      .. zephyr:board:: wio_terminal
+
+   The metadata for the board is read from various config files and used to automatically populate
+   some sections of the board documentation. A board documentation page that uses this directive
+   can be linked to using the :rst:role:`zephyr:board` role.
+
+.. rst:role:: zephyr:board
+
+   This role is used to reference a board documented using :rst:dir:`zephyr:board`.
+
 .. rst:directive:: .. zephyr:board-catalog::
 
    This directive is used to generate a catalog of Zephyr-supported boards that can be used to
