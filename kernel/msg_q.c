@@ -120,6 +120,14 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 	return 0;
 }
 
+static inline void msgq_copy(char *dest, const char *src, size_t n)
+{
+	while (n > 0) {
+		*dest++ = *src++;
+		n--;
+	}
+}
+
 
 int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout)
 {
@@ -140,8 +148,8 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, put, msgq, timeout, 0);
 
 			/* give message to waiting thread */
-			(void)memcpy(pending_thread->base.swap_data, data,
-			       msgq->msg_size);
+			msgq_copy(pending_thread->base.swap_data, data,
+				  msgq->msg_size);
 			/* wake up waiting thread */
 			arch_thread_return_value_set(pending_thread, 0);
 			z_ready_thread(pending_thread);
@@ -151,7 +159,7 @@ int z_impl_k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t timeout
 			/* put message in queue */
 			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
 					msgq->write_ptr < msgq->buffer_end);
-			(void)memcpy(msgq->write_ptr, (char *)data, msgq->msg_size);
+			msgq_copy(msgq->write_ptr, data, msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
 			if (msgq->write_ptr == msgq->buffer_end) {
 				msgq->write_ptr = msgq->buffer_start;
@@ -227,7 +235,7 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 
 	if (msgq->used_msgs > 0U) {
 		/* take first available message from queue */
-		(void)memcpy((char *)data, msgq->read_ptr, msgq->msg_size);
+		msgq_copy(data, msgq->read_ptr, msgq->msg_size);
 		msgq->read_ptr += msgq->msg_size;
 		if (msgq->read_ptr == msgq->buffer_end) {
 			msgq->read_ptr = msgq->buffer_start;
@@ -242,8 +250,9 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 			/* add thread's message to queue */
 			__ASSERT_NO_MSG(msgq->write_ptr >= msgq->buffer_start &&
 					msgq->write_ptr < msgq->buffer_end);
-			(void)memcpy(msgq->write_ptr, (char *)pending_thread->base.swap_data,
-			       msgq->msg_size);
+			msgq_copy(msgq->write_ptr,
+				  pending_thread->base.swap_data,
+				  msgq->msg_size);
 			msgq->write_ptr += msgq->msg_size;
 			if (msgq->write_ptr == msgq->buffer_end) {
 				msgq->write_ptr = msgq->buffer_start;
