@@ -162,6 +162,8 @@
 #define NRF_FUN_CAN_TX 46U
 /** CAN RX */
 #define NRF_FUN_CAN_RX 47U
+/** EXMIF RWDS */
+#define NRF_FUN_EXMIF_RWDS 50U
 
 /** @} */
 
