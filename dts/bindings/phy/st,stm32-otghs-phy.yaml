@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding is to be used by the STM32U5xx transceivers which are built-in
+    with USB HS PHY IP and a configurable HSE clock source.
+
+compatible: "st,stm32-otghs-phy"
+
+include: phy-controller.yaml
+
+properties:
+  "#phy-cells":
+    const: 0
+
+  "clock-cfg":
+    type: int
+    required: false
+    enum:
+      - 0 # STM32U5_OTGHS_PHY_CLKSEL_16MHZ
+      - 1 # STM32U5_OTGHS_PHY_CLKSEL_19P2MHZ
+      - 2 # STM32U5_OTGHS_PHY_CLKSEL_20MHZ
+      - 3 # STM32U5_OTGHS_PHY_CLKSEL_24MHZ
+      - 4 # STM32U5_OTGHS_PHY_CLKSEL_26MHZ
+      - 5 # STM32U5_OTGHS_PHY_CLKSEL_32MHZ
+    description: |
+      The HSE clock source configuration for this PHY.
+      The default is a 16MHz clock source.
