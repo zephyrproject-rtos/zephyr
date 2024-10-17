@@ -32,12 +32,38 @@ config SETTINGS_ENCODE_LEN
 
 choice SETTINGS_BACKEND
 	prompt "Storage back-end"
+	default SETTINGS_ZMS if ZMS
 	default SETTINGS_NVS if NVS
 	default SETTINGS_FCB if FCB
 	default SETTINGS_FILE if FILE_SYSTEM
 	default SETTINGS_NONE
 	help
 	  Storage back-end to be used by the settings subsystem.
+
+config SETTINGS_ZMS
+	bool "ZMS (Zephyr Memory Storage)"
+	depends on ZMS
+	help
+	  Use ZMS as settings storage backend.
+
+if SETTINGS_ZMS
+
+config SETTINGS_ZMS_NAME_CACHE
+	bool "ZMS name lookup cache"
+	select SYS_HASH_FUNC32
+	help
+	  Enable ZMS name lookup cache, used to reduce the Settings name
+	  lookup time.
+
+config SETTINGS_ZMS_NAME_CACHE_SIZE
+	int "ZMS name lookup cache size"
+	default 128
+	range 1 $(UINT32_MAX)
+	depends on SETTINGS_ZMS_NAME_CACHE
+	help
+	  Number of entries in Settings ZMS name cache.
+
+endif # SETTINGS_ZMS
 
 config SETTINGS_FCB
 	bool "FCB"
@@ -131,6 +157,21 @@ config SETTINGS_NVS_SECTOR_COUNT
 	depends on SETTINGS_NVS
 	help
 	  Number of sectors used for the NVS settings area
+
+config SETTINGS_ZMS_SECTOR_SIZE_MULT
+	int "Sector size of the ZMS settings area"
+	default 1
+	depends on SETTINGS_ZMS
+	help
+	  The sector size to use for the ZMS settings area as a multiple of
+	  FLASH_ERASE_BLOCK_SIZE.
+
+config SETTINGS_ZMS_SECTOR_COUNT
+	int "Sector count of the ZMS settings area"
+	default 8
+	depends on SETTINGS_ZMS
+	help
+	  Number of sectors used for the ZMS settings area
 
 config SETTINGS_SHELL
 	bool "Settings shell"
