@@ -165,7 +165,7 @@ TESTDATA_2 = [
         ),
         ScanPathResult(
             warnings=None,
-            matches=['1a', '1b'],
+            matches=['feature5.1a', 'feature5.1b'],
             has_registered_test_suites=False,
             has_run_registered_test_suites=True,
             has_test_main=False,

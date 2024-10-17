@@ -1,6 +1,6 @@
 # vim: set syntax=python ts=4 :
 #
-# Copyright (c) 20180-2022 Intel Corporation
+# Copyright (c) 2018-2024 Intel Corporation
 # Copyright 2022 NXP
 # SPDX-License-Identifier: Apache-2.0
 
@@ -1108,13 +1108,16 @@ class ProjectBuilder(FilterBuilder):
                     matches = new_ztest_unit_test_regex.findall(sym.name)
                     if matches:
                         for m in matches:
-                            # new_ztest_suite = m[0] # not used for now
+                            new_ztest_suite = m[0]
+                            if new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
+                                logger.warning(f"Unexpected Ztest suite '{new_ztest_suite}' "
+                                               f"not present in: {self.instance.testsuite.ztest_suite_names}")
                             test_func_name = m[1].replace("test_", "", 1)
-                            testcase_id = f"{yaml_testsuite_name}.{test_func_name}"
+                            testcase_id = f"{yaml_testsuite_name}.{new_ztest_suite}.{test_func_name}"
                             detected_cases.append(testcase_id)
 
         if detected_cases:
-            logger.debug(f"{', '.join(detected_cases)} in {elf_file}")
+            logger.debug(f"Detected Ztest cases: [{', '.join(detected_cases)}] in {elf_file}")
             tc_keeper = {tc.name: {'status': tc.status, 'reason': tc.reason} for tc in self.instance.testcases}
             self.instance.testcases.clear()
             self.instance.testsuite.testcases.clear()
