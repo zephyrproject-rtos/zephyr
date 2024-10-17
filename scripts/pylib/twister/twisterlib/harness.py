@@ -20,10 +20,10 @@ from pytest import ExitCode
 from twisterlib.reports import ReportStatus
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.environment import ZEPHYR_BASE, PYTEST_PLUGIN_INSTALLED
-from twisterlib.handlers import Handler, terminate_process, SUPPORTED_SIMS_IN_PYTEST
+from twisterlib.handlers import Handler, terminate_process
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-
+from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 
 logger = logging.getLogger('twister')
 logger.setLevel(logging.DEBUG)
