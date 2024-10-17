@@ -1,0 +1,10 @@
+/ {
+	aliases {
+		i2c-target = &arduino_i2c;
+	};
+};
+
+&arduino_serial {
+	status = "okay";
+	current-speed = <115200>;
+};
