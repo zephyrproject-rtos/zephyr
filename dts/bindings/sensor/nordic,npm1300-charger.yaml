@@ -36,10 +36,12 @@ properties:
   dischg-limit-microamp:
     type: int
     required: true
+    enum:
+      - 200000
+      - 1000000
     description: |
       Discharge current limit in uA.
-      Available range is 270 mA to 1340 mA in 3.23 mA steps.
-      The value specified will be rounded down to the closest implemented value.
+      Available values are 200 mA and 1000 mA.
 
   vbus-limit-microamp:
     type: int
