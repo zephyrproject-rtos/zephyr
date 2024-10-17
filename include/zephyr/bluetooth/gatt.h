@@ -913,6 +913,45 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 						   })),                         \
 	BT_GATT_ATTRIBUTE(_uuid, _perm, _read, _write, _user_data)
 
+/** @brief A tuple of a const pointer and a size.
+ *
+ * This not reserved for any specific use.
+ */
+struct bt_sized_ptr {
+	const void *data;
+	size_t size;
+};
+
+/** @brief Const object literal sized pointer to a C object
+ *
+ * Make sure to give the right object, not a pointer to it.
+ */
+#define BT_SIZED_PTR(_obj)                                                                         \
+	(const struct bt_sized_ptr)                                                                \
+	{                                                                                          \
+		.data = &(_obj), .size = sizeof((_obj)),                                           \
+	}
+
+ssize_t bt_gatts_handler_fixed_size_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+					 void *buf, uint16_t len, uint16_t offset);
+
+/** @brief Shorthand for exposing a C object as a read-only GATT characteristic.
+ *
+ * @note Whatever object is given to this macro will be interpreted as a byte
+ * array. There is no special handling. It is the responsibility of the user of
+ * this macro to make sure the object is as intended.
+ *
+ * @note - Structs should be packed and in
+ * @note - Make sure to give the intended object, not a pointer to it.
+ * @note - The null-terminator of a C string is part the C string object.
+ *
+ * @returns A initializer list for @ref bt_gatt_attr[]
+ */
+#define BT_GATT_CHARACTERISTIC_OBJ_RO(_uuid, _perm, _obj)                                          \
+	BT_GATT_CHARACTERISTIC((_uuid), BT_GATT_CHRC_READ, _perm,                                  \
+			       bt_gatts_handler_fixed_size_read, NULL,                             \
+			       (void *)&BT_SIZED_PTR((_obj)))
+
 #if defined(CONFIG_BT_SETTINGS_CCC_LAZY_LOADING)
 	#define BT_GATT_CCC_MAX (CONFIG_BT_MAX_CONN)
 #elif defined(CONFIG_BT_CONN)
