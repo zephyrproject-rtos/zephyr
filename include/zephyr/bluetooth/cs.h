@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/conn.h>
 
@@ -338,15 +339,64 @@ struct bt_le_cs_test_param {
 	 *      it should use as low a transmit power as possible
 	 */
 	uint8_t transmit_power_level;
-	/** Interlude time in microseconds between the RTT packets. */
+	/** Interlude time in microseconds between the RTT packets.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip1_time;
-	/** Interlude time in microseconds between the CS tones. */
+	/** Interlude time in microseconds between the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 145 us
+	 */
 	uint8_t t_ip2_time;
-	/** Time in microseconds for frequency changes. */
+	/** Time in microseconds for frequency changes.
+	 *
+	 *  Valid options are:
+	 *    - 15 us
+	 *    - 20 us
+	 *    - 30 us
+	 *    - 40 us
+	 *    - 50 us
+	 *    - 60 us
+	 *    - 80 us
+	 *    - 100 us
+	 *    - 120 us
+	 *    - 150 us
+	 */
 	uint8_t t_fcs_time;
-	/** Time in microseconds for the phase measurement period of the CS tones. */
+	/** Time in microseconds for the phase measurement period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 10 us
+	 *    - 20 us
+	 *    - 40 us
+	 */
 	uint8_t t_pm_time;
-	/** Time in microseconds for the antenna switch period of the CS tones. */
+	/** Time in microseconds for the antenna switch period of the CS tones.
+	 *
+	 *  Valid options are:
+	 *    - 0 us
+	 *    - 1 us
+	 *    - 2 us
+	 *    - 4 us
+	 *    - 10 us
+	 */
 	uint8_t t_sw_time;
 	/** Antenna Configuration Index used during antenna switching during
 	 *  the tone phases of CS steps.
@@ -540,6 +590,35 @@ struct bt_le_cs_subevent_step {
 	const uint8_t *data;
 };
 
+/** Sign-extended IQ sample extracted from step data. */
+struct bt_le_cs_iq_sample {
+	int16_t i;
+	int16_t q;
+};
+
+/** @brief Extract IQ sample from HCI-formatted PCT.
+ *
+ * Convenience function for processing 24-bit phase correction terms found
+ * in CS step data. The 12-bit signed real and imaginary components are
+ * converted to host endianness and sign-extended.
+ *
+ * @param pct 24-bit little-endian phase correction term.
+ *
+ * @return Real and imaginary terms as int16_t.
+ */
+static inline struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3])
+{
+	uint32_t sample = sys_get_le24(pct);
+	int16_t i;
+	int16_t q;
+	struct {
+		int16_t x: 12;
+	} s;
+	i = s.x = sample & BT_HCI_LE_CS_PCT_MASK;
+	q = s.x = (sample >> 12) & BT_HCI_LE_CS_PCT_MASK;
+	return (struct bt_le_cs_iq_sample){.i = i, .q = q};
+}
+
 /** @brief Set all valid channel map bits
  *
  * This command is used to enable all valid channels in a
@@ -669,7 +748,7 @@ int bt_le_cs_remove_config(struct bt_conn *conn, uint8_t config_id);
  */
 int bt_le_cs_stop_test(void);
 
-/** @brief Parse CS Test Subevent Results
+/** @brief Parse CS Subevent Step Data
  *
  * A helper for parsing HCI-formatted step data found in channel sounding subevent results.
  *

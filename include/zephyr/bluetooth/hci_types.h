@@ -2463,8 +2463,8 @@ struct bt_hci_cp_le_read_remote_fae_table {
 #define BT_HCI_OP_LE_CS_CS_SYNC_2M     0x2
 #define BT_HCI_OP_LE_CS_CS_SYNC_2M_2BT 0x3
 
-#define BT_HCI_OP_LE_CS_TEST_MAXIMIZE_TX_POWER 0x7E
-#define BT_HCI_OP_LE_CS_TEST_MINIMIZE_TX_POWER 0x7F
+#define BT_HCI_OP_LE_CS_TEST_MINIMIZE_TX_POWER 0x7E
+#define BT_HCI_OP_LE_CS_TEST_MAXIMIZE_TX_POWER 0x7F
 
 #define BT_HCI_OP_LE_CS_TEST_ACI_0 0x0
 #define BT_HCI_OP_LE_CS_TEST_ACI_1 0x1
@@ -3521,6 +3521,12 @@ struct bt_hci_evt_le_cs_config_complete {
 #define BT_HCI_LE_CS_PACKET_NADM_ATTACK_EXT_LIKELY    0x06
 #define BT_HCI_LE_CS_PACKET_NADM_UNKNOWN              0xFF
 
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_SUCCESSFUL	      0x0
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_BIT_ERRORS_FOUND 0x1
+#define BT_HCI_LE_CS_PACKET_QUALITY_AA_CHECK_AA_NOT_FOUND     0x2
+
+#define BT_HCI_LE_CS_PACKET_RSSI_NOT_AVAILABLE 0x7F
+
 #define BT_HCI_EVT_LE_CS_SUBEVENT_RESULT 0x31
 /** Subevent result step data format: Mode 0 Initiator  */
 struct bt_hci_le_cs_step_data_mode_0_initiator {
@@ -3561,8 +3567,8 @@ struct bt_hci_le_cs_step_data_mode_1 {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 } __packed;
@@ -3579,8 +3585,8 @@ struct bt_hci_le_cs_step_data_mode_1_ss_rtt {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
@@ -3618,8 +3624,8 @@ struct bt_hci_le_cs_step_data_mode_3 {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t antenna_permutation_index;
@@ -3638,8 +3644,8 @@ struct bt_hci_le_cs_step_data_mode_3_ss_rtt {
 	uint8_t packet_nadm;
 	uint8_t packet_rssi;
 	union {
-		uint16_t toa_tod_initiator;
-		uint16_t tod_toa_reflector;
+		int16_t toa_tod_initiator;
+		int16_t tod_toa_reflector;
 	};
 	uint8_t packet_antenna;
 	uint8_t packet_pct1[4];
