@@ -453,6 +453,8 @@ void reg_change_callbk_fn(void *vif_ctx,
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
 	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
+	LOG_DBG("%s: Regulatory change event received", __func__);
+
 	vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
@@ -469,6 +471,12 @@ void reg_change_callbk_fn(void *vif_ctx,
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 	if (!fmac_dev_ctx) {
 		LOG_ERR("%s: fmac_dev_ctx is NULL", __func__);
+		return;
+	}
+
+	if (!fmac_dev_ctx->waiting_for_reg_event) {
+		LOG_DBG("%s: Unsolicited regulatory change event", __func__);
+		/* TODO: Handle unsolicited regulatory change event */
 		return;
 	}
 
