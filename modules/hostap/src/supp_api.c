@@ -2125,7 +2125,7 @@ int hapd_process_enterprise_config(struct hostapd_iface *iface,
 		enterprise_creds.dh_param, enterprise_creds.dh_param_len))
 		goto out;
 
-	if (!hostapd_cli_cmd_v("set private_key_passwd %s", params->key_passwd))
+	if (!hostapd_cli_cmd_v("set private_key_passwd \"%s\"", params->key_passwd))
 		goto out;
 
 	if (hostapd_process_eap_user(params, iface->bss[0]->conf))
