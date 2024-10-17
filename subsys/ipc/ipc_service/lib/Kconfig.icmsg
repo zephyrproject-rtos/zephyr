@@ -51,7 +51,7 @@ if IPC_SERVICE_BACKEND_ICMSG_WQ_ENABLE
 
 config IPC_SERVICE_BACKEND_ICMSG_WQ_STACK_SIZE
 	int "Size of RX work queue stack"
-	default 1024
+	default 1280
 	help
 	  Size of stack used by work queue RX thread. This work queue is
 	  created to prevent notifying service users about received data
