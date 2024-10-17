@@ -1476,35 +1476,13 @@ int supplicant_spec_scan(const struct device *dev, struct wifi_scan_params *para
 
 int suppliant_11r_roaming(const struct device *dev)
 {
-	struct wpa_supplicant *wpa_s;
-	int ret = 0;
-
-	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
-
-	wpa_s = get_wpa_s_handle(dev);
-	if (!wpa_s) {
-		wpa_printf(MSG_ERROR, "Device %s not found", dev->name);
-		ret = -1;
-		goto out;
-	}
-
-	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
-	    wpa_s->wpa_state < WPA_COMPLETED)) {
-		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
-		goto out;
-	}
-
 	if (!wpa_cli_cmd_v("reassociate")) {
 		wpa_printf(MSG_ERROR, "%s: cli cmd <reassociate> fail",
 			   __func__);
-		ret = -1;
-		goto out;
+		return -1;
 	}
 
-out:
-	k_mutex_unlock(&wpa_supplicant_mutex);
-	return ret;
+	return 0;
 }
 #endif
 
