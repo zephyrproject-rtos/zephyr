@@ -371,6 +371,72 @@ function(test_setting_empty_list)
   endforeach()
 endfunction()
 
+function(test_setting_genexes)
+  set(file ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml)
+  yaml_create(FILE ${file}
+              NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+  )
+
+  set_property(TARGET app PROPERTY expanding_str "expanded genex")
+  set(new_value "$<TARGET_PROPERTY:app,expanding_str>")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-string-genex
+           GENEX VALUE ${new_value}
+  )
+
+  # create the list by appending in several steps to test conversion
+  # from JSON list to genex stringified list
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           LIST "A"
+  )
+  set_property(TARGET app PROPERTY expanding_list "list" "of")
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND GENEX LIST "new" "$<TARGET_PROPERTY:app,expanding_list>"
+  )
+  yaml_set(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
+           KEY cmake test set key-list-string-genex
+           APPEND LIST "strings"
+  )
+
+  yaml_generate(NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create TARGET app)
+
+  # Re-run cmake on this directory to check the generation results
+  add_custom_command(TARGET app POST_BUILD
+    COMMAND ${CMAKE_COMMAND} ${CMAKE_CURRENT_LIST_DIR} -DGENERATED_FILE="${file}"
+  )
+endfunction()
+
+function(test_verify_genexes)
+  yaml_load(FILE ${GENERATED_FILE} # set from command line
+      NAME ${CMAKE_CURRENT_FUNCTION}_readback
+  )
+
+  set(expected "expanded genex")
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-string-genex)
+
+  test_assert(TEST ${expected} STREQUAL ${readback}
+        COMMENT "new yaml value does not match readback value."
+  )
+
+  set(expected "A" "new" "list" "of" "strings")
+  list(LENGTH expected exp_len)
+
+  yaml_get(readback NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+  yaml_length(act_len NAME ${CMAKE_CURRENT_FUNCTION}_readback KEY cmake test set key-list-string-genex)
+
+  test_assert(TEST ${exp_len} EQUAL ${act_len}
+              COMMENT "yaml list length does not match expectation."
+  )
+
+  foreach(a e IN ZIP_LISTS readback expected)
+    test_assert(TEST "${e}" STREQUAL "${a}"
+                COMMENT "list values mismatch."
+    )
+  endforeach()
+endfunction()
+
 function(test_set_remove_int)
   yaml_create(FILE ${CMAKE_BINARY_DIR}/${CMAKE_CURRENT_FUNCTION}_test_create.yaml
               NAME ${CMAKE_CURRENT_FUNCTION}_yaml-create
@@ -430,29 +496,43 @@ function(test_fail_missing_filename)
   set_property(GLOBAL PROPERTY EXPECTED_ERROR 0)
 endfunction()
 
-yaml_load(FILE ${CMAKE_CURRENT_LIST_DIR}/test.yaml NAME yaml-test)
-test_reading_string()
-test_reading_int()
-test_reading_list_strings()
-test_reading_list_int()
-test_reading_not_found()
-test_reading_not_found_array()
-test_reading_not_array()
+if (NOT DEFINED GENERATED_FILE)
 
-test_save_new_file()
+  # First pass - do the bulk of YAML testing
 
-test_setting_int()
-test_setting_string()
-test_setting_list_strings()
-test_setting_list_int()
+  yaml_load(FILE ${CMAKE_CURRENT_LIST_DIR}/test.yaml NAME yaml-test)
+  test_reading_string()
+  test_reading_int()
+  test_reading_list_strings()
+  test_reading_list_int()
+  test_reading_not_found()
+  test_reading_not_found_array()
+  test_reading_not_array()
 
-test_setting_empty_value()
-test_setting_empty_list()
+  test_save_new_file()
 
-test_append_list_strings()
+  test_setting_int()
+  test_setting_string()
+  test_setting_list_strings()
+  test_setting_list_int()
 
-test_set_remove_int()
+  test_setting_empty_value()
+  test_setting_empty_list()
 
-test_fail_missing_filename()
+  test_append_list_strings()
+
+  test_setting_genexes() # this is verified later
+
+  test_set_remove_int()
+
+  test_fail_missing_filename()
+
+else()
+
+  # Second cmake run - verify generator expressions expansions
+
+  test_verify_genexes()
+
+  endif()
 
 target_sources(app PRIVATE src/main.c)
