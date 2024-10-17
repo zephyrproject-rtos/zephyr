@@ -1,0 +1,25 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ambient-temp0 = &p3t1755;
+	};
+};
+
+&i3c1 {
+	status = "okay";
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <4000000>;
+	i3c-od-scl-hz = <1500000>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
+};
