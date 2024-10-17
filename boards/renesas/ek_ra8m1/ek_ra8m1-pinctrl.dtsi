@@ -4,6 +4,30 @@
  */
 
 &pinctrl {
+	sci0_default: sci0_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 9)>;
+			drive-strength = "medium";
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_0, 6, 10)>;
+		};
+	};
+
+	sci2_default: sci2_default {
+		group1 {
+			/* tx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 10, 3)>;
+			drive-strength = "medium";
+		};
+		group2 {
+			/* rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_2, 10, 2)>;
+		};
+	};
+
 	sci3_default: sci3_default {
 		group1 {
 			/* tx */
