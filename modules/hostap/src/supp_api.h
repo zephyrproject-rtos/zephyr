@@ -375,6 +375,7 @@ int supplicant_ap_sta_disconnect(const struct device *dev,
  * @return 0 for OK; -1 for ERROR
  */
 int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
 /**
@@ -386,5 +387,4 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
  */
 int hapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
-#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 #endif /* ZEPHYR_SUPP_MGMT_H */
