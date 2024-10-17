@@ -221,6 +221,7 @@ class Lcov(CoverageTool):
                 "--ignore-errors", "mismatch,mismatch",
             ]
 
+        cmd = [str(c) for c in cmd]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         return subprocess.call(cmd, stdout=coveragelog)
@@ -346,6 +347,7 @@ class Gcovr(CoverageTool):
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
         cmd += excludes + mode_options + ["--json", "-o", coveragefile, outdir]
+        cmd = [str(c) for c in cmd]
         cmd_str = " ".join(cmd)
         logger.debug(f"Running {cmd_str}...")
         subprocess.call(cmd, stdout=coveragelog)

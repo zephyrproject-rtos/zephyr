@@ -8,6 +8,7 @@ Tests for the error classes
 
 import os
 import pytest
+import re
 
 from pathlib import Path
 from twisterlib.error import StatusAttributeError
@@ -21,7 +22,7 @@ def test_configurationerror():
 
     expected_err = f'{os.path.join("some", "path")}: dummy message'
 
-    with pytest.raises(ConfigurationError, match=expected_err):
+    with pytest.raises(ConfigurationError, match=re.escape(expected_err)):
         raise ConfigurationError(cfile, message)
 
 

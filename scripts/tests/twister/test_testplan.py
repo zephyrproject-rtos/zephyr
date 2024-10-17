@@ -49,8 +49,10 @@ def test_testplan_add_testsuites_short(class_testplan):
     assert sorted(testsuite_list) == sorted(expected_testsuites)
 
     # Test 2 : Assert Testcase name is expected & all testsuites values are testcase class objects
-    suite = class_testplan.testsuites.get(tests_rel_dir + 'test_a/test_a.check_1')
-    assert suite.name == tests_rel_dir + 'test_a/test_a.check_1'
+    testsuite_rel_path = tests_rel_dir + 'test_a/test_a.check_1'
+    testsuite_rel_path = testsuite_rel_path.replace('/', os.sep)
+    suite = class_testplan.testsuites.get(testsuite_rel_path)
+    assert suite.name == testsuite_rel_path
     assert all(isinstance(n, TestSuite) for n in class_testplan.testsuites.values())
 
 @pytest.mark.parametrize("board_root_dir", [("board_config_file_not_exist"), ("board_config")])
@@ -266,34 +268,34 @@ def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms
         instance_list.append(instance)
     plan.add_instances(instance_list)
     assert list(plan.instances.keys()) == \
-		   [platform.name + '/' + s for s in list(all_testsuites_dict.keys())]
+		   [os.path.join(platform.name, s) for s in list(all_testsuites_dict.keys())]
     assert all(isinstance(n, TestInstance) for n in list(plan.instances.values()))
     assert list(plan.instances.values()) == instance_list
 
 
 QUARANTINE_BASIC = {
-    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'a1 on board_1 and board_3'
+    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'.replace('/', os.sep) : 'a1 on board_1 and board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'.replace('/', os.sep) : 'a1 on board_1 and board_3'
 }
 
 QUARANTINE_WITH_REGEXP = {
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'a2 and c2 on x86',
-    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all test_d',
-    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'a2 and c2 on x86'
+    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2'.replace('/', os.sep) : 'a2 and c2 on x86',
+    'demo_board_1/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1'.replace('/', os.sep) : 'all test_d',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1'.replace('/', os.sep) : 'all test_d',
+    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1'.replace('/', os.sep) : 'all test_d',
+    'demo_board_2/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2'.replace('/', os.sep) : 'a2 and c2 on x86'
 }
 
 QUARANTINE_PLATFORM = {
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_e/test_e.check_1' : 'all on board_3',
-    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_config/test_config.main' : 'all on board_3'
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_2'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_d/test_d.check_1'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_1'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_b/test_b.check_2'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_1'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_c/test_c.check_2'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_e/test_e.check_1'.replace('/', os.sep) : 'all on board_3',
+    'demo_board_3/scripts/tests/twister/test_data/testsuites/tests/test_config/test_config.main'.replace('/', os.sep) : 'all on board_3'
 }
 
 QUARANTINE_MULTIFILES = {
@@ -352,12 +354,9 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
 
 
 TESTDATA_PART4 = [
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy'],
-     None, 'Snippet not supported'),
-    (os.path.join('test_c', 'test_c.check_1'), ['cdc-acm-console'],
-     0, None),
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy', 'cdc-acm-console'],
-     2, 'Snippet not supported'),
+    ('test_d/test_d.check_1', ['dummy'], None, 'Snippet not supported'),
+    ('test_c/test_c.check_1', ['cdc-acm-console'], 0, None),
+    ('test_d/test_d.check_1', ['dummy', 'cdc-acm-console'], 2, 'Snippet not supported'),
 ]
 
 @pytest.mark.parametrize(
@@ -376,14 +375,12 @@ def test_required_snippets_short(
 ):
     """ Testing required_snippets function of TestPlan class in Twister """
     plan = class_testplan
-    testpath = os.path.join('scripts', 'tests', 'twister', 'test_data',
-                            'testsuites', 'tests', testpath)
-    testsuite = class_testplan.testsuites.get(testpath)
+    testsuite_rel_path = f'scripts/tests/twister/test_data/testsuites/tests/{testpath}'
+    testsuite_rel_path = testsuite_rel_path.replace('/', os.sep)
+    testsuite = class_testplan.testsuites.get(testsuite_rel_path)
     plan.platforms = platforms_list
     plan.platform_names = [p.name for p in platforms_list]
     plan.testsuites = {testpath: testsuite}
-
-    print(plan.testsuites)
 
     for _, testcase in plan.testsuites.items():
         testcase.exclude_platform = []
@@ -1125,7 +1122,7 @@ boards:
       - name: unit_testing
 """
     p1e1_yamlfile = tmp_p1_dir / 'board.yml'
-    p1e1_yamlfile.write_text(p1e1_bs_yaml)
+    p1e1_yamlfile.write_text(p1e1_bs_yaml, encoding='utf-8')
 
     p1e1_yaml = """\
 identifier: p1e1
@@ -1138,7 +1135,7 @@ toolchain:
 twister: False
 """
     p1e1_yamlfile = tmp_p1_dir / 'p1e1.yaml'
-    p1e1_yamlfile.write_text(p1e1_yaml)
+    p1e1_yamlfile.write_text(p1e1_yaml, encoding='utf-8')
 
     p1e2_yaml = """\
 identifier: p1e2
@@ -1150,7 +1147,7 @@ toolchain:
   - zephyr
 """
     p1e2_yamlfile = tmp_p1_dir / 'p1e2.yaml'
-    p1e2_yamlfile.write_text(p1e2_yaml)
+    p1e2_yamlfile.write_text(p1e2_yaml, encoding='utf-8')
 
     tmp_p2_dir = tmp_arch1_dir / 'p2'
     tmp_p2_dir.mkdir()
@@ -1168,7 +1165,7 @@ boards:
       - name: unit_testing
 """
     p2_yamlfile = tmp_p2_dir / 'board.yml'
-    p2_yamlfile.write_text(p2_bs_yaml)
+    p2_yamlfile.write_text(p2_bs_yaml, encoding='utf-8')
 
     p2_yaml = """\
 identifier: p2
@@ -1182,11 +1179,11 @@ testing:
   default: True
 """
     p2_yamlfile = tmp_p2_dir / 'p2.yaml'
-    p2_yamlfile.write_text(p2_yaml)
+    p2_yamlfile.write_text(p2_yaml, encoding='utf-8')
 
     if create_duplicate:
         p2_yamlfile = tmp_p2_dir / 'p2-1.yaml'
-        p2_yamlfile.write_text(p2_yaml)
+        p2_yamlfile.write_text(p2_yaml, encoding='utf-8')
 
     p2_2_yaml = """\
 testing:
@@ -1200,7 +1197,7 @@ toolchain:
   - zephyr
 """
     p2_2_yamlfile = tmp_p2_dir / 'p2-2.yaml'
-    p2_2_yamlfile.write_text(p2_2_yaml)
+    p2_2_yamlfile.write_text(p2_2_yaml, encoding='utf-8')
 
     tmp_arch2_dir = tmp_board_root_dir / 'arm'
     tmp_arch2_dir.mkdir()
@@ -1217,7 +1214,7 @@ boards:
       - name: unit_testing
 """
     p3_yamlfile = tmp_p3_dir / 'board.yml'
-    p3_yamlfile.write_text(p3_bs_yaml)
+    p3_yamlfile.write_text(p3_bs_yaml, encoding='utf-8')
 
     p3_yaml = """\
 identifier: p3
@@ -1229,9 +1226,9 @@ toolchain:
   - zephyr
 """
     p3_yamlfile = tmp_p3_dir / 'p3.yaml'
-    p3_yamlfile.write_text(p3_yaml)
+    p3_yamlfile.write_text(p3_yaml, encoding='utf-8')
     p3_yamlfile = tmp_p3_dir / 'p3_B.conf'
-    p3_yamlfile.write_text('')
+    p3_yamlfile.write_text('', encoding='utf-8')
 
     env = mock.Mock(board_roots=[tmp_board_root_dir],soc_roots=[tmp_path], arch_roots=[tmp_path])
 
@@ -1291,6 +1288,7 @@ TESTDATA_9 = [
          'testsuite filter', 'testsuite filter, alt root']
 )
 def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, expected_suite_count):
+    testsuite_filter = [f.replace('/', os.sep) for f in testsuite_filter]
     # tmp_path
     # ├ tests  <- test root
     # │ ├ good_test
@@ -1557,7 +1555,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         testplan.load_from_file('dummy.yaml', filter_platform)
 
     expected_instances = {
-        'Platform 1/TestSuite 1': {
+        str(os.path.join('Platform 1', 'TestSuite 1')): {
             'metrics': {
                 'handler_time': 60.0,
                 'used_ram': 4096,
@@ -1575,7 +1573,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                 }
             }
         },
-        'Platform 1/TestSuite 2': {
+        str(os.path.join('Platform 1', 'TestSuite 2')): {
             'metrics': {
                 'handler_time': 0,
                 'used_ram': 0,
@@ -1586,7 +1584,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
             'retries': 0,
             'testcases': []
         },
-        'Platform 1/TestSuite 3': {
+        str(os.path.join('Platform 1', 'TestSuite 3')): {
             'metrics': {
                 'handler_time': 360.0,
                 'used_ram': 4096,
@@ -1610,7 +1608,7 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
                     }
             }
         },
-        'Platform 1/TestSuite 4': {
+        str(os.path.join('Platform 1', 'TestSuite 4')): {
             'metrics': {
                 'handler_time': 360.0,
                 'used_ram': 4096,

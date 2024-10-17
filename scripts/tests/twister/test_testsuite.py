@@ -326,13 +326,7 @@ TESTDATA_5 = [
             'test_a',
             'test_a.check_1'
         ),
-        os.path.join(
-            os.sep,
-            TEST_DATA_REL_PATH,
-            'tests',
-            'test_a',
-            'test_a.check_1'
-        ),
+        os.path.join(os.sep, TEST_DATA_REL_PATH, 'tests', 'test_a', 'test_a.check_1')
     ),
     (
         ZEPHYR_BASE,
@@ -367,7 +361,14 @@ TESTDATA_5 = [
 
 @pytest.mark.parametrize(
     'testsuite_root, suite_path, name, expected',
-    TESTDATA_5
+    TESTDATA_5,
+    ids=[
+        'test base, single test folder, case absolute path',
+        'zephyr base, zephyr base, case',
+        'zephyr base, single test folder, case absolute path',
+        'tests folder, tests folder, case relative path',
+        'zephyr base, zephyr base, subcase'
+    ]
 )
 def test_get_unique(testsuite_root, suite_path, name, expected):
     """
@@ -443,8 +444,9 @@ def test_get_search_area_boundary(
 
 
 TESTDATA_7 = [
-    (True, [os.path.join('', 'home', 'user', 'dummy_path', 'dummy.c'),
-            os.path.join('', 'home', 'user', 'dummy_path', 'dummy.cpp')]),
+    (True, [os.path.join(os.sep, 'home', 'user', 'dummy_path', 'dummy.c'),
+            os.path.join(os.sep, 'home', 'user', 'dummy_path', 'dummy.cpp')]
+    ),
     (False, [])
 ]
 
@@ -454,8 +456,11 @@ TESTDATA_7 = [
     ids=['valid', 'not a directory']
 )
 def test_find_c_files_in(isdir, expected):
-    old_dir = os.path.join('', 'home', 'user', 'dummy_base_dir')
-    new_path = os.path.join('', 'home', 'user', 'dummy_path')
+    if os.name == 'nt':
+        expected = ['\\\\?\\C:' + p for p in expected]
+
+    old_dir = os.path.join(os.sep, 'home', 'user', 'dummy_base_dir')
+    new_path = os.path.join(os.sep, 'home', 'user', 'dummy_path')
     cur_dir = old_dir
 
     def mock_chdir(path, *args, **kwargs):
@@ -516,9 +521,9 @@ def test_find_c_files_in(isdir, expected):
          mock.patch('os.getcwd', return_value=cur_dir), \
          mock.patch('glob.glob', mock_glob), \
          mock.patch('os.chdir', side_effect=mock_chdir) as chdir_mock:
-        filenames = find_c_files_in(new_path)
+        tfilenames = find_c_files_in(new_path)
 
-    assert sorted(filenames) == sorted(expected)
+    assert sorted([str(f) for f in tfilenames]) == sorted(expected)
 
     assert chdir_mock.call_args is None or \
            chdir_mock.call_args == mock.call(old_dir)
@@ -680,9 +685,13 @@ def test_scan_testsuite_path(
 
 
 TESTDATA_9 = [
-    ('dummy/path', 'dummy/path/src', 'dummy/path/src'),
-    ('dummy/path', 'dummy/src', 'dummy/src'),
-    ('dummy/path', 'another/path', '')
+    (
+        os.path.join('dummy', 'path'),
+        os.path.join('dummy', 'path', 'src'),
+        os.path.join('dummy', 'path', 'src')
+    ),
+    (os.path.join('dummy', 'path'), os.path.join('dummy', 'src'), os.path.join('dummy', 'src')),
+    (os.path.join('dummy', 'path'), os.path.join('another', 'path'), '')
 ]
 
 
@@ -900,5 +909,4 @@ TESTDATA_11 = [
 def test_get_no_detailed_test_id(testsuite_root, suite_path, name, expected):
     '''Test to check if the name without path is given for each testsuite'''
     suite = TestSuite(testsuite_root, suite_path, name, detailed_test_id=False)
-    print(suite.name)
     assert suite.name == expected
