@@ -163,8 +163,8 @@ int http_server_init(struct http_server_ctx *ctx)
 		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
 			int optval = 0;
 
-			(void)setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
-					 &optval, sizeof(optval));
+			(void)zsock_setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &optval,
+					       sizeof(optval));
 		}
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
