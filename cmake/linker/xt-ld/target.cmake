@@ -17,8 +17,15 @@ if(CONFIG_CPP_EXCEPTIONS)
   # The location is so important that we cannot let this be controlled by normal
   # link libraries, instead we must control the link command specifically as
   # part of toolchain.
-  set(CMAKE_CXX_LINK_EXECUTABLE
+  if (LIBGCC_DIR)
+    set(CMAKE_CXX_LINK_EXECUTABLE
       "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${LIBGCC_DIR}/crtbegin.o <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${LIBGCC_DIR}/crtend.o")
+  elseif(COMMAND compiler_file_name)
+    compiler_file_name("crtbegin.o" CRTBEGIN)
+    compiler_file_name("crtend.o" CRTEND)
+    set(CMAKE_CXX_LINK_EXECUTABLE
+      "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> ${CRTBEGIN} <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${CRTEND}")
+  endif()
 endif()
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}

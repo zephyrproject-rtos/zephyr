@@ -47,6 +47,12 @@ tests:
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y
+  kernel.common.newlib:
+    filter: CONFIG_NEWLIB_LIBC_SUPPORTED
+    min_ram: 32
+    tags: newlib
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
   kernel.common.lto:
     # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
     filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
