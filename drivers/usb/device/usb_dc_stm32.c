@@ -23,6 +23,7 @@
 #include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/dt-bindings/phy/stm32u5_otg_hs_phy.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include "stm32_hsem.h"
@@ -35,6 +36,21 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
+
+/*
+ * Some STM32U5xx parts support a USB HS PHY which is clocked by the HSE clock or PLL1_P
+ * clock directly.  This requires specific configuration.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
+#if DT_NODE_HAS_PROP(DT_PHANDLE_BY_IDX(DT_NODELABEL(usbotg_hs), phys, 0), clock_cfg)
+#define OTG_HS_PHY_REFERENCE_CLOCK                                                                 \
+	_CONCAT(SYSCFG_OTG_HS_PHY_CLK_SELECT_,                                                     \
+		DT_PROP(DT_PHANDLE(DT_NODELABEL(usbotg_hs), phys), clock_cfg))
+#else
+#define OTG_HS_PHY_REFERENCE_CLOCK SYSCFG_OTG_HS_PHY_CLK_SELECT_1
+#endif
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy) */
 
 /*
  * Vbus sensing is determined based on the presence of the hardware detection
@@ -217,7 +233,7 @@ static int usb_dc_stm32_clock_enable(void)
 		return -ENODEV;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
 	/* Sequence to enable the power of the OTG HS on a stm32U5 serie : Enable VDDUSB */
 	bool pwr_clk = LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR);
 
@@ -246,7 +262,7 @@ static int usb_dc_stm32_clock_enable(void)
 
 	/* Set the OTG PHY reference clock selection (through SYSCFG) block */
 	LL_APB3_GRP1_EnableClock(LL_APB3_GRP1_PERIPH_SYSCFG);
-	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(SYSCFG_OTG_HS_PHY_CLK_SELECT_1);
+	HAL_SYSCFG_SetOTGPHYReferenceClockSelection(OTG_HS_PHY_REFERENCE_CLOCK);
 	/* Configuring the SYSCFG registers OTG_HS PHY : OTG_HS PHY enable*/
 	HAL_SYSCFG_EnableOTGPHY(SYSCFG_OTG_HS_PHY_ENABLE);
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
@@ -333,7 +349,7 @@ static int usb_dc_stm32_clock_disable(void)
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) && defined(CONFIG_SOC_SERIES_STM32U5X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_otghs_phy)
 	LL_AHB2_GRP1_DisableClock(LL_AHB2_GRP1_PERIPH_USBPHY);
 #endif
 
