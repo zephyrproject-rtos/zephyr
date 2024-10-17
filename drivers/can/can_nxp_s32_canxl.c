@@ -946,6 +946,37 @@ static void can_nxp_s32_ctrl_callback(const struct device *dev,
 	}
 }
 
+#ifdef CAN_NXP_S32_FD_MODE
+extern int can_calc_timing_internal(const struct device *dev, struct can_timing *res,
+				    const struct can_timing *min, const struct can_timing *max,
+				    uint32_t bitrate, uint16_t sample_pnt);
+
+/*
+ * This function calculates the data phase bit timing so that the prescaler
+ * of the data phase bit timing must be equal this one of the nominal bit timing.
+ * Due to the hardware CANXL use the same bit time quanta prescaler for
+ * the nominal bit timing and the data phase bit timing.
+ */
+static int can_nxp_s32_calc_timing_data_fixed_prescaler(const struct device *dev,
+							struct can_timing *res, uint32_t bitrate,
+							uint16_t sample_pnt)
+{
+	const struct can_driver_api *api = dev->api;
+	struct can_nxp_s32_data *data = dev->data;
+	struct can_timing timing_min = api->timing_data_min;
+	struct can_timing timing_max = api->timing_data_max;
+
+	timing_min.prescaler = data->timing.prescaler;
+	timing_max.prescaler = data->timing.prescaler;
+
+	if (bitrate > CAN_NXP_S32_MAX_BITRATE) {
+		return -EINVAL;
+	}
+
+	return can_calc_timing_internal(dev, res, &timing_min, &timing_max, bitrate, sample_pnt);
+}
+#endif
+
 static int can_nxp_s32_init(const struct device *dev)
 {
 	const struct can_nxp_s32_config *config = dev->config;
@@ -1005,8 +1036,9 @@ static int can_nxp_s32_init(const struct device *dev)
 	nxp_s32_zcan_timing_to_canxl_timing(&data->timing, &config->can_cfg->bitrate);
 
 #ifdef CAN_NXP_S32_FD_MODE
-	err = can_calc_timing_data(dev, &data->timing_data, config->common.bitrate_data,
-				   config->common.sample_point_data);
+	err = can_nxp_s32_calc_timing_data_fixed_prescaler(dev, &data->timing_data,
+							   config->common.bitrate_data,
+							   config->common.sample_point_data);
 	if (err == -EINVAL) {
 		LOG_ERR("Can't find timing data for given param");
 		return -EIO;
@@ -1096,36 +1128,28 @@ static const struct can_driver_api can_nxp_s32_driver_api = {
 	.set_state_change_callback = can_nxp_s32_set_state_change_callback,
 	.get_core_clock = can_nxp_s32_get_core_clock,
 	.get_max_filters = can_nxp_s32_get_max_filters,
-	.timing_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_max = {
-		.sjw = 0x04,
-		.prop_seg = 0x08,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x100
-	},
+	.timing_min = {.sjw = 0x01,
+		       .prop_seg = 0x01,
+		       .phase_seg1 = 0x01,
+		       .phase_seg2 = 0x02,
+		       .prescaler = 0x01},
+	.timing_max = {.sjw = 0x80,
+		       .prop_seg = 0x180,
+		       .phase_seg1 = 0x80,
+		       .phase_seg2 = 0x80,
+		       .prescaler = 0x100},
 #ifdef CAN_NXP_S32_FD_MODE
 	.set_timing_data = can_nxp_s32_set_timing_data,
-	.timing_data_min = {
-		.sjw = 0x01,
-		.prop_seg = 0x01,
-		.phase_seg1 = 0x01,
-		.phase_seg2 = 0x02,
-		.prescaler = 0x01
-	},
-	.timing_data_max = {
-		.sjw = 0x04,
-		.prop_seg = 0x08,
-		.phase_seg1 = 0x08,
-		.phase_seg2 = 0x08,
-		.prescaler = 0x100
-	}
+	.timing_data_min = {.sjw = 0x01,
+			    .prop_seg = 0x01,
+			    .phase_seg1 = 0x01,
+			    .phase_seg2 = 0x02,
+			    .prescaler = 0x01},
+	.timing_data_max = {.sjw = 0x80,
+			    .prop_seg = 0x80,
+			    .phase_seg1 = 0x80,
+			    .phase_seg2 = 0x80,
+			    .prescaler = 0x100}
 #endif
 };
 
