@@ -194,6 +194,15 @@ void bt_bas_bls_set_battery_charge_level(enum bt_bas_bls_battery_charge_level le
 	bls.power_state &= ~BATTERY_CHARGE_LEVEL_MASK;
 	bls.power_state |= (level << BATTERY_CHARGE_LEVEL_SHIFT) & BATTERY_CHARGE_LEVEL_MASK;
 	bt_bas_bls_update_battery_level_status();
+
+#if defined(CONFIG_BT_BAS_BCS)
+	if (level == BT_BAS_BLS_CHARGE_LEVEL_CRITICAL) {
+		bt_bas_bcs_set_battery_critical_state(true);
+		return;
+	}
+
+	bt_bas_bcs_set_battery_critical_state(false);
+#endif /* CONFIG_BT_BAS_BCS */
 }
 
 void bt_bas_bls_set_battery_charge_type(enum bt_bas_bls_battery_charge_type type)
@@ -232,6 +241,15 @@ void bt_bas_bls_set_service_required(enum bt_bas_bls_service_required value)
 	bls.additional_status &= ~SERVICE_REQUIRED_MASK;
 	bls.additional_status |= (value << SERVICE_REQUIRED_SHIFT) & SERVICE_REQUIRED_MASK;
 	bt_bas_bls_update_battery_level_status();
+
+#if defined(CONFIG_BT_BAS_BCS)
+	if (value == BT_BAS_BLS_SERVICE_REQUIRED_TRUE) {
+		bt_bas_bcs_set_immediate_service_required(true);
+		return;
+	}
+
+	bt_bas_bcs_set_immediate_service_required(false);
+#endif /* CONFIG_BT_BAS_BCS */
 }
 
 void bt_bas_bls_set_battery_fault(enum bt_bas_bls_battery_fault value)
