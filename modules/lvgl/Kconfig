@@ -102,6 +102,7 @@ config LV_Z_FLUSH_THREAD_STACK_SIZE
 	default 1024
 	help
 	  Stack size for LVGL flush thread, which will call display_write
+	  and display_show
 
 config LV_Z_FLUSH_THREAD_PRIO
 	int "LVGL flush thread priority"

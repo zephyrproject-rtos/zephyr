@@ -48,6 +48,10 @@ void lvgl_flush_cb_mono(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color
 	}
 
 	lv_disp_flush_ready(disp_drv);
+
+	if (is_last && (data->cap.screen_info & SCREEN_INFO_REQUIRES_SHOW)) {
+		display_show(display_dev);
+	}
 }
 
 void lvgl_set_px_cb_mono(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x,

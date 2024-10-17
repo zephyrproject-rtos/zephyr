@@ -282,6 +282,9 @@ Trusted Firmware-M
 LVGL
 ****
 
+* Added support for displays with the capability :c:enum:`SCREEN_INFO_REQUIRES_SHOW`.
+  (:github:`79936`)
+
 Tests and Samples
 *****************
 

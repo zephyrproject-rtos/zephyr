@@ -24,12 +24,17 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		k_msgq_get(&flush_queue, &flush, K_FOREVER);
 		data = (struct lvgl_disp_data *)flush.disp_drv->user_data;
+		const bool is_last = lv_disp_flush_is_last(flush.disp_drv);
 
 		display_write(data->display_dev, flush.x, flush.y, &flush.desc,
 			      flush.buf);
 
 		lv_disp_flush_ready(flush.disp_drv);
 		k_sem_give(&flush_complete);
+
+		if (is_last && (data->cap.screen_info & SCREEN_INFO_REQUIRES_SHOW)) {
+			display_show(data->display_dev);
+		}
 	}
 }
 
@@ -129,11 +134,15 @@ void lvgl_flush_display(struct lvgl_display_flush *request)
 	k_yield();
 #else
 	/* Write directly to the display */
-	struct lvgl_disp_data *data =
-		(struct lvgl_disp_data *)request->disp_drv->user_data;
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)request->disp_drv->user_data;
+	const bool is_last = lv_disp_flush_is_last(request->disp_drv);
 
 	display_write(data->display_dev, request->x, request->y,
 		      &request->desc, request->buf);
 	lv_disp_flush_ready(request->disp_drv);
+
+	if (is_last && (data->cap.screen_info & SCREEN_INFO_REQUIRES_SHOW)) {
+		display_show(data->display_dev);
+	}
 #endif
 }
