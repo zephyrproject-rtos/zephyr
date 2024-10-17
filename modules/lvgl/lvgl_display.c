@@ -25,6 +25,7 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 		k_msgq_get(&flush_queue, &flush, K_FOREVER);
 		data = (struct lvgl_disp_data *)flush.disp_drv->user_data;
 
+		flush.desc.frame_incomplete = !lv_disp_flush_is_last(flush.disp_drv);
 		display_write(data->display_dev, flush.x, flush.y, &flush.desc,
 			      flush.buf);
 
@@ -132,6 +133,7 @@ void lvgl_flush_display(struct lvgl_display_flush *request)
 	struct lvgl_disp_data *data =
 		(struct lvgl_disp_data *)request->disp_drv->user_data;
 
+	request->desc.frame_incomplete = !lv_disp_flush_is_last(request->disp_drv);
 	display_write(data->display_dev, request->x, request->y,
 		      &request->desc, request->buf);
 	lv_disp_flush_ready(request->disp_drv);
