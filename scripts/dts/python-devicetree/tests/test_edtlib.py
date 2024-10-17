@@ -365,6 +365,118 @@ def test_include_filters():
         assert set(child.prop2specs.keys()) == {'child-prop-1', 'child-prop-2',
                                                 'x', 'z'}  # root level 'y' is blocked
 
+def test_include_filters_inherited_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file.
+
+    Use-case "B includes I includes X":
+    - X is a base binding file, specifying common properties
+    - I is an intermediary binding file, which includes X without modification
+      nor filter
+    - B includes I, filtering the properties it chooses to inherit
+      with an allowlist or a blocklist
+
+    Checks that the properties inherited from X via I are actually filtered
+    as B intends to.
+    '''
+    fname2path = {
+        # Base binding file, specifies a few properties up to the grandchild-binding level.
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        # 'include:'s the base file above, without modification nor filter
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            # Filters inherited specifications with an allowlist.
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only property allowed.
+    assert {"prop-1"} == set(binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            # Filters inherited specifications with a blocklist.
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only non blocked property.
+    assert {"prop-1"} == set(binding.prop2specs.keys())
+
+def test_include_filters_inherited_child_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file
+    (child-binding level).
+
+    See also: test_include_filters_inherited_bindings()
+    '''
+    fname2path = {
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    # Only property allowed.
+    assert {"child-prop-1"} == set(child_binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    # Only non blocked property.
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert {"child-prop-1"} == set(child_binding.prop2specs.keys())
+
+def test_include_filters_inherited_grandchild_bindings() -> None:
+    '''Test the basics of filtering properties inherited via an intermediary binding file
+    (grandchild-binding level).
+
+    See also: test_include_filters_inherited_bindings()
+    '''
+    fname2path = {
+        "simple.yaml": "test-bindings-include/simple.yaml",
+        "simple_inherit.yaml": "test-bindings-include/simple_inherit.yaml",
+    }
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_allowlist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert child_binding.child_binding
+    grandchild_binding = child_binding.child_binding
+    # Only property allowed.
+    assert {"grandchild-prop-1"} == set(grandchild_binding.prop2specs.keys())
+
+    with from_here():
+        binding = edtlib.Binding(
+            "test-bindings-include/simple_filter_blocklist.yaml",
+            fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+    assert binding.child_binding
+    child_binding = binding.child_binding
+    assert child_binding.child_binding
+    grandchild_binding = child_binding.child_binding
+    # Only non blocked property.
+    assert {"grandchild-prop-1"} == set(grandchild_binding.prop2specs.keys())
 
 def test_bus():
     '''Test 'bus:' and 'on-bus:' in bindings'''
