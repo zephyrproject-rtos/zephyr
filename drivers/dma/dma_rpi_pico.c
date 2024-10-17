@@ -10,7 +10,11 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#include <zephyr/dt-bindings/dma/rpi_pico_dma.h>
+#if defined(CONFIG_SOC_SERIES_RP2040)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2040.h>
+#elif defined(CONFIG_SOC_SERIES_RP2350)
+#include <zephyr/dt-bindings/dma/rpi-pico-dma-rp2350.h>
+#endif
 
 #include <hardware/dma.h>
 
