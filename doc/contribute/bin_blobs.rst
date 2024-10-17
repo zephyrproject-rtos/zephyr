@@ -92,6 +92,7 @@ Tainting will be communicated to the user in the following manners:
 - The ``west spdx`` command will include the tainted status in its output
 - The kernel's default fatal error handler will also explicitly print out the
   kernel's tainted status
+- The boot banner prints the kernel's tainted status
 
 .. _bin-blobs-types:
 
