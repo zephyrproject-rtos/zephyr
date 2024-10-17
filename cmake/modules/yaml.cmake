@@ -72,6 +72,29 @@ function(internal_yaml_context_free)
   endif()
 endfunction()
 
+# Internal helper function to provide the correct initializer for a list in the
+# JSON content.
+function(internal_yaml_list_initializer var)
+  set(${var} "[]" PARENT_SCOPE)
+endfunction()
+
+# Internal helper function to append items to a list in the JSON content.
+# Unassigned arguments are the values to be appended.
+function(internal_yaml_list_append var key)
+  set(json_content "${${var}}")
+  string(JSON subjson GET "${json_content}" ${key})
+  string(JSON index LENGTH "${subjson}")
+  list(LENGTH ARGN length)
+  math(EXPR stop "${index} + ${length} - 1")
+  if(NOT length EQUAL 0)
+    foreach(i RANGE ${index} ${stop})
+      list(POP_FRONT ARGN value)
+      string(JSON json_content SET "${json_content}" ${key} ${i} "\"${value}\"")
+    endforeach()
+  endif()
+  set(${var} "${json_content}" PARENT_SCOPE)
+endfunction()
+
 # Usage
 #   yaml_context(EXISTS NAME <name> <result>)
 #
@@ -265,6 +288,18 @@ function(yaml_set)
 
   zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
 
+  if(DEFINED ARG_YAML_LIST
+     OR LIST IN_LIST ARG_YAML_KEYWORDS_MISSING_VALUES)
+    set(key_is_list TRUE)
+  endif()
+
+  if(ARG_YAML_APPEND AND NOT key_is_list)
+    message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(APPEND ...) can only be used with argument: LIST")
+  endif()
+
+  zephyr_get_scoped(json_content ${ARG_YAML_NAME} JSON)
+  zephyr_get_scoped(genex ${ARG_YAML_NAME} GENEX)
+
   set(yaml_key_undefined ${ARG_YAML_KEY})
   foreach(k ${yaml_key_undefined})
     list(REMOVE_AT yaml_key_undefined 0)
@@ -281,8 +316,8 @@ function(yaml_set)
 
   list(REVERSE yaml_key_undefined)
   if(NOT "${yaml_key_undefined}" STREQUAL "")
-    if(ARG_YAML_APPEND)
-      set(json_string "[]")
+    if(key_is_list)
+      internal_yaml_list_initializer(json_string)
     else()
       set(json_string "\"\"")
     endif()
@@ -295,21 +330,13 @@ function(yaml_set)
     )
   endif()
 
-  if(DEFINED ARG_YAML_LIST OR LIST IN_LIST ARG_YAML_KEYWORDS_MISSING_VALUES)
+  if(key_is_list)
     if(NOT ARG_YAML_APPEND)
-      string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "[]")
+      internal_yaml_list_initializer(json_string)
+      string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "${json_string}")
     endif()
 
-    string(JSON subjson GET "${json_content}" ${ARG_YAML_KEY})
-    string(JSON index LENGTH "${subjson}")
-    list(LENGTH ARG_YAML_LIST length)
-    math(EXPR stop "${index} + ${length} - 1")
-    if(NOT length EQUAL 0)
-      foreach(i RANGE ${index} ${stop})
-        list(POP_FRONT ARG_YAML_LIST value)
-        string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} ${i} "\"${value}\"")
-      endforeach()
-    endif()
+    internal_yaml_list_append(json_content "${ARG_YAML_KEY}" ${ARG_YAML_LIST})
   else()
     string(JSON json_content SET "${json_content}" ${ARG_YAML_KEY} "\"${ARG_YAML_VALUE}\"")
   endif()
