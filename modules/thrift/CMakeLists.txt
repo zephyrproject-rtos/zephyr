@@ -39,4 +39,7 @@ zephyr_library_sources_ifdef(CONFIG_THRIFT_SSL_SOCKET
 # needed because std::iterator was deprecated with -std=c++17
 zephyr_library_compile_options(-Wno-deprecated-declarations)
 
+# needed for ctime_r
+zephyr_library_compile_definitions(_POSIX_C_SOURCE=200809L)
+
 endif(CONFIG_THRIFT)
