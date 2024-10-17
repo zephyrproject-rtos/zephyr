@@ -20,6 +20,23 @@
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+struct wpa_supp_enterprise_file {
+	uint8_t *ca_cert;
+	uint32_t ca_cert_len;
+	uint8_t *client_cert;
+	uint32_t client_cert_len;
+	uint8_t *client_key;
+	uint32_t client_key_len;
+	uint8_t *ca_cert2;
+	uint32_t ca_cert2_len;
+	uint8_t *client_cert2;
+	uint32_t client_cert2_len;
+	uint8_t *client_key2;
+	uint32_t client_key2_len;
+};
+#endif
+
 /**
  * @brief Get version
  *
@@ -173,8 +190,7 @@ int supplicant_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_
  */
 int supplicant_mode(const struct device *dev, struct wifi_mode_info *mode);
 
-#if defined CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || \
-	defined CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 /** Set Wi-Fi enterprise mode CA/client Cert and key
  *
  * @param dev Pointer to the device structure for the driver instance
