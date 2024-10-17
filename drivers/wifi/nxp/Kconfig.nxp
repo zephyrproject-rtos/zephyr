@@ -457,7 +457,6 @@ config NXP_WIFI_11V
 
 config NXP_WIFI_11R
 	bool "802.11R Support"
-	default n if (NXP_RW610 && !WIFI_NM_WPA_SUPPLICANT)
 	default y
 	depends on NXP_88W8987 || NXP_IW416 || NXP_RW610 || NXP_WIFI_CUSTOM
 	help
