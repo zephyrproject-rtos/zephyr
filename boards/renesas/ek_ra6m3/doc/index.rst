@@ -69,7 +69,7 @@ Hardware
 ********
 Detailed hardware feature for the RA6M3 MCU group can be found at `RA6M3 Group User's Manual Hardware`_
 
-.. figure:: ra6m3-block-diagram.webp
+.. figure:: ra6m3_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA6M3 MCU group feature

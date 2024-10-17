@@ -71,7 +71,7 @@ Hardware
 ********
 Detail Hardware feature for the RA4M2 MCU group can be found at `RA4M2 Group User's Manual Hardware`_
 
-.. figure:: ra4m2-block-diagram.webp
+.. figure:: ra4m2_block_diagram.webp
 	:width: 442px
 	:align: center
 	:alt: RA4M2 MCU group feature
