@@ -156,9 +156,8 @@ i2c0: i2c@8000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
-	easydma-maxcnt-bits = <13>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 };
@@ -173,9 +172,8 @@ i2c1: i2c@9000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
-	easydma-maxcnt-bits = <13>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 };
@@ -190,9 +188,8 @@ i2c2: i2c@a000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
-	easydma-maxcnt-bits = <13>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 };
@@ -207,9 +204,8 @@ i2c3: i2c@b000 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
-	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
-	easydma-maxcnt-bits = <13>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 	zephyr,pm-device-runtime-auto;
 };
@@ -225,8 +221,8 @@ spi0: spi@8000 {
 	#size-cells = <0>;
 	reg = <0x8000 0x1000>;
 	interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
-	max-frequency = <DT_FREQ_M(8)>;
-	easydma-maxcnt-bits = <13>;
+	nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -241,8 +237,8 @@ spi1: spi@9000 {
 	#size-cells = <0>;
 	reg = <0x9000 0x1000>;
 	interrupts = <9 NRF_DEFAULT_IRQ_PRIORITY>;
-	max-frequency = <DT_FREQ_M(8)>;
-	easydma-maxcnt-bits = <13>;
+	nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -257,8 +253,8 @@ spi2: spi@a000 {
 	#size-cells = <0>;
 	reg = <0xa000 0x1000>;
 	interrupts = <10 NRF_DEFAULT_IRQ_PRIORITY>;
-	max-frequency = <DT_FREQ_M(8)>;
-	easydma-maxcnt-bits = <13>;
+	nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 
@@ -273,8 +269,8 @@ spi3: spi@b000 {
 	#size-cells = <0>;
 	reg = <0xb000 0x1000>;
 	interrupts = <11 NRF_DEFAULT_IRQ_PRIORITY>;
-	max-frequency = <DT_FREQ_M(8)>;
-	easydma-maxcnt-bits = <13>;
+	nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+	nordic,easydma-maxcnt-bits = <13>;
 	status = "disabled";
 };
 

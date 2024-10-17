@@ -271,7 +271,7 @@
 				cc-num = <8>;
 				interrupts = <40 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -282,7 +282,7 @@
 				cc-num = <8>;
 				interrupts = <41 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -293,7 +293,7 @@
 				cc-num = <8>;
 				interrupts = <42 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(32)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(32)>;
 				prescaler = <0>;
 			};
 
@@ -473,7 +473,7 @@
 				cc-num = <6>;
 				interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -484,7 +484,7 @@
 				cc-num = <6>;
 				interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>;
 				max-bit-width = <32>;
-				max-frequency = <DT_FREQ_M(320)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(320)>;
 				prescaler = <0>;
 			};
 
@@ -500,9 +500,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x8e6000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <230 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(32)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -524,9 +524,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x8e7000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <231 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(32)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(32)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -820,7 +820,7 @@
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -832,9 +832,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9a5000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <421 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -860,7 +860,7 @@
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -872,9 +872,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9a6000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <422 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -934,7 +934,7 @@
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -946,9 +946,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9b5000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <437 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -974,7 +974,7 @@
 				reg = <0x9b6000 0x1000>;
 				status = "disabled";
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -986,9 +986,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9b6000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <438 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -1048,7 +1048,7 @@
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -1060,9 +1060,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9c5000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <453 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -1088,7 +1088,7 @@
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -1100,9 +1100,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9c6000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <454 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -1162,7 +1162,7 @@
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -1174,9 +1174,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9d5000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <469 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;
@@ -1202,7 +1202,7 @@
 				reg = <0x9d6000 0x1000>;
 				status = "disabled";
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				nordic,clockpin-enable = <NRF_FUN_TWIM_SDA>,
@@ -1214,9 +1214,9 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x9d6000 0x1000>;
 				status = "disabled";
-				easydma-maxcnt-bits = <15>;
+				nordic,easydma-maxcnt-bits = <15>;
 				interrupts = <470 NRF_DEFAULT_IRQ_PRIORITY>;
-				max-frequency = <DT_FREQ_M(8)>;
+				nordic,spi-max-frequency = <DT_FREQ_M(8)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				rx-delay-supported;

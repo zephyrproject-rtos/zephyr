@@ -121,78 +121,46 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@40003000 {
+		i2c0: spi0: seriobox@40003000 {
 			/*
-			 * This i2c node can be TWI, TWIM, or TWIS,
-			 * for the user to pick:
-			 * compatible = "nordic,nrf-twi" or
-			 *              "nordic,nrf-twim" or
-			 *              "nordic,nrf-twis".
-			 */
-			compatible = "nordic,nrf-twim";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40003000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <16>;
-			status = "disabled";
-			zephyr,pm-device-runtime-auto;
-		};
-
-		spi0: spi@40003000 {
-			/*
-			 * This spi node can be SPI, SPIM, or SPIS,
+			 * This node can be SPI/TWI, SPIM/TWIM, SPIS/TWIS,
 			 * for the user to pick:
 			 * compatible = "nordic,nrf-spi" or
 			 *              "nordic,nrf-spim" or
-			 *              "nordic,nrf-spis".
+			 *              "nordic,nrf-spis" pr
+			 *              "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
 			 */
-			compatible = "nordic,nrf-spim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@40004000 {
-			/*
-			 * This i2c node can be TWI, TWIM, or TWIS,
-			 * for the user to pick:
-			 * compatible = "nordic,nrf-twi" or
-			 *              "nordic,nrf-twim" or
-			 *              "nordic,nrf-twis".
-			 */
-			compatible = "nordic,nrf-twim";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40004000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spi1: spi@40004000 {
+		i2c1: spi1: seriobox@40004000 {
 			/*
-			 * This spi node can be SPI, SPIM, or SPIS,
+			 * This node can be SPI/TWI, SPIM/TWIM, SPIS/TWIS,
 			 * for the user to pick:
 			 * compatible = "nordic,nrf-spi" or
 			 *              "nordic,nrf-spim" or
-			 *              "nordic,nrf-spis".
+			 *              "nordic,nrf-spis" pr
+			 *              "nordic,nrf-twi" or
+			 *              "nordic,nrf-twim" or
+			 *              "nordic,nrf-twis".
 			 */
-			compatible = "nordic,nrf-spim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 
 		nfct: nfct@40005000 {
@@ -462,8 +430,8 @@
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
 			interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			status = "disabled";
 		};
 
@@ -529,8 +497,8 @@
 			#size-cells = <0>;
 			reg = <0x4002f000 0x1000>;
 			interrupts = <47 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(32)>;
-			easydma-maxcnt-bits = <16>;
+			nordic,spi-max-frequency = <DT_FREQ_M(32)>;
+			nordic,easydma-maxcnt-bits = <16>;
 			rx-delay-supported;
 			rx-delay = <2>;
 			status = "disabled";

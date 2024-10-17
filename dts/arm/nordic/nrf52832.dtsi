@@ -131,9 +131,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <8>;
+			nordic,easydma-maxcnt-bits = <8>;
 			status = "disabled";
 			zephyr,pm-device-runtime-auto;
 		};
@@ -151,8 +150,8 @@
 			#size-cells = <0>;
 			reg = <0x40003000 0x1000>;
 			interrupts = <3 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <8>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <8>;
 			status = "disabled";
 		};
 
@@ -168,9 +167,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			easydma-maxcnt-bits = <8>;
+			nordic,easydma-maxcnt-bits = <8>;
 			status = "disabled";
 			zephyr,pm-device-runtime-auto;
 		};
@@ -188,8 +186,8 @@
 			#size-cells = <0>;
 			reg = <0x40004000 0x1000>;
 			interrupts = <4 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <8>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <8>;
 			status = "disabled";
 		};
 
@@ -453,8 +451,8 @@
 			#size-cells = <0>;
 			reg = <0x40023000 0x1000>;
 			interrupts = <35 NRF_DEFAULT_IRQ_PRIORITY>;
-			max-frequency = <DT_FREQ_M(8)>;
-			easydma-maxcnt-bits = <8>;
+			nordic,spi-max-frequency = <DT_FREQ_M(8)>;
+			nordic,easydma-maxcnt-bits = <8>;
 			status = "disabled";
 		};
 
