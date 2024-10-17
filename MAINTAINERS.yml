@@ -3509,7 +3509,7 @@ Raspberry Pi Pico Platforms:
     - boards/raspberrypi/
     - boards/adafruit/kb2040/
     - boards/sparkfun/pro_micro_rp2040/
-    - dts/arm/rpi_pico/
+    - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
