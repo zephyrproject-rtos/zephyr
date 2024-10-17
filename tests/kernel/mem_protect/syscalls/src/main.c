@@ -18,6 +18,8 @@
 #elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
 	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
 #define SLEEP_MS_LONG	300
+#elif defined(CONFIG_WHISPER_TARGET)
+#define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000
 #endif
