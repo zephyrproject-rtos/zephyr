@@ -6,6 +6,9 @@ board:
     - name: s400
       variants:
         - name: whisper
+        - name: pmp
+          variants:
+            - name: whisper
     - name: s420
       variants:
         - name: whisper

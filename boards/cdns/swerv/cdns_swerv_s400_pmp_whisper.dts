@@ -1,0 +1,83 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <skeleton.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &whisper_consoleio;
+		zephyr,sram = &dccm;
+		zephyr,iccm = &iccm;
+		zephyr,dccm = &dccm;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,swerv,s400", "riscv";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei",
+					       "zba", "zbb", "zbc", "zbs";
+			reg = <0>;
+			clock-frequency = <15000000>;
+
+			cpu0intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&cpu0intc>;
+		ranges;
+
+		iccm: memory@ee000000 {
+			compatible = "mmio-sram";
+			reg = <0xEE000000 0x02000000>;
+		};
+
+		dccm: memory@f4000000 {
+			compatible = "mmio-sram";
+			reg = <0xF4000000 0x02000000>;
+		};
+
+		pic: interrupt-controller@f00c0000 {
+			compatible = "cdns,swerv-pic";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0xF00C0000 0x00008000>;
+			riscv,max-priority = <15>;
+		};
+
+		timer: timer@44a00000 {
+			compatible = "riscv,machine-timer";
+			reg = <0x44A00000 0x8 0x44A00008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0intc 7>;
+		};
+
+		whisper_consoleio: whisper-consoleio@d0580000 {
+			reg = <0xD0580000 0x00000004>;
+
+			status = "okay";
+		};
+	};
+};
