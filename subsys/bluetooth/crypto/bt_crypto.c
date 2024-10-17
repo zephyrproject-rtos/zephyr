@@ -7,12 +7,7 @@
 
 #include <zephyr/sys/byteorder.h>
 
-#if defined(CONFIG_BT_USE_PSA_API)
 #include "psa/crypto.h"
-#else
-#include <tinycrypt/cmac_mode.h>
-#include <tinycrypt/constants.h>
-#endif
 
 #include "common/bt_str.h"
 #include "bt_crypto.h"
