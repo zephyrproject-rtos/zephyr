@@ -882,6 +882,8 @@ test_i2c_vishay_vcnl36825t: vcnl36825t@81 {
 	multi-pulse = <8>;
 
 	low-power;
+
+	int-gpios = <&test_gpio 0 0>;
 };
 
 test_i2c_tmag5273: tmag5273@82 {
