@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "posix_types.h"
+#include <zephyr/posix/posix_types.h>
 
 #include <time.h>
 
