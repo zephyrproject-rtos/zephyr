@@ -12,6 +12,12 @@ variants:
     type: sim
     simulation:
       - name: whisper
+  cdns_swerv/s400/pmp/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+    testing:
+      timeout_multiplier: 6
   cdns_swerv/s420/whisper:
     type: sim
     simulation:
