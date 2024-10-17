@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include "ipv4.h"
+#include "igmp.h"
 
 #define THREAD_SLEEP 50 /* ms */
 
@@ -98,37 +99,87 @@ static void net_test_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+static struct net_ipv4_igmp_v3_report *get_igmp_hdr(struct net_pkt *pkt)
+#else
 static struct net_ipv4_igmp_v2_query *get_igmp_hdr(struct net_pkt *pkt)
+#endif
 {
 	net_pkt_cursor_init(pkt);
 
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
 		     net_pkt_ipv4_opts_len(pkt));
 
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	return (struct net_ipv4_igmp_v3_report *)net_pkt_cursor_get_pos(pkt);
+#else
 	return (struct net_ipv4_igmp_v2_query *)net_pkt_cursor_get_pos(pkt);
+#endif
 }
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+static struct net_ipv4_igmp_v3_group_record *get_igmp_group_record(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv4_opts_len(pkt));
+	net_pkt_skip(pkt, sizeof(struct net_ipv4_igmp_v3_report));
+
+	return (struct net_ipv4_igmp_v3_group_record *)net_pkt_cursor_get_pos(pkt);
+}
+#endif
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
-	struct net_ipv4_igmp_v2_query *igmp;
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_ipv4_igmp_v3_report *igmp_header;
+	struct net_ipv4_igmp_v3_group_record *igmp_group_record;
+#else
+	struct net_ipv4_igmp_v2_query *igmp_header;
+#endif
 
 	if (!pkt->buffer) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	igmp = get_igmp_hdr(pkt);
+	igmp_header = get_igmp_hdr(pkt);
 
-	if (igmp->type == NET_IPV4_IGMP_QUERY) {
+	if (igmp_header->type == NET_IPV4_IGMP_QUERY) {
 		NET_DBG("Received query....");
 		is_query_received = true;
 		k_sem_give(&wait_data);
-	} else if (igmp->type == NET_IPV4_IGMP_REPORT_V2) {
+	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V2) {
 		NET_DBG("Received v2 report....");
+		zassert_false(IS_ENABLED(CONFIG_NET_IPV4_IGMPV3),
+			      "Wrong IGMP report received (IGMPv2)");
 		is_join_msg_ok = true;
 		is_report_sent = true;
 		k_sem_give(&wait_data);
-	} else if (igmp->type == NET_IPV4_IGMP_LEAVE) {
+	} else if (igmp_header->type == NET_IPV4_IGMP_REPORT_V3) {
+		NET_DBG("Received v3 report....");
+		zassert_true(IS_ENABLED(CONFIG_NET_IPV4_IGMPV3),
+			     "Wrong IGMP report received (IGMPv3)");
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		zassert_true(ntohs(igmp_header->groups_len) == 1,
+			     "Invalid group length of IGMPv3 report (%d)", igmp_header->groups_len);
+
+		igmp_group_record = get_igmp_group_record(pkt);
+		zassert_true(igmp_group_record->sources_len == 0,
+			     "Invalid sources length of IGMPv3 group record");
+
+		if (igmp_group_record->type == IGMPV3_CHANGE_TO_EXCLUDE_MODE) {
+			is_join_msg_ok = true;
+		} else if (igmp_group_record->type == IGMPV3_CHANGE_TO_INCLUDE_MODE) {
+			is_leave_msg_ok = true;
+		}
+#else
+		is_join_msg_ok = true;
+#endif
+		is_report_sent = true;
+		k_sem_give(&wait_data);
+	} else if (igmp_header->type == NET_IPV4_IGMP_LEAVE) {
 		NET_DBG("Received leave....");
 		is_leave_msg_ok = true;
 		k_sem_give(&wait_data);
