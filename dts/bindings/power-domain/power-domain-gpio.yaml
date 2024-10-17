@@ -28,3 +28,6 @@ properties:
     type: int
     default: 0
     description: Off delay time, in microseconds
+
+  "#power-domain-cells":
+    const: 0

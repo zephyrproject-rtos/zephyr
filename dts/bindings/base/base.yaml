@@ -93,6 +93,18 @@ properties:
     type: string-array
     description: Provided names of mailbox / IPM channel specifiers
 
+  power-domains:
+    type: phandle-array
+    description: Power domain specifiers
+
+  power-domain-names:
+    type: string-array
+    description: Provided names of power domain specifiers
+
+  "#power-domain-cells":
+    type: int
+    description: Number of cells in power-domains property
+
   zephyr,deferred-init:
     type: boolean
     description: |

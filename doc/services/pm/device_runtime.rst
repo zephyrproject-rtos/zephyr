@@ -26,7 +26,7 @@ asynchronously, it will be put into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDING` state first and then into the
 :c:enumerator:`PM_DEVICE_STATE_SUSPENDED` state when the action is run.
 
-For devices on a power domain (via the devicetree 'power-domain' property), device runtime
+For devices on a power domain (via the devicetree 'power-domains' property), device runtime
 power management automatically attempts to request and release the dependent domain
 in response to :c:func:`pm_device_runtime_get` and :c:func:`pm_device_runtime_put`
 calls on the child device.
