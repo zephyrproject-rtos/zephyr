@@ -217,8 +217,9 @@ def map_regs(log_only):
     # Platform/quirk detection.  ID lists cribbed from the SOF kernel driver
     global cavs25, ace15, ace20, ace30
     did = int(open(f"{pcidir}/device").read().rstrip(), 16)
-    cavs25 = did in [ 0xa0c8, 0x43c8, 0x4b55, 0x4b58, 0x7ad0, 0x51c8 ]
-    ace15 = did in [ 0x7e28 ]
+    cavs25 = did in [ 0x43c8, 0x4b55, 0x4b58, 0x51c8, 0x51ca, 0x51cb, 0x51ce, 0x51cf, 0x54c8,
+                      0x7ad0, 0xa0c8 ]
+    ace15 = did in [ 0x7728, 0x7f50, 0x7e28 ]
     ace20 = did in [ 0xa828 ]
     ace30 = did in [ 0xe428 ]
 
@@ -289,10 +290,10 @@ def map_regs(log_only):
     else:
         dsp.ADSPCS         = 0x00004
         dsp.HIPCTDR        = 0x000c0
-        dsp.HIPCTDA        = 0x000c4 # 1.8+ only
+        dsp.HIPCTDA        = 0x000c4
         dsp.HIPCTDD        = 0x000c8
         dsp.HIPCIDR        = 0x000d0
-        dsp.HIPCIDA        = 0x000d4 # 1.8+ only
+        dsp.HIPCIDA        = 0x000d4
         dsp.HIPCIDD        = 0x000d8
         dsp.ROM_STATUS     = WINDOW_BASE # Start of first SRAM window
         dsp.SRAM_FW_STATUS = WINDOW_BASE
@@ -443,10 +444,7 @@ def load_firmware(fw_file):
     hda.SPBFCTL |= (1 << hda_ostream_id)
     hda.SD_SPIB = len(fw_bytes)
 
-    # Start DSP.  Host needs to provide power to all cores on 1.5
-    # (which also starts them) and 1.8 (merely gates power, DSP also
-    # has to set PWRCTL). On 2.5 where the DSP has full control,
-    # and only core 0 is set.
+    # Start DSP. Only start up core 0, reset is managed by DSP.
     log.info(f"Starting DSP, ADSPCS = 0x{dsp.ADSPCS:x}")
     dsp.ADSPCS = mask(SPA)
     while (dsp.ADSPCS & mask(CPA)) == 0: pass
@@ -469,8 +467,7 @@ def load_firmware(fw_file):
     # Send the DSP an IPC message to tell the device how to boot.
     # Note: with cAVS 1.8+ the ROM receives the stream argument as an
     # index within the array of output streams (and we always use the
-    # first one by construction).  But with 1.5 it's the HDA index,
-    # and depends on the number of input streams on the device.
+    # first one by construction).
     stream_idx = 0
     ipcval = (  (1 << 31)            # BUSY bit
                 | (0x01 << 24)       # type = PURGE_FW
@@ -576,8 +573,7 @@ def load_firmware_ace(fw_file):
     # Send the DSP an IPC message to tell the device how to boot.
     # Note: with cAVS 1.8+ the ROM receives the stream argument as an
     # index within the array of output streams (and we always use the
-    # first one by construction).  But with 1.5 it's the HDA index,
-    # and depends on the number of input streams on the device.
+    # first one by construction).
     stream_idx = 0
     ipcval = (  (1 << 31)            # BUSY bit
                 | (0x01 << 24)       # type = PURGE_FW
@@ -909,7 +905,7 @@ def ipc_command(data, ext_data):
             return
 
     if adsp_is_ace():
-        dsp.HFIPCXTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+        dsp.HFIPCXTDR = 1<<31 # Ack local interrupt
         if done:
             dsp.HFIPCXTDA = ~(1<<31) & dsp.HFIPCXTDA # Signal done
         if send_msg:
@@ -917,7 +913,7 @@ def ipc_command(data, ext_data):
             dsp.HFIPCXIDDY = ext_data
             dsp.HFIPCXIDR = (1<<31) | ext_data
     else:
-        dsp.HIPCTDR = 1<<31 # Ack local interrupt, also signals DONE on v1.5
+        dsp.HIPCTDR = 1<<31 # Ack local interrupt
         if done:
             dsp.HIPCTDA = 1<<31 # Signal done
         if send_msg:
@@ -949,7 +945,7 @@ async def main():
         log.error(e)
         sys.exit(1)
 
-    log.info(f"Detected cAVS 1.8+ hardware")
+    log.info(f"Detected a supported cAVS/ACE hardware version")
 
     if args.log_only:
         wait_fw_entered(dsp, timeout_s=None)
