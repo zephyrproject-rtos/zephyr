@@ -110,8 +110,6 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_RTS_THRESHOLD_CONFIG,
 	/** WPS config */
 	NET_REQUEST_WIFI_CMD_WPS_CONFIG,
-	/** AP WPS config */
-	NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 /** @endcond */
@@ -266,11 +264,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
 #define NET_REQUEST_WIFI_WPS_CONFIG (_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
-
-#define NET_REQUEST_WIFI_AP_WPS_CONFIG				\
-	(_NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_AP_WPS_CONFIG)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_WPS_CONFIG);
 
 /** @brief Wi-Fi management events */
 enum net_event_wifi_cmd {
@@ -1378,14 +1371,6 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
-	/** Start AP WPS PBC/PIN
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params wps operarion parameters
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*ap_wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
 };
 
 /** Wi-Fi management offload API */
