@@ -2446,7 +2446,6 @@ out:
 
 int supplicant_ap_wps_pin(const struct device *dev, struct wifi_wps_config_params *params)
 {
-#define WPS_PIN_EXPIRE_TIME 120
 	struct hostapd_iface *iface;
 	char *get_pin_cmd = "WPS_AP_PIN random";
 	int ret  = 0;
@@ -2475,7 +2474,7 @@ int supplicant_ap_wps_pin(const struct device *dev, struct wifi_wps_config_param
 			goto out;
 		}
 
-		if (!hostapd_cli_cmd_v("wps_pin any %s %d", params->pin, WPS_PIN_EXPIRE_TIME)) {
+		if (!hostapd_cli_cmd_v("wps_pin any %s", params->pin)) {
 			goto out;
 		}
 
