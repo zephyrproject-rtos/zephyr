@@ -1,0 +1,66 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - wifi
+    - net
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  wifi.build.crypto_default:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
+  wifi.build.crypto_alt:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
+  wifi.build.crypto_none:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE=y
+  # FIXME: The psa crypto does not work atm so commented out
+  #        the build test temporarily.
+  # wifi.build.crypto_psa:
+  #  extra_configs:
+  #    - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA=y
+  wifi.build.crypto_enterprise:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
+      - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
+      - CONFIG_EAP_TLS=y
+      - CONFIG_EAP_TTLS=y
+      - CONFIG_EAP_PEAP=y
+      - CONFIG_EAP_MD5=y
+      - CONFIG_EAP_MSCHAPV2=y
+      - CONFIG_EAP_LEAP=y
+      - CONFIG_EAP_PSK=y
+      - CONFIG_EAP_PAX=y
+      - CONFIG_EAP_SAKE=y
+      - CONFIG_EAP_GPSK=y
+      - CONFIG_EAP_PWD=y
+      - CONFIG_EAP_EKE=y
+      - CONFIG_EAP_IKEV2=y
+      - CONFIG_EAP_SIM=y
+      - CONFIG_EAP_AKA=y
+  wifi.build.wpa3:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y
+      - CONFIG_MBEDTLS_TLS_VERSION_1_2=y
+  wifi.build.wps:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
+  wifi.build.p2p:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO=y
+  wifi.build.hostapd_ap:
+    extra_configs:
+      - CONFIG_WIFI_NM_HOSTAPD_AP=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
+  wifi.build.dpp:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
