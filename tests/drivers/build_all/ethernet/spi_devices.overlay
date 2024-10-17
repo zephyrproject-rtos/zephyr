@@ -36,6 +36,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -119,6 +120,22 @@
 						status = "okay";
 					};
 				};
+			};
+
+			test_spi_lan865x: lan865x@5 {
+				compatible = "microchip,lan865x";
+				reg = <0x5>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				rst-gpios = <&test_gpio 0 0>;
+
+				plca-node-id = <0>;
+				plca-node-count = <1>;
+				plca-burst-count = <1>;
+				plca-burst-timer = <1>;
+				plca-to-timer = <1>;
+
+				local-mac-address = [00 00 00 01 02 03];
 			};
 		};
 	};
