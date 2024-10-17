@@ -182,6 +182,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll_sync->latency_event = 0;
 		lll_sync->event_counter = 0;
 
+#if defined(CONFIG_BT_CTLR_ADV_PDU_LINK)
+		lll_sync->data_chan_counter = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_PDU_LINK */
+
 		sync->is_enabled = 0U;
 		sync->is_started = 0U;
 
