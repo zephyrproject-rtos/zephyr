@@ -24,6 +24,7 @@ static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
 static struct k_thread test_udc_thread_data;
 static K_SEM_DEFINE(ep_queue_sem, 0, 1);
 static uint8_t last_used_ep;
+static uint8_t test_event_ctx;
 
 static int test_udc_event_handler(const struct device *dev,
 				  const struct udc_event *const event)
@@ -56,6 +57,9 @@ static void test_udc_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		k_msgq_get(&test_msgq, &event, K_FOREVER);
+
+		zassert_equal(udc_get_event_ctx(event.dev), &test_event_ctx,
+			      "Wrong pointer to higher layer context");
 
 		switch (event.type) {
 		case UDC_EVT_VBUS_REMOVED:
@@ -368,7 +372,7 @@ static void test_udc_ep_mps(uint8_t type)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	err = udc_enable(dev);
@@ -476,7 +480,7 @@ ZTEST(udc_driver_test, test_udc_not_initialized)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, NULL);
+	err = udc_init(dev, NULL, NULL);
 	zassert_equal(err, -EINVAL, "Not failed to initialize UDC");
 
 	err = udc_shutdown(dev);
@@ -515,7 +519,7 @@ ZTEST(udc_driver_test, test_udc_initialized)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	test_udc_set_address(dev, 0);
@@ -548,7 +552,7 @@ ZTEST(udc_driver_test, test_udc_enabled)
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
 	zassert_true(device_is_ready(dev), "UDC device not ready");
 
-	err = udc_init(dev, test_udc_event_handler);
+	err = udc_init(dev, test_udc_event_handler, &test_event_ctx);
 	zassert_ok(err, "Failed to initialize UDC driver");
 
 	err = udc_enable(dev);
