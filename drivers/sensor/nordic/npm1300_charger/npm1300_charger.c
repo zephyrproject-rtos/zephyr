@@ -18,6 +18,7 @@ struct npm1300_charger_config {
 	int32_t term_warm_microvolt;
 	int32_t current_microamp;
 	int32_t dischg_limit_microamp;
+	uint8_t dischg_limit_idx;
 	int32_t vbus_limit_microamp;
 	int32_t temp_thresholds[4U];
 	int32_t dietemp_thresholds[2U];
@@ -142,8 +143,8 @@ static const struct linear_range charger_volt_ranges[] = {
 /* Linear range for charger current */
 static const struct linear_range charger_current_range = LINEAR_RANGE_INIT(32000, 2000, 16U, 400U);
 
-/* Linear range for Discharge limit */
-static const struct linear_range discharge_limit_range = LINEAR_RANGE_INIT(268090, 3230, 83U, 415U);
+/* Allowed values for discharge limit */
+static const uint16_t discharge_limits[] = {84U, 415U};
 
 /* Linear range for vbusin current limit */
 static const struct linear_range vbus_current_ranges[] = {
@@ -197,7 +198,7 @@ static void calc_current(const struct npm1300_charger_config *const config,
 
 	switch (data->ibat_stat) {
 	case IBAT_STAT_DISCHARGE:
-		full_scale_ma = config->dischg_limit_microamp / 1000;
+		full_scale_ma = config->dischg_limit_microamp / 893;
 		break;
 	case IBAT_STAT_CHARGE_TRICKLE:
 	/* Fallthrough */
@@ -563,16 +564,10 @@ int npm1300_charger_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Set discharge limit, allow rounding down to closest value */
-	ret = linear_range_get_win_index(&discharge_limit_range,
-					 config->dischg_limit_microamp - discharge_limit_range.step,
-					 config->dischg_limit_microamp, &idx);
-	if (ret == -EINVAL) {
-		return ret;
-	}
-
-	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG, idx / 2U,
-				     idx & 1U);
+	/* Set discharge limit */
+	ret = mfd_npm1300_reg_write2(config->mfd, CHGR_BASE, CHGR_OFFSET_ISET_DISCHG,
+				     discharge_limits[config->dischg_limit_idx] / 2U,
+				     discharge_limits[config->dischg_limit_idx] & 1U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -669,6 +664,8 @@ static DEVICE_API(sensor, npm1300_charger_battery_driver_api) = {
 };
 
 #define NPM1300_CHARGER_INIT(n)                                                                    \
+	BUILD_ASSERT(DT_INST_ENUM_IDX(n, dischg_limit_microamp) < ARRAY_SIZE(discharge_limits));   \
+                                                                                                   \
 	static struct npm1300_charger_data npm1300_charger_data_##n;                               \
                                                                                                    \
 	static const struct npm1300_charger_config npm1300_charger_config_##n = {                  \
@@ -678,6 +675,7 @@ static DEVICE_API(sensor, npm1300_charger_battery_driver_api) = {
 			DT_INST_PROP_OR(n, term_warm_microvolt, DT_INST_PROP(n, term_microvolt)),  \
 		.current_microamp = DT_INST_PROP(n, current_microamp),                             \
 		.dischg_limit_microamp = DT_INST_PROP(n, dischg_limit_microamp),                   \
+		.dischg_limit_idx = DT_INST_ENUM_IDX(n, dischg_limit_microamp),                    \
 		.vbus_limit_microamp = DT_INST_PROP(n, vbus_limit_microamp),                       \
 		.thermistor_ohms = DT_INST_PROP(n, thermistor_ohms),                               \
 		.thermistor_idx = DT_INST_ENUM_IDX(n, thermistor_ohms),                            \
