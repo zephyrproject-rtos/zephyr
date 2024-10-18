@@ -18,7 +18,7 @@
 	chosen {
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
-		zephyr,code-partition = &slot0_partition;
+		zephyr,code-partition = &slot1_partition;
 	};
 };
 
@@ -28,7 +28,12 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: partition@80000 {
+		slot0_partition: partition@0 {
+			label = "unused";
+			reg = <0x00000000 DT_SIZE_K(512)>;
+		};
+
+		slot1_partition: partition@80000 {
 			label = "image-0";
 			reg = <0x00080000 DT_SIZE_K(512)>;
 		};
