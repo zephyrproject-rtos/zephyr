@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart8;
 		zephyr,shell-uart = &uart8;
+		zephyr,flash-controller = &flash1;
 		zephyr,flash = &flash0;
 	};
 
@@ -76,4 +77,17 @@
 	div = <2>;
 	mul = <20 0>;
 	status = "okay";
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@0 {
+			label = "storage";
+			reg = <0X0 DT_SIZE_K(64)>;
+		};
+	};
 };
