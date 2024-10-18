@@ -133,12 +133,12 @@ tests:
       type: multi_line
       ordered: false
       regex:
-        - "host: IPC-service HOST demo started"
-        - "host: Ep bounded"
-        - "host: Perform sends for"
-        - "host: Sent"
-        - "host: Received"
-        - "host: IPC-service HOST demo ended"
+        - "I: IPC-service HOST demo started"
+        - "I: Ep bounded"
+        - "I: Perform sends for"
+        - "I: Sent"
+        - "I: Received"
+        - "I: IPC-service HOST demo ended"
 
   sample.ipc.icbmsg.nrf54l15_remote_no_multithreading:
     platform_allow: nrf54l15dk/nrf54l15/cpuapp
