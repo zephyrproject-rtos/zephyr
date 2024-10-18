@@ -62,7 +62,6 @@ config NRF70_SYSTEM_MODE
 
 config NRF70_SCAN_ONLY
 	bool "nRF70 scan only mode"
-	depends on WIFI_NRF7000
 	help
 	  Select this option to enable scan only mode of the nRF70 driver
 
