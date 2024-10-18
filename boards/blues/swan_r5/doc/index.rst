@@ -1,7 +1,4 @@
-.. _swan_r5_board:
-
-Blues Wireless Swan
-###################
+.. zephyr:board:: swan_r5
 
 Overview
 ********
@@ -52,10 +49,6 @@ some highlights of the board:
   - tRNG
   - 12-bit ADC, 2 x 12-bit DAC
   - low-power RTC, and CRC calculation peripherals
-
-.. image:: img/swan.jpg
-     :align: center
-     :alt: Blues Wireless Swan
 
 More information about the board can be found at the `Swan Product Page`_.
 
