@@ -1,15 +1,8 @@
-.. _sltb010a:
-
-EFR32BG22 Thunderboard (SLTB010A)
-#################################
+.. zephyr:board:: sltb010a
 
 SLTB010A is a development kit based on the EFR32BG22 SoC. Early revisions of
 the kit (A00 and A01) use a slightly different PCB (BRD4184A) from later
 revisions (BRD4184B).
-
-.. image:: ./sltb010a.jpg
-   :align: center
-   :alt: SLTB010A board
 
 Hardware
 ********
