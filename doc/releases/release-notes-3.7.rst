@@ -455,7 +455,7 @@ Boards & SoC Support
   * nRF54H20 PDK (pre-release) converted to :ref:`nrf54h20dk_nrf54h20`
   * PPR core target in :ref:`nrf54h20dk_nrf54h20` runs from RAM by default. A
     new ``xip`` variant has been introduced which runs from MRAM (XIP).
-  * Refactored :ref:`beagleconnect_freedom` external antenna switch handling.
+  * Refactored :zephyr:board:`beagleconnect_freedom` external antenna switch handling.
   * Added Arduino dts node labels for the nRF5340 Audio DK.
   * Changed the default revision of the nRF54L15 PDK from 0.2.1 to 0.3.0.
   * In boards based on the nRF5340 SoC, replaced direct accesses to the register
@@ -1048,7 +1048,7 @@ Drivers and Sensors
   * Added a Add QTMR PWM driver for NXP imxrt11xx
   * Made the NXP MCUX PWM driver thread safe
   * Fix :zephyr:code-sample:`pwm-blinky` code sample to demonstrate PWM support for
-    :ref:`beagleconnect_freedom`.
+    :zephyr:board:`beagleconnect_freedom`.
   * Added driver for ENE KB1200.
   * Added support for Nordic nRF54H and nRF54L Series SoCs.
   * Added support for Nuvoton Numaker M2L31X series.
